@@ -1,0 +1,13 @@
+{
+  "title": "File Manager",
+  "page": "files",
+  "ui_elements": [
+    {"element_id": "page_title", "role": "heading", "text": "Files", "attributes": {"visible": true}},
+    {"element_id": "new_file_btn", "role": "button", "text": "New File", "attributes": {"visible": true, "enabled": true}}
+  ],
+  "forms": {},
+  "filesystem": {
+    "/home/user/": {"kind": "dir"}
+  }
+}
+

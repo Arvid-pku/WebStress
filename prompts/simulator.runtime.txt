@@ -1,0 +1,18 @@
+Input JSON:
+{"seed":123,"fidelity":"low","episode_id":"ep-123-demo","instruction":{"id":"demo"},"last_action":null,"timestamp":"2025-01-01T00:00:00Z","time_delta_ms":0}
+
+Output JSON shape:
+{
+  "observation": {"timestamp":"...","screenshot_id":"...","ui_elements":[],"audio_events":[],"meta":{}},
+  "internal_result": {"result":"ok|rejected|partial","reason":"internal string"},
+  "event_log": [{"t":"...","event":"..."}],
+  "state_diff": {},
+  "state_digest": "sha256",
+  "terminal": false,
+  "reward_hint": null
+}
+
+Few-shot (rejection is perceptual only):
+- Action: {"type":"click","target":{"element_id":"submit_btn"}} with invalid form -> Observation includes {"element_id":"error_banner","role":"banner","text":"Please complete required fields"} and a beep in audio_events; no internal reasons in observation.
+- Action: {"type":"click","target":{"element_id":"missing"}} -> Observation unchanged or subtle flash via meta.event_visuals; no reason text.
+

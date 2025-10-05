@@ -1,0 +1,12 @@
+{
+  "title": "Email Client",
+  "page": "inbox",
+  "ui_elements": [
+    {"element_id": "page_title", "role": "heading", "text": "Inbox", "attributes": {"visible": true}},
+    {"element_id": "compose_btn", "role": "button", "text": "Compose", "attributes": {"visible": true, "enabled": true}},
+    {"element_id": "send_btn", "role": "button", "text": "Send", "attributes": {"visible": true, "enabled": false}}
+  ],
+  "forms": {},
+  "filesystem": {}
+}
+
