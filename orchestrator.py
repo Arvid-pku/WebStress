@@ -7,6 +7,18 @@ from simulator_core import SimulatorCore
 from judge import Judge
 from proposer import Proposer
 
+USE_LLM_AGENT = os.getenv("USE_LLM_AGENT") == "1"
+USE_LLM_JUDGE = os.getenv("USE_LLM_JUDGE") == "1"
+USE_LLM_PROPOSER = os.getenv("USE_LLM_PROPOSER") == "1"
+
+if USE_LLM_AGENT or USE_LLM_JUDGE or USE_LLM_PROPOSER:
+    try:
+        from llm_wrappers import LLMAgent, LLMJudge, LLMProposer
+    except Exception:
+        LLMAgent = None  # type: ignore
+        LLMJudge = None  # type: ignore
+        LLMProposer = None  # type: ignore
+
 
 class DummyAgent:
     """A minimal agent that emits a single action causing a rejection, then stops."""
@@ -19,8 +31,16 @@ class DummyAgent:
 
 def run_episode(instr: Dict[str, Any], seed: int, fidelity: str = "low", steps_limit: int = 1) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     sim = SimulatorCore()
-    agent = DummyAgent()
-    judge = Judge()
+    # Choose agent
+    if USE_LLM_AGENT and 'LLMAgent' in globals() and LLMAgent is not None:
+        agent = LLMAgent(model=os.getenv("LLM_MODEL"), temperature=float(os.getenv("AGENT_TEMP", "0.2")), seed=seed)
+    else:
+        agent = DummyAgent()
+    # Choose judge
+    if USE_LLM_JUDGE and 'LLMJudge' in globals() and LLMJudge is not None:
+        judge = LLMJudge(model=os.getenv("LLM_MODEL"), temperature=0.0, seed=seed)
+    else:
+        judge = Judge()
 
     obs, start_digest, episode_id = sim.reset(instr, seed, fidelity)
     episode_log: Dict[str, Any] = {
@@ -81,4 +101,3 @@ if __name__ == "__main__":
     log, judge_out = run_episode(instruction, seed=123, fidelity="low", steps_limit=1)
     save_episode("runs", log, judge_out)
     print("Saved episode to 'runs/'")
-

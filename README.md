@@ -385,4 +385,15 @@ Agent-visible observation (returned to agent):
   - Pass `fidelity` into `SimulatorCore.reset(instruction, seed, fidelity)`; current implementation supports `low` behavior scripts.
 
 - Switching to LLM wrappers:
-  - Prompts are under `prompts/`. Replace the `DummyAgent` in `orchestrator.py` with your LLM wrapper that emits one Action JSON per step. Ensure all boundaries validate against schemas in `schema/` (this repo ships minimal validators in `validation.py`).
+  - Prompts are under `prompts/`. LLM wrappers for Agent, Judge, and Proposer are implemented in `llm_wrappers.py` using `llm_client.py`.
+  - Enable via env flags (example uses GPT-5 as a model name; set to your deployment):
+    - `pip install openai`
+    - `export OPENAI_API_KEY=...`
+    - `export LLM_MODEL=gpt-5` (or another model id)
+    - `export USE_LLM_AGENT=1` (optional)
+    - `export USE_LLM_JUDGE=1` (optional)
+    - `export USE_LLM_PROPOSER=1` (optional)
+  - Then run: `python orchestrator.py`
+  - Notes:
+    - Simulator remains a deterministic core. For high-fidelity content, wire LLM calls inside the simulator in `high` mode while preserving observation-only rules and determinism (temp=0.0).
+    - All LLM outputs are validated against JSON schemas; malformed outputs are retried with strict JSON instructions.
