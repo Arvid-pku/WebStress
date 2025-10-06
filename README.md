@@ -413,3 +413,6 @@ When `--llm-simulator` (or `USE_LLM_SIMULATOR=1`) is enabled, the Simulator uses
 - Optional dependency: `pip install jsonschema`
 - With `jsonschema` installed, `validation.py` enforces strict schemas for Action, Observation, State, Instruction, and Judge Output using the files in `schema/`.
 - Without it, a minimal built-in validator is used (sufficient for the included tests).
+
+export OPENAI_API_KEY=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
+python orchestrator.py --llm-simulator --llm-agent --seed 123 --fidelity high --steps 2

@@ -13,14 +13,14 @@ USE_LLM_JUDGE = os.getenv("USE_LLM_JUDGE") == "1"
 USE_LLM_PROPOSER = os.getenv("USE_LLM_PROPOSER") == "1"
 USE_LLM_SIMULATOR = os.getenv("USE_LLM_SIMULATOR") == "1"
 
-if USE_LLM_AGENT or USE_LLM_JUDGE or USE_LLM_PROPOSER:
-    try:
-        from llm_wrappers import LLMAgent, LLMJudge, LLMProposer, LLMSimulator
-    except Exception:
-        LLMAgent = None  # type: ignore
-        LLMJudge = None  # type: ignore
-        LLMProposer = None  # type: ignore
-        LLMSimulator = None  # type: ignore
+# Always attempt to import LLM wrappers; they lazily create clients.
+try:
+    from llm_wrappers import LLMAgent, LLMJudge, LLMProposer, LLMSimulator
+except Exception:
+    LLMAgent = None  # type: ignore
+    LLMJudge = None  # type: ignore
+    LLMProposer = None  # type: ignore
+    LLMSimulator = None  # type: ignore
 
 
 class DummyAgent:
@@ -41,7 +41,7 @@ def run_episode(instr: Dict[str, Any], seed: int, fidelity: str = "low", steps_l
         sim = base_sim
     # Choose agent
     if USE_LLM_AGENT and 'LLMAgent' in globals() and LLMAgent is not None:
-        agent = LLMAgent(model=os.getenv("LLM_MODEL"), temperature=float(os.getenv("AGENT_TEMP", "0.2")), seed=seed)
+        agent = LLMAgent(model=os.getenv("LLM_MODEL"), temperature=float(os.getenv("AGENT_TEMP", "1")), seed=seed)
     else:
         agent = DummyAgent()
     # Choose judge
@@ -122,6 +122,13 @@ if __name__ == "__main__":
             {"predicate": "element_text_contains:Invalid card number", "weight": 1.0}
         ],
     }
+    print(
+        "Components:",
+        f"simulator={'LLM' if USE_LLM_SIMULATOR else 'core'}",
+        f"agent={'LLM' if USE_LLM_AGENT else 'dummy'}",
+        f"judge={'LLM' if USE_LLM_JUDGE else 'det'}",
+        f"proposer={'LLM' if USE_LLM_PROPOSER else 'simple'}",
+    )
     log, judge_out = run_episode(instruction, seed=args.seed, fidelity=args.fidelity, steps_limit=args.steps)
     save_episode("runs", log, judge_out)
     print("Saved episode to 'runs/'")

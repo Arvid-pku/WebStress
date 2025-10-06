@@ -15,14 +15,58 @@ PROMPTS_DIR = os.path.join(os.path.dirname(__file__), "prompts")
 
 
 class LLMAgent:
-    def __init__(self, model: Optional[str] = None, temperature: float = 0.2, seed: Optional[int] = None):
+    def __init__(self, model: Optional[str] = None, temperature: float = 1, seed: Optional[int] = None):
         self.client = LLMClient(model=model, temperature=temperature, seed=seed)
         self.system = _read(os.path.join(PROMPTS_DIR, "agent.system.txt"))
 
     def act(self, observation: Dict[str, Any], instruction: Dict[str, Any]) -> Dict[str, Any]:
         payload = {"instruction": instruction, "observation": observation}
         out = self.client.complete_json(system_prompt=self.system, user_json=payload, max_retries=2)
-        validate_action(out)
+        try:
+            validate_action(out)
+            return out
+        except Exception:
+            norm = self._normalize_action(out)
+            validate_action(norm)
+            return norm
+
+    def _normalize_action(self, raw: Dict[str, Any]) -> Dict[str, Any]:
+        if not isinstance(raw, dict):
+            return raw  # let validator raise
+        allowed_top = {"type", "target", "text", "keys", "delta_y", "delta_x"}
+        out: Dict[str, Any] = dict(raw)
+        # Map common mistakes
+        if "action" in out and "type" not in out:
+            out["type"] = out.pop("action")
+        # Lowercase type
+        if isinstance(out.get("type"), str):
+            out["type"] = out["type"].lower()
+        # Move element_id/x/y into target
+        tgt = dict(out.get("target", {})) if isinstance(out.get("target"), dict) else {}
+        if "element_id" in out:
+            tgt["element_id"] = out.pop("element_id")
+        if "x" in out or "y" in out:
+            if "x" in out:
+                tgt["x"] = out.pop("x")
+            if "y" in out:
+                tgt["y"] = out.pop("y")
+        if tgt:
+            # Filter target keys
+            tgt = {k: v for k, v in tgt.items() if k in {"element_id", "x", "y"}}
+            out["target"] = tgt
+        # Value -> text
+        if "value" in out and "text" not in out:
+            out["text"] = out.pop("value")
+        # keys: str -> [str]
+        if "keys" in out and isinstance(out["keys"], str):
+            out["keys"] = [out["keys"]]
+        # deltaY/deltaX normalization
+        if "deltaY" in out and "delta_y" not in out:
+            out["delta_y"] = out.pop("deltaY")
+        if "deltaX" in out and "delta_x" not in out:
+            out["delta_x"] = out.pop("deltaX")
+        # Strip unknown keys
+        out = {k: v for k, v in out.items() if k in allowed_top}
         return out
 
 

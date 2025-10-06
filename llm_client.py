@@ -9,13 +9,13 @@ class LLMClient:
     - Uses environment variables:
       - OPENAI_API_KEY
       - OPENAI_BASE_URL (optional)
-      - LLM_MODEL (default: gpt-4o-mini)
+      - LLM_MODEL (default: gpt-5)
     - Supports JSON-only responses with retry on malformed JSON.
     - No network calls occur unless methods are invoked.
     """
 
     def __init__(self, model: Optional[str] = None, temperature: float = 0.0, seed: Optional[int] = None):
-        self.model = model or os.getenv("LLM_MODEL", "gpt-4o-mini")
+        self.model = model or os.getenv("LLM_MODEL", "gpt-5")
         self.temperature = float(temperature)
         self.seed = seed
         self._client = None
