@@ -1,0 +1,11 @@
+{
+  "id": "open-settings",
+  "description": "Open the Settings from the desktop.",
+  "template": "desktop",
+  "difficulty": "easy",
+  "time_limit": 45,
+  "success_criteria": [
+    {"predicate": "element_text_contains:Settings", "weight": 1.0}
+  ]
+}
+

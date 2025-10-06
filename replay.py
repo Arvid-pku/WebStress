@@ -3,15 +3,21 @@ import sys
 from typing import Any, Dict
 
 from simulator_core import SimulatorCore
+try:
+    from llm_wrappers import LLMSimulator  # optional
+except Exception:
+    LLMSimulator = None  # type: ignore
 
 
 def verify_episode(log: Dict[str, Any]) -> bool:
     instr_id = log.get("instruction_id", "instr")
     seed = log.get("seed", 0)
     # Minimal instruction placeholder; template inferred by simulator default
-    instr = {"id": instr_id, "template": "flight_booking", "description": "", "difficulty": "easy", "time_limit": 30, "success_criteria": []}
+    instr = {"id": instr_id, "template": "desktop", "description": "", "difficulty": "easy", "time_limit": 30, "success_criteria": []}
 
-    sim = SimulatorCore()
+    base = SimulatorCore()
+    use_llm = (log.get("components", {}) or {}).get("simulator") == "llm" and LLMSimulator is not None
+    sim = LLMSimulator(core=base, model=None, seed=seed) if use_llm else base
     obs, start_digest, episode_id = sim.reset(instr, seed)
     if start_digest != log.get("start_digest"):
         return False
@@ -37,4 +43,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

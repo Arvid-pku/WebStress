@@ -18,6 +18,12 @@ Meta policy:
 - Use scroll_y to reflect scroll actions (pixels). Do not change ui_elements on scroll unless base_observation indicates pagination.
 - Use focused_element_id only if the base_observation already contains that element_id.
 
+State transitions (optional):
+- You may also return a `state_patch` object to update the canonical state when the action is valid (internal_outcome == 'ok').
+- Allowed state_patch keys: page, ui_elements, windows, forms, filesystem.
+- Keep patches minimal and consistent with the observation you return.
+- Never include internal reasons or logs in the patch; do not add non-canonical keys.
+
 Determinism:
 - Treat the provided `seed` and `episode_id` as the source for reproducible text variations (but do NOT alter ids or add randomness that breaks replayability).
 - If unsure, favor minimal, conservative edits to the base_observation.

@@ -15,6 +15,10 @@ Hard rules:
 - Prefer element_id targeting over coordinates. Only use coordinates if no element_id is available.
 - For input_text, always include the "text" field.
 
+Planning hints (do not output thoughts):
+- Plan internally step-by-step; only output the action JSON.
+- Use observations to update your plan; stop when success cues appear.
+
 Hints:
 - If you see a confirmation or submit button, try clicking it.
 - If a form field is empty and needs content, use input_text on that field.

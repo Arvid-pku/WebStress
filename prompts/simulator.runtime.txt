@@ -14,6 +14,15 @@
       "On double_click, prefer event_visuals='double_click' unless base shows a distinct outcome."
     ]
   },
+  "state_patch_contract": {
+    "allowed_keys": ["page", "ui_elements", "windows", "forms", "filesystem"],
+    "notes": [
+      "Return state_patch only when the action is valid (internal_outcome == 'ok').",
+      "page should be a short string like 'desktop' or 'settings'.",
+      "ui_elements must be a complete list replacing the current UI tree.",
+      "filesystem is a shallow merge from path -> descriptor."
+    ]
+  },
   "few_shot_examples": [
     {
       "input": {
@@ -198,6 +207,44 @@
   ]
   ,
   "additional_examples": [
+    {
+      "input": {
+        "template": "desktop",
+        "internal_outcome": "ok",
+        "last_action": {"type":"double_click","target":{"element_id":"icon_settings"}},
+        "base_observation": {
+          "timestamp": "2025-10-05T12:30:00Z",
+          "screenshot_id": "s-desktop-1",
+          "ui_elements": [
+            {"element_id": "icon_settings", "role": "icon", "text": "Settings", "attributes": {"visible": true}},
+            {"element_id": "taskbar", "role": "toolbar", "text": "", "attributes": {"visible": true}}
+          ],
+          "audio_events": [],
+          "meta": {"page": "desktop"}
+        }
+      },
+      "output": {
+        "observation": {
+          "timestamp": "2025-10-05T12:30:00Z",
+          "screenshot_id": "s-desktop-1",
+          "ui_elements": [
+            {"element_id": "settings_header", "role": "heading", "text": "Settings", "attributes": {"visible": true}},
+            {"element_id": "toggle_wifi", "role": "switch", "text": "Wi‑Fi", "attributes": {"visible": true, "enabled": true}},
+            {"element_id": "toggle_bluetooth", "role": "switch", "text": "Bluetooth", "attributes": {"visible": true, "enabled": true}}
+          ],
+          "audio_events": [],
+          "meta": {"page": "settings", "event_visuals": "double_click"}
+        },
+        "state_patch": {
+          "page": "settings",
+          "ui_elements": [
+            {"element_id": "settings_header", "role": "heading", "text": "Settings", "attributes": {"visible": true}},
+            {"element_id": "toggle_wifi", "role": "switch", "text": "Wi‑Fi", "attributes": {"visible": true, "enabled": true}},
+            {"element_id": "toggle_bluetooth", "role": "switch", "text": "Bluetooth", "attributes": {"visible": true, "enabled": true}}
+          ]
+        }
+      }
+    },
     {
       "input": {
         "template": "flight_booking",

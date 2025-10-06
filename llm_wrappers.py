@@ -98,6 +98,22 @@ class LLMProposer:
         validate_instruction(out)
         return out
 
+class InstructionCompiler:
+    """Compile freeform instruction text into Instruction JSON.
+
+    Uses LLM if available; otherwise applies heuristic mapping for the desktop template.
+    """
+
+    def __init__(self, model: Optional[str] = None, temperature: float = 0.2, seed: Optional[int] = None):
+        self.client = LLMClient(model=model, temperature=temperature, seed=seed)
+        self.system = _read(os.path.join(PROMPTS_DIR, "compiler.system.txt"))
+
+    def compile(self, instruction_text: str) -> Dict[str, Any]:
+        payload = {"task": instruction_text, "environment": "desktop"}
+        out = self.client.complete_json(system_prompt=self.system, user_json=payload, max_retries=2)
+        validate_instruction(out)
+        return out
+
 
 # Simulator wrapper note: The deterministic core is already implemented in simulator_core.SimulatorCore.
 # If desired, wire an LLM in 'high' fidelity mode to generate richer internal reasons/text while preserving
@@ -122,7 +138,7 @@ class LLMSimulator:
 
     def reset(self, instruction: Dict[str, Any], seed: int, fidelity: str = "low"):
         base_obs, start_digest, episode_id = self.core.reset(instruction, seed, fidelity)
-        enriched = self._enrich_observation(
+        enriched, _ = self._llm_transition(
             instruction=instruction,
             episode_id=episode_id,
             seed=seed,
@@ -135,12 +151,11 @@ class LLMSimulator:
 
     def step(self, episode_id: str, action: Dict[str, Any], timestamp_iso: str, time_delta_ms: int) -> Dict[str, Any]:
         out = self.core.step(episode_id, action, timestamp_iso, time_delta_ms)
-        # Enrich observation using internal_result.result (but not reason) and base observation
-        # Retrieve seed/fidelity/template for context
+        # Enrich observation and optionally mutate canonical state via state_patch
         state_summary = self.core.get_state_summary(episode_id)
-        seed = self.core._episodes[episode_id]["seed"]  # internal; acceptable within simulator layer
+        seed = self.core._episodes[episode_id]["seed"]
         fidelity = self.core._episodes[episode_id]["fidelity"]
-        enriched = self._enrich_observation(
+        enriched, state_patch = self._llm_transition(
             instruction={"template": state_summary.get("template")},
             episode_id=episode_id,
             seed=seed,
@@ -149,6 +164,17 @@ class LLMSimulator:
             internal_result={"result": out.get("internal_result", {}).get("result", "ok")},
             last_action=action,
         )
+        if state_patch:
+            try:
+                self._apply_state_patch(episode_id, state_patch)
+                # Refresh digest after mutation
+                new_state = self.core._episodes[episode_id]
+                from simulator_core import _sha256_digest  # local import to avoid cycle
+                out["state_digest"] = _sha256_digest(new_state)
+                out["state_diff"] = list(state_patch.keys())
+            except Exception:
+                # If patch application fails, keep original state
+                pass
         out["observation"] = enriched
         return out
 
@@ -158,7 +184,7 @@ class LLMSimulator:
     def snapshot(self, episode_id: str):
         return self.core.snapshot(episode_id)
 
-    def _enrich_observation(
+    def _llm_transition(
         self,
         instruction: Dict[str, Any],
         episode_id: str,
@@ -167,7 +193,7 @@ class LLMSimulator:
         base_observation: Dict[str, Any],
         internal_result: Dict[str, Any],
         last_action: Optional[Dict[str, Any]],
-    ) -> Dict[str, Any]:
+    ) -> tuple[Dict[str, Any], Optional[Dict[str, Any]]]:
         # Parse enrichment content if JSON, else pass as text
         try:
             enrich_content = json.loads(self.enrich_text)
@@ -187,13 +213,35 @@ class LLMSimulator:
             "internal_outcome": internal_result.get("result", "ok"),
             "enrichment_contract": enrich_content.get("output_contract"),
             "few_shot_examples": enrich_content.get("few_shot_examples"),
+            "state_patch_contract": enrich_content.get("state_patch_contract"),
             "guidance": "Start from base_observation; preserve unrelated elements; modify only impacted ones; copy timestamp and screenshot_id exactly; do not leak internal reasons."
         }
         try:
             out = self.client.complete_json(system_prompt=self.system, user_json=user_payload, max_retries=2)
             obs = out.get("observation") if "observation" in out else out
             validate_observation(obs)
-            return obs
+            sp = out.get("state_patch") if isinstance(out, dict) else None
+            if sp and not isinstance(sp, dict):
+                sp = None
+            return obs, sp
         except Exception:
             # Fallback to base observation
-            return base_observation
+            return base_observation, None
+
+    def _apply_state_patch(self, episode_id: str, patch: Dict[str, Any]) -> None:
+        st = self.core._episodes[episode_id]
+        allowed_top = {"page", "ui_elements", "windows", "forms", "filesystem"}
+        patch = {k: v for k, v in patch.items() if k in allowed_top}
+        if "page" in patch and isinstance(patch["page"], str):
+            st["page"] = patch["page"]
+        if "ui_elements" in patch and isinstance(patch["ui_elements"], list):
+            # Replace full UI element list
+            st["ui_elements"] = patch["ui_elements"]
+        if "windows" in patch and isinstance(patch["windows"], list):
+            st["windows"] = patch["windows"]
+        if "forms" in patch and isinstance(patch["forms"], dict):
+            st["forms"] = patch["forms"]
+        if "filesystem" in patch and isinstance(patch["filesystem"], dict):
+            # Shallow merge
+            fs = st.setdefault("filesystem", {})
+            fs.update(patch["filesystem"])

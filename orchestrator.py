@@ -28,11 +28,11 @@ class DummyAgent:
 
     def act(self, observation: Dict[str, Any], instruction: Dict[str, Any]) -> Dict[str, Any]:
         # Prefer element_id targeting per spec
-        # This naive agent first tries to click confirm; user can wire own agent.
-        return {"type": "click", "target": {"element_id": "confirm_payment_btn"}}
+        # This naive agent double-clicks the Settings icon on desktop.
+        return {"type": "double_click", "target": {"element_id": "icon_settings"}}
 
 
-def run_episode(instr: Dict[str, Any], seed: int, fidelity: str = "low", steps_limit: int = 1) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+def run_episode(instr: Dict[str, Any], seed: int, fidelity: str = "low", steps_limit: int = 1, stop_on_success: bool = False, success_threshold: float = 0.99) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     base_sim = SimulatorCore()
     # Choose simulator
     if USE_LLM_SIMULATOR and 'LLMSimulator' in globals() and LLMSimulator is not None:
@@ -57,6 +57,12 @@ def run_episode(instr: Dict[str, Any], seed: int, fidelity: str = "low", steps_l
         "seed": seed,
         "start_digest": start_digest,
         "steps": [],
+        "components": {
+            "simulator": "llm" if USE_LLM_SIMULATOR else "core",
+            "agent": "llm" if USE_LLM_AGENT else "dummy",
+            "judge": "llm" if USE_LLM_JUDGE else "det",
+            "proposer": "llm" if USE_LLM_PROPOSER else "simple",
+        },
     }
 
     done = False
@@ -78,6 +84,12 @@ def run_episode(instr: Dict[str, Any], seed: int, fidelity: str = "low", steps_l
         obs = out["observation"]
         done = bool(out.get("terminal"))
         steps += 1
+        if stop_on_success:
+            end_summary = sim.get_state_summary(episode_id)
+            start_summary = {"start_digest": start_digest}
+            score_now = judge.evaluate(instr, start_summary, end_summary, episode_log)["score"]
+            if score_now >= success_threshold:
+                break
 
     end_summary = sim.get_state_summary(episode_id)
     start_summary = {"start_digest": start_digest}
@@ -103,6 +115,12 @@ if __name__ == "__main__":
     parser.add_argument("--llm-judge", action="store_true", default=USE_LLM_JUDGE)
     parser.add_argument("--llm-proposer", action="store_true", default=USE_LLM_PROPOSER)
     parser.add_argument("--llm-simulator", action="store_true", default=USE_LLM_SIMULATOR)
+    parser.add_argument("--instr-file", type=str, default=os.getenv("INSTR_FILE"), help="Path to instruction JSON file")
+    parser.add_argument("--instr-json", type=str, default=os.getenv("INSTR_JSON"), help="Instruction JSON string")
+    parser.add_argument("--instruction", "--instr-text", dest="instr_text", type=str, default=os.getenv("INSTRUCTION"), help="Freeform instruction text to compile")
+    parser.add_argument("--task", type=str, default=os.getenv("TASK"), help="Preset task name (e.g., open-settings)")
+    parser.add_argument("--stop-on-success", action="store_true", help="Stop the episode early when success criteria are met")
+    parser.add_argument("--success-threshold", type=float, default=float(os.getenv("SUCCESS_THRESHOLD", "0.99")), help="Score threshold to stop when --stop-on-success is set")
     args = parser.parse_args()
 
     # Reflect CLI toggles to module-level flags
@@ -111,17 +129,109 @@ if __name__ == "__main__":
     USE_LLM_PROPOSER = args.llm_proposer
     USE_LLM_SIMULATOR = args.llm_simulator
 
-    # Example instruction
-    instruction = {
-        "id": "demo",
-        "description": "Trigger validation error.",
-        "template": "flight_booking",
-        "difficulty": "easy",
-        "time_limit": 30,
-        "success_criteria": [
-            {"predicate": "element_text_contains:Invalid card number", "weight": 1.0}
-        ],
-    }
+    def preset_instruction(name: str) -> Dict[str, Any]:
+        name = (name or "").strip().lower()
+        if name == "open-settings":
+            return {
+                "id": "open-settings",
+                "description": "Open the Settings from the desktop.",
+                "template": "desktop",
+                "difficulty": "easy",
+                "time_limit": 45,
+                "success_criteria": [
+                    {"predicate": "element_text_contains:Settings", "weight": 1.0}
+                ],
+            }
+        if name == "open-files":
+            return {
+                "id": "open-files",
+                "description": "Open the Files app from the desktop.",
+                "template": "desktop",
+                "difficulty": "easy",
+                "time_limit": 45,
+                "success_criteria": [
+                    {"predicate": "element_text_contains:Files", "weight": 1.0}
+                ],
+            }
+        if name == "open-browser":
+            return {
+                "id": "open-browser",
+                "description": "Open the Browser from the desktop.",
+                "template": "desktop",
+                "difficulty": "easy",
+                "time_limit": 45,
+                "success_criteria": [
+                    {"predicate": "element_text_contains:Browser", "weight": 1.0}
+                ],
+            }
+        # default preset
+        return {
+            "id": "desktop_demo",
+            "description": "Open the Settings from the desktop.",
+            "template": "desktop",
+            "difficulty": "easy",
+            "time_limit": 30,
+            "success_criteria": [
+                {"predicate": "element_text_contains:Settings", "weight": 1.0}
+            ],
+        }
+
+    # Resolve instruction from CLI/env
+    instruction: Dict[str, Any]
+    if args.instr_file:
+        with open(args.instr_file, "r", encoding="utf-8") as f:
+            instruction = json.load(f)
+    elif args.instr_json:
+        instruction = json.loads(args.instr_json)
+    elif args.instr_text:
+        # Compile freeform instruction to Instruction JSON
+        try:
+            from llm_wrappers import InstructionCompiler
+            compiler = InstructionCompiler(model=os.getenv("LLM_MODEL"), temperature=0.0, seed=args.seed)
+            instruction = compiler.compile(args.instr_text)
+        except Exception:
+            # Heuristic fallback for desktop
+            txt = (args.instr_text or "").lower()
+            if "settings" in txt:
+                instruction = {
+                    "id": "open-settings",
+                    "description": args.instr_text,
+                    "template": "desktop",
+                    "difficulty": "easy",
+                    "time_limit": 60,
+                    "success_criteria": [{"predicate": "element_text_contains:Settings", "weight": 1.0}],
+                }
+            elif "files" in txt:
+                instruction = {
+                    "id": "open-files",
+                    "description": args.instr_text,
+                    "template": "desktop",
+                    "difficulty": "easy",
+                    "time_limit": 60,
+                    "success_criteria": [{"predicate": "element_text_contains:Files", "weight": 1.0}],
+                }
+            elif "browser" in txt:
+                instruction = {
+                    "id": "open-browser",
+                    "description": args.instr_text,
+                    "template": "desktop",
+                    "difficulty": "easy",
+                    "time_limit": 60,
+                    "success_criteria": [{"predicate": "element_text_contains:Browser", "weight": 1.0}],
+                }
+            else:
+                instruction = {
+                    "id": "desktop-goal",
+                    "description": args.instr_text,
+                    "template": "desktop",
+                    "difficulty": "medium",
+                    "time_limit": 90,
+                    "success_criteria": [{"predicate": "element_text_contains:Done|Success|Settings|Files|Browser", "weight": 1.0}],
+                }
+    elif args.task:
+        instruction = preset_instruction(args.task)
+    else:
+        instruction = preset_instruction("open-settings")
     print(
         "Components:",
         f"simulator={'LLM' if USE_LLM_SIMULATOR else 'core'}",
@@ -129,6 +239,6 @@ if __name__ == "__main__":
         f"judge={'LLM' if USE_LLM_JUDGE else 'det'}",
         f"proposer={'LLM' if USE_LLM_PROPOSER else 'simple'}",
     )
-    log, judge_out = run_episode(instruction, seed=args.seed, fidelity=args.fidelity, steps_limit=args.steps)
+    log, judge_out = run_episode(instruction, seed=args.seed, fidelity=args.fidelity, steps_limit=args.steps, stop_on_success=args.stop_on_success, success_threshold=args.success_threshold)
     save_episode("runs", log, judge_out)
     print("Saved episode to 'runs/'")

@@ -18,6 +18,7 @@ Contents
 - Running Locally and With LLMs
 - Testing Strategy
 - Known Limitations and Tips
+ - Instruction Compilation
 
 
 ## Overview and Guarantees
@@ -82,33 +83,26 @@ Responsibilities
 - Apply atomic `action`s and produce agent‑visible `observation` only. Internal logs: `internal_result`, `event_log`, `state_diff`, `state_digest` are returned to the orchestrator but never to the agent.
 - Deterministic initialization from templates in `templates/` and the `seed`.
 
-Current Templates and Rules
-- `flight_booking`
-  - `input_text` on `card_number_input` updates text; form validity when 15/16 digits.
-  - `click` on `confirm_payment_btn`:
-    - invalid card → internal_result=rejected, `error_banner` visible + beep (observation), no leakage of internal reason text.
-    - valid card → create `/home/user/tickets.pdf`, show `confirmation_text`.
-
-- `email_client`
-  - `click compose_btn` → reveal `to_input`, `subject_input`, `body_input`.
-  - `input_text` updates compose form; enables `send_btn` when all fields valid; `click send_btn`:
-    - not ready → rejected; show `status_banner` with “Please complete all fields” + beep.
-    - ready → create `/home/user/outbox/sent-<seed>.eml`; show `status_banner` with “Message sent”.
-
-- `file_manager`
-  - `click new_file_btn` → create `/home/user/untitled.txt`; show `status_banner` text.
+Initial World: Desktop
+- `desktop`
+  - Default page with common icons: Settings, Browser, Files, Trash, and a sample `Readme.txt`.
+  - Deterministic core handles selection and open attempts minimally:
+    - `double_click` on known icons (e.g., `icon_settings`) is a valid action returning `internal_result=ok` but does not change canonical state by itself.
+    - When LLMSimulator is enabled, it can return a `state_patch` to transition to pages like `settings` with new `ui_elements`.
+  - Invalid actions (e.g., clicking missing elements) produce perceptual feedback only (flash, beep) with `internal_result=rejected` and no leakage.
 
 Observation Construction
 - Only includes `ui_elements` with `attributes.visible == true`.
 - On rejected actions, adds an audio `beep` and `meta.event_visuals: flash`.
 
 
-## LLMSimulator (Observation Enrichment)
+## LLMSimulator (Observation Enrichment + Optional State Patch)
 
 Location: `llm_wrappers.py` (class `LLMSimulator`)
 
 Purpose
-- Enrich agent‑visible observation text/attributes using an LLM at `temperature=0.0`, seeded, while preserving the canonical state and determinism guarantees.
+- Enrich agent‑visible observation text/attributes using an LLM at `temperature=0.0`, seeded.
+- Optionally return a `state_patch` (page, ui_elements, windows, forms, filesystem) to apply to the canonical state when the action is valid (e.g., open Settings from desktop). This enables LLM‑driven world generation while the core remains minimal.
 - Copy `timestamp` and `screenshot_id` from the base observation EXACTLY; only edit relevant `ui_elements` and `meta` keys.
 
 Prompts
@@ -117,7 +111,8 @@ Prompts
 
 Behavior
 - On `reset` and `step`, LLMSimulator sends `{ seed, fidelity, episode_id, instruction, last_action, base_observation, internal_outcome }` with the output contract and few‑shots.
-- Validates the LLM’s `observation` via `validation.py`; if invalid or network unavailable, returns the base observation unchanged.
+- If the action is valid (`internal_outcome == 'ok'`) and the model returns a `state_patch`, it is applied to the canonical state (limited to allowed keys). Digest is recomputed.
+- Validates the LLM’s `observation`; if invalid or network unavailable, returns the base observation unchanged and ignores `state_patch`.
 
 
 ## Agent Wrappers (LLMAgent)
@@ -149,6 +144,12 @@ Location: `orchestrator.py`
 - CLI flags control seed, fidelity, steps, and LLM component toggles:
   - `--seed`, `--fidelity {low,medium,high}`, `--steps`
   - `--llm-simulator`, `--llm-agent`, `--llm-judge`, `--llm-proposer`
+  - Instruction sources:
+    - `--instruction` (freeform text) → compiled to Instruction JSON via LLM (`InstructionCompiler`) or heuristics
+    - `--instr-file` path to JSON
+    - `--instr-json` inline JSON string
+    - `--task` preset names for convenience (desktop only)
+  - Early stopping: `--stop-on-success` with `--success-threshold`
 - Environment var equivalents: `USE_LLM_SIMULATOR`, `USE_LLM_AGENT`, etc.
 - Prints selected components at startup.
 - Episode log structure (saved in `runs/`):
@@ -183,6 +184,7 @@ Location: `prompts/`
 - Simulator (system): hard rules; allowed meta keys; deterministic edits only; no leakage.
 - Simulator (runtime): JSON contract and instructive few‑shots for rejections, inputs, scroll/hotkeys/double‑clicks, plus template‑specific examples.
 - Agent (system): exact Action schema; single JSON object only.
+- Compiler (system): converts freeform text into Instruction JSON with machine‑testable `success_criteria`.
 - Judge/Proposer (system): roles and deterministic outputs.
 
 Best practices
@@ -212,6 +214,11 @@ Add a judge predicate
 1) Extend `Judge.evaluate()` to parse and score the new predicate.
 2) Add tests in `tests/` verifying deterministic scoring.
 
+## Instruction Compilation
+
+- For complex, freeform tasks, the orchestrator can accept `--instruction` text and compile it into an Instruction JSON using `InstructionCompiler` (LLM) with `prompts/compiler.system.txt`.
+- If the LLM is unavailable, a simple heuristic fallback is used for common desktop goals (Settings, Files, Browser).
+- The Agent receives the compiled instruction and can take multiple steps to complete it. Use `--steps` to increase horizon and `--stop-on-success` to end early when criteria are met.
 
 ## Running Locally and With LLMs
 
@@ -253,4 +260,3 @@ Guidance for new tests
 - Network‑restricted environments: LLMSimulator falls back to base; LLMAgent will error unless you add a dummy fallback in the orchestrator.
 - Keep `element_id`s stable and human‑readable; the Agent is instructed to target by `element_id` first.
 - Always update prompts + tests when adding new actions or UI behaviors to keep the LLMs aligned.
-
