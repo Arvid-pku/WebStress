@@ -19,8 +19,11 @@ class LLMAgent:
         self.client = LLMClient(model=model, temperature=temperature, seed=seed)
         self.system = _read(os.path.join(PROMPTS_DIR, "agent.system.txt"))
 
-    def act(self, observation: Dict[str, Any], instruction: Dict[str, Any]) -> Dict[str, Any]:
+    def act(self, observation: Dict[str, Any], instruction: Dict[str, Any], history: Optional[list] = None) -> Dict[str, Any]:
         payload = {"instruction": instruction, "observation": observation}
+        if history:
+            # Only pass agent-visible items; orchestrator already strips internals
+            payload["history"] = history
         out = self.client.complete_json(system_prompt=self.system, user_json=payload, max_retries=2)
         try:
             validate_action(out)

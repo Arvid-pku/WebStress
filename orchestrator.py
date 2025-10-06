@@ -32,7 +32,7 @@ class DummyAgent:
         return {"type": "double_click", "target": {"element_id": "icon_settings"}}
 
 
-def run_episode(instr: Dict[str, Any], seed: int, fidelity: str = "low", steps_limit: int = 1, stop_on_success: bool = False, success_threshold: float = 0.99) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+def run_episode(instr: Dict[str, Any], seed: int, fidelity: str = "low", steps_limit: int = 1, stop_on_success: bool = False, success_threshold: float = 0.99, agent_history: int = 0) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     base_sim = SimulatorCore()
     # Choose simulator
     if USE_LLM_SIMULATOR and 'LLMSimulator' in globals() and LLMSimulator is not None:
@@ -67,8 +67,14 @@ def run_episode(instr: Dict[str, Any], seed: int, fidelity: str = "low", steps_l
 
     done = False
     steps = 0
+    history: list[Dict[str, Any]] = []
     while not done and steps < steps_limit:
-        action = agent.act(obs, instr)
+        # Provide recent observation/action history to the agent (agent-visible only)
+        hist_slice = history[-agent_history:] if agent_history and agent_history > 0 else []
+        try:
+            action = agent.act(obs, instr, hist_slice)  # type: ignore[arg-type]
+        except TypeError:
+            action = agent.act(obs, instr)  # type: ignore[call-arg]
         now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
         out = sim.step(episode_id, action, now, 0)
 
@@ -81,6 +87,17 @@ def run_episode(instr: Dict[str, Any], seed: int, fidelity: str = "low", steps_l
             "state_digest": out["state_digest"],
             "observation": out["observation"],  # store agent-visible obs for replay/judge
         })
+        # Append to history for next step
+        if agent_history and agent_history > 0:
+            history.append({
+                "t": now,
+                "action": action,
+                "observation": obs,
+                "result_observation": out["observation"],
+            })
+            if len(history) > agent_history:
+                history = history[-agent_history:]
+
         obs = out["observation"]
         done = bool(out.get("terminal"))
         steps += 1
@@ -121,6 +138,7 @@ if __name__ == "__main__":
     parser.add_argument("--task", type=str, default=os.getenv("TASK"), help="Preset task name (e.g., open-settings)")
     parser.add_argument("--stop-on-success", action="store_true", help="Stop the episode early when success criteria are met")
     parser.add_argument("--success-threshold", type=float, default=float(os.getenv("SUCCESS_THRESHOLD", "0.99")), help="Score threshold to stop when --stop-on-success is set")
+    parser.add_argument("--agent-history", type=int, default=int(os.getenv("AGENT_HISTORY", "0")), help="Number of recent (action, observation) steps to pass to the agent")
     args = parser.parse_args()
 
     # Reflect CLI toggles to module-level flags
@@ -239,6 +257,14 @@ if __name__ == "__main__":
         f"judge={'LLM' if USE_LLM_JUDGE else 'det'}",
         f"proposer={'LLM' if USE_LLM_PROPOSER else 'simple'}",
     )
-    log, judge_out = run_episode(instruction, seed=args.seed, fidelity=args.fidelity, steps_limit=args.steps, stop_on_success=args.stop_on_success, success_threshold=args.success_threshold)
+    log, judge_out = run_episode(
+        instruction,
+        seed=args.seed,
+        fidelity=args.fidelity,
+        steps_limit=args.steps,
+        stop_on_success=args.stop_on_success,
+        success_threshold=args.success_threshold,
+        agent_history=args.agent_history,
+    )
     save_episode("runs", log, judge_out)
     print("Saved episode to 'runs/'")

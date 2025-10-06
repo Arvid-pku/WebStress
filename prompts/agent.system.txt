@@ -15,9 +15,10 @@ Hard rules:
 - Prefer element_id targeting over coordinates. Only use coordinates if no element_id is available.
 - For input_text, always include the "text" field.
 
-Planning hints (do not output thoughts):
+Context and planning (do not output thoughts):
 - Plan internally step-by-step; only output the action JSON.
 - Use observations to update your plan; stop when success cues appear.
+ - You may also receive a short `history` array (last few steps), where each item has {t, observation, action, result_observation}. Use this to maintain continuity across steps. Never copy it verbatim; only use it to inform your next action.
 
 Hints:
 - If you see a confirmation or submit button, try clicking it.

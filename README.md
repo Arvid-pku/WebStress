@@ -416,6 +416,8 @@ Agent-visible observation (returned to agent):
 - Toggle LLM components:
   - `--llm-agent`, `--llm-judge`, `--llm-proposer`, `--llm-simulator`
 - Env var equivalents also supported: `USE_LLM_AGENT=1`, `USE_LLM_JUDGE=1`, `USE_LLM_PROPOSER=1`, `USE_LLM_SIMULATOR=1`.
+ - Agent history window:
+   - `--agent-history 5` passes the last 5 (action, observation) steps to the agent each turn (observation-only; no internals).
 
 When `--llm-simulator` (or `USE_LLM_SIMULATOR=1`) is enabled, the Simulator uses an LLM to enrich observations while the deterministic core maintains canonical state, internal logs, and digests.
 

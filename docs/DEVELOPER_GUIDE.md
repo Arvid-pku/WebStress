@@ -122,6 +122,7 @@ Location: `llm_wrappers.py` (class `LLMAgent`)
 - System prompt: `prompts/agent.system.txt` specifies the Action schema and examples.
 - Returns exactly one Action JSON. Output is validated against `schema/action.json`.
 - Includes a normalization step to repair common mistakes (e.g., `action`→`type`, top‑level `element_id` → `target.element_id`, `value`→`text`, `keys` normalization, etc.). If repair fails, validation raises.
+- Optionally receives a short `history` array of recent `{t, observation, action, result_observation}` items from the orchestrator. This contains only agent‑visible data and helps the agent plan across multiple steps. Enable with `--agent-history N`.
 
 
 ## Judge and Proposer
