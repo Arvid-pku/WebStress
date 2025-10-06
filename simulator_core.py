@@ -94,7 +94,8 @@ class SimulatorCore:
             return None
 
         # Simple rules for flight_booking template
-        if state.get("template") == "flight_booking":
+        tmpl = state.get("template")
+        if tmpl == "flight_booking":
             if atype == "click" and element_id == "confirm_payment_btn":
                 # Determine if form valid
                 card_valid = bool(state.get("forms", {}).get("card_valid", False))
@@ -163,6 +164,102 @@ class SimulatorCore:
                 internal_result = {"result": "rejected", "reason": "unhandled action"}
                 event_log.append({"t": timestamp_iso, "event": "rejected", "action": action, "reason": internal_result["reason"]})
 
+        elif tmpl == "email_client":
+            # Compose flow
+            def set_visible(eid: str, vis: bool):
+                el = find_element(eid)
+                if el:
+                    el.setdefault("attributes", {})["visible"] = vis
+            def set_text(eid: str, text: str):
+                el = find_element(eid)
+                if el:
+                    el["text"] = text
+
+            if atype == "click" and element_id == "compose_btn":
+                set_visible("to_input", True)
+                set_visible("subject_input", True)
+                set_visible("body_input", True)
+                set_visible("status_banner", False)
+                event_log.append({"t": timestamp_iso, "event": "compose_open"})
+
+            elif atype == "input_text" and element_id in {"to_input", "subject_input", "body_input"}:
+                el = find_element(element_id)
+                if el is not None:
+                    txt = action.get("text", "")
+                    el["text"] = txt
+                    # Update compose readiness
+                    forms = state.setdefault("forms", {})
+                    comp = forms.setdefault("compose", {"to": "", "subject": "", "body": "", "ready": False})
+                    if element_id == "to_input":
+                        comp["to"] = txt
+                    elif element_id == "subject_input":
+                        comp["subject"] = txt
+                    else:
+                        comp["body"] = txt
+
+                    to_ok = ("@" in comp.get("to", "")) and ("." in comp.get("to", ""))
+                    subj_ok = len(comp.get("subject", "")) > 0
+                    body_ok = len(comp.get("body", "")) > 0
+                    ready = bool(to_ok and subj_ok and body_ok)
+                    comp["ready"] = ready
+                    # toggle send button enable
+                    send_btn = find_element("send_btn")
+                    if send_btn:
+                        send_btn.setdefault("attributes", {})["enabled"] = ready
+                    event_log.append({"t": timestamp_iso, "event": "text_input", "element": element_id})
+                else:
+                    internal_result = {"result": "rejected", "reason": "target not found"}
+                    event_log.append({"t": timestamp_iso, "event": "rejected", "action": action, "reason": internal_result["reason"]})
+
+            elif atype == "click" and element_id == "send_btn":
+                ready = state.get("forms", {}).get("compose", {}).get("ready", False)
+                send_btn = find_element("send_btn")
+                enabled = send_btn and send_btn.get("attributes", {}).get("enabled", False)
+                if not (ready and enabled):
+                    internal_result = {"result": "rejected", "reason": "compose incomplete"}
+                    set_text("status_banner", "Please complete all fields")
+                    set_visible("status_banner", True)
+                    event_log.append({"t": timestamp_iso, "event": "rejected", "action": action, "reason": internal_result["reason"]})
+                else:
+                    # Simulate sending: write outbox file deterministically by seed
+                    out_dir = "/home/user/outbox/"
+                    state.setdefault("filesystem", {}).setdefault(out_dir, {"kind": "dir"})
+                    filename = f"{out_dir}sent-{state['seed']}.eml"
+                    state["filesystem"][filename] = {
+                        "bytes": 64,
+                        "kind": "eml",
+                        "created_at": timestamp_iso,
+                    }
+                    set_text("status_banner", "Message sent")
+                    set_visible("status_banner", True)
+                    event_log.append({"t": timestamp_iso, "event": "file_created", "path": filename})
+                    state_diff["filesystem.added"] = [filename]
+
+            elif atype == "noop":
+                event_log.append({"t": timestamp_iso, "event": "noop"})
+            else:
+                internal_result = {"result": "rejected", "reason": "unhandled action"}
+                event_log.append({"t": timestamp_iso, "event": "rejected", "action": action, "reason": internal_result["reason"]})
+
+        elif tmpl == "file_manager":
+            def set_text(eid: str, text: str):
+                for el in state.get("ui_elements", []):
+                    if el.get("element_id") == eid:
+                        el["text"] = text
+                        el.setdefault("attributes", {})["visible"] = True
+                        return
+            if atype == "click" and element_id == "new_file_btn":
+                # Create untitled file in /home/user/
+                path = "/home/user/untitled.txt"
+                state.setdefault("filesystem", {})[path] = {"bytes": 0, "kind": "txt", "created_at": timestamp_iso}
+                set_text("status_banner", "Created untitled.txt")
+                event_log.append({"t": timestamp_iso, "event": "file_created", "path": path})
+                state_diff["filesystem.added"] = [path]
+            elif atype == "noop":
+                event_log.append({"t": timestamp_iso, "event": "noop"})
+            else:
+                internal_result = {"result": "rejected", "reason": "unhandled action"}
+                event_log.append({"t": timestamp_iso, "event": "rejected", "action": action, "reason": internal_result["reason"]})
         else:
             # Other templates: keep simple behavior
             if atype == "noop":

@@ -407,3 +407,9 @@ Agent-visible observation (returned to agent):
 - Env var equivalents also supported: `USE_LLM_AGENT=1`, `USE_LLM_JUDGE=1`, `USE_LLM_PROPOSER=1`, `USE_LLM_SIMULATOR=1`.
 
 When `--llm-simulator` (or `USE_LLM_SIMULATOR=1`) is enabled, the Simulator uses an LLM to enrich observations while the deterministic core maintains canonical state, internal logs, and digests.
+
+## Strict JSON Schema validation
+
+- Optional dependency: `pip install jsonschema`
+- With `jsonschema` installed, `validation.py` enforces strict schemas for Action, Observation, State, Instruction, and Judge Output using the files in `schema/`.
+- Without it, a minimal built-in validator is used (sufficient for the included tests).
