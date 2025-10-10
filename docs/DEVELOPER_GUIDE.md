@@ -1,145 +1,115 @@
-# LLMOS — Developer Guide (LLM‑only Simulator)
+# LLMOS — Developer Guide
 
-This guide reflects the current architecture where the Simulator is implemented purely with an LLM that maintains and updates the full canonical state. The prior deterministic core and hybrid simulator have been removed/deprecated to reduce ambiguity.
-
-Contents
-- Overview
-- Directory Layout
-- Data Schemas
-- PureLLMSimulator
-- Agent, Judge, Proposer
-- Orchestrator & Logs
-- Prompts
-- Extending (templates, actions, predicates)
-- Running Locally
-- Testing & Determinism Notes
+This guide describes how the LLM‑only system is organized, how the contracts work, and how to extend or debug it. The simulator is pure LLM (no rule‑based core); all roles are split into dedicated modules and driven by contract‑first prompts.
 
 
-## Overview
+High‑level architecture
 
-- Simulator: Pure LLM (PureLLMSimulator) maintains canonical `state` and returns agent‑visible `observation` each step. It enforces JSON schema validation and aims for determinism with temperature=0 and explicit seeds, but exact replay is not guaranteed.
-- Agent: Observes and returns one Action JSON per step (LLMAgent or a dummy agent for offline testing).
-- Judge: Deterministic scorer based on machine‑testable predicates.
-- Proposer: Simple adaptive instruction proposer.
-- Orchestrator: Runs episodes, wires components, persists logs.
-
-Internal reasons never leak to the Agent. Invalid actions result in perceptual cues (e.g., beep) only.
-
-
-## Directory Layout
-
-- LLM modules:
-  - `agent_llm.py` — `LLMAgent`
-  - `judge_llm.py` — `LLMJudge`
-  - `proposer_llm.py` — `LLMProposer`, `InstructionCompiler`
-  - `simulator_llm.py` — `PureLLMSimulator`
-- `orchestrator.py` — Episode loop, CLI, logs. Uses `PureLLMSimulator` by default.
-- `llm_client.py` — OpenAI‑compatible JSON client (response_format json_object) with retries.
-  (Removed) `judge.py`, `proposer.py` — project now uses LLM-based Judge/Proposer exclusively.
-- `templates/*.json` — Base UI assets used to seed initial states (e.g., `desktop.json`).
-- `schema/*.json` — JSON Schemas for Action, Observation, Instruction, State, and Judge Output.
-- `validation.py` — Minimal validators; uses `jsonschema` if available.
-- `prompts/*.txt` — System prompts for agent, simulator, judge, proposer, compiler.
-- `replay.py` — Present but replay verification is unsupported in LLM‑only mode.
-- `tests/` — Legacy tests may reference the removed deterministic core; update as needed.
+```
+Instruction ─▶ Orchestrator ─┬─▶ Simulator(LLM) ──▶ Observation ──▶ Agent(LLM)
+                              │                                          │
+                              │                                          └── Action JSON
+                              │
+                              ├─▶ Logs (verbose+concise) ──▶ Judge(LLM) ──▶ Score
+                              │
+                              └─▶ Proposer(LLM) ──▶ Next Instruction (optional)
+```
 
 
-## Data Schemas
+Modules
 
-Location: `schema/`
-
-- `action.json` — strict single action per step; allowed types include click, double_click, input_text, etc.
-- `observation.json` — `timestamp`, `screenshot_id`, `ui_elements[]`, `audio_events[]`, `meta{}`. No internal fields.
-- `instruction.json` — instruction metadata and `success_criteria[]`.
-- `state.json` — canonical private state (seed, fidelity, template, windows, page, ui_elements, filesystem, random_seed, ...).
-- `judge_output.json` — `{score, feedback, subscores}`.
-
-When adding fields, update both the schema and `validation.py`.
-
-
-## PureLLMSimulator
-
-Locations: `agent_llm.py`, `judge_llm.py`, `proposer_llm.py`, `simulator_llm.py`
-
-Responsibilities
-- Maintain canonical `state` per `episode_id` inside the simulator.
-- On `reset`: seed a state from `templates/<template>.json`, ask the LLM (prompt: `prompts/pure_simulator.system.txt`) to optionally refine it via `state_ops` (JSON Patch), and return the first `observation`.
-- On `step` (compact mode, default): provide `{state_digest, state_summary, last_action, seed, fidelity, sim_history, ops_recent, timestamp}`; expect `{state_ops, observation, internal_result, event_log, terminal}` back; apply `state_ops`, validate, and persist. If the model needs full state, it returns `request:"read_state"` and the simulator will immediately re-invoke it with `{current_state, request_granted:"read_state"}` added.
-- Provide `get_state_summary` and `snapshot` for logging and judging.
-
-Validation & Fallbacks
-- All LLM outputs are validated against `state.json` and `observation.json`.
-- If a call fails or outputs invalid JSON, the simulator keeps the previous state and synthesizes a “rejected” observation with one beep.
-
-Determinism
-- The simulator runs at temperature=0 and receives `seed` and `episode_id` to improve reproducibility, but exact replay is not guaranteed with external models.
+- `agent_llm.py` — `LLMAgent` (acts on observations only)
+- `judge_llm.py` — `LLMJudge` (deterministic scoring)
+- `proposer_llm.py` — `LLMProposer`, `InstructionCompiler` (LLM task generation and free‑text compiler)
+- `simulator_llm.py` — `PureLLMSimulator` (canonical state + observation)
+- `llm_client.py` — OpenAI‑compatible client; JSON‑only responses (`response_format=json_object`), seed support, temperature fallback
+- `validation.py` — schema validators; uses `jsonschema` if available
+- `schema/` — JSON Schemas for action, observation, state, instruction, judge_output
+- `prompts/` — contract‑first, minimal, neutral prompts for each role
+- `templates/` — deterministic initial states (e.g., `desktop.json`)
+- `orchestrator.py` — episode control loop and logging
+- `replay.py` — placeholder (replay verification unsupported in LLM‑only mode)
 
 
-## Agent, Judge, Proposer
+Simulator details (PureLLMSimulator)
 
-- `LLMAgent` — Consumes observations and outputs exactly one Action JSON. Normalizes common mistakes, validates via `action.json`.
-- `Judge` — Deterministic, parses predicates like `element_text_contains:` and `file_exists:`; returns `{score, feedback, subscores}`.
-- `LLMJudge` (optional) — LLM‑backed judging, schema‑validated.
-- `Proposer` / `LLMProposer` — Generate next instructions; basic difficulty heuristics.
+Inputs
+- Reset: full initial `current_state` plus `state_digest`, `state_summary`.
+- Step (compact by default): `{phase, episode_id, seed, fidelity, instruction, state_digest, state_summary, sim_history, ops_recent, last_action, timestamp, time_delta_ms}`.
+- Read‑state handshake: if the LLM needs the full state, it returns `request:"read_state"`; the simulator immediately reissues the step including `{current_state, request_granted:"read_state"}`.
 
+Outputs
+- `state_ops`: JSON Patch ops to apply to the previous state (subset of RFC‑6902).
+- `observation`: agent‑visible only, validated against `schema/observation.json`.
+- `internal_result`: `{result:"ok"|"rejected", reason:"..."}` (never sent to the Agent; logs only).
+- `event_log`: list of internal events.
+- `terminal`: boolean.
 
-## Orchestrator & Logs
+Validation and fallbacks
+- All states/observations are validated; if an LLM call fails or returns invalid output, the simulator keeps the previous state and synthesizes a rejection observation (with one beep).
+- Top‑level diff `state_diff` and `state_digest` are recorded for each step.
 
-Location: `orchestrator.py`
+JSON Patch helper
+- `_apply_state_ops` supports `add`, `remove`, `replace`, `move` with JSON Pointer paths; invalid ops are rejected.
 
-- CLI flags: `--seed`, `--fidelity {low,medium,high}`, `--steps`, `--llm-agent`, `--llm-judge`, `--llm-proposer`, plus instruction sources `--instruction|--instr-file|--instr-json|--task`. Early stop: `--stop-on-success --success-threshold`.
-- Instruction text is compiled to JSON via `InstructionCompiler` (LLM) or a heuristic fallback.
-- Logs in `runs/`:
-  - Verbose (machine/detailed):
-    - `runs/<episode_id>.log.json` — episode summary (agent‑visible obs per step).
-    - `runs/<episode_id>.judge.json` — judge output.
-    - `runs/<episode_id>/agent.log.jsonl` — per‑step agent actions and (if LLM) payload traces.
-    - `runs/<episode_id>/simulator.log.jsonl` — per‑step `{internal_result, event_log, state_diff, state_digest, observation}`; optional `state_snapshot` if `--log-state-snapshots`.
-    - `runs/<episode_id>/llm/*.json` — raw LLM request/response dumps per phase/step.
-    - `runs/runtime.log.jsonl` — start events with components and instruction.
-  - Concise (human‑readable):
-    - `runs/runtime.readable.log` — one‑line startup and compile summaries.
-    - `runs/<episode_id>/agent.readable.log` — step, time, action type, target, keys/text.
-    - `runs/<episode_id>/simulator.readable.log` — step, time, result, page, state diff keys.
-    - `runs/<episode_id>/judge.readable.log` — final score and feedback.
-  - Select via `--log-profile {verbose|concise|both}` (default: `both`).
-
-Replay verification is not supported in LLM‑only mode.
+History windows
+- Simulator keeps bounded `sim_history` (recent steps) and `ops_recent` (recent state_ops) to inform the LLM.
+- Sizes are controlled via `history_window` and the CLI flag `--sim-history`.
 
 
-## Prompts
-
-- `prompts/pure_simulator.system.txt` — strict contract for `{state_ops, observation, internal_result, event_log, terminal, request?}` (state changes via JSON Patch only).
-- `prompts/agent.system.txt` — action schema and examples.
-- `prompts/compiler.system.txt` — instruction compiler contract.
-- `prompts/judge.system.txt`, `prompts/proposer.system.txt` — optional LLM modules.
+Agent details (LLMAgent)
+- System prompt enforces “one action JSON per step” with strict schema (type/target/text/keys/scroll deltas).
+- Normalizer fixes common mistakes (case, target flattening, `value`→`text`, arrays) before validation.
 
 
-## Extending
-
-New template/page
-1) Add `templates/<name>.json` containing base `ui_elements`, `forms`, `filesystem`.
-2) Extend `prompts/pure_simulator.system.txt` with conventions for the new page (stable element_ids, headings, toggles, etc.).
-3) Add few‑shot snippets (if needed) to help the model produce consistent states.
-
-New action type
-1) Update `schema/action.json` and `prompts/agent.system.txt`.
-2) Mention handling expectations in the simulator prompt.
-3) Validate via `validation.py` and add tests if applicable.
-
-New judge predicate
-1) Extend `Judge.evaluate()` and add tests.
+Judge details (LLMJudge)
+- System prompt: evidence‑only, deterministic judgment; return exactly one JSON with `{score, feedback, subscores}`.
+- Orchestrator feeds `instruction`, `start_state_summary`, `end_state_summary`, `episode_log`.
+- `validation.py` ensures shape and bounds.
 
 
-## Running Locally
-
-- Install optional deps: `pip install -r requirements-optional.txt`.
-- Set API key: `export OPENAI_API_KEY=...` and optionally `export LLM_MODEL=gpt-5`.
-- Example: `python orchestrator.py --instruction "Open the Settings and toggle Wi‑Fi" --llm-agent --steps 6 --fidelity high`.
+Proposer details (LLMProposer, InstructionCompiler)
+- Proposer: generates desktop tasks with machine‑testable `success_criteria`. Emphasizes diversity, determinism for identical inputs, and neutrality.
+- InstructionCompiler: converts free‑text into an Instruction JSON (desktop template).
 
 
-## Testing & Determinism Notes
+Prompts (contract‑first, neutral)
+- `prompts/pure_simulator.system.txt` — compact inputs, JSON Patch `state_ops`, read‑state handshake, self‑checklist.
+- `prompts/agent.system.txt` — one‑action schema, self‑checklist.
+- `prompts/judge.system.txt` — evidence‑only, deterministic; exact one JSON.
+- `prompts/proposer.system.txt` — diverse desktop tasks; deterministic for identical inputs; no brand‑specific content.
+- `prompts/compiler.system.txt` — free‑text instruction compiler.
 
-- Schema validation is strict when `jsonschema` is installed. Prefer adding tests that validate shapes and contracts rather than exact byte‑equality of states.
-- Legacy tests referencing the old deterministic core will not apply. Update or remove them when migrating fully to LLM‑only simulation.
-- For stability, keep prompts concise and explicit; run with temperature=0 and fixed seeds.
+
+CLI (orchestrator)
+- Core: `--seed`, `--fidelity {low|medium|high}`, `--steps`.
+- History windows: `--agent-history` (default 5), `--sim-history` (default 5).
+- Debug/compat: `--sim-include-state` (send full current_state every step).
+- Logging: `--log-dir`, `--log-profile {verbose|concise|both}`, `--log-state-snapshots`.
+- Early stop: `--stop-on-success`, `--success-threshold`.
+- Instruction sources: `--instr-file`, `--instr-json`, `--instruction` (free‑text, compiled by LLM), `--task` (preset shortcuts).
+
+
+LLM client nuances
+- `llm_client.py` uses `response_format={type: json_object}` and records raw IO per call.
+- Temperature fallback: some models disallow `temperature=0.0`; client retries without the parameter and records `used_temperature`.
+- Seeds are passed where supported (not all models honor them).
+
+
+Logging layout
+- Verbose (`runs/<episode_id>/`): `agent.log.jsonl`, `simulator.log.jsonl`, `judge.log.jsonl` (when applicable), and `llm/*.json` raw dumps per phase/step (plus `*.error.json` on failures).
+- Concise: `agent.readable.log`, `simulator.readable.log`, `judge.readable.log`.
+- Runtime: `runs/runtime.log.jsonl`, `runs/runtime.readable.log`.
+
+
+Extending
+- Add a new template: create `templates/<name>.json` (ui_elements/forms/filesystem) and ensure the simulator prompt covers its basic flows neutrally.
+- Add a new predicate: extend judge logic in the LLM prompt and (optionally) add deterministic helpers.
+- Tighten a prompt: keep it short, contract‑first, and neutral; add a compact self‑checklist.
+
+
+Gotchas
+- The simulator produces realistic observations only; internal reasons never appear in observations.
+- Replay verification is not supported in LLM‑only mode due to external model variability.
+- Ensure `OPENAI_API_KEY` is set and `LLM_MODEL` points to a model supporting JSON output formatting.
+
