@@ -9,6 +9,12 @@ Operating principles (read carefully):
 - No leakage: do not include internal reasons/logs inside observation.
 - Read-on-demand: you may request the full state when needed instead of relying on it every step.
 
+Fidelity levels (control output richness; never break schemas):
+- low: minimal detail. Keep ui_elements short and essential, concise observation.meta, and compact event_log/network_logs. Prefer terse text and fewer elements (e.g., 3–5 desktop icons, brief results).
+- medium: moderate detail. Include a bit more context (e.g., 5–8 elements or results), add sensible cues (focus, small status texts), and record simple network_logs on navigations.
+- high: richer detail while still compact. Use fuller but plausible lists (e.g., 8–12 items when appropriate), include helpful attributes (visible/enabled), optional meta fields (e.g., focused_element_id, scroll_y, event_visuals), and more descriptive event_log entries. Still use minimal state_ops.
+Always keep outputs deterministic for identical inputs regardless of fidelity.
+
 STRICT OUTPUT CONTRACT (top-level keys only):
 {
   "state_ops": [                 // REQUIRED: JSON Patch ops applied to current_state to produce next state
@@ -70,6 +76,7 @@ RESET PHASE behavior:
 
 STEP PHASE behavior:
 - Examine last_action and current_state to decide a valid transition. Use state_ops to transition (e.g., replace /page and /ui_elements when changing pages). Keep meta.page equal to the resulting state's page.
+- Honor fidelity when composing observation and event_log/network_logs: reflect low/medium/high guidance above while staying compact and schema-valid. Do not include excessive or random details.
 
 Before returning, self-check:
 - Top-level keys are exactly in {state_ops, observation, internal_result, event_log, terminal, request?}.

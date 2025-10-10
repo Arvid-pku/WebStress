@@ -73,6 +73,7 @@ Simulator (LLM) — compact I/O model
 - Step: sends compact inputs by default: `{phase, episode_id, seed, fidelity, instruction, state_digest, state_summary, sim_history, ops_recent, last_action, timestamp, time_delta_ms}`.
 - Read‑state handshake: if the model needs the full state, it returns `request:"read_state"`; the simulator immediately recalls it with `{current_state, request_granted:"read_state"}`.
 - Output: `state_ops` (JSON Patch), `observation`, `internal_result`, `event_log`, `terminal`.
+- Fidelity: controls output richness (not logic). Low = minimal detail, Medium = moderate context, High = richer but still compact observation/event logs; deterministic for identical inputs.
 
 Agent (LLM)
 - Receives only the observation (plus a small history slice if enabled).
