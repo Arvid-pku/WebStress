@@ -51,20 +51,39 @@ class LLMClient:
         ]
         response_format = {"type": "json_object"}
         last_err = None
-        for _ in range(max_retries + 1):
-            resp = client.chat.completions.create(
-                model=self.model,
-                temperature=self.temperature,
-                messages=messages,
-                response_format=response_format,
-                seed=self.seed,
-            )
+        tried_without_temp = False
+
+        def _call(with_temp: bool):
+            params: Dict[str, Any] = {
+                "model": self.model,
+                "messages": messages,
+                "response_format": response_format,
+            }
+            if with_temp and self.temperature is not None:
+                params["temperature"] = self.temperature
+            if self.seed is not None:
+                params["seed"] = self.seed
+            return client.chat.completions.create(**params), params
+
+        attempts = max_retries + 1
+        for _ in range(attempts + 1):  # allow one extra attempt without temperature when needed
+            try:
+                resp, used_params = _call(with_temp=not tried_without_temp)
+            except Exception as e:
+                estr = str(e)
+                last_err = e
+                # Fallback: some models reject explicit temperature; retry omitting it once
+                if (not tried_without_temp) and ("unsupported" in estr.lower() and "temperature" in estr.lower()):
+                    tried_without_temp = True
+                    continue
+                raise
             txt = resp.choices[0].message.content or "{}"
             # Record last raw IO for debugging
             self._last_io = {
                 "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
                 "model": self.model,
                 "temperature": self.temperature,
+                "used_temperature": used_params.get("temperature", None),
                 "seed": self.seed,
                 "system_prompt": system_prompt,
                 "user_json": user_json,

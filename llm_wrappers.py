@@ -416,10 +416,22 @@ class PureLLMSimulator:
             # Validate; if invalid, fall back to a locally derived observation
             validate_state(next_state)
             validate_observation(observation)
-        except Exception:
+        except Exception as e:
             # Fallback: keep initial state, synthesize observation locally
             next_state = init_state
             observation = self._make_observation_from_state(next_state)
+            try:
+                import traceback as _tb
+                self._last_call.update({
+                    "error": {
+                        "where": "reset",
+                        "type": e.__class__.__name__,
+                        "message": str(e),
+                        "traceback": _tb.format_exc(),
+                    }
+                })
+            except Exception:
+                pass
         self._episodes[episode_id] = next_state
         self._meta[episode_id] = {"fidelity": fidelity, "seed": seed, "instruction": instruction}
         self._history[episode_id] = []
@@ -484,13 +496,25 @@ class PureLLMSimulator:
             else:
                 observation = self._normalize_observation(observation_raw, next_state.get("template", "desktop"), next_state.get("seed", 0) or 0, timestamp_iso)
             validate_observation(observation)
-        except Exception:
+        except Exception as e:
             # On failure, keep state and synthesize observation; mark rejection
             next_state = prev_state
             internal_result = {"result": "rejected", "reason": "llm_transition_failed"}
             observation = self._make_observation_from_state(next_state, internal_result)
             event_log = [{"t": timestamp_iso, "event": "rejected", "action": action, "reason": internal_result.get("reason")}]
             terminal = False
+            try:
+                import traceback as _tb
+                self._last_call.update({
+                    "error": {
+                        "where": "step",
+                        "type": e.__class__.__name__,
+                        "message": str(e),
+                        "traceback": _tb.format_exc(),
+                    }
+                })
+            except Exception:
+                pass
 
         # Compute diffs and digest
         def _top_level_diff(a: Dict[str, Any], b: Dict[str, Any]) -> list[str]:

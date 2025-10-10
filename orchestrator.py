@@ -104,13 +104,18 @@ def run_episode(
                     rf.write(f"{t0} reset page={pg} start_digest={start_digest[:10]}...\n")
             except Exception:
                 pass
-        # Save raw LLM IO for reset if present
+        # Save raw/error LLM IO for reset if present
         try:
             if sim_log_path and hasattr(sim, "_last_call") and isinstance(getattr(sim, "_last_call"), dict):
-                raw = getattr(sim, "_last_call").get("raw")  # type: ignore[index]
+                lc = getattr(sim, "_last_call")  # type: ignore[index]
+                raw = lc.get("raw")
+                err = lc.get("error")
                 if raw:
                     with open(os.path.join(llm_dir, "simulator_reset.json"), "w", encoding="utf-8") as f:
                         json.dump(raw, f, indent=2, sort_keys=True)
+                if err:
+                    with open(os.path.join(llm_dir, "simulator_reset.error.json"), "w", encoding="utf-8") as f:
+                        json.dump({"input": lc.get("input"), "error": err}, f, indent=2, sort_keys=True)
         except Exception:
             pass
     episode_log: Dict[str, Any] = {
@@ -235,13 +240,18 @@ def run_episode(
                     rf.write(line + "\n")
             except Exception:
                 pass
-        # Save raw simulator LLM IO per step (verbose)
+        # Save raw/error simulator LLM IO per step (verbose)
         try:
             if sim_log_path and 'llm_dir' in locals() and hasattr(sim, "_last_call") and isinstance(getattr(sim, "_last_call"), dict):
-                raw = getattr(sim, "_last_call").get("raw")  # type: ignore[index]
+                lc = getattr(sim, "_last_call")  # type: ignore[index]
+                raw = lc.get("raw")
+                err = lc.get("error")
                 if raw:
                     with open(os.path.join(llm_dir, f"simulator_step_{steps:04d}.json"), "w", encoding="utf-8") as f:
                         json.dump(raw, f, indent=2, sort_keys=True)
+                if err:
+                    with open(os.path.join(llm_dir, f"simulator_step_{steps:04d}.error.json"), "w", encoding="utf-8") as f:
+                        json.dump({"input": lc.get("input"), "error": err}, f, indent=2, sort_keys=True)
         except Exception:
             pass
 
