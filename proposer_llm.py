@@ -14,8 +14,8 @@ PROMPTS_DIR = os.path.join(os.path.dirname(__file__), "prompts")
 
 
 class LLMProposer:
-    def __init__(self, model: Optional[str] = None, temperature: float = 0.7, seed: Optional[int] = None):
-        self.client = LLMClient(model=model, temperature=temperature, seed=seed)
+    def __init__(self, model: Optional[str] = None, temperature: float = 0.7, seed: Optional[int] = None, base_url: Optional[str] = None, api_key: Optional[str] = None):
+        self.client = LLMClient(model=model, temperature=temperature, seed=seed, base_url=base_url, api_key=api_key)
         self.system = _read(os.path.join(PROMPTS_DIR, "proposer.system.txt"))
 
     def propose_next(self, agent_id: str, recent_episodes: List[Dict[str, Any]], global_task_pool: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
@@ -70,8 +70,8 @@ class LLMProposer:
 class InstructionCompiler:
     """Compile freeform instruction text into Instruction JSON using an LLM."""
 
-    def __init__(self, model: Optional[str] = None, temperature: float = 0.2, seed: Optional[int] = None):
-        self.client = LLMClient(model=model, temperature=temperature, seed=seed)
+    def __init__(self, model: Optional[str] = None, temperature: float = 0.2, seed: Optional[int] = None, base_url: Optional[str] = None, api_key: Optional[str] = None):
+        self.client = LLMClient(model=model, temperature=temperature, seed=seed, base_url=base_url, api_key=api_key)
         self.system = _read(os.path.join(PROMPTS_DIR, "compiler.system.txt"))
 
     def compile(self, instruction_text: str) -> Dict[str, Any]:

@@ -93,11 +93,18 @@ Running
 
 Install and configure
 - Python deps: `pip install openai jsonschema` (jsonschema optional but recommended)
+ - Optional for visualization: `pip install streamlit` (for an interactive viewer)
 - Set environment variables:
   - `OPENAI_API_KEY` (required)
   - `OPENAI_BASE_URL` (optional; for self‑hosted gateways)
   - `LLM_MODEL` (e.g., `gpt-5` or your deployment ID)
   - `AGENT_TEMP` (optional; agent exploration temperature)
+  - Role‑specific overrides (optional; override the above per role):
+    - Simulator: `SIMULATOR_OPENAI_API_KEY`, `SIMULATOR_OPENAI_BASE_URL`, `SIMULATOR_MODEL`
+    - Agent: `AGENT_OPENAI_API_KEY`, `AGENT_OPENAI_BASE_URL`, `AGENT_MODEL`, `AGENT_TEMP`
+    - Judge: `JUDGE_OPENAI_API_KEY`, `JUDGE_OPENAI_BASE_URL`, `JUDGE_MODEL`
+    - Proposer: `PROPOSER_OPENAI_API_KEY`, `PROPOSER_OPENAI_BASE_URL`, `PROPOSER_MODEL`
+    - Compiler: `COMPILER_OPENAI_API_KEY`, `COMPILER_OPENAI_BASE_URL`, `COMPILER_MODEL`
 
 Examples
 - Default (LLM proposer picks a task):
@@ -107,8 +114,14 @@ Examples
     - Uses LLMProposer to generate a task, runs it, summarizes the result, then proposes the next task using recent_episodes.
 - Free‑text instruction compiled by LLM:
   - `python orchestrator.py --instruction "Open the Settings and toggle Wi‑Fi" --llm-agent --steps 6`
+- Batch from JSONL (compute accuracy):
+  - `python orchestrator.py --instr-jsonl instructions/osworld_small.jsonl --steps 4 --success-threshold 0.9`
+    - Runs each instruction line as an episode, prints accuracy, and writes `runs/batch_summary.json`.
 - Compact/verbose logs and snapshots:
   - `python orchestrator.py --instruction "..." --log-profile both --log-state-snapshots`
+ - HTML summary export is now default: after each run, a compact `index.html` is written under `runs/<episode_id>/`. Disable with `--no-export-html`.
+ - Streamlit viewer (interactive, compare runs):
+   - `streamlit run viewer_streamlit.py`
 
 Important flags
 - `--seed`, `--fidelity {low|medium|high}`, `--steps N`
@@ -127,11 +140,15 @@ Logging
   - `agent.log.jsonl` — agent payload/outputs
   - `simulator.log.jsonl` — per‑step internals `{internal_result, event_log, state_diff, state_digest, observation}`
   - `llm/` — raw LLM request/response dumps per phase/step; errors saved as `*.error.json`
-- Concise human‑readable (`--log-profile concise|both`):
+- Concise human-readable (`--log-profile concise|both`):
   - `agent.readable.log` — action type, target, text/keys
   - `simulator.readable.log` — step result, reason, page, diff keys
   - `judge.readable.log` — final score + feedback
 - Runtime logs: `runs/runtime.log.jsonl`, `runs/runtime.readable.log`
+
+- Visualization (HTML + Streamlit)
+- Static HTML per-episode: by default, an episode summary is written to `runs/<episode_id>/index.html` with a compact table of steps and key fields (action, result, page, diffs), plus links to raw logs. Disable with `--no-export-html`.
+- Interactive viewer: `viewer_streamlit.py` lists episodes in `runs/`, shows concise tables, and can compare two episodes side-by-side. Install with `pip install streamlit`, then run `streamlit run viewer_streamlit.py`.
 
 
 Prompts (contract‑first)

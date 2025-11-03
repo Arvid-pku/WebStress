@@ -14,8 +14,8 @@ PROMPTS_DIR = os.path.join(os.path.dirname(__file__), "prompts")
 
 
 class LLMAgent:
-    def __init__(self, model: Optional[str] = None, temperature: float = 1, seed: Optional[int] = None):
-        self.client = LLMClient(model=model, temperature=temperature, seed=seed)
+    def __init__(self, model: Optional[str] = None, temperature: float = 1, seed: Optional[int] = None, base_url: Optional[str] = None, api_key: Optional[str] = None):
+        self.client = LLMClient(model=model, temperature=temperature, seed=seed, base_url=base_url, api_key=api_key)
         self.system = _read(os.path.join(PROMPTS_DIR, "agent.system.txt"))
 
     def act(self, observation: Dict[str, Any], instruction: Dict[str, Any], history: Optional[list] = None) -> Dict[str, Any]:
@@ -64,4 +64,3 @@ class LLMAgent:
             out["delta_x"] = out.pop("deltaX")
         out = {k: v for k, v in out.items() if k in allowed_top}
         return out
-

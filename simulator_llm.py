@@ -22,12 +22,12 @@ class PureLLMSimulator:
     - diverse: higher temperature and a diversity-oriented prompt
     """
 
-    def __init__(self, model: Optional[str] = None, seed: Optional[int] = None, history_window: int = 5, include_full_state: bool = False, mode: str = "deterministic", temperature: Optional[float] = None):
+    def __init__(self, model: Optional[str] = None, seed: Optional[int] = None, history_window: int = 5, include_full_state: bool = False, mode: str = "deterministic", temperature: Optional[float] = None, base_url: Optional[str] = None, api_key: Optional[str] = None):
         mode = (mode or "deterministic").lower()
         self._mode = mode if mode in {"deterministic", "diverse"} else "deterministic"
         # Choose temperature based on mode if not provided
         sim_temp = float(temperature) if temperature is not None else (0.7 if self._mode == "diverse" else 0.0)
-        self.client = LLMClient(model=model, temperature=sim_temp, seed=seed)
+        self.client = LLMClient(model=model, temperature=sim_temp, seed=seed, base_url=base_url, api_key=api_key)
         prompt_file = "pure_simulator.diverse.system.txt" if self._mode == "diverse" else "pure_simulator.system.txt"
         self.system = _read(os.path.join(PROMPTS_DIR, prompt_file))
         self._episodes: Dict[str, Dict[str, Any]] = {}

@@ -14,8 +14,8 @@ PROMPTS_DIR = os.path.join(os.path.dirname(__file__), "prompts")
 
 
 class LLMJudge:
-    def __init__(self, model: Optional[str] = None, temperature: float = 0.0, seed: Optional[int] = None):
-        self.client = LLMClient(model=model, temperature=temperature, seed=seed)
+    def __init__(self, model: Optional[str] = None, temperature: float = 0.0, seed: Optional[int] = None, base_url: Optional[str] = None, api_key: Optional[str] = None):
+        self.client = LLMClient(model=model, temperature=temperature, seed=seed, base_url=base_url, api_key=api_key)
         self.system = _read(os.path.join(PROMPTS_DIR, "judge.system.txt"))
 
     def evaluate(self, instruction: Dict[str, Any], start_state_summary: Dict[str, Any], end_state_summary: Dict[str, Any], episode_log: Dict[str, Any]) -> Dict[str, Any]:

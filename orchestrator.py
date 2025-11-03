@@ -2,7 +2,7 @@ import argparse
 import json
 import os
 import time
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, Tuple, Optional
 
 USE_LLM_AGENT = True
 USE_LLM_JUDGE = True
@@ -46,19 +46,30 @@ def run_episode(
     log_profile: str = "both",
     sim_mode: str = "deterministic",
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    # Helper to resolve role-specific configuration
+    def _role_conf(role: str) -> Tuple[Optional[str], Optional[str], Optional[str]]:
+        r = role.upper()
+        model = os.getenv(f"{r}_MODEL") or os.getenv("LLM_MODEL")
+        base = os.getenv(f"{r}_OPENAI_BASE_URL") or os.getenv("OPENAI_BASE_URL")
+        key = os.getenv(f"{r}_OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY")
+        return model, base, key
+
     # Choose simulator (LLM-only)
     if 'PureLLMSimulator' in globals() and PureLLMSimulator is not None:
-        sim = PureLLMSimulator(model=os.getenv("LLM_MODEL"), seed=seed, history_window=sim_history, include_full_state=sim_include_state, mode=sim_mode)
+        sim_model, sim_base, sim_key = _role_conf("SIMULATOR")
+        sim = PureLLMSimulator(model=sim_model, seed=seed, history_window=sim_history, include_full_state=sim_include_state, mode=sim_mode, base_url=sim_base, api_key=sim_key)
     else:
         raise RuntimeError("PureLLMSimulator not available. Ensure simulator_llm.py is present.")
     # Choose agent
     if USE_LLM_AGENT and 'LLMAgent' in globals() and LLMAgent is not None:
-        agent = LLMAgent(model=os.getenv("LLM_MODEL"), temperature=float(os.getenv("AGENT_TEMP", "1")), seed=seed)
+        agent_model, agent_base, agent_key = _role_conf("AGENT")
+        agent = LLMAgent(model=agent_model, temperature=float(os.getenv("AGENT_TEMP", "1")), seed=seed, base_url=agent_base, api_key=agent_key)
     else:
         agent = DummyAgent()
     # Choose judge (LLM-only)
     if 'LLMJudge' in globals() and LLMJudge is not None:
-        judge = LLMJudge(model=os.getenv("LLM_MODEL"), temperature=0.0, seed=seed)
+        judge_model, judge_base, judge_key = _role_conf("JUDGE")
+        judge = LLMJudge(model=judge_model, temperature=0.0, seed=seed, base_url=judge_base, api_key=judge_key)
     else:
         raise RuntimeError("LLMJudge not available. Ensure judge_llm.py is present.")
 
@@ -123,7 +134,13 @@ def run_episode(
     episode_log: Dict[str, Any] = {
         "episode_id": episode_id,
         "instruction_id": instr.get("id"),
+        "instruction": instr,
         "seed": seed,
+        "fidelity": fidelity,
+        "sim_mode": sim_mode,
+        "agent_history": agent_history,
+        "sim_history": sim_history,
+        "sim_include_state": sim_include_state,
         "start_digest": start_digest,
         "steps": [],
         "components": {
@@ -331,6 +348,7 @@ if __name__ == "__main__":
     parser.add_argument("--llm-proposer", action="store_true", default=USE_LLM_PROPOSER)
     parser.add_argument("--instr-file", type=str, default=os.getenv("INSTR_FILE"), help="Path to instruction JSON file")
     parser.add_argument("--instr-json", type=str, default=os.getenv("INSTR_JSON"), help="Instruction JSON string")
+    parser.add_argument("--instr-jsonl", type=str, default=os.getenv("INSTR_JSONL"), help="Path to JSONL file with one Instruction JSON per line (batch mode)")
     parser.add_argument("--instruction", "--instr-text", dest="instr_text", type=str, default=os.getenv("INSTRUCTION"), help="Freeform instruction text to compile (LLM)")
     parser.add_argument("--stop-on-success", action="store_true", help="Stop the episode early when success criteria are met")
     parser.add_argument("--success-threshold", type=float, default=float(os.getenv("SUCCESS_THRESHOLD", "0.99")), help="Score threshold to stop when --stop-on-success is set")
@@ -350,6 +368,8 @@ if __name__ == "__main__":
     parser.add_argument("--propose-count", type=int, default=int(os.getenv("PROPOSE_COUNT", "0")), help="Run propose→run loop for N episodes (LLMProposer adapts using recent_episodes)")
     parser.add_argument("--global-task-pool", type=str, default=os.getenv("GLOBAL_TASK_POOL"), help="Optional JSON file: array of candidate instructions to bias the proposer")
     parser.add_argument("--agent-id", type=str, default=os.getenv("AGENT_ID", "agent"), help="Agent identifier to pass to the proposer")
+    parser.add_argument("--export-html", action="store_true", help="[Deprecated] HTML export is default; use --no-export-html to disable")
+    parser.add_argument("--no-export-html", action="store_true", help="Disable HTML summary export")
     args = parser.parse_args()
 
     # Reflect CLI toggles to module-level flags
@@ -365,7 +385,131 @@ if __name__ == "__main__":
 
     # Removed preset rule-based tasks; default to LLMProposer below.
 
-    # Resolve instruction from CLI/env
+    # Batch mode: JSONL of instructions
+    if args.instr_jsonl:
+        # Read all instructions first (skip blank/malformed lines)
+        instrs: list[Dict[str, Any]] = []
+        try:
+            with open(args.instr_jsonl, "r", encoding="utf-8") as f:
+                for ln in f:
+                    s = (ln or "").strip()
+                    if not s:
+                        continue
+                    try:
+                        obj = json.loads(s)
+                        if isinstance(obj, dict):
+                            instrs.append(obj)
+                    except Exception:
+                        continue
+        except Exception as e:
+            raise RuntimeError(f"Failed to read --instr-jsonl {args.instr_jsonl}: {e}")
+
+        # Batch start log
+        with open(runtime_log_path, "a", encoding="utf-8") as rf:
+            rf.write(json.dumps({
+                "t": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                "event": "batch_start",
+                "count": len(instrs),
+                "seed": args.seed,
+                "fidelity": args.fidelity,
+                "sim_mode": args.sim_mode,
+            }) + "\n")
+        if args.log_profile in ("concise", "both"):
+            try:
+                with open(runtime_readable_path, "a", encoding="utf-8") as rrf:
+                    rrf.write(f"{time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())} batch start count={len(instrs)} sim_mode={args.sim_mode}\n")
+            except Exception:
+                pass
+
+        total = 0
+        successes = 0
+        scores: list[float] = []
+        summaries: list[Dict[str, Any]] = []
+        for instruction in instrs:
+            total += 1
+            # For readability
+            iid = instruction.get("id") if isinstance(instruction, dict) else None
+            print(
+                "Components:",
+                f"simulator=llm({args.sim_mode})",
+                f"agent={'LLM' if USE_LLM_AGENT else 'dummy'}",
+                f"judge={'LLM' if USE_LLM_JUDGE else 'det'}",
+                f"proposer={'LLM' if USE_LLM_PROPOSER else 'simple'}",
+                f"instr={iid}",
+            )
+            log, judge_out = run_episode(
+                instruction,
+                seed=args.seed,
+                fidelity=args.fidelity,
+                steps_limit=args.steps,
+                stop_on_success=args.stop_on_success,
+                success_threshold=args.success_threshold,
+                agent_history=args.agent_history,
+                sim_history=args.sim_history,
+                log_dir=args.log_dir,
+                log_state_snapshots=args.log_state_snapshots,
+                log_profile=args.log_profile,
+                sim_include_state=args.sim_include_state,
+                sim_mode=args.sim_mode,
+            )
+            episode_dir = os.path.join(args.log_dir)
+            save_episode(episode_dir, log, judge_out)
+            do_export_html = not getattr(args, "no_export_html", False)
+            if do_export_html:
+                try:
+                    from tools.export_html import export_episode_html
+                    html_path = export_episode_html(args.log_dir, log.get("episode_id"))
+                    if html_path:
+                        print(f"Exported HTML summary: {html_path}")
+                except Exception as e:
+                    print(f"[warn] HTML export failed: {e}")
+            sc = float(judge_out.get("score") or 0.0)
+            scores.append(sc)
+            ok = sc >= float(args.success_threshold)
+            successes += 1 if ok else 0
+            summaries.append({
+                "id": iid,
+                "score": sc,
+                "success": ok,
+                "episode_id": log.get("episode_id"),
+            })
+
+        # Final metrics
+        acc = (successes / total) if total else 0.0
+        mean_score = (sum(scores) / len(scores)) if scores else 0.0
+        print(f"Batch complete: total={total} success={successes} accuracy={acc:.3f} mean_score={mean_score:.3f}")
+        # Persist batch summary
+        summary = {
+            "t": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "total": total,
+            "successes": successes,
+            "accuracy": acc,
+            "mean_score": mean_score,
+            "threshold": args.success_threshold,
+            "items": summaries,
+        }
+        try:
+            with open(os.path.join(args.log_dir, "batch_summary.json"), "w", encoding="utf-8") as f:
+                json.dump(summary, f, indent=2, sort_keys=True)
+        except Exception:
+            pass
+        with open(runtime_log_path, "a", encoding="utf-8") as rf:
+            rf.write(json.dumps({
+                "t": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                "event": "batch_end",
+                "summary": {k: v for k, v in summary.items() if k != "items"},
+            }) + "\n")
+        if args.log_profile in ("concise", "both"):
+            try:
+                with open(runtime_readable_path, "a", encoding="utf-8") as rrf:
+                    rrf.write(
+                        f"{time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())} batch end total={total} success={successes} acc={acc:.3f} mean={mean_score:.3f}\n"
+                    )
+            except Exception:
+                pass
+        raise SystemExit(0)
+
+    # Resolve single instruction from CLI/env (non-batch)
     instruction: Dict[str, Any]
     if args.instr_file:
         with open(args.instr_file, "r", encoding="utf-8") as f:
@@ -375,7 +519,14 @@ if __name__ == "__main__":
     elif args.instr_text:
         # Compile freeform instruction using LLM (no heuristic fallback)
         from proposer_llm import InstructionCompiler
-        compiler = InstructionCompiler(model=os.getenv("LLM_MODEL"), temperature=0.0, seed=args.seed)
+        def _role_conf(role: str) -> Tuple[Optional[str], Optional[str], Optional[str]]:
+            r = role.upper()
+            model = os.getenv(f"{r}_MODEL") or os.getenv("LLM_MODEL")
+            base = os.getenv(f"{r}_OPENAI_BASE_URL") or os.getenv("OPENAI_BASE_URL")
+            key = os.getenv(f"{r}_OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY")
+            return model, base, key
+        comp_model, comp_base, comp_key = _role_conf("COMPILER")
+        compiler = InstructionCompiler(model=comp_model, temperature=0.0, seed=args.seed, base_url=comp_base, api_key=comp_key)
         instruction = compiler.compile(args.instr_text)
         # Log compiler I/O
         try:
@@ -398,7 +549,14 @@ if __name__ == "__main__":
         # Default: Use LLMProposer to propose the next instruction
         if 'LLMProposer' not in globals() or LLMProposer is None:
             raise RuntimeError("LLMProposer not available. Ensure proposer_llm.py is present.")
-        proposer = LLMProposer(model=os.getenv("LLM_MODEL"), temperature=0.2, seed=args.seed)
+        def _role_conf(role: str) -> Tuple[Optional[str], Optional[str], Optional[str]]:
+            r = role.upper()
+            model = os.getenv(f"{r}_MODEL") or os.getenv("LLM_MODEL")
+            base = os.getenv(f"{r}_OPENAI_BASE_URL") or os.getenv("OPENAI_BASE_URL")
+            key = os.getenv(f"{r}_OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY")
+            return model, base, key
+        prop_model, prop_base, prop_key = _role_conf("PROPOSER")
+        proposer = LLMProposer(model=prop_model, temperature=0.2, seed=args.seed, base_url=prop_base, api_key=prop_key)
         instruction = proposer.propose_next(agent_id="agent", recent_episodes=[])
         # Log proposer I/O
         try:
@@ -467,7 +625,14 @@ if __name__ == "__main__":
         # Proposer instance
         if 'LLMProposer' not in globals() or LLMProposer is None:
             raise RuntimeError("LLMProposer not available. Ensure proposer_llm.py is present.")
-        proposer = LLMProposer(model=os.getenv("LLM_MODEL"), temperature=0.2, seed=args.seed)
+        def _role_conf(role: str) -> Tuple[Optional[str], Optional[str], Optional[str]]:
+            r = role.upper()
+            model = os.getenv(f"{r}_MODEL") or os.getenv("LLM_MODEL")
+            base = os.getenv(f"{r}_OPENAI_BASE_URL") or os.getenv("OPENAI_BASE_URL")
+            key = os.getenv(f"{r}_OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY")
+            return model, base, key
+        prop_model, prop_base, prop_key = _role_conf("PROPOSER")
+        proposer = LLMProposer(model=prop_model, temperature=0.2, seed=args.seed, base_url=prop_base, api_key=prop_key)
         # Keep a small recent window
         recent_episodes: list[Dict[str, Any]] = []
         # If instruction not provided, the earlier branch already proposed one.
@@ -490,6 +655,15 @@ if __name__ == "__main__":
             episode_dir = os.path.join(args.log_dir)
             save_episode(episode_dir, log, judge_out)
             print(f"Saved episode to '{episode_dir}/'")
+            do_export_html = not getattr(args, "no_export_html", False)
+            if do_export_html:
+                try:
+                    from tools.export_html import export_episode_html
+                    html_path = export_episode_html(args.log_dir, log.get("episode_id"))
+                    if html_path:
+                        print(f"Exported HTML summary: {html_path}")
+                except Exception as e:
+                    print(f"[warn] HTML export failed: {e}")
             # Append summary for proposer
             try:
                 recent_episodes.append({
@@ -543,3 +717,13 @@ if __name__ == "__main__":
         episode_dir = os.path.join(args.log_dir)
         save_episode(episode_dir, log, judge_out)
         print(f"Saved episode to '{episode_dir}/'")
+        # Default HTML export (disable with --no-export-html)
+        do_export_html = not getattr(args, "no_export_html", False)
+        if do_export_html:
+            try:
+                from tools.export_html import export_episode_html
+                html_path = export_episode_html(args.log_dir, log.get("episode_id"))
+                if html_path:
+                    print(f"Exported HTML summary: {html_path}")
+            except Exception as e:
+                print(f"[warn] HTML export failed: {e}")

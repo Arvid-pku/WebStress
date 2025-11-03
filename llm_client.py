@@ -15,24 +15,26 @@ class LLMClient:
     - No network calls occur unless methods are invoked.
     """
 
-    def __init__(self, model: Optional[str] = None, temperature: float = 0.0, seed: Optional[int] = None):
+    def __init__(self, model: Optional[str] = None, temperature: float = 0.0, seed: Optional[int] = None, base_url: Optional[str] = None, api_key: Optional[str] = None):
         self.model = model or os.getenv("LLM_MODEL", "gpt-5")
         self.temperature = float(temperature)
         self.seed = seed
         self._client = None
         self._last_io: Optional[Dict[str, Any]] = None
+        self._base_url = base_url
+        self._api_key = api_key
 
     def _ensure_client(self):
         if self._client is not None:
             return self._client
-        api_key = os.getenv("OPENAI_API_KEY")
+        api_key = self._api_key or os.getenv("OPENAI_API_KEY")
         if not api_key:
             raise RuntimeError("OPENAI_API_KEY is not set; cannot use LLM client.")
         try:
             from openai import OpenAI  # type: ignore
         except Exception as e:  # pragma: no cover
             raise RuntimeError("openai package not installed. Run 'pip install openai'.") from e
-        base_url = os.getenv("OPENAI_BASE_URL")
+        base_url = self._base_url or os.getenv("OPENAI_BASE_URL")
         if base_url:
             self._client = OpenAI(api_key=api_key, base_url=base_url)
         else:
