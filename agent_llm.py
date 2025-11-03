@@ -35,9 +35,11 @@ class LLMAgent:
             return norm
 
     def _normalize_action(self, raw: Dict[str, Any]) -> Dict[str, Any]:
+        # Always coerce to a valid action object; fall back to a safe noop.
         if not isinstance(raw, dict):
-            return raw
+            return {"type": "noop"}
         allowed_top = {"type", "target", "text", "keys", "delta_y", "delta_x"}
+        allowed_types = {"click", "double_click", "right_click", "drag", "scroll", "keypress", "input_text", "hotkey", "noop"}
         out: Dict[str, Any] = dict(raw)
         if "action" in out and "type" not in out:
             out["type"] = out.pop("action")
@@ -63,4 +65,10 @@ class LLMAgent:
         if "deltaX" in out and "delta_x" not in out:
             out["delta_x"] = out.pop("deltaX")
         out = {k: v for k, v in out.items() if k in allowed_top}
+        # Ensure required fields exist; default to a noop when missing/invalid
+        if not isinstance(out.get("type"), str) or not out.get("type"):
+            out["type"] = "noop"
+        elif out["type"] not in allowed_types:
+            # Coerce unknown action types to a safe noop
+            out["type"] = "noop"
         return out
