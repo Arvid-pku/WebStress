@@ -289,6 +289,33 @@ def _load_sim_by_step(log_dir: str, episode_id: str) -> Dict[int, Dict[str, Any]
     return by_step
 
 
+def _load_initial_observation(episode: Dict[str, Any], log_dir: str, episode_id: str) -> Optional[Dict[str, Any]]:
+    obs = episode.get("initial_observation")
+    if isinstance(obs, dict):
+        return obs
+    sim_path = os.path.join(log_dir, episode_id, "simulator.log.jsonl")
+    if not os.path.exists(sim_path):
+        return None
+    try:
+        with open(sim_path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    rec = json.loads(line)
+                except Exception:
+                    continue
+                if rec.get("phase") == "reset":
+                    init_obs = rec.get("observation")
+                    if isinstance(init_obs, dict):
+                        return init_obs
+                    break
+    except Exception:
+        return None
+    return None
+
+
 def _render_html(episode: Dict[str, Any], judgement: Dict[str, Any], log_dir: str) -> str:
     eid = episode.get("episode_id", "episode")
     instr_id = _escape(episode.get("instruction_id"))
@@ -305,6 +332,11 @@ def _render_html(episode: Dict[str, Any], judgement: Dict[str, Any], log_dir: st
     subscores_html = _subscores_block(judgement)
     # Load sim logs to enrich state snapshots per step
     sim_by_step = _load_sim_by_step(log_dir, str(eid))
+    initial_obs = _load_initial_observation(episode, log_dir, str(eid))
+    if initial_obs:
+        initial_obs_html = f"<section class=initial><h2>Initial Observation</h2>{_obs_block(initial_obs)}</section>"
+    else:
+        initial_obs_html = ""
     # Build per-step details cards
     detail_cards: List[str] = []
     for idx, st in enumerate(steps):
@@ -346,6 +378,7 @@ def _render_html(episode: Dict[str, Any], judgement: Dict[str, Any], log_dir: st
     <style>
       body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,'Helvetica Neue',Arial,'Noto Sans',sans-serif;margin:20px;color:#1b1f23}
       h1{font-size:22px;margin:0 0 8px}
+      h2{font-size:18px;margin-top:28px}
       .meta{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px}
       .tag{background:#f4f6f8;border:1px solid #e5e7eb;border-radius:6px;padding:6px 10px}
       table{border-collapse:collapse;width:100%;font-size:13px}
@@ -363,6 +396,7 @@ def _render_html(episode: Dict[str, Any], judgement: Dict[str, Any], log_dir: st
       .badge{display:inline-block;background:#eef2ff;border:1px solid #dbeafe;border-radius:999px;padding:2px 8px;font-size:12px}
       .meta, .muted{color:#6b7280;font-size:12px}
       .empty{color:#9ca3af}
+      .initial{margin:24px 0}
       pre{background:#0b1020;color:#e5e7eb;padding:10px;border-radius:6px;overflow:auto;max-height:300px}
       table.mini{border-collapse:collapse;width:100%;font-size:12px;margin-top:6px}
       table.mini th, table.mini td{border:1px solid #eef2f7;padding:4px 6px}
@@ -391,6 +425,7 @@ def _render_html(episode: Dict[str, Any], judgement: Dict[str, Any], log_dir: st
       <div class=tag><b>Score</b>: {score}</div>
       <div class=tag><b>Steps</b>: {len(steps)}</div>
     </div>
+    {initial_obs_html}
     {instruction_html}
     <details><summary>Settings</summary>
       {settings_html}
