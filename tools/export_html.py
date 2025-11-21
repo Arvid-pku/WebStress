@@ -29,6 +29,24 @@ def _truncate(s: Any, n: int = 80) -> str:
     return t if len(t) <= n else t[: n - 1] + "…"
 
 
+def _describe_feature_config(cfg: Optional[Dict[str, Any]]) -> str:
+    if not isinstance(cfg, dict) or not cfg:
+        return "default"
+    parts: List[str] = []
+    gran = cfg.get("observation_granularity")
+    if isinstance(gran, str):
+        parts.append(f"gran={gran}")
+    bool_flags = sorted([k for k, v in cfg.items() if isinstance(v, bool) and v])
+    if bool_flags:
+        parts.append("flags=" + ",".join(bool_flags))
+    failure = cfg.get("failure_feedback")
+    if isinstance(failure, dict):
+        fb_flags = sorted([k for k, v in failure.items() if isinstance(v, bool) and v])
+        if fb_flags:
+            parts.append("failure=" + ",".join(fb_flags))
+    return "; ".join(parts) if parts else "custom"
+
+
 def _render_table_rows(steps: List[Dict[str, Any]]) -> str:
     rows = []
     for idx, st in enumerate(steps):
@@ -236,23 +254,25 @@ def _instruction_block(instr: Optional[Dict[str, Any]], fallback_id: Optional[st
 def _settings_block(ep: Dict[str, Any]) -> str:
     seed = _escape(ep.get("seed"))
     fidelity = _escape(ep.get("fidelity"))
-    sim_mode = _escape(ep.get("sim_mode"))
+    features = ep.get("sim_feature_config") if isinstance(ep.get("sim_feature_config"), dict) else None
+    sim_features = _escape(_describe_feature_config(features))
     ah = _escape(ep.get("agent_history"))
     sh = _escape(ep.get("sim_history"))
     inc_state = _escape(ep.get("sim_include_state"))
     comps = ep.get("components") if isinstance(ep.get("components"), dict) else {}
     comps_pre = f"<pre>{_pretty(comps)}</pre>" if comps else "<div class=muted>no components info</div>"
+    features_pre = f"<details><summary>Simulator feature config</summary><pre>{_pretty(features)}</pre></details>" if features else "<div class=muted>sim features: default</div>"
     items = """
       <ul>
         <li>seed: {seed}</li>
         <li>fidelity: {fidelity}</li>
-        <li>sim_mode: {sim_mode}</li>
+        <li>sim_features: {sim_features}</li>
         <li>agent_history: {ah}</li>
         <li>sim_history: {sh}</li>
         <li>sim_include_state: {inc_state}</li>
       </ul>
-    """.format(seed=seed, fidelity=fidelity, sim_mode=sim_mode, ah=ah, sh=sh, inc_state=inc_state)
-    return items + comps_pre
+    """.format(seed=seed, fidelity=fidelity, sim_features=sim_features, ah=ah, sh=sh, inc_state=inc_state)
+    return items + comps_pre + features_pre
 
 
 def _subscores_block(jd: Dict[str, Any]) -> str:

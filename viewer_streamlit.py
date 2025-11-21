@@ -50,6 +50,24 @@ def load_sim_by_step(log_dir: str, eid: str) -> Dict[int, Dict[str, Any]]:
     return by_step
 
 
+def _describe_features(cfg: Optional[Dict[str, Any]]) -> str:
+    if not isinstance(cfg, dict) or not cfg:
+        return "default"
+    parts: List[str] = []
+    gran = cfg.get('observation_granularity')
+    if isinstance(gran, str):
+        parts.append(f"gran={gran}")
+    bool_flags = sorted([k for k, v in cfg.items() if isinstance(v, bool) and v])
+    if bool_flags:
+        parts.append("flags=" + ",".join(bool_flags))
+    failure = cfg.get('failure_feedback')
+    if isinstance(failure, dict):
+        fb_flags = sorted([k for k, v in failure.items() if isinstance(v, bool) and v])
+        if fb_flags:
+            parts.append("failure=" + ",".join(fb_flags))
+    return "; ".join(parts) if parts else "custom"
+
+
 def _selected_element(obs: Dict[str, Any], element_id: Optional[str]) -> Optional[Dict[str, Any]]:
     if not isinstance(obs, dict) or not element_id:
         return None
@@ -143,7 +161,8 @@ def render_episode(title: str, ep: Dict[str, Any], jd: Dict[str, Any], log_dir: 
         with c2:
             st.metric('Fidelity', str(ep.get('fidelity', '-')))
         with c3:
-            st.metric('Sim Mode', str(ep.get('sim_mode', '-')))
+            feat_cfg = ep.get('sim_feature_config') if isinstance(ep.get('sim_feature_config'), dict) else None
+            st.metric('Sim Features', _describe_features(feat_cfg))
         c4, c5, c6 = st.columns(3)
         with c4:
             st.metric('Agent History', str(ep.get('agent_history', '-')))
@@ -153,6 +172,11 @@ def render_episode(title: str, ep: Dict[str, Any], jd: Dict[str, Any], log_dir: 
             st.metric('Include State', str(ep.get('sim_include_state', '-')))
         st.caption('Components')
         st.json(ep.get('components', {}))
+        st.caption('Simulator feature config')
+        if feat_cfg:
+            st.json(feat_cfg)
+        else:
+            st.info('default feature set')
     # Judge subscores (folded)
     if isinstance(jd.get('subscores'), dict) and jd.get('subscores'):
         with st.expander('Judge subscores'):

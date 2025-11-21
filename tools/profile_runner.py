@@ -40,7 +40,7 @@ def main() -> None:
     p.add_argument("--seed", type=int, default=int(os.getenv("SEED", "123")))
     p.add_argument("--steps", type=int, default=int(os.getenv("STEPS", "8")))
     p.add_argument("--fidelity", type=str, choices=["low", "medium", "high"], default=os.getenv("FIDELITY", "medium"))
-    p.add_argument("--sim-mode", type=str, choices=["deterministic", "diverse"], default=os.getenv("SIM_MODE", "deterministic"))
+    p.add_argument("--sim-feature-config", type=str, default=os.getenv("SIM_FEATURE_CONFIG"))
     p.add_argument("--log-dir", type=str, default=os.getenv("LOG_DIR", "runs"))
     p.add_argument("--log-profile", type=str, choices=["verbose", "concise", "both"], default=os.getenv("LOG_PROFILE", "concise"))
     p.add_argument("--log-state-snapshots", action="store_true")
@@ -51,6 +51,8 @@ def main() -> None:
     repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     if repo_root not in sys.path:
         sys.path.insert(0, repo_root)
+
+    from simulator_prompt_features import SimulatorPromptFeatures
 
     try:
         from line_profiler import LineProfiler  # type: ignore
@@ -88,27 +90,41 @@ def main() -> None:
     # LLM client
     lp.add_function(LLMClient.complete_json)
 
+    sim_feature_config_raw: Optional[Dict[str, Any]] = None
+    sim_feature_config: Optional[SimulatorPromptFeatures] = None
+    if args.sim_feature_config:
+        try:
+            with open(args.sim_feature_config, "r", encoding="utf-8") as f:
+                loaded = json.load(f)
+            if not isinstance(loaded, dict):
+                raise ValueError("feature config must be a JSON object")
+            sim_feature_config_raw = loaded
+            sim_feature_config = SimulatorPromptFeatures.from_dict(loaded)
+        except Exception as exc:
+            raise RuntimeError(f"Failed to load simulator feature config ({args.sim_feature_config}): {exc}")
+
     # Build instruction and run one episode through orchestrator.run_episode
     instruction = _load_first_instruction(args.instr_jsonl, args.instr_id)
-
+    feature_controls_fidelity = bool(isinstance(sim_feature_config_raw, dict) and "observation_granularity" in sim_feature_config_raw)
     # Mirror environment-based role configuration used in orchestrator.run_episode
     # (orchestrator.run_episode resolves models/keys internally, so we just pass instruction/args)
     def run_once():
-        log, judge_out = orchestrator.run_episode(
-            instruction,
-            seed=args.seed,
-            fidelity=args.fidelity,
-            steps_limit=args.steps,
-            stop_on_success=False,
-            success_threshold=0.99,
-            agent_history=5,
-            sim_history=5,
-            sim_include_state=args.sim_include_state,
-            log_dir=args.log_dir,
-            log_state_snapshots=args.log_state_snapshots,
-            log_profile=args.log_profile,
-            sim_mode=args.sim_mode,
-        )
+        kwargs = {
+            "seed": args.seed,
+            "steps_limit": args.steps,
+            "stop_on_success": False,
+            "success_threshold": 0.99,
+            "agent_history": 5,
+            "sim_history": 5,
+            "sim_include_state": args.sim_include_state,
+            "log_dir": args.log_dir,
+            "log_state_snapshots": args.log_state_snapshots,
+            "log_profile": args.log_profile,
+            "sim_feature_config": sim_feature_config,
+        }
+        if not feature_controls_fidelity:
+            kwargs["fidelity"] = args.fidelity
+        log, judge_out = orchestrator.run_episode(instruction, **kwargs)
         # Persist outputs like the main script (concise)
         orchestrator.save_episode(args.log_dir, log, judge_out)
 

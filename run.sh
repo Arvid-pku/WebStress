@@ -22,10 +22,10 @@ export COMPILER_OPENAI_API_KEY=sk-Ay4jrZcS2qDNxtGT9QLlJQ
 export COMPILER_OPENAI_BASE_URL=https://litellm.oit.duke.edu/v1
 export COMPILER_MODEL=gpt-5
 
-python orchestrator.py --steps 16 --sim-mode diverse  --log-profile both --log-state-snapshots --instr-jsonl instructions/osworld_small.jsonl  --fidelity high --success-threshold 0.9
+python orchestrator.py --steps 16 --sim-feature-config prompts/simulator_features.example.json --log-profile both --log-state-snapshots --instr-jsonl instructions/osworld_small.jsonl --success-threshold 0.9
 
 
-# python tools/profile_runner.py --instr-jsonl instructions/osworld_small.jsonl --instr-id bb5e4c0d-f964-439c-97b6-bdb9747de3f4 --steps 16 --sim-mode diverse --fidelity high
+# python tools/profile_runner.py --instr-jsonl instructions/osworld_small.jsonl --instr-id bb5e4c0d-f964-439c-97b6-bdb9747de3f4 --steps 16 --sim-feature-config prompts/simulator_features.example.json
 
 
 # python replay_agent_call.py \

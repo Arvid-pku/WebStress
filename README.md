@@ -74,7 +74,7 @@ Simulator (LLM) — compact I/O model
 - Read‑state handshake: if the model needs the full state, it returns `request:"read_state"`; the simulator immediately recalls it with `{current_state, request_granted:"read_state"}`.
 - Output: `state_ops` (JSON Patch), `observation`, `internal_result`, `event_log`, `terminal`.
 - Fidelity: controls output richness (not logic). Low = minimal detail, Medium = moderate context, High = richer but still compact observation/event logs.
-- Simulator modes: `--sim-mode {deterministic|diverse}`. Deterministic uses a stable prompt with low temperature; Diverse uses a diversity-oriented prompt and higher temperature for varied but plausible outputs.
+- Simulator features: `--sim-feature-config <path>` injects the “feature switchboard” described in `simulator_prompt_features.py`. Point it at a JSON file (see `prompts/simulator_features.example.json`) to toggle observation granularity, failure feedback, diversity, and robustness settings without swapping prompts.
 
 Agent (LLM)
 - Receives only the observation (plus a small history slice if enabled).
@@ -127,7 +127,7 @@ Important flags
 - `--seed`, `--fidelity {low|medium|high}`, `--steps N`
 - `--agent-history N` (default 5), `--sim-history N` (default 5)
 - `--sim-include-state` (force full current_state each step; debug/compat)
-- `--sim-mode {deterministic|diverse}` (default `deterministic`)
+- `--sim-feature-config <path>` (optional; JSON describing observation granularity, failure feedback, diversity, and robustness toggles)
 - `--log-dir runs`, `--log-profile {verbose|concise|both}`, `--log-state-snapshots`
 - `--stop-on-success`, `--success-threshold 0.99`
 - Instruction sources: `--instr-file`, `--instr-json`, `--instruction` (free‑text). If none are provided, an instruction is generated via the LLM proposer.
@@ -157,6 +157,24 @@ Prompts (contract‑first)
 - `prompts/judge.system.txt` — evidence‑only, deterministic scoring; exact one JSON object.
 - `prompts/proposer.system.txt` — diverse desktop tasks, deterministic for identical inputs; no brand‑specific content.
 - `prompts/compiler.system.txt` — free‑text instruction compiler → Instruction JSON.
+
+Simulator feature switchboard
+- `simulator_prompt_features.py` loads optional JSON configs (see `prompts/simulator_features.example.json`) and injects a “Feature switchboard” block into the simulator prompt.
+- Toggles cover observation granularity (low/medium/high), failure-feedback style (describe result / explain cause / offer hints), data vs. functional diversity, and robustness stressors (stochastic or unreliable transitions, adversarial logic, noise injection).
+- Use `--sim-feature-config` to point at a JSON object such as:
+  ```json
+  {
+    "observation_granularity": "high",
+    "failure_feedback": {"describe_result": true, "explain_cause": true, "provide_hints": true},
+    "data_diversity": true,
+    "functional_diversity": true,
+    "stochastic_transitions": false,
+    "unreliable_transitions": true,
+    "adversarial_logic": true,
+    "noise_injection": true
+  }
+  ```
+- Each toggle adds explicit instructions inside the simulator’s system prompt so the LLM can deterministically honor the requested behaviors without editing prompt files manually.
 
 
 Determinism and fallbacks

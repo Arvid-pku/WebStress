@@ -5,6 +5,8 @@ import time
 from dataclasses import dataclass
 from typing import Any, Dict, Tuple, Optional
 
+from simulator_prompt_features import SimulatorPromptFeatures
+
 USE_LLM_AGENT = True
 USE_LLM_JUDGE = True
 USE_LLM_PROPOSER = True
@@ -183,10 +185,24 @@ def _log_sim_readable(handles: LogHandles, step: int, now: str, action: Dict[str
             rf.write(line + "\n")
     except Exception:
         pass
+
+
+def _resolve_fidelity(cli_value: str, raw_cfg: Optional[Dict[str, Any]], obj_cfg: Optional[SimulatorPromptFeatures]) -> str:
+    has_override = isinstance(raw_cfg, dict) and "observation_granularity" in raw_cfg
+    if has_override and obj_cfg is not None:
+        return obj_cfg.observation_granularity
+    gran = None
+    if isinstance(raw_cfg, dict):
+        gran = raw_cfg.get("observation_granularity")
+    if isinstance(gran, str):
+        lowered = gran.strip().lower()
+        if lowered in {"low", "medium", "high"}:
+            return lowered
+    return cli_value
 def run_episode(
     instr: Dict[str, Any],
     seed: int,
-    fidelity: str = "low",
+    fidelity: Optional[str] = None,
     steps_limit: int = 1,
     stop_on_success: bool = False,
     success_threshold: float = 0.99,
@@ -196,7 +212,7 @@ def run_episode(
     log_dir: str | None = None,
     log_state_snapshots: bool = False,
     log_profile: str = "both",
-    sim_mode: str = "deterministic",
+    sim_feature_config: Optional[Any] = None,
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     # Helper to resolve role-specific configuration
     def _role_conf(role: str) -> Tuple[Optional[str], Optional[str], Optional[str]]:
@@ -206,10 +222,23 @@ def run_episode(
         key = os.getenv(f"{r}_OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY")
         return model, base, key
 
+    feature_payload: Optional[Any] = None
+    feature_obj: Optional[SimulatorPromptFeatures] = None
+    if isinstance(sim_feature_config, SimulatorPromptFeatures):
+        feature_obj = sim_feature_config
+        feature_payload = sim_feature_config
+    elif isinstance(sim_feature_config, dict):
+        feature_obj = SimulatorPromptFeatures.from_dict(sim_feature_config)
+        feature_payload = feature_obj
+    else:
+        feature_payload = None
+
+    episode_fidelity = fidelity or (feature_obj.observation_granularity if feature_obj else "low")
+
     # Choose simulator (LLM-only)
     if 'PureLLMSimulator' in globals() and PureLLMSimulator is not None:
         sim_model, sim_base, sim_key = _role_conf("SIMULATOR")
-        sim = PureLLMSimulator(model=sim_model, seed=seed, history_window=sim_history, include_full_state=sim_include_state, mode=sim_mode, base_url=sim_base, api_key=sim_key)
+        sim = PureLLMSimulator(model=sim_model, seed=seed, history_window=sim_history, include_full_state=sim_include_state, base_url=sim_base, api_key=sim_key, feature_config=feature_payload)
     else:
         raise RuntimeError("PureLLMSimulator not available. Ensure simulator_llm.py is present.")
     # Choose agent
@@ -225,7 +254,7 @@ def run_episode(
     else:
         raise RuntimeError("LLMJudge not available. Ensure judge_llm.py is present.")
 
-    obs, start_digest, episode_id = sim.reset(instr, seed, fidelity)
+    obs, start_digest, episode_id = sim.reset(instr, seed, episode_fidelity)
 
     # Prepare episode-specific logs
     episode_dir = None
@@ -254,8 +283,7 @@ def run_episode(
         "instruction_id": instr.get("id"),
         "instruction": instr,
         "seed": seed,
-        "fidelity": fidelity,
-        "sim_mode": sim_mode,
+        "fidelity": episode_fidelity,
         "agent_history": agent_history,
         "sim_history": sim_history,
         "sim_include_state": sim_include_state,
@@ -268,6 +296,16 @@ def run_episode(
             "proposer": "llm" if USE_LLM_PROPOSER else "simple",
         },
     }
+    try:
+        cfg_obj = getattr(sim, "_feature_config", None)
+        if cfg_obj is not None and hasattr(cfg_obj, "to_dict"):
+            episode_log["sim_feature_config"] = cfg_obj.to_dict()
+        elif feature_obj:
+            episode_log["sim_feature_config"] = feature_obj.to_dict()
+        elif sim_feature_config:
+            episode_log["sim_feature_config"] = sim_feature_config
+    except Exception:
+        pass
 
     done = False
     steps = 0
@@ -394,7 +432,7 @@ if __name__ == "__main__":
     parser.add_argument("--agent-history", type=int, default=int(os.getenv("AGENT_HISTORY", "5")), help="Number of recent (action, observation) steps to pass to the agent")
     parser.add_argument("--sim-history", type=int, default=int(os.getenv("SIM_HISTORY", "5")), help="Number of recent simulator steps to include in simulator input")
     parser.add_argument("--sim-include-state", action="store_true", default=os.getenv("SIM_INCLUDE_STATE", "0") == "1", help="Always include full current_state in simulator LLM input (compat mode)")
-    parser.add_argument("--sim-mode", type=str, default=os.getenv("SIM_MODE", "deterministic"), choices=["deterministic", "diverse"], help="Simulator mode: deterministic (stable) or diverse (varied)")
+    parser.add_argument("--sim-feature-config", type=str, default=os.getenv("SIM_FEATURE_CONFIG"), help="Path to JSON file describing simulator feature toggles")
     parser.add_argument("--log-dir", type=str, default=os.getenv("LOG_DIR", "runs"), help="Directory for logs")
     parser.add_argument("--log-state-snapshots", action="store_true", help="Include full state snapshots in simulator logs (verbose only)")
     parser.add_argument(
@@ -410,6 +448,58 @@ if __name__ == "__main__":
     parser.add_argument("--export-html", action="store_true", help="[Deprecated] HTML export is default; use --no-export-html to disable")
     parser.add_argument("--no-export-html", action="store_true", help="Disable HTML summary export")
     args = parser.parse_args()
+
+    sim_feature_config_raw: Optional[Dict[str, Any]] = None
+    sim_feature_config: Optional[SimulatorPromptFeatures] = None
+    if args.sim_feature_config:
+        try:
+            with open(args.sim_feature_config, "r", encoding="utf-8") as f:
+                loaded = json.load(f)
+            if not isinstance(loaded, dict):
+                raise ValueError("feature config must be a JSON object")
+            sim_feature_config_raw = loaded
+            sim_feature_config = SimulatorPromptFeatures.from_dict(loaded)
+        except Exception as e:
+            raise RuntimeError(f"Failed to load simulator feature config ({args.sim_feature_config}): {e}")
+
+    def _feature_descriptor(cfg: Optional[Dict[str, Any]]) -> str:
+        if not cfg:
+            return "default"
+        parts: list[str] = []
+        granularity = cfg.get("observation_granularity")
+        if isinstance(granularity, str):
+            parts.append(f"gran={granularity}")
+        bool_flags = sorted([k for k, v in cfg.items() if isinstance(v, bool) and v])
+        if bool_flags:
+            parts.append("flags=" + ",".join(bool_flags))
+        failure_fb = cfg.get("failure_feedback")
+        if isinstance(failure_fb, dict):
+            fb_flags = sorted([k for k, v in failure_fb.items() if isinstance(v, bool) and v])
+            if fb_flags:
+                parts.append("failure=" + ",".join(fb_flags))
+        if not parts:
+            return "custom"
+        return "custom(" + "; ".join(parts) + ")"
+
+    feature_desc = _feature_descriptor(sim_feature_config_raw)
+    effective_fidelity = _resolve_fidelity(args.fidelity, sim_feature_config_raw, sim_feature_config)
+    feature_controls_fidelity = bool(isinstance(sim_feature_config_raw, dict) and "observation_granularity" in sim_feature_config_raw)
+
+    common_run_kwargs: Dict[str, Any] = {
+        "seed": args.seed,
+        "steps_limit": args.steps,
+        "stop_on_success": args.stop_on_success,
+        "success_threshold": args.success_threshold,
+        "agent_history": args.agent_history,
+        "sim_history": args.sim_history,
+        "log_dir": args.log_dir,
+        "log_state_snapshots": args.log_state_snapshots,
+        "log_profile": args.log_profile,
+        "sim_include_state": args.sim_include_state,
+        "sim_feature_config": sim_feature_config,
+    }
+    if not feature_controls_fidelity:
+        common_run_kwargs["fidelity"] = args.fidelity
 
     # Reflect CLI toggles to module-level flags
     USE_LLM_AGENT = args.llm_agent
@@ -450,13 +540,13 @@ if __name__ == "__main__":
                 "event": "batch_start",
                 "count": len(instrs),
                 "seed": args.seed,
-                "fidelity": args.fidelity,
-                "sim_mode": args.sim_mode,
+                "fidelity": effective_fidelity,
+                "sim_feature_descriptor": feature_desc,
             }) + "\n")
         if args.log_profile in ("concise", "both"):
             try:
                 with open(runtime_readable_path, "a", encoding="utf-8") as rrf:
-                    rrf.write(f"{time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())} batch start count={len(instrs)} sim_mode={args.sim_mode}\n")
+                    rrf.write(f"{time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())} batch start count={len(instrs)} sim_features={feature_desc}\n")
             except Exception:
                 pass
 
@@ -470,27 +560,13 @@ if __name__ == "__main__":
             iid = instruction.get("id") if isinstance(instruction, dict) else None
             print(
                 "Components:",
-                f"simulator=llm({args.sim_mode})",
+                f"simulator=llm({feature_desc})",
                 f"agent={'LLM' if USE_LLM_AGENT else 'dummy'}",
                 f"judge={'LLM' if USE_LLM_JUDGE else 'det'}",
                 f"proposer={'LLM' if USE_LLM_PROPOSER else 'simple'}",
                 f"instr={iid}",
             )
-            log, judge_out = run_episode(
-                instruction,
-                seed=args.seed,
-                fidelity=args.fidelity,
-                steps_limit=args.steps,
-                stop_on_success=args.stop_on_success,
-                success_threshold=args.success_threshold,
-                agent_history=args.agent_history,
-                sim_history=args.sim_history,
-                log_dir=args.log_dir,
-                log_state_snapshots=args.log_state_snapshots,
-                log_profile=args.log_profile,
-                sim_include_state=args.sim_include_state,
-                sim_mode=args.sim_mode,
-            )
+            log, judge_out = run_episode(instruction, **common_run_kwargs)
             episode_dir = os.path.join(args.log_dir)
             save_episode(episode_dir, log, judge_out)
             do_export_html = not getattr(args, "no_export_html", False)
@@ -616,7 +692,7 @@ if __name__ == "__main__":
             pass
     print(
         "Components:",
-        f"simulator=llm({args.sim_mode})",
+        f"simulator=llm({feature_desc})",
         f"agent={'LLM' if USE_LLM_AGENT else 'dummy'}",
         f"judge={'LLM' if USE_LLM_JUDGE else 'det'}",
         f"proposer={'LLM' if USE_LLM_PROPOSER else 'simple'}",
@@ -629,14 +705,14 @@ if __name__ == "__main__":
             "t": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
             "event": "start",
             "seed": args.seed,
-            "fidelity": args.fidelity,
+            "fidelity": effective_fidelity,
             "components": {
                 "simulator": "llm",
                 "agent": "llm" if USE_LLM_AGENT else "dummy",
                 "judge": "llm" if USE_LLM_JUDGE else "det",
                 "proposer": "llm" if USE_LLM_PROPOSER else "simple",
             },
-            "sim_mode": args.sim_mode,
+            "sim_feature_descriptor": feature_desc,
             "instruction": instruction,
             "log_profile": args.log_profile,
         }) + "\n")
@@ -644,7 +720,7 @@ if __name__ == "__main__":
         try:
             with open(runtime_readable_path, "a", encoding="utf-8") as rrf:
                 rrf.write(
-                    f"{time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())} start seed={args.seed} fidelity={args.fidelity} sim_mode={args.sim_mode} comp=sim:llm,agent:{'LLM' if USE_LLM_AGENT else 'dummy'},judge:{'LLM' if USE_LLM_JUDGE else 'det'} instr={instruction.get('id')}\n"
+                    f"{time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())} start seed={args.seed} fidelity={effective_fidelity} sim_features={feature_desc} comp=sim:llm,agent:{'LLM' if USE_LLM_AGENT else 'dummy'},judge:{'LLM' if USE_LLM_JUDGE else 'det'} instr={instruction.get('id')}\n"
                 )
         except Exception:
             pass
@@ -676,21 +752,7 @@ if __name__ == "__main__":
         recent_episodes: list[Dict[str, Any]] = []
         # If instruction not provided, the earlier branch already proposed one.
         for i in range(int(args.propose_count)):
-            log, judge_out = run_episode(
-                instruction,
-                seed=args.seed,
-                fidelity=args.fidelity,
-                steps_limit=args.steps,
-                stop_on_success=args.stop_on_success,
-                success_threshold=args.success_threshold,
-                agent_history=args.agent_history,
-                sim_history=args.sim_history,
-                log_dir=args.log_dir,
-                log_state_snapshots=args.log_state_snapshots,
-                log_profile=args.log_profile,
-                sim_include_state=args.sim_include_state,
-                sim_mode=args.sim_mode,
-            )
+            log, judge_out = run_episode(instruction, **common_run_kwargs)
             episode_dir = os.path.join(args.log_dir)
             save_episode(episode_dir, log, judge_out)
             print(f"Saved episode to '{episode_dir}/'")
@@ -738,21 +800,7 @@ if __name__ == "__main__":
                     pass
                 instruction = next_instr
     else:
-        log, judge_out = run_episode(
-            instruction,
-            seed=args.seed,
-            fidelity=args.fidelity,
-            steps_limit=args.steps,
-            stop_on_success=args.stop_on_success,
-            success_threshold=args.success_threshold,
-            agent_history=args.agent_history,
-            sim_history=args.sim_history,
-            log_dir=args.log_dir,
-            log_state_snapshots=args.log_state_snapshots,
-            log_profile=args.log_profile,
-            sim_include_state=args.sim_include_state,
-            sim_mode=args.sim_mode,
-        )
+        log, judge_out = run_episode(instruction, **common_run_kwargs)
         episode_dir = os.path.join(args.log_dir)
         save_episode(episode_dir, log, judge_out)
         print(f"Saved episode to '{episode_dir}/'")

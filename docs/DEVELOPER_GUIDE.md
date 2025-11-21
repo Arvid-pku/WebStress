@@ -85,6 +85,7 @@ Prompts (contract‑first, neutral)
 - `prompts/judge.system.txt` — evidence‑only, deterministic; exact one JSON.
 - `prompts/proposer.system.txt` — diverse desktop tasks; deterministic for identical inputs; no brand‑specific content.
 - `prompts/compiler.system.txt` — free‑text instruction compiler.
+- `simulator_prompt_features.py` — injects a “Feature switchboard” section into simulator prompts. Point `--sim-feature-config` to a JSON object (see `prompts/simulator_features.example.json`) to toggle observation granularity, failure feedback, diversity levers, and robustness/adversarial noise without editing the prompt manually.
 
 
 CLI (orchestrator)
@@ -94,6 +95,7 @@ CLI (orchestrator)
 - Logging: `--log-dir`, `--log-profile {verbose|concise|both}`, `--log-state-snapshots`.
 - Early stop: `--stop-on-success`, `--success-threshold`.
 - Instruction sources: `--instr-file`, `--instr-json`, `--instruction` (free‑text, compiled by LLM). If none provided, the LLM proposer is used by default.
+- Simulator features: `--sim-feature-config` points to a JSON object (see `prompts/simulator_features.example.json`). Leave unset for the default stable configuration; enable toggles (granularity, data/functional diversity, stochastic/robustness challenges) as needed without swapping prompts.
 
 
 LLM client nuances
@@ -101,10 +103,9 @@ LLM client nuances
 - Temperature fallback: some models disallow `temperature=0.0`; client retries without the parameter and records `used_temperature`.
 - Seeds are passed where supported (not all models honor them).
 
-
-Modes
-- Deterministic: `pure_simulator.system.txt` prompt, temperature ~0.0.
-- Diverse: `pure_simulator.diverse.system.txt` prompt, higher temperature; initial UI elements may be shuffled/sampled per fidelity for variety.
+Simulator features
+- `pure_simulator.system.txt` now serves every run; diversity/noise knobs come from the feature switchboard injected by `simulator_prompt_features.py`.
+- Default config keeps behavior stable; enabling `data_diversity`/`functional_diversity` (or other robustness flags) instructs the prompt and runtime to introduce variety with a higher default temperature.
 
 Logging layout
 - Verbose (`runs/<episode_id>/`): `agent.log.jsonl`, `simulator.log.jsonl`, `judge.log.jsonl` (when applicable), and `llm/*.json` raw dumps per phase/step (plus `*.error.json` on failures).

@@ -1,0 +1,14 @@
+{
+  "observation_granularity": "high",
+  "failure_feedback": {
+    "describe_result": true,
+    "explain_cause": true,
+    "provide_hints": true
+  },
+  "data_diversity": true,
+  "functional_diversity": true,
+  "stochastic_transitions": true,
+  "unreliable_transitions": false,
+  "adversarial_logic": true,
+  "noise_injection": true
+}
