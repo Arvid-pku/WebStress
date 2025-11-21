@@ -70,7 +70,7 @@ Core contracts
 
 Simulator (LLM) — compact I/O model
 - Reset: sends the full initial state; returns a consistent observation.
-- Step: sends compact inputs by default: `{phase, episode_id, seed, fidelity, instruction, state_digest, state_summary, sim_history, ops_recent, last_action, timestamp, time_delta_ms}`.
+- Step: sends compact inputs by default: `{phase, episode_id, seed, fidelity, instruction, current_state, state_digest, state_summary, last_action, timestamp, time_delta_ms}`.
 - Read‑state handshake: if the model needs the full state, it returns `request:"read_state"`; the simulator immediately recalls it with `{current_state, request_granted:"read_state"}`.
 - Output: `state_ops` (JSON Patch), `observation`, `internal_result`, `event_log`, `terminal`.
 - Fidelity: controls output richness (not logic). Low = minimal detail, Medium = moderate context, High = richer but still compact observation/event logs.
@@ -120,13 +120,13 @@ Examples
 - Compact/verbose logs and snapshots:
   - `python orchestrator.py --instruction "..." --log-profile both --log-state-snapshots`
  - HTML summary export is now default: after each run, a compact `index.html` is written under `runs/<episode_id>/`. Disable with `--no-export-html`.
- - Streamlit viewer (interactive, compare runs):
+- Streamlit viewer (interactive, compare runs):
    - `streamlit run viewer_streamlit.py`
 
 Important flags
 - `--seed`, `--fidelity {low|medium|high}`, `--steps N`
-- `--agent-history N` (default 5), `--sim-history N` (default 5)
-- `--sim-include-state` (force full current_state each step; debug/compat)
+- `--agent-history N` (default 5)
+- `--sim-include-state` / `--no-sim-include-state` (send full `current_state` each step; enabled by default)
 - `--sim-feature-config <path>` (optional; JSON describing observation granularity, failure feedback, diversity, and robustness toggles)
 - `--log-dir runs`, `--log-profile {verbose|concise|both}`, `--log-state-snapshots`
 - `--stop-on-success`, `--success-threshold 0.99`

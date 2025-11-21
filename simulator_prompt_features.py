@@ -101,51 +101,48 @@ class SimulatorPromptFeatures:
 
 def _granularity_text(level: Literal["low", "medium", "high"]) -> str:
     mapping = {
-        "low": "LOW — terse observation text, 3-5 elements max, minimal event_log.",
-        "medium": "MEDIUM — balanced detail (5-8 elements), light context cues.",
-        "high": "HIGH — richly described but still compact, include helpful affordances.",
+        "low": "Keep the observation terse (~3–5 ui_elements, essential meta only, minimal event_log).",
+        "medium": "Provide balanced detail (~5–8 ui_elements plus light context cues and short status notes).",
+        "high": "Provide richer detail (broader ui lists with helpful attributes, descriptive event_log/network_log entries).",
     }
     return mapping[level]
 
 
 def build_feature_block(features: SimulatorPromptFeatures) -> str:
-    lines = [
-        "Feature switchboard (configured by orchestrator). Read every line before emitting a response:",
-    ]
+    lines: list[str] = []
 
-    has_optional = False
-
-    def _append_section(title: str, bullet_points: list[str]) -> None:
+    def _append_section(title: str, bullet_points: list[str], mandatory: bool = False) -> None:
         if not bullet_points:
             return
-        lines.append(f"- {title}:")
+        label = f"- **{title}**"
+        if mandatory:
+            label += " (MANDATORY)"
+        lines.append(label)
         for point in bullet_points:
-            lines.append(f"  * {point}")
+            lines.append(f"  - {point}")
 
     if features.observation_granularity != DEFAULT_GRANULARITY:
-        has_optional = True
         _append_section(
-            "Observation fidelity override",
+            f"Observation fidelity override — {features.observation_granularity.upper()}",
             [
                 _granularity_text(features.observation_granularity),
-                "Match ui_elements, meta, event_log, and network_logs density to this level—no more, no less.",
+                "Match ui_elements, meta, event_log, and network_log density to this level for every response.",
             ],
+            mandatory=True,
         )
 
     failure_points = [
         f"When rejecting actions: {features.failure_feedback.describe()} and keep reasons as compact labels (e.g., 'invalid_action').",
-        "On rejection emit exactly one beep audio_event, return state_ops=[], and leave the rest of the observation untouched except for the error cue.",
+        "During rejection: emit exactly one beep audio_event, return state_ops=[], and leave the rest of the observation untouched apart from the error cue.",
     ]
-    _append_section("Failure handling discipline", failure_points)
+    _append_section("Failure handling discipline", failure_points, mandatory=True)
 
     state_diversity_points: list[str] = []
     if features.data_diversity:
-        has_optional = True
         state_diversity_points.append(
             "Data diversity: rotate numbers, proper names, and lightweight file contents per step seed; never break schema invariants."
         )
     if features.functional_diversity:
-        has_optional = True
         state_diversity_points.append(
             "Functional diversity: reshuffle layouts/components or swap plausible widgets while preserving affordances and identifiers when possible."
         )
@@ -153,29 +150,30 @@ def build_feature_block(features: SimulatorPromptFeatures) -> str:
 
     dynamics_points: list[str] = []
     if features.stochastic_transitions:
-        has_optional = True
         dynamics_points.append(
             "Stochastic transitions: when multiple valid results exist, pick one using a deterministic rule tied to the provided seed (e.g., even seeds favor the first option, odd seeds the second) and fully commit observation/state_ops to that branch so identical seeds stay consistent while different seeds may diverge."
         )
     if features.unreliable_transitions:
-        has_optional = True
         dynamics_points.append(
             'Unreliable transitions: at low frequency emit a "transient_failure" rejection even for valid inputs; never mutate state when doing so.'
         )
     if features.adversarial_logic:
-        has_optional = True
         dynamics_points.append(
             "Adversarial logic: spotlight subtle inconsistencies, edge-case warnings, or hidden blockers without fabricating impossible conditions."
         )
     if features.noise_injection:
-        has_optional = True
         dynamics_points.append(
             "Noise injection: add harmless notifications, background chatter, or superfluous log lines that do not alter task semantics or violate schemas."
         )
     _append_section("Dynamics and robustness toggles", dynamics_points)
 
-    if not has_optional:
-        lines.append("- No optional diversity/robustness features are enabled; operate with canonical deterministic behavior.")
+    if (
+        features.observation_granularity == DEFAULT_GRANULARITY
+        and not state_diversity_points
+        and not dynamics_points
+    ):
+        lines.append("- **Canonical mode**")
+        lines.append("  - No optional diversity or robustness features are enabled; operate with deterministic, schema-first behavior.")
 
     block = "\n".join(lines)
     return block

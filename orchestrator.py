@@ -45,6 +45,12 @@ class LogHandles:
     log_state_snapshots: bool = False
 
 
+def _agent_instruction_view(instr: Any) -> Dict[str, Any]:
+    if not isinstance(instr, dict):
+        return {}
+    return {"description": instr.get("description")}
+
+
 def _dump_llm_io(llm_dir: Optional[str], role: str, call: Any, step: Optional[int] = None, phase: str = "step") -> None:
     if not llm_dir or not isinstance(call, dict):
         return
@@ -207,8 +213,7 @@ def run_episode(
     stop_on_success: bool = False,
     success_threshold: float = 0.99,
     agent_history: int = 5,
-    sim_history: int = 5,
-    sim_include_state: bool = False,
+    sim_include_state: bool = True,
     log_dir: str | None = None,
     log_state_snapshots: bool = False,
     log_profile: str = "both",
@@ -238,7 +243,7 @@ def run_episode(
     # Choose simulator (LLM-only)
     if 'PureLLMSimulator' in globals() and PureLLMSimulator is not None:
         sim_model, sim_base, sim_key = _role_conf("SIMULATOR")
-        sim = PureLLMSimulator(model=sim_model, seed=seed, history_window=sim_history, include_full_state=sim_include_state, base_url=sim_base, api_key=sim_key, feature_config=feature_payload)
+        sim = PureLLMSimulator(model=sim_model, seed=seed, include_full_state=sim_include_state, base_url=sim_base, api_key=sim_key, feature_config=feature_payload)
     else:
         raise RuntimeError("PureLLMSimulator not available. Ensure simulator_llm.py is present.")
     # Choose agent
@@ -285,7 +290,6 @@ def run_episode(
         "seed": seed,
         "fidelity": episode_fidelity,
         "agent_history": agent_history,
-        "sim_history": sim_history,
         "sim_include_state": sim_include_state,
         "start_digest": start_digest,
         "steps": [],
@@ -313,10 +317,11 @@ def run_episode(
     while not done and steps < steps_limit:
         # Provide recent observation/action history to the agent (agent-visible only)
         hist_slice = history[-agent_history:] if agent_history and agent_history > 0 else []
+        agent_instr = _agent_instruction_view(instr)
         try:
-            action = agent.act(obs, instr, hist_slice)  # type: ignore[arg-type]
+            action = agent.act(obs, agent_instr, hist_slice)  # type: ignore[arg-type]
         except TypeError:
-            action = agent.act(obs, instr)  # type: ignore[call-arg]
+            action = agent.act(obs, agent_instr)  # type: ignore[call-arg]
         now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
         _log_agent_verbose(handles, agent, instr.get("id"), len(hist_slice), steps, now, action)  # type: ignore[arg-type]
         _log_agent_readable(handles, agent, steps, now, action)  # type: ignore[arg-type]
@@ -430,8 +435,13 @@ if __name__ == "__main__":
     parser.add_argument("--stop-on-success", action="store_true", help="Stop the episode early when success criteria are met")
     parser.add_argument("--success-threshold", type=float, default=float(os.getenv("SUCCESS_THRESHOLD", "0.99")), help="Score threshold to stop when --stop-on-success is set")
     parser.add_argument("--agent-history", type=int, default=int(os.getenv("AGENT_HISTORY", "5")), help="Number of recent (action, observation) steps to pass to the agent")
-    parser.add_argument("--sim-history", type=int, default=int(os.getenv("SIM_HISTORY", "5")), help="Number of recent simulator steps to include in simulator input")
-    parser.add_argument("--sim-include-state", action="store_true", default=os.getenv("SIM_INCLUDE_STATE", "0") == "1", help="Always include full current_state in simulator LLM input (compat mode)")
+    sim_include_env = os.getenv("SIM_INCLUDE_STATE")
+    if sim_include_env is None:
+        sim_include_default = True
+    else:
+        sim_include_default = sim_include_env.lower() not in {"0", "false", "no"}
+    parser.add_argument("--sim-include-state", dest="sim_include_state", action="store_true", default=sim_include_default, help="Include full current_state in simulator LLM input (default)")
+    parser.add_argument("--no-sim-include-state", dest="sim_include_state", action="store_false", help="Disable sending full current_state to the simulator LLM")
     parser.add_argument("--sim-feature-config", type=str, default=os.getenv("SIM_FEATURE_CONFIG"), help="Path to JSON file describing simulator feature toggles")
     parser.add_argument("--log-dir", type=str, default=os.getenv("LOG_DIR", "runs"), help="Directory for logs")
     parser.add_argument("--log-state-snapshots", action="store_true", help="Include full state snapshots in simulator logs (verbose only)")
@@ -523,7 +533,6 @@ if __name__ == "__main__":
         "stop_on_success": args.stop_on_success,
         "success_threshold": args.success_threshold,
         "agent_history": args.agent_history,
-        "sim_history": args.sim_history,
         "log_dir": args.log_dir,
         "log_state_snapshots": args.log_state_snapshots,
         "log_profile": args.log_profile,

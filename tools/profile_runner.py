@@ -44,7 +44,13 @@ def main() -> None:
     p.add_argument("--log-dir", type=str, default=os.getenv("LOG_DIR", "runs"))
     p.add_argument("--log-profile", type=str, choices=["verbose", "concise", "both"], default=os.getenv("LOG_PROFILE", "concise"))
     p.add_argument("--log-state-snapshots", action="store_true")
-    p.add_argument("--sim-include-state", action="store_true", default=os.getenv("SIM_INCLUDE_STATE", "0") == "1")
+    sim_include_env = os.getenv("SIM_INCLUDE_STATE")
+    if sim_include_env is None:
+        sim_include_default = True
+    else:
+        sim_include_default = sim_include_env.lower() not in {"0", "false", "no"}
+    p.add_argument("--sim-include-state", dest="sim_include_state", action="store_true", default=sim_include_default)
+    p.add_argument("--no-sim-include-state", dest="sim_include_state", action="store_false")
     args = p.parse_args()
 
     # Ensure repository root is on sys.path so imports like 'orchestrator' work
@@ -115,7 +121,6 @@ def main() -> None:
             "stop_on_success": False,
             "success_threshold": 0.99,
             "agent_history": 5,
-            "sim_history": 5,
             "sim_include_state": args.sim_include_state,
             "log_dir": args.log_dir,
             "log_state_snapshots": args.log_state_snapshots,

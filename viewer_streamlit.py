@@ -190,12 +190,10 @@ def render_episode(title: str, ep: Dict[str, Any], jd: Dict[str, Any], log_dir: 
         with c3:
             feat_cfg = ep.get('sim_feature_config') if isinstance(ep.get('sim_feature_config'), dict) else None
             st.metric('Sim Features', _describe_features(feat_cfg))
-        c4, c5, c6 = st.columns(3)
+        c4, c5 = st.columns(2)
         with c4:
             st.metric('Agent History', str(ep.get('agent_history', '-')))
         with c5:
-            st.metric('Sim History', str(ep.get('sim_history', '-')))
-        with c6:
             st.metric('Include State', str(ep.get('sim_include_state', '-')))
         st.caption('Components')
         st.json(ep.get('components', {}))

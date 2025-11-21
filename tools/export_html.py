@@ -331,7 +331,6 @@ def _settings_block(ep: Dict[str, Any]) -> str:
     features = ep.get("sim_feature_config") if isinstance(ep.get("sim_feature_config"), dict) else None
     sim_features = _escape(_describe_feature_config(features))
     ah = _escape(ep.get("agent_history"))
-    sh = _escape(ep.get("sim_history"))
     inc_state = _escape(ep.get("sim_include_state"))
     comps = ep.get("components") if isinstance(ep.get("components"), dict) else {}
     comps_pre = f"<pre>{_pretty(comps)}</pre>" if comps else "<div class=muted>no components info</div>"
@@ -342,10 +341,9 @@ def _settings_block(ep: Dict[str, Any]) -> str:
         <li>fidelity: {fidelity}</li>
         <li>sim_features: {sim_features}</li>
         <li>agent_history: {ah}</li>
-        <li>sim_history: {sh}</li>
         <li>sim_include_state: {inc_state}</li>
       </ul>
-    """.format(seed=seed, fidelity=fidelity, sim_features=sim_features, ah=ah, sh=sh, inc_state=inc_state)
+    """.format(seed=seed, fidelity=fidelity, sim_features=sim_features, ah=ah, inc_state=inc_state)
     return items + comps_pre + features_pre
 
 

@@ -20,6 +20,7 @@ runs/
 .env.development.local
 .env.test.local
 tmp.py
+tmp.json
 tasks/
 instructions/
 history/

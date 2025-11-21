@@ -35,8 +35,8 @@ Simulator details (PureLLMSimulator)
 
 Inputs
 - Reset: full initial `current_state` plus `state_digest`, `state_summary`.
-- Step (compact by default): `{phase, episode_id, seed, fidelity, instruction, state_digest, state_summary, sim_history, ops_recent, last_action, timestamp, time_delta_ms}`.
-- Read‑state handshake: if the LLM needs the full state, it returns `request:"read_state"`; the simulator immediately reissues the step including `{current_state, request_granted:"read_state"}`.
+- Step (compact by default): `{phase, episode_id, seed, fidelity, instruction, current_state, state_digest, state_summary, last_action, timestamp, time_delta_ms}`.
+- Read-state handshake: if the LLM needs the full state, it returns `request:"read_state"`; the simulator immediately reissues the step including `{current_state, request_granted:"read_state"}`.
 - Fidelity semantics: forwarded to the simulator LLM to modulate output richness only. Low = minimal UI lists/logs, Medium = moderate, High = richer details (still compact). Schemas and minimal-diff rules always apply.
 
 Outputs
@@ -52,10 +52,6 @@ Validation and fallbacks
 
 JSON Patch helper
 - `_apply_state_ops` supports `add`, `remove`, `replace`, `move` with JSON Pointer paths; invalid ops are rejected.
-
-History windows
-- Simulator keeps bounded `sim_history` (recent steps) and `ops_recent` (recent state_ops) to inform the LLM.
-- Sizes are controlled via `history_window` and the CLI flag `--sim-history`.
 
 
 Agent details (LLMAgent)
@@ -90,8 +86,8 @@ Prompts (contract‑first, neutral)
 
 CLI (orchestrator)
 - Core: `--seed`, `--fidelity {low|medium|high}`, `--steps`.
-- History windows: `--agent-history` (default 5), `--sim-history` (default 5).
-- Debug/compat: `--sim-include-state` (send full current_state every step).
+- History window: `--agent-history` (default 5).
+- State payload toggle: `--sim-include-state` / `--no-sim-include-state` (full `current_state` each step, enabled by default).
 - Logging: `--log-dir`, `--log-profile {verbose|concise|both}`, `--log-state-snapshots`.
 - Early stop: `--stop-on-success`, `--success-threshold`.
 - Instruction sources: `--instr-file`, `--instr-json`, `--instruction` (free‑text, compiled by LLM). If none provided, the LLM proposer is used by default.

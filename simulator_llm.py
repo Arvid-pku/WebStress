@@ -23,7 +23,7 @@ class PureLLMSimulator:
     and diverse prompt variants.
     """
 
-    def __init__(self, model: Optional[str] = None, seed: Optional[int] = None, history_window: int = 5, include_full_state: bool = False, temperature: Optional[float] = None, base_url: Optional[str] = None, api_key: Optional[str] = None, feature_config: Optional[Any] = None):
+    def __init__(self, model: Optional[str] = None, seed: Optional[int] = None, include_full_state: bool = True, temperature: Optional[float] = None, base_url: Optional[str] = None, api_key: Optional[str] = None, feature_config: Optional[Any] = None):
         if isinstance(feature_config, SimulatorPromptFeatures):
             features = feature_config
         elif isinstance(feature_config, dict):
@@ -38,10 +38,7 @@ class PureLLMSimulator:
         self.system = build_simulator_prompt(base_prompt, features)
         self._episodes: Dict[str, Dict[str, Any]] = {}
         self._meta: Dict[str, Dict[str, Any]] = {}
-        self._history: Dict[str, list] = {}
-        self._history_window = max(0, int(history_window))
         self._include_full_state = bool(include_full_state)
-        self._ops_history: Dict[str, list] = {}
 
     def _now_iso(self) -> str:
         import time
@@ -222,7 +219,6 @@ class PureLLMSimulator:
             "state_digest": self._sha256_digest(init_state),
             "state_summary": self._state_summary(init_state),
             "timestamp": self._now_iso(),
-            "sim_history": [],
         }
         self._last_call = {"phase": "reset", "input": payload}
         try:
@@ -257,8 +253,6 @@ class PureLLMSimulator:
                 pass
         self._episodes[episode_id] = next_state
         self._meta[episode_id] = {"fidelity": fidelity, "seed": seed, "instruction": instruction}
-        self._history[episode_id] = []
-        self._ops_history[episode_id] = []
         self._last_call.update({"output": {"state": next_state, "observation": observation}, "raw": getattr(self.client, "_last_io", None)})
         start_digest = self._sha256_digest(next_state)
         return observation, start_digest, episode_id
@@ -370,10 +364,6 @@ class PureLLMSimulator:
         validate_action(action)
         prev_state = self._episodes[episode_id]
         meta = self._meta.get(episode_id, {})
-        sim_hist = self._history.get(episode_id, [])
-        sim_hist_slice = sim_hist[-self._history_window:] if self._history_window > 0 else []
-        ops_hist = self._ops_history.get(episode_id, [])
-        ops_hist_slice = ops_hist[-self._history_window:] if self._history_window > 0 else []
         payload = {
             "phase": "step",
             "seed": meta.get("seed"),
@@ -383,10 +373,8 @@ class PureLLMSimulator:
             "last_action": action,
             "timestamp": timestamp_iso,
             "time_delta_ms": int(time_delta_ms),
-            "sim_history": sim_hist_slice,
             "state_digest": self._sha256_digest(prev_state),
             "state_summary": self._state_summary(prev_state),
-            "ops_recent": ops_hist_slice,
         }
         if self._include_full_state:
             payload["current_state"] = prev_state
@@ -460,21 +448,6 @@ class PureLLMSimulator:
             "output": {"state": next_state, "observation": observation, "internal_result": internal_result, "event_log": event_log, "terminal": terminal},
             "raw": getattr(self.client, "_last_io", None)
         })
-        try:
-            entry = {"t": timestamp_iso, "action": action, "result": internal_result, "state_diff": state_diff}
-            self._history.setdefault(episode_id, []).append(entry)
-            if self._history_window > 0 and len(self._history[episode_id]) > self._history_window:
-                self._history[episode_id] = self._history[episode_id][-self._history_window:]
-            try:
-                ops = out.get("state_ops") if isinstance(out, dict) else None
-                if isinstance(ops, list):
-                    self._ops_history.setdefault(episode_id, []).append(ops)
-                    if self._history_window > 0 and len(self._ops_history[episode_id]) > self._history_window:
-                        self._ops_history[episode_id] = self._ops_history[episode_id][-self._history_window:]
-            except Exception:
-                pass
-        except Exception:
-            pass
         return {
             "observation": observation,
             "internal_result": internal_result,
