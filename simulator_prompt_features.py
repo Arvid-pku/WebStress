@@ -101,9 +101,9 @@ class SimulatorPromptFeatures:
 
 def _granularity_text(level: Literal["low", "medium", "high"]) -> str:
     mapping = {
-        "low": "Keep the observation terse (~3–5 ui_elements, essential meta only, minimal event_log).",
-        "medium": "Provide balanced detail (~5–8 ui_elements plus light context cues and short status notes).",
-        "high": "Provide richer detail (broader ui lists with helpful attributes, descriptive event_log/network_log entries).",
+        "low": "Render a compact scene: ~3–5 ui_elements, essential attributes only, tiny event_log/network_log snippets.",
+        "medium": "Render a balanced scene: ~5–8 ui_elements with useful attributes, light context cues, short status or progress notes.",
+        "high": "Render an information-dense scene: include extensive ui_elements with attributes (visible/enabled/role/state), nested panels, tooltips, status areas, and descriptive event_log/network_log entries that capture the breadth of the page.",
     }
     return mapping[level]
 
@@ -131,39 +131,59 @@ def build_feature_block(features: SimulatorPromptFeatures) -> str:
             mandatory=True,
         )
 
-    failure_points = [
-        f"When rejecting actions: {features.failure_feedback.describe()} and keep reasons as compact labels (e.g., 'invalid_action').",
-        "During rejection: emit exactly one beep audio_event, return state_ops=[], and leave the rest of the observation untouched apart from the error cue.",
+    failure_points: list[str] = [
+        "During rejection you must emit exactly one beep audio_event, set state_ops=[], and leave the rest of the observation untouched except for the explicit rejection cue.",
+        "Always keep `internal_result.reason` as a compact label (e.g., `invalid_action`, `unsupported_target`).",
     ]
+    if features.failure_feedback.describe_result:
+        failure_points.append(
+            "Describe the immediate visible effect of the failed action inside the observation text (e.g., highlight that nothing moved, a dialog stayed closed, etc.)."
+        )
+    if features.failure_feedback.explain_cause:
+        failure_points.append(
+            "Explain the most plausible underlying cause for the failure (missing permission, disabled control, validation error) using concise language."
+        )
+    if features.failure_feedback.provide_hints:
+        failure_points.append(
+            "Offer a short, actionable hint for recovery (what to click next, which prerequisite is missing)."
+        )
+    if (
+        not features.failure_feedback.describe_result
+        and not features.failure_feedback.explain_cause
+        and not features.failure_feedback.provide_hints
+    ):
+        failure_points.append(
+            "When no feedback directives are enabled, do not add extra commentary—only the observation itself should change to reflect the failed state."
+        )
     _append_section("Failure handling discipline", failure_points, mandatory=True)
 
     state_diversity_points: list[str] = []
     if features.data_diversity:
         state_diversity_points.append(
-            "Data diversity: rotate numbers, proper names, and lightweight file contents per step seed; never break schema invariants."
+            "Data diversity: populate lists, tables, feeds, or directories with substantial, varied domain data so every populated view feels realistic and information-dense (large contact lists, many flights, long email threads, etc.). Keep the diversified corpus consistent for identical seeds."
         )
     if features.functional_diversity:
         state_diversity_points.append(
-            "Functional diversity: reshuffle layouts/components or swap plausible widgets while preserving affordances and identifiers when possible."
+            "Functional diversity: expose multiple actionable controls and deep navigation paths so the agent must reason about which among many plausible operations best advances the task."
         )
     _append_section("State diversity controls", state_diversity_points)
 
     dynamics_points: list[str] = []
     if features.stochastic_transitions:
         dynamics_points.append(
-            "Stochastic transitions: when multiple valid results exist, pick one using a deterministic rule tied to the provided seed (e.g., even seeds favor the first option, odd seeds the second) and fully commit observation/state_ops to that branch so identical seeds stay consistent while different seeds may diverge."
+            "Let transitions behave like a realistic UI: when an action should open a dialog, navigate, or update state, perform that natural transition without forcing artificial determinism or randomness."
         )
     if features.unreliable_transitions:
         dynamics_points.append(
-            'Unreliable transitions: at low frequency emit a "transient_failure" rejection even for valid inputs; never mutate state when doing so.'
+            "Occasionally simulate instability: certain actions may intermittently do nothing, require a retry, or trigger an unexpected but plausible alternate effect. Reflect the outcome in state_ops/observation so the agent must adapt."
         )
     if features.adversarial_logic:
         dynamics_points.append(
-            "Adversarial logic: spotlight subtle inconsistencies, edge-case warnings, or hidden blockers without fabricating impossible conditions."
+            "Adversarial logic: deliberately introduce obstacles or distractions (extra authentication prompts, blocking overlays, policy gates, conflicting instructions, tight timing, etc.) so successful completion demands more deliberate planning and failure becomes more likely if the agent rushes."
         )
     if features.noise_injection:
         dynamics_points.append(
-            "Noise injection: add harmless notifications, background chatter, or superfluous log lines that do not alter task semantics or violate schemas."
+            "Noise injection: weave in irrelevant but believable observation content (background system messages, unrelated notifications, verbose log snippets) that forces the agent to filter signal from noise without altering the true state."
         )
     _append_section("Dynamics and robustness toggles", dynamics_points)
 
