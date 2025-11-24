@@ -94,12 +94,14 @@ Running
 Install and configure
 - Python deps: `pip install openai jsonschema` (jsonschema optional but recommended)
  - Optional for visualization: `pip install streamlit` (for an interactive viewer)
+ - Optional for Gemini provider: `pip install google-generativeai`
 - Set environment variables:
   - `OPENAI_API_KEY` (required)
-  - `OPENAI_BASE_URL` (optional; for self‑hosted gateways)
+  - `OPENAI_BASE_URL` (optional; for self-hosted gateways)
   - `LLM_MODEL` (e.g., `gpt-5` or your deployment ID)
+  - For Gemini provider, set `GOOGLE_API_KEY` (or reuse the role-specific `*_OPENAI_API_KEY`) and pick a Gemini model ID such as `models/gemini-3-pro-preview`.
   - `AGENT_TEMP` (optional; agent exploration temperature)
-  - Role‑specific overrides (optional; override the above per role):
+  - Role-specific overrides (optional; override the above per role):
     - Simulator: `SIMULATOR_OPENAI_API_KEY`, `SIMULATOR_OPENAI_BASE_URL`, `SIMULATOR_MODEL`
     - Agent: `AGENT_OPENAI_API_KEY`, `AGENT_OPENAI_BASE_URL`, `AGENT_MODEL`, `AGENT_TEMP`
     - Judge: `JUDGE_OPENAI_API_KEY`, `JUDGE_OPENAI_BASE_URL`, `JUDGE_MODEL`

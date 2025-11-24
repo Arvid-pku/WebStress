@@ -1,7 +1,7 @@
 import json
 import os
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional, Tuple
 import re
 
 _API_LOG_PATH: Optional[str] = os.getenv("LLM_API_LOG_PATH")
@@ -46,26 +46,37 @@ def _next_api_sequence() -> int:
 
 
 class LLMClient:
-    """Thin wrapper around an LLM provider (OpenAI-compatible) for JSON outputs.
+    """Thin wrapper around OpenAI-compatible + Gemini providers for JSON outputs.
 
     - Uses environment variables:
-      - OPENAI_API_KEY
-      - OPENAI_BASE_URL (optional)
+      - OPENAI_API_KEY / role-specific overrides (default), or GOOGLE_API_KEY for Gemini
+      - OPENAI_BASE_URL (optional, OpenAI-compatible only)
       - LLM_MODEL (default: gpt-5)
     - Supports JSON-only responses with retry on malformed JSON.
     - No network calls occur unless methods are invoked.
     """
 
-    def __init__(self, model: Optional[str] = None, temperature: float = 0.0, seed: Optional[int] = None, base_url: Optional[str] = None, api_key: Optional[str] = None):
+    def __init__(self, model: Optional[str] = None, temperature: float = 0.0, seed: Optional[int] = None, base_url: Optional[str] = None, api_key: Optional[str] = None, provider: Optional[str] = None):
         self.model = model or os.getenv("LLM_MODEL", "gpt-5")
         self.temperature = float(temperature)
         self.seed = seed
         self._client = None
+        self._gemini_module = None
         self._last_io: Optional[Dict[str, Any]] = None
         self._base_url = base_url
         self._api_key = api_key
+        self.provider = self._resolve_provider(provider, self.model)
 
-    def _ensure_client(self):
+    def _resolve_provider(self, explicit: Optional[str], model_name: Optional[str]) -> str:
+        if isinstance(explicit, str) and explicit.strip():
+            lowered = explicit.strip().lower()
+            if lowered in {"openai", "gemini"}:
+                return lowered
+        if isinstance(model_name, str) and "gemini" in model_name.lower():
+            return "gemini"
+        return "openai"
+
+    def _ensure_openai_client(self):
         if self._client is not None:
             return self._client
         api_key = self._api_key or os.getenv("OPENAI_API_KEY")
@@ -82,14 +93,120 @@ class LLMClient:
             self._client = OpenAI(api_key=api_key)
         return self._client
 
+    def _ensure_gemini_module(self):
+        if self._gemini_module is not None:
+            return self._gemini_module
+        api_key = self._api_key or os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
+        if not api_key:
+            raise RuntimeError("GOOGLE_API_KEY (or GEMINI_API_KEY) is not set; cannot use Gemini provider.")
+        try:
+            import google.generativeai as genai  # type: ignore
+        except Exception as e:  # pragma: no cover
+            raise RuntimeError("google-generativeai package not installed. Run 'pip install google-generativeai'.") from e
+        genai.configure(api_key=api_key)
+        self._gemini_module = genai
+        return self._gemini_module
+
+    def _build_gemini_generation_config(self) -> Dict[str, Any]:
+        config: Dict[str, Any] = {"response_mime_type": "application/json"}
+        if self.temperature is not None:
+            config["temperature"] = self.temperature
+        return config
+
+    def _gemini_response_text(self, response: Any) -> str:
+        text = getattr(response, "text", None)
+        if isinstance(text, str) and text.strip():
+            return text
+        candidates = getattr(response, "candidates", None)
+        if isinstance(candidates, list):
+            for cand in candidates:
+                content = getattr(cand, "content", None)
+                if not content and isinstance(cand, dict):
+                    content = cand.get("content")
+                parts = getattr(content, "parts", None)
+                if not parts and isinstance(content, dict):
+                    parts = content.get("parts")
+                if isinstance(parts, list):
+                    for part in parts:
+                        part_text = getattr(part, "text", None)
+                        if not part_text and isinstance(part, dict):
+                            part_text = part.get("text")
+                        if isinstance(part_text, str) and part_text.strip():
+                            return part_text
+        return ""
+
+    def _complete_json_gemini(self, system_prompt: str, user_json: Dict[str, Any], max_retries: int) -> Tuple[Dict[str, Any], str, int, Optional[float]]:
+        genai = self._ensure_gemini_module()
+        payload = json.dumps(user_json, separators=(",", ":"))
+        parsed_response: Optional[Dict[str, Any]] = None
+        raw_response_text: str = ""
+        last_err: Optional[Exception] = None
+        attempts = 0
+        for attempt in range(max_retries + 1):
+            attempts = attempt + 1
+            reinforcement = ""
+            if attempt > 0:
+                reinforcement = "Return strictly valid JSON object only. Output a single JSON object with no prose, markdown, or code fences."
+            system_instruction = "\n\n".join(filter(None, [system_prompt, reinforcement]))
+            try:
+                gen_config = self._build_gemini_generation_config()
+                model_args: Dict[str, Any] = {"model_name": self.model or "models/gemini-1.5-flash"}
+                if system_instruction:
+                    model_args["system_instruction"] = system_instruction
+                if gen_config:
+                    model_args["generation_config"] = gen_config
+                model = genai.GenerativeModel(**model_args)
+                response = model.generate_content(payload)
+            except Exception as e:
+                last_err = e
+                if attempt >= max_retries:
+                    raise
+                continue
+            raw_response_text = self._gemini_response_text(response)
+            self._last_io = {
+                "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                "model": self.model,
+                "provider": self.provider,
+                "temperature": self.temperature,
+                "seed": self.seed,
+                "system_prompt": system_prompt,
+                "user_json": user_json,
+                "response_text": raw_response_text,
+            }
+            try:
+                if not raw_response_text or raw_response_text.strip() == "":
+                    raise ValueError("empty content from model")
+                parsed = json.loads(raw_response_text)
+                if isinstance(parsed, dict) and not parsed:
+                    raise ValueError("empty JSON object from model")
+                if isinstance(parsed, dict):
+                    parsed_response = parsed
+                    break
+            except Exception as e:
+                last_err = e
+                try:
+                    extracted = self._extract_json_object(raw_response_text)
+                    if extracted:
+                        parsed = json.loads(extracted)
+                        if isinstance(parsed, dict):
+                            if isinstance(self._last_io, dict):
+                                self._last_io["extracted_json"] = extracted[:5000]
+                            parsed_response = parsed
+                            break
+                except Exception as _:
+                    pass
+            if attempt < max_retries:
+                continue
+            break
+        if parsed_response is None:
+            if last_err:
+                raise last_err
+            raise RuntimeError("Gemini response did not include valid JSON.")
+        return parsed_response, raw_response_text, attempts, (self.temperature if self.temperature is not None else None)
+
     def complete_json(self, system_prompt: str, user_json: Dict[str, Any], max_retries: int = 1, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Get a JSON object from the model using chat.completions with json_object formatting."""
         context = context or {}
-        client = self._ensure_client()
-        messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": json.dumps(user_json, separators=(",", ":"))},
-        ]
         response_format: Dict[str, Any] = {"type": "json_object"}
         last_err = None
         temp_supported = True  # assume temperature is supported until server proves otherwise
@@ -102,26 +219,37 @@ class LLMClient:
         call_started_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
         last_used_temperature: Optional[float] = None
 
-        def _call_with_tracking(with_temp: bool):
-            nonlocal attempt_count, last_used_temperature
-            resp, used = _call(with_temp=with_temp)
-            attempt_count += 1
-            last_used_temperature = used.get("temperature")
-            return resp, used
-
-        def _call(with_temp: bool):
-            params: Dict[str, Any] = {
-                "model": self.model,
-                "messages": messages,
-                "response_format": response_format,
-            }
-            if with_temp and self.temperature is not None:
-                params["temperature"] = self.temperature
-            if self.seed is not None:
-                params["seed"] = self.seed
-            return client.chat.completions.create(**params), params
-
         try:
+            if self.provider == "gemini":
+                parsed, raw_response_text, attempt_count, last_used_temperature = self._complete_json_gemini(system_prompt, user_json, max_retries)
+                parsed_response = parsed
+                return parsed
+
+            client = self._ensure_openai_client()
+            messages = [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": json.dumps(user_json, separators=(",", ":"))},
+            ]
+
+            def _call_with_tracking(with_temp: bool):
+                nonlocal attempt_count, last_used_temperature
+                resp, used = _call(with_temp=with_temp)
+                attempt_count += 1
+                last_used_temperature = used.get("temperature")
+                return resp, used
+
+            def _call(with_temp: bool):
+                params: Dict[str, Any] = {
+                    "model": self.model,
+                    "messages": messages,
+                    "response_format": response_format,
+                }
+                if with_temp and self.temperature is not None:
+                    params["temperature"] = self.temperature
+                if self.seed is not None:
+                    params["seed"] = self.seed
+                return client.chat.completions.create(**params), params
+
             # Exactly (max_retries + 1) attempts total, with a same-iteration fallback if temperature is unsupported
             for attempt in range(max_retries + 1):
                 try:
@@ -168,6 +296,7 @@ class LLMClient:
                 self._last_io = {
                     "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
                     "model": self.model,
+                    "provider": self.provider,
                     "temperature": self.temperature,
                     "used_temperature": (used_params.get("temperature", None) if isinstance(used_params, dict) else last_used_temperature),
                     "seed": self.seed,
