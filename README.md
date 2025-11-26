@@ -49,12 +49,3 @@ Every run lands in `runs/<episode_id>/` and always includes a compact HTML summa
 
 Prompts for each role live under `prompts/`, schemas under `schema/`, and starter desktop templates under `templates/`. Adjust simulator behavior without editing prompts by pointing `--sim-feature-config` at a JSON file (see `prompts/simulator_features.example.json`).
 
-## Determinism and safety nets
-
-- Simulator and Judge run at temperature 0.0; the client retries without explicit temperature if a provider rejects the setting and records the applied value in raw logs.
-- Agent and Proposer can use higher temperatures (`AGENT_TEMP`, etc.) for exploration.
-- All payloads are schema‑validated (`validation.py`); malformed outputs trigger automatic retries or safe fallbacks, preventing silent corruption.
-
-## License
-
-No license has been specified for this repository.
