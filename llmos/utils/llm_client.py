@@ -218,11 +218,20 @@ class LLMClient:
         openai_config = self.llm_config.get("openai", {})
         model = model_name or openai_config.get("default_model", "gpt-4o")
 
+        # Models that don't support custom temperature (only default=1)
+        # Includes o1 series and gpt-5-mini reasoning models
+        no_temperature_models = ["o1", "o1-mini", "o1-preview", "gpt-5-mini"]
+        supports_temperature = not any(
+            model.startswith(m) or m in model for m in no_temperature_models
+        )
+
         kwargs = {
             "model": model,
             "messages": messages,
-            "temperature": temperature,
         }
+
+        if supports_temperature:
+            kwargs["temperature"] = temperature
 
         if json_mode:
             kwargs["response_format"] = {"type": "json_object"}

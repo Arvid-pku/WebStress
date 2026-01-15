@@ -396,20 +396,21 @@ class CorrelationStudyRunner:
         """Create an agent by ID."""
         from ..core.agent import Agent
 
-        # Map agent IDs to model names
-        model_mapping = {
-            "gpt-5-mini": "gpt-5-mini",
-            "gpt-4o-mini": "gpt-4o-mini",
-            "gpt-o1-mini": "o1-mini",
+        # Map agent IDs to (provider, model_name)
+        agent_mapping = {
+            "gpt-5-mini": ("openai", "gpt-5-mini"),
+            "gpt-4o-mini": ("openai", "gpt-4o-mini"),
+            "gpt-o1-mini": ("openai", "o1-mini"),
         }
 
-        model_name = model_mapping.get(agent_id, agent_id)
+        provider, model_name = agent_mapping.get(agent_id, ("openai", agent_id))
 
-        # Create agent with specific model
+        # Create agent with specific provider and model
         return Agent(
             llm_client=llm_client,
             config_path=self.config_path,
-            model=model_name,
+            model_name=model_name,
+            provider=provider,
         )
 
     def _save_task_result(self, result: TaskResult) -> str:
