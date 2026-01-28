@@ -58,3 +58,7 @@ docs/
 
 
 results/quick_test
+results/correlation_study
+trajectory/
+tmp.py
+benchmarks/_2024-10-23_22-59-29_GenericAgent-gpt-4o-mini_on_workarena.servicenow.filter-requested-items-and-order-developer-laptop-l2_20

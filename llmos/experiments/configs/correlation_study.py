@@ -182,33 +182,6 @@ def get_abstraction_configs(best_state_output: StateOutputMode = StateOutputMode
             verification=VerificationMode.SCHEMA,
             **base,
         ),
-        "abs_task": SimulatorConfig(
-            state_output=best_state_output,
-            abstraction=AbstractionLevel.TASK_RELEVANT,
-            memory=MemoryMode.ROLLING_WINDOW,
-            memory_window=5,
-            reasoning=ReasoningMode.DIRECT,
-            verification=VerificationMode.SCHEMA,
-            **base,
-        ),
-        "abs_viewport": SimulatorConfig(
-            state_output=best_state_output,
-            abstraction=AbstractionLevel.VIEWPORT_ONLY,
-            memory=MemoryMode.ROLLING_WINDOW,
-            memory_window=5,
-            reasoning=ReasoningMode.DIRECT,
-            verification=VerificationMode.SCHEMA,
-            **base,
-        ),
-        "abs_interactive": SimulatorConfig(
-            state_output=best_state_output,
-            abstraction=AbstractionLevel.INTERACTIVE_ONLY,
-            memory=MemoryMode.ROLLING_WINDOW,
-            memory_window=5,
-            reasoning=ReasoningMode.DIRECT,
-            verification=VerificationMode.SCHEMA,
-            **base,
-        ),
     }
 
 
@@ -405,7 +378,7 @@ PHASES = [
         phase_id="abstraction",
         phase_name="Phase 2.2: Abstraction",
         dimension="abstraction",
-        config_ids=["abs_full", "abs_semantic", "abs_task", "abs_viewport", "abs_interactive"],
+        config_ids=["abs_full", "abs_semantic"],
         hypothesis="Semantic-level abstraction generalizes better than full DOM.",
     ),
     PhaseConfig(

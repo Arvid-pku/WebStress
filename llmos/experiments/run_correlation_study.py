@@ -52,8 +52,10 @@ class TaskResult:
     score: float
     success: bool
     steps: int
+    instruction: str = ""  # Task instruction
     state_history: list[dict] = field(default_factory=list)
     action_trace: list[dict] = field(default_factory=list)
+    simulator_trace: list[dict] = field(default_factory=list)  # Simulator LLM data per step
     events: list[str] = field(default_factory=list)
     error: Optional[str] = None
     metadata: dict = field(default_factory=dict)
@@ -311,7 +313,9 @@ class CorrelationStudyRunner:
         start_time = time.time()
         state_history = []
         action_trace = []
+        simulator_trace = []
         events = []
+        instruction = task.get("instruction", "")
 
         try:
             # Reset simulator
@@ -319,11 +323,15 @@ class CorrelationStudyRunner:
                 template_name=task.get("initial_state_template", "browser"),
                 instruction=task,
             )
-            state_history.append({"tick": 0, "observation": observation})
+            state_history.append({
+                "tick": 0,
+                "observation": observation,
+                "instruction": instruction,
+            })
 
             # Reset agent
             if hasattr(agent, "reset"):
-                agent.reset(task.get("instruction", ""))
+                agent.reset(instruction)
 
             # Run episode
             done = False
@@ -336,6 +344,16 @@ class CorrelationStudyRunner:
                 # Step simulator
                 observation, done, info = sim.step(action)
                 step += 1
+
+                # Get simulator LLM data from simulator history
+                sim_history_entry = sim.history[-1] if hasattr(sim, 'history') and sim.history else {}
+                simulator_llm_data = sim_history_entry.get("simulator_llm_data", {})
+                simulator_trace.append({
+                    "step": step,
+                    "thought": sim_history_entry.get("thought", ""),
+                    "state_ops": sim_history_entry.get("state_ops", []),
+                    "llm_data": simulator_llm_data,
+                })
 
                 state_history.append({
                     "tick": step,
@@ -365,8 +383,10 @@ class CorrelationStudyRunner:
                 score=score,
                 success=success,
                 steps=step,
+                instruction=instruction,
                 state_history=state_history,
                 action_trace=action_trace,
+                simulator_trace=simulator_trace,
                 events=events,
                 metadata={
                     "timestamp": datetime.now().isoformat(),
@@ -385,6 +405,7 @@ class CorrelationStudyRunner:
                 score=-1.0,
                 success=False,
                 steps=0,
+                instruction=instruction,
                 error=str(e),
                 metadata={
                     "timestamp": datetime.now().isoformat(),
@@ -400,7 +421,7 @@ class CorrelationStudyRunner:
         agent_mapping = {
             "gpt-5-mini": ("openai", "gpt-5-mini"),
             "gpt-4o-mini": ("openai", "gpt-4o-mini"),
-            "gpt-o1-mini": ("openai", "o1-mini"),
+            "gpt-o4-mini": ("openai", "o4-mini"),  # o4-mini doesn't support system messages
         }
 
         provider, model_name = agent_mapping.get(agent_id, ("openai", agent_id))
@@ -414,12 +435,25 @@ class CorrelationStudyRunner:
         )
 
     def _save_task_result(self, result: TaskResult) -> str:
-        """Save task result to file."""
+        """Save task result to file and generate HTML visualization."""
         result_dir = self.output_dir / result.config_id / result.agent_id
         result_dir.mkdir(parents=True, exist_ok=True)
 
+        # Save JSON
         filepath = result_dir / f"{result.task_id}.json"
         result.save(str(filepath))
+
+        # Auto-generate HTML visualization and update index
+        try:
+            from ..tools.visualize_correlation import export_result_to_html, create_index_html
+            html_dir = self.output_dir / "html" / result.config_id / result.agent_id
+            html_dir.mkdir(parents=True, exist_ok=True)
+            html_path = html_dir / f"{result.task_id}.html"
+            export_result_to_html(str(filepath), str(html_path))
+            # Update index after each result
+            create_index_html(str(self.output_dir))
+        except Exception as e:
+            logger.warning(f"Could not generate HTML for {result.task_id}: {e}")
 
         return str(filepath)
 
@@ -518,7 +552,7 @@ def run_smoke_test(output_dir: str = "./results/smoke_test") -> bool:
         from .utils.leaderboard import get_workarena_l2_scores
         scores = get_workarena_l2_scores()
         logger.info(f"   Found {len(scores)} agents with L2 scores")
-        for agent_id in ["gpt-5-mini", "gpt-o1-mini", "gpt-4o-mini"]:
+        for agent_id in ["gpt-5-mini", "gpt-o4-mini", "gpt-4o-mini"]:
             if agent_id in scores:
                 logger.info(f"   {agent_id}: {scores[agent_id]}%")
         logger.info("   OK")
@@ -610,7 +644,7 @@ def main():
     parser.add_argument(
         "--agents",
         type=str,
-        default="gpt-5-mini,gpt-o1-mini,gpt-4o-mini",
+        default="gpt-5-mini,gpt-o4-mini,gpt-4o-mini",
         help="Comma-separated list of agent IDs (default: all study agents)",
     )
 

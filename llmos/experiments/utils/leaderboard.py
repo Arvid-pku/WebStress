@@ -15,7 +15,7 @@ from typing import Optional
 AGENT_ID_MAPPING = {
     "gpt-5-mini": "GPT-5-mini",
     "gpt-4o-mini": "GPT-4o-mini",
-    "gpt-o1-mini": "GPT-o1-mini",
+    "gpt-o4-mini": "GPT-o1-mini",  # Using o4-mini model, map to o1-mini leaderboard score
     "gpt-4o": "GPT-4o",
     "gpt-5": "GPT-5",
     "claude-3.5-sonnet": "Claude-3.5-Sonnet",
@@ -188,7 +188,7 @@ if __name__ == "__main__":
 
     print()
     print("Target agents for correlation study:")
-    target_agents = ["gpt-5-mini", "gpt-4o-mini", "gpt-o1-mini"]
+    target_agents = ["gpt-5-mini", "gpt-4o-mini", "gpt-o4-mini"]
     target_scores = get_workarena_l2_scores(str(csv_path), target_agents)
     for agent_id, score in target_scores.items():
         print(f"  {agent_id}: {score}%")
