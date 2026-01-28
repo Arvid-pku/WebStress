@@ -219,11 +219,20 @@ class LLMClient:
         model = model_name or openai_config.get("default_model", "gpt-4o")
 
         # Models that don't support custom temperature (only default=1)
-        # Includes o1 series and gpt-5-mini reasoning models
-        no_temperature_models = ["o1", "o1-mini", "o1-preview", "gpt-5-mini"]
+        # Includes o1/o4 series and gpt-5-mini reasoning models
+        no_temperature_models = ["o1", "o1-mini", "o1-preview", "o4-mini", "gpt-5-mini"]
         supports_temperature = not any(
             model.startswith(m) or m in model for m in no_temperature_models
         )
+
+        # Models that don't support system messages - convert to user messages
+        no_system_models = ["o4-mini"]
+        needs_system_conversion = any(
+            model.startswith(m) or m in model for m in no_system_models
+        )
+
+        if needs_system_conversion:
+            messages = self._convert_system_to_user_messages(messages)
 
         kwargs = {
             "model": model,
@@ -238,6 +247,20 @@ class LLMClient:
 
         response = client.chat.completions.create(**kwargs)
         return response.choices[0].message.content
+
+    def _convert_system_to_user_messages(self, messages: list[dict]) -> list[dict]:
+        """Convert system messages to user messages for models that don't support them."""
+        converted = []
+        for msg in messages:
+            if msg.get("role") == "system":
+                # Convert system message to user message with clear prefix
+                converted.append({
+                    "role": "user",
+                    "content": f"[System Instructions]\n{msg.get('content', '')}"
+                })
+            else:
+                converted.append(msg)
+        return converted
 
     def _complete_gemini(
         self,

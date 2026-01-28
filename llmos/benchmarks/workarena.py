@@ -67,6 +67,7 @@ class WorkArenaTaskProvider:
         shuffle: bool = True,
         seed: Optional[int] = None,
         max_tasks: Optional[int] = None,
+        unique_tasks_only: bool = True,  # Return one task per unique task class
     ):
         """
         Initialize WorkArena task provider.
@@ -86,6 +87,8 @@ class WorkArenaTaskProvider:
             shuffle: Whether to shuffle tasks.
             seed: Random seed.
             max_tasks: Maximum number of tasks to load.
+            unique_tasks_only: If True (default), return only one task per unique
+                task class. If False, return all task-seed pairs.
         """
         self.task_filter = task_filter
         self.task_level = task_level.lower()
@@ -94,6 +97,7 @@ class WorkArenaTaskProvider:
         self.shuffle = shuffle
         self.seed = seed
         self.max_tasks = max_tasks
+        self.unique_tasks_only = unique_tasks_only
 
         self._tasks: list[Task] = []
         self._workarena_tasks: list[Any] = []  # Original WorkArena task classes
@@ -101,55 +105,50 @@ class WorkArenaTaskProvider:
         self._loaded = False
 
     def _load_tasks(self) -> None:
-        """Load tasks from WorkArena."""
+        """Load tasks from WorkArena.
+
+        Uses get_all_tasks_agents() to get properly instantiated task-seed pairs.
+        This ensures we get concrete task descriptions instead of generic class names.
+        """
         if self._loaded:
             return
 
-        task_classes = []
+        task_seed_pairs: list[tuple[Any, int]] = []
 
         try:
-            # Try to import task sets based on level
-            # WorkArena exports:
-            #   L1: ATOMIC_TASKS, workarena_tasks_l1 (33 tasks)
-            #   L2: ALL_COMPOSITIONAL_TASKS_L2 (341 tasks)
-            #   L3: ALL_COMPOSITIONAL_TASKS_L3 (341 tasks)
-            #   All: ALL_WORKARENA_TASKS (716 tasks)
+            from browsergym.workarena import get_all_tasks_agents
 
+            # Load task-seed pairs based on level
+            # get_all_tasks_agents returns (task_class, seed) tuples
             if self.task_level in ("l1", "all"):
                 try:
-                    from browsergym.workarena import ATOMIC_TASKS
-                    task_classes.extend(list(ATOMIC_TASKS))
-                    logger.info(f"Loaded {len(ATOMIC_TASKS)} L1 atomic tasks")
-                except ImportError:
-                    logger.warning("ATOMIC_TASKS not available")
+                    l1_tasks = get_all_tasks_agents(filter='l1')
+                    task_seed_pairs.extend(l1_tasks)
+                    logger.info(f"Loaded {len(l1_tasks)} L1 atomic task-seed pairs")
+                except Exception as e:
+                    logger.warning(f"L1 tasks not available: {e}")
 
             if self.task_level in ("l2", "all"):
                 try:
-                    from browsergym.workarena import ALL_COMPOSITIONAL_TASKS_L2
-                    task_classes.extend(list(ALL_COMPOSITIONAL_TASKS_L2))
-                    logger.info(f"Loaded {len(ALL_COMPOSITIONAL_TASKS_L2)} L2 compositional tasks")
-                except ImportError:
-                    logger.warning("ALL_COMPOSITIONAL_TASKS_L2 not available")
+                    l2_tasks = get_all_tasks_agents(filter='l2')
+                    task_seed_pairs.extend(l2_tasks)
+                    logger.info(f"Loaded {len(l2_tasks)} L2 compositional task-seed pairs")
+                except Exception as e:
+                    logger.warning(f"L2 tasks not available: {e}")
 
             if self.task_level in ("l3", "all"):
                 try:
-                    from browsergym.workarena import ALL_COMPOSITIONAL_TASKS_L3
-                    task_classes.extend(list(ALL_COMPOSITIONAL_TASKS_L3))
-                    logger.info(f"Loaded {len(ALL_COMPOSITIONAL_TASKS_L3)} L3 compositional tasks")
-                except ImportError:
-                    logger.warning("ALL_COMPOSITIONAL_TASKS_L3 not available")
+                    l3_tasks = get_all_tasks_agents(filter='l3')
+                    task_seed_pairs.extend(l3_tasks)
+                    logger.info(f"Loaded {len(l3_tasks)} L3 compositional task-seed pairs")
+                except Exception as e:
+                    logger.warning(f"L3 tasks not available: {e}")
 
-            if not task_classes:
-                # Fallback: try ALL_WORKARENA_TASKS
-                try:
-                    from browsergym.workarena import ALL_WORKARENA_TASKS
-                    task_classes = list(ALL_WORKARENA_TASKS)
-                    logger.info(f"Loaded {len(ALL_WORKARENA_TASKS)} tasks from ALL_WORKARENA_TASKS")
-                except ImportError:
-                    raise ImportError(
-                        "WorkArena not installed or no tasks found. "
-                        "Install with: pip install browsergym-workarena"
-                    )
+            if not task_seed_pairs:
+                raise ImportError(
+                    "WorkArena not installed or no tasks found. "
+                    "Install with: pip install browsergym-workarena"
+                )
 
         except ImportError as e:
             raise ImportError(
@@ -157,29 +156,56 @@ class WorkArenaTaskProvider:
                 f"Error: {e}"
             )
 
-        # Apply filter
+        # Apply filter based on task class name
         if self.task_filter:
-            task_classes = [
-                t for t in task_classes
-                if t.__name__ in self.task_filter or any(f in t.__name__ for f in self.task_filter)
+            task_seed_pairs = [
+                (tc, seed) for tc, seed in task_seed_pairs
+                if tc.__name__ in self.task_filter or any(f in tc.__name__ for f in self.task_filter)
             ]
+
+        # Deduplicate: keep only one task-seed pair per unique base task type
+        # (removes Small/Medium/Large suffix to get base type)
+        if self.unique_tasks_only:
+            seen_base_types = set()
+            unique_pairs = []
+            for tc, seed in task_seed_pairs:
+                # Extract base type by removing size suffix
+                base_type = tc.__name__
+                for suffix in ['SmallTaskL2', 'MediumTaskL2', 'LargeTaskL2',
+                               'SmallTaskL3', 'MediumTaskL3', 'LargeTaskL3',
+                               'SmallTask', 'MediumTask', 'LargeTask',
+                               'TaskL2', 'TaskL3', 'Task']:
+                    if base_type.endswith(suffix):
+                        base_type = base_type[:-len(suffix)]
+                        break
+
+                if base_type not in seen_base_types:
+                    seen_base_types.add(base_type)
+                    unique_pairs.append((tc, seed))
+            task_seed_pairs = unique_pairs
+            logger.info(f"Deduplicated to {len(task_seed_pairs)} unique base task types")
 
         # Shuffle
         if self.shuffle:
             if self.seed is not None:
                 random.seed(self.seed)
-            random.shuffle(task_classes)
+            random.shuffle(task_seed_pairs)
 
         # Limit
         if self.max_tasks:
-            task_classes = task_classes[:self.max_tasks]
+            task_seed_pairs = task_seed_pairs[:self.max_tasks]
 
-        # Convert to Task objects with level tracking
-        self._workarena_tasks = task_classes
-        self._task_levels = self._determine_task_levels(task_classes)
+        # Store task classes and seeds separately
+        self._workarena_tasks = [tc for tc, _ in task_seed_pairs]
+        self._task_seeds = [seed for _, seed in task_seed_pairs]
+
+        # Determine task levels
+        self._task_levels = self._determine_task_levels(self._workarena_tasks)
+
+        # Convert to Task objects with proper instantiation
         self._tasks = [
-            self._convert_task(tc, idx, self._task_levels.get(tc.__name__, "l1"))
-            for idx, tc in enumerate(task_classes)
+            self._convert_task(tc, seed, idx, self._task_levels.get(tc.__name__, "l1"))
+            for idx, (tc, seed) in enumerate(task_seed_pairs)
         ]
         self._loaded = True
 
@@ -226,8 +252,11 @@ class WorkArenaTaskProvider:
         "general": "servicenow_menu",
     }
 
-    def _convert_task(self, task_class: Any, index: int, level: str = "l1") -> Task:
-        """Convert a WorkArena task class to LLMOS Task."""
+    def _convert_task(self, task_class: Any, task_seed: int, index: int, level: str = "l1") -> Task:
+        """Convert a WorkArena task class to LLMOS Task.
+
+        Instantiates the task with the proper seed to get concrete task description.
+        """
         # Extract metadata from task class
         task_name = task_class.__name__
 
@@ -239,9 +268,8 @@ class WorkArenaTaskProvider:
         # Map category to template
         template = self.CATEGORY_TO_TEMPLATE.get(category, "servicenow_menu")
 
-        # Generate instruction from task name
-        # WorkArena tasks have descriptive names like "FilterHardwareListTask"
-        instruction = self._generate_instruction(task_name, task_class)
+        # Get concrete instruction by instantiating the task with seed
+        instruction = self._get_task_instruction(task_class, task_seed)
 
         return Task(
             task_id=f"workarena_{level}_{index:04d}_{task_name}",
@@ -251,6 +279,7 @@ class WorkArenaTaskProvider:
             category=category,
             extra={
                 "workarena_task_class": task_name,
+                "workarena_task_seed": task_seed,
                 "workarena_task_index": index,
                 "workarena_level": level,  # WorkArena task complexity
                 "workarena_category": category,
@@ -328,8 +357,40 @@ class WorkArenaTaskProvider:
 
         return "general"
 
+    def _get_task_instruction(self, task_class: Any, task_seed: int) -> str:
+        """Get concrete task instruction by instantiating the task.
+
+        Instantiates the WorkArena task with the given seed to extract the
+        concrete task_description. Falls back to generic instruction if unavailable.
+        """
+        try:
+            # Instantiate task with seed to get concrete description
+            task_instance = task_class(seed=task_seed)
+
+            # Try to get task_description (concrete instruction)
+            task_description = getattr(task_instance, 'task_description', None)
+            if task_description:
+                return task_description
+
+            # For tasks without task_description, construct from other attributes
+            protocol_name = getattr(task_instance, 'protocol_name', None)
+            short_description = getattr(task_instance, 'short_description', None)
+
+            if protocol_name and short_description:
+                return f'{short_description}. Refer to protocol "{protocol_name}" for guidance.'
+            elif protocol_name:
+                return f'Complete the task according to protocol "{protocol_name}".'
+            elif short_description:
+                return short_description
+
+        except Exception as e:
+            logger.debug(f"Could not instantiate task {task_class.__name__}: {e}")
+
+        # Fall back to generic instruction
+        return self._generate_instruction(task_class.__name__, task_class)
+
     def _generate_instruction(self, task_name: str, task_class: Any) -> str:
-        """Generate natural language instruction from task class."""
+        """Generate generic instruction from task class name (fallback)."""
         # Try to get docstring
         if task_class.__doc__:
             return task_class.__doc__.strip().split('\n')[0]
@@ -425,6 +486,16 @@ class WorkArenaTaskProvider:
         if idx is not None and 0 <= idx < len(self._workarena_tasks):
             return self._workarena_tasks[idx]
         return None
+
+    def get_workarena_task_class_and_seed(self, task: Task) -> tuple[Any, Optional[int]]:
+        """Get the original WorkArena task class and seed for a task."""
+        self._load_tasks()
+        idx = task.extra.get("workarena_task_index")
+        if idx is not None and 0 <= idx < len(self._workarena_tasks):
+            task_class = self._workarena_tasks[idx]
+            task_seed = self._task_seeds[idx] if hasattr(self, '_task_seeds') and idx < len(self._task_seeds) else None
+            return task_class, task_seed
+        return None, None
 
 
 # =============================================================================
