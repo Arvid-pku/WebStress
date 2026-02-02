@@ -80,6 +80,9 @@ class Orchestrator:
         temporal: Optional[str] = None,
         uncertainty: Optional[str] = None,
         grounding: Optional[str] = None,
+        # Simulator model parameters
+        sim_model: Optional[str] = None,
+        sim_provider: Optional[str] = None,
         # Agent parameters
         agent_model: Optional[str] = None,
         agent_provider: Optional[str] = None,
@@ -102,6 +105,8 @@ class Orchestrator:
             temporal: Temporal mode.
             uncertainty: Uncertainty mode.
             grounding: Grounding strategy.
+            sim_model: Simulator LLM model name.
+            sim_provider: Simulator LLM provider.
             agent_model: Agent model name.
             agent_provider: Agent LLM provider.
             benchmark: Optional BenchmarkConfig for benchmark-specific behavior.
@@ -143,6 +148,8 @@ class Orchestrator:
             temporal=temporal,
             uncertainty=uncertainty,
             grounding=grounding,
+            llm_model=sim_model,
+            llm_provider=sim_provider,
         )
         self.judge = Judge(self.llm_client, config_path)
         self.proposer = Proposer(self.llm_client, config_path)
@@ -196,6 +203,9 @@ class Orchestrator:
         temporal: Optional[str] = None,
         uncertainty: Optional[str] = None,
         grounding: Optional[str] = None,
+        # Simulator model parameters
+        sim_model: Optional[str] = None,
+        sim_provider: Optional[str] = None,
         # Agent parameters
         agent_model: Optional[str] = None,
         agent_provider: Optional[str] = None,
@@ -213,6 +223,8 @@ class Orchestrator:
             preset: Simulator preset.
             state_output, abstraction, memory, reasoning, verification,
             temporal, uncertainty, grounding: Simulator module parameters.
+            sim_model: Simulator LLM model name.
+            sim_provider: Simulator LLM provider.
             agent_model: Agent model name.
             agent_provider: Agent LLM provider.
             **benchmark_kwargs: Additional arguments passed to benchmark adapter.
@@ -236,6 +248,8 @@ class Orchestrator:
             temporal=temporal,
             uncertainty=uncertainty,
             grounding=grounding,
+            sim_model=sim_model,
+            sim_provider=sim_provider,
             agent_model=agent_model,
             agent_provider=agent_provider,
             benchmark=benchmark_config,
@@ -707,6 +721,8 @@ class Orchestrator:
             "strictness": self.simulator.sim_config.strictness,
             "action_space": self.action_space,
             "preset": getattr(self.simulator, "_preset_name", "classic"),
+            "sim_model": self.simulator.sim_config.llm_model,
+            "sim_provider": self.simulator.sim_config.llm_provider,
             "agent_model": self.agent_model,
             "agent_provider": self.agent_provider,
             "benchmark_name": self.benchmark.name if self.benchmark else None,
@@ -727,6 +743,8 @@ class Orchestrator:
                 strictness=worker_config["strictness"],
                 action_space=worker_config["action_space"],
                 preset=worker_config["preset"],
+                sim_model=worker_config["sim_model"],
+                sim_provider=worker_config["sim_provider"],
                 agent_model=worker_config["agent_model"],
                 agent_provider=worker_config["agent_provider"],
             )
@@ -966,153 +984,84 @@ Examples:
 
     subparsers = parser.add_subparsers(dest="command", help="Command to run")
 
+    # Shared parent parser for common arguments (simulator, agent, model settings)
+    common_parser = argparse.ArgumentParser(add_help=False)
+    common_parser.add_argument("--difficulty", "-d", type=str, choices=["easy", "medium", "hard", "expert"],
+                               help="Simulator difficulty level")
+    common_parser.add_argument("--strictness", "-s", type=str, choices=["lenient", "moderate", "strict"],
+                               default="strict", help="Simulator strictness level")
+    common_parser.add_argument("--action-space", type=str, choices=["minimal", "full"],
+                               default="minimal", help="Agent action space")
+    common_parser.add_argument("--quiet", "-q", action="store_true", help="Less output")
+    # Simulator module arguments
+    common_parser.add_argument("--preset", type=str, choices=["classic", "default", "efficient", "thorough"],
+                               help="Simulator preset")
+    common_parser.add_argument("--state-output", type=str,
+                               choices=["full_state", "delta_only", "semantic_description"],
+                               help="State output mode")
+    common_parser.add_argument("--abstraction", type=str,
+                               choices=["full_dom", "semantic_elements", "task_relevant", "viewport_only", "interactive_only"],
+                               help="Abstraction level")
+    common_parser.add_argument("--memory", type=str,
+                               choices=["full_history", "rolling_window", "summarized", "checkpoints"],
+                               help="Memory mode")
+    common_parser.add_argument("--reasoning", type=str, choices=["direct", "chain"],
+                               help="Reasoning mode")
+    common_parser.add_argument("--verification", type=str,
+                               choices=["none", "schema", "constraint_check", "backward"],
+                               help="Verification mode")
+    common_parser.add_argument("--temporal", type=str,
+                               choices=["instant", "async_aware", "event_driven"],
+                               help="Temporal mode")
+    common_parser.add_argument("--uncertainty", type=str,
+                               choices=["deterministic", "with_confidence", "probabilistic", "admits_uncertainty"],
+                               help="Uncertainty mode")
+    common_parser.add_argument("--grounding", type=str,
+                               choices=["llm_knowledge", "example_grounded", "doc_grounded", "trace_grounded"],
+                               help="Grounding strategy")
+    # Simulator model arguments
+    common_parser.add_argument("--sim-model", type=str,
+                               help="Simulator model name (e.g., gpt-4o, gemini-1.5-pro)")
+    common_parser.add_argument("--sim-provider", type=str, choices=["openai", "gemini"],
+                               help="Simulator LLM provider")
+    # Agent model arguments
+    common_parser.add_argument("--agent-model", type=str,
+                               help="Agent model name (e.g., gpt-4o, gemini-1.5-pro)")
+    common_parser.add_argument("--agent-provider", type=str, choices=["openai", "gemini"],
+                               help="Agent LLM provider")
+
     # Run command
-    run_parser = subparsers.add_parser("run", help="Run a single episode")
+    run_parser = subparsers.add_parser("run", help="Run a single episode", parents=[common_parser])
     run_parser.add_argument("--task", "-t", type=str, help="Task instruction")
     run_parser.add_argument("--task-file", "-f", type=str, help="JSON file with task instruction")
     run_parser.add_argument("--template", type=str, default="desktop", help="Initial state template")
-    run_parser.add_argument("--difficulty", "-d", type=str, choices=["easy", "medium", "hard", "expert"],
-                           help="Simulator difficulty level")
-    run_parser.add_argument("--strictness", "-s", type=str, choices=["lenient", "moderate", "strict"],
-                           default="strict", help="Simulator strictness level")
-    run_parser.add_argument("--action-space", type=str, choices=["minimal", "full"],
-                           default="minimal", help="Agent action space")
-    run_parser.add_argument(
-        "--task-difficulty",
-        type=str,
-        choices=["easy", "medium", "hard", "expert"],
-        help="Task metadata difficulty (defaults to the simulator difficulty)",
-    )
+    run_parser.add_argument("--task-difficulty", type=str, choices=["easy", "medium", "hard", "expert"],
+                            help="Task metadata difficulty (defaults to the simulator difficulty)")
     run_parser.add_argument("--human", action="store_true", help="Use human agent")
     run_parser.add_argument("--no-save", action="store_true", help="Don't save episode")
-    run_parser.add_argument("--quiet", "-q", action="store_true", help="Less output")
-    # Simulator module arguments
-    run_parser.add_argument("--preset", type=str, choices=["classic", "default", "efficient", "thorough"],
-                           help="Simulator preset")
-    run_parser.add_argument("--state-output", type=str,
-                           choices=["full_state", "delta_only", "semantic_description"],
-                           help="State output mode")
-    run_parser.add_argument("--abstraction", type=str,
-                           choices=["full_dom", "semantic_elements", "task_relevant", "viewport_only", "interactive_only"],
-                           help="Abstraction level")
-    run_parser.add_argument("--memory", type=str,
-                           choices=["full_history", "rolling_window", "summarized", "checkpoints"],
-                           help="Memory mode")
-    run_parser.add_argument("--reasoning", type=str, choices=["direct", "chain"],
-                           help="Reasoning mode")
-    run_parser.add_argument("--verification", type=str,
-                           choices=["none", "schema", "constraint_check", "backward"],
-                           help="Verification mode")
-    run_parser.add_argument("--temporal", type=str,
-                           choices=["instant", "async_aware", "event_driven"],
-                           help="Temporal mode")
-    run_parser.add_argument("--uncertainty", type=str,
-                           choices=["deterministic", "with_confidence", "probabilistic", "admits_uncertainty"],
-                           help="Uncertainty mode")
-    run_parser.add_argument("--grounding", type=str,
-                           choices=["llm_knowledge", "example_grounded", "doc_grounded", "trace_grounded"],
-                           help="Grounding strategy")
-    # Agent arguments
-    run_parser.add_argument("--agent-model", type=str, help="Agent model name (e.g., gpt-4o, gemini-1.5-pro)")
-    run_parser.add_argument("--agent-provider", type=str, choices=["openai", "gemini"],
-                           help="Agent LLM provider")
 
     # Curriculum command
-    curr_parser = subparsers.add_parser("curriculum", help="Run curriculum learning")
+    curr_parser = subparsers.add_parser("curriculum", help="Run curriculum learning", parents=[common_parser])
     curr_parser.add_argument("--episodes", "-n", type=int, default=10, help="Number of episodes")
     curr_parser.add_argument("--tasks-file", type=str, help="JSON file with initial tasks")
-    curr_parser.add_argument("--difficulty", "-d", type=str, choices=["easy", "medium", "hard", "expert"],
-                            help="Starting difficulty level")
-    curr_parser.add_argument("--strictness", "-s", type=str, choices=["lenient", "moderate", "strict"],
-                            default="strict", help="Simulator strictness level")
-    curr_parser.add_argument("--action-space", type=str, choices=["minimal", "full"],
-                            default="minimal", help="Agent action space")
     curr_parser.add_argument("--auto-adjust", action="store_true",
-                            help="Auto-adjust difficulty based on performance")
-    curr_parser.add_argument("--quiet", "-q", action="store_true", help="Less output")
-    # Simulator module arguments
-    curr_parser.add_argument("--preset", type=str, choices=["classic", "default", "efficient", "thorough"],
-                            help="Simulator preset")
-    curr_parser.add_argument("--state-output", type=str,
-                            choices=["full_state", "delta_only", "semantic_description"],
-                            help="State output mode")
-    curr_parser.add_argument("--abstraction", type=str,
-                            choices=["full_dom", "semantic_elements", "task_relevant", "viewport_only", "interactive_only"],
-                            help="Abstraction level")
-    curr_parser.add_argument("--memory", type=str,
-                            choices=["full_history", "rolling_window", "summarized", "checkpoints"],
-                            help="Memory mode")
-    curr_parser.add_argument("--reasoning", type=str, choices=["direct", "chain"],
-                            help="Reasoning mode")
-    curr_parser.add_argument("--verification", type=str,
-                            choices=["none", "schema", "constraint_check", "backward"],
-                            help="Verification mode")
-    curr_parser.add_argument("--temporal", type=str,
-                            choices=["instant", "async_aware", "event_driven"],
-                            help="Temporal mode")
-    curr_parser.add_argument("--uncertainty", type=str,
-                            choices=["deterministic", "with_confidence", "probabilistic", "admits_uncertainty"],
-                            help="Uncertainty mode")
-    curr_parser.add_argument("--grounding", type=str,
-                            choices=["llm_knowledge", "example_grounded", "doc_grounded", "trace_grounded"],
-                            help="Grounding strategy")
-    # Agent arguments
-    curr_parser.add_argument("--agent-model", type=str, help="Agent model name")
-    curr_parser.add_argument("--agent-provider", type=str, choices=["openai", "gemini"],
-                            help="Agent LLM provider")
+                             help="Auto-adjust difficulty based on performance")
 
     # Benchmark command
-    bench_parser = subparsers.add_parser("benchmark", help="Run a benchmark evaluation")
+    bench_parser = subparsers.add_parser("benchmark", help="Run a benchmark evaluation", parents=[common_parser])
     bench_parser.add_argument("name", type=str, help="Benchmark name (e.g., workarena, webarena)")
     bench_parser.add_argument("--episodes", "-n", type=int, help="Number of episodes (default: all tasks)")
     bench_parser.add_argument("--max-tasks", type=int, help="Maximum tasks to load from benchmark")
     bench_parser.add_argument("--shuffle", action="store_true", help="Shuffle task order")
     bench_parser.add_argument("--seed", type=int, help="Random seed for shuffling")
     bench_parser.add_argument("--filter", type=str, nargs="+", help="Filter tasks by name patterns")
-    bench_parser.add_argument("--difficulty", "-d", type=str, choices=["easy", "medium", "hard", "expert"],
-                             help="Simulator difficulty level")
-    bench_parser.add_argument("--strictness", "-s", type=str, choices=["lenient", "moderate", "strict"],
-                             default="strict", help="Simulator strictness level")
-    bench_parser.add_argument("--action-space", type=str, choices=["minimal", "full"],
-                             default="minimal", help="Agent action space")
     bench_parser.add_argument("--auto-adjust", action="store_true",
-                             help="Auto-adjust difficulty based on performance")
+                              help="Auto-adjust difficulty based on performance")
     bench_parser.add_argument("--parallel", "-p", action="store_true",
-                             help="Run episodes in parallel")
+                              help="Run episodes in parallel")
     bench_parser.add_argument("--workers", "-w", type=int, default=4,
-                             help="Number of parallel workers (default: 4)")
+                              help="Number of parallel workers (default: 4)")
     bench_parser.add_argument("--human", action="store_true", help="Use human agent")
-    bench_parser.add_argument("--quiet", "-q", action="store_true", help="Less output")
-    # Simulator module arguments
-    bench_parser.add_argument("--preset", type=str, choices=["classic", "default", "efficient", "thorough"],
-                             help="Simulator preset")
-    bench_parser.add_argument("--state-output", type=str,
-                             choices=["full_state", "delta_only", "semantic_description"],
-                             help="State output mode")
-    bench_parser.add_argument("--abstraction", type=str,
-                             choices=["full_dom", "semantic_elements", "task_relevant", "viewport_only", "interactive_only"],
-                             help="Abstraction level")
-    bench_parser.add_argument("--memory", type=str,
-                             choices=["full_history", "rolling_window", "summarized", "checkpoints"],
-                             help="Memory mode")
-    bench_parser.add_argument("--reasoning", type=str, choices=["direct", "chain"],
-                             help="Reasoning mode")
-    bench_parser.add_argument("--verification", type=str,
-                             choices=["none", "schema", "constraint_check", "backward"],
-                             help="Verification mode")
-    bench_parser.add_argument("--temporal", type=str,
-                             choices=["instant", "async_aware", "event_driven"],
-                             help="Temporal mode")
-    bench_parser.add_argument("--uncertainty", type=str,
-                             choices=["deterministic", "with_confidence", "probabilistic", "admits_uncertainty"],
-                             help="Uncertainty mode")
-    bench_parser.add_argument("--grounding", type=str,
-                             choices=["llm_knowledge", "example_grounded", "doc_grounded", "trace_grounded"],
-                             help="Grounding strategy")
-    # Agent arguments
-    bench_parser.add_argument("--agent-model", type=str, help="Agent model name")
-    bench_parser.add_argument("--agent-provider", type=str, choices=["openai", "gemini"],
-                             help="Agent LLM provider")
 
     # Config command
     config_parser = subparsers.add_parser("config", help="Show or edit configuration")
@@ -1141,6 +1090,9 @@ Examples:
     temporal = getattr(args, "temporal", None)
     uncertainty = getattr(args, "uncertainty", None)
     grounding = getattr(args, "grounding", None)
+    # Simulator model settings
+    sim_model = getattr(args, "sim_model", None)
+    sim_provider = getattr(args, "sim_provider", None)
     # Agent settings
     agent_model = getattr(args, "agent_model", None)
     agent_provider = getattr(args, "agent_provider", None)
@@ -1159,6 +1111,8 @@ Examples:
         temporal=temporal,
         uncertainty=uncertainty,
         grounding=grounding,
+        sim_model=sim_model,
+        sim_provider=sim_provider,
         agent_model=agent_model,
         agent_provider=agent_provider,
     )
@@ -1248,6 +1202,8 @@ Examples:
                 temporal=args.temporal,
                 uncertainty=args.uncertainty,
                 grounding=args.grounding,
+                sim_model=args.sim_model,
+                sim_provider=args.sim_provider,
                 agent_model=args.agent_model,
                 agent_provider=args.agent_provider,
                 **benchmark_kwargs,
