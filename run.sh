@@ -271,24 +271,28 @@ source .venv/bin/activate
 # DEFAULT COMMAND
 # =============================================================================
 
-# python -m llmos.main run \
-#     --task "Change the Chrome start page background image to the third most recent photo, sorted by time, from the /user/yxj/image folder." \
-#     --template desktop \
-#     --difficulty hard \
-#     --strictness strict \
-#     --action-space minimal \
-#     --preset classic
+python -m llmos.main run \
+    --task "Change the Chrome start page background image to the third most recent photo, sorted by time, from the /user/yxj/image folder." \
+    --template desktop \
+    --difficulty hard \
+    --strictness strict \
+    --action-space minimal \
+    --sim-model "gemini-3-pro-preview" \
+    --sim-provider gemini \
+    --agent-provider gemini \
+    --agent-model "gemini-3-flash-preview"
+      
 
 
 
-python -m llmos.main benchmark workarena \
-      --strictness strict \
-      --difficulty hard \
-      --episodes 5 \
-      --max-tasks 50 \
-      --shuffle \
-      --seed 42 \
-      --agent-model "gemini-3-flash-preview" \
-      --agent-provider gemini \
-      --parallel \
-      --workers 4
+# python -m llmos.main benchmark workarena \
+#       --strictness strict \
+#       --difficulty hard \
+#       --episodes 5 \
+#       --max-tasks 50 \
+#       --shuffle \
+#       --seed 42 \
+#       --agent-model "gemini-3-flash-preview" \
+#       --agent-provider gemini \
+#       --parallel \
+#       --workers 4
