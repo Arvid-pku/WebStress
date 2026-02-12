@@ -6,14 +6,16 @@ Modes:
 - SUBTLE: Realistic obstacles (popups, validation, timeouts)
 - DECEPTIVE: Ambiguous UI (similar buttons, misleading labels)
 - HOSTILE: Active interference (redirects, content changes, session expiry)
+- PRIMITIVE_TARGETED: Challenge specific agent primitives (backtracking,
+  reflection, verification, etc.) to diagnose capability gaps
 
 The key constraint: every obstacle must be realistic and explainable.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional
 
-from ...core.modules.enums import AdversarialMode
+from ...core.modules.enums import AdversarialMode, AdversarialPrimitive
 from .base import (
     Module,
     BasePromptBlock,
@@ -22,7 +24,7 @@ from .base import (
 
 
 # =============================================================================
-# Prompt Blocks
+# Severity-based Prompt Blocks (existing)
 # =============================================================================
 
 NONE_ADVERSARIAL_PROMPT = """
@@ -34,231 +36,224 @@ Simulate normally without intentional obstacles.
 SUBTLE_ADVERSARIAL_PROMPT = """
 ## Adversarial Mode: Subtle Obstacles
 
-Your goal: Create REALISTIC obstacles that hinder the agent's progress.
+Create ONE realistic obstacle per step. Agent should not detect intentional sabotage.
 
-Before generating state changes:
-1. Identify what the agent is trying to achieve
-2. Choose ONE realistic obstacle from the categories below (or create a new one)
-3. Apply it naturally - the agent should not detect intentional sabotage
+**Form/Input:** Validation error on valid input, field cleared by autofill, focus stolen by chat widget, format mismatch, silent truncation
+**UI Blocking:** Popup/modal (cookie consent, newsletter), confirmation dialog, CAPTCHA, terms checkbox, notification permission
+**Navigation:** Target requires scrolling, collapsed section, tab switch, pagination, infinite scroll
+**Loading/Timing:** Extended loading spinner, partial load, lazy-load element, skeleton placeholder
+**State:** Dirty form warning, undo prompt with timeout, auto-save conflict, draft recovery dialog
 
-### Obstacle Categories
-
-**Form & Input Obstacles:**
-- **Validation error**: Reject valid input with plausible error ("Password must contain symbol", "Invalid email format")
-- **Field cleared**: Browser autofill conflict clears a field agent just filled
-- **Focus stolen**: Another element grabs focus (chat widget, notification)
-- **Input lag**: Text appears character by character, requires waiting
-- **Format mismatch**: "Please enter date as MM/DD/YYYY" when agent used YYYY-MM-DD
-- **Character limit**: Silently truncate input that exceeds limit
-- **Required field**: Previously optional field now shows as required
-- **Dropdown closed**: Dropdown menu closes before selection completes
-
-**UI Blocking Obstacles:**
-- **Popup/modal**: Cookie consent, newsletter signup, survey, or chat widget blocking target
-- **Confirmation dialog**: "Are you sure?", "Unsaved changes will be lost"
-- **CAPTCHA**: Verification challenge at form submission or suspicious activity
-- **Terms acceptance**: "Please accept terms to continue" checkbox appears
-- **Age verification**: Age gate appears before content
-- **Notification permission**: Browser asks for notification permission, blocks interaction
-- **Overlay ad**: Non-intrusive ad appears near target element
-
-**Navigation Obstacles:**
-- **Scroll needed**: Target element exists but requires scrolling to reach
-- **Collapsed section**: Target is inside collapsed accordion/dropdown
-- **Tab switch needed**: Content is on different tab than currently active
-- **Pagination**: Target item is on page 2 or 3 of results
-- **Infinite scroll**: Need to scroll to load more items before target appears
-- **Back button trap**: Clicking back goes to unexpected page
-
-**Loading & Timing Obstacles:**
-- **Loading delay**: Extended loading spinner, requires waiting or retry
-- **Partial load**: Page loads but target element still loading
-- **Lazy load**: Element loads only when scrolled into view
-- **Skeleton UI**: Placeholder shown, real content not yet ready
-- **Stale data**: "Data may be outdated, click refresh"
-
-**State Obstacles:**
-- **Dirty form warning**: "You have unsaved changes" when navigating
-- **Undo prompt**: "Action completed. Undo?" with timeout
-- **Auto-save conflict**: "Saving..." blocks further edits temporarily
-- **Draft recovery**: "Restore previous draft?" dialog
-
-### Custom Obstacles
-
-You may create NEW obstacle types not listed above IF:
-1. It represents a realistic scenario that occurs in real web applications
-2. You can explain WHY this would happen naturally (not intentional sabotage)
-3. The agent has a clear way to overcome it
-
-When using a custom obstacle, explain: "Custom obstacle: [description] - Realistic because: [reason]"
-
-### Rules
-- Only ONE obstacle per step (don't stack multiple)
-- Obstacle must be explainable as normal system behavior
-- After 2-3 failed attempts on same obstacle, let agent proceed
-- Track obstacles in hidden_state to avoid infinite loops
-- Vary obstacle types - don't repeat the same one consecutively
-
-Output format: "Obstacle: [type] - [justification]"
+Rules: One obstacle per step. Must be explainable as normal behavior. After 2-3 fails, let agent proceed. Vary types.
+Output: "Obstacle: [type] - [justification]"
 """
 
 DECEPTIVE_ADVERSARIAL_PROMPT = """
 ## Adversarial Mode: Deceptive UI
 
-Your goal: Create AMBIGUOUS situations that mislead the agent.
+Create AMBIGUOUS situations that mislead the agent. Make the "wrong" choice appear more attractive.
 
-Before generating state changes:
-1. Identify what the agent is trying to click/fill/find
-2. Create confusion through ambiguity
-3. Make the "wrong" choice appear more attractive
+**Duplicates/Similar:** Similar buttons nearby ("Submit" vs "Submit for Review"), near-identical list names, multiple forms, icon confusion
+**Misleading Labels:** Inverted meaning ("Continue" goes back), ambiguous "OK", technical jargon, abbreviated labels
+**Decoys:** Fake download button (ad-styled), sponsored results as organic, prominent upsell over free option, pre-checked newsletter
+**Visual Deception:** Correct option hidden (needs hover/expand), swapped positions, disabled-looking correct target, wrong size hierarchy
+**State-Based:** Phantom selection (appears selected but isn't), stale highlighting, cached/partial UI updates
+**Dark Patterns:** Confirm-shaming, roach motel (easy in, hard out), misdirection, double-negative checkboxes
 
-### Deception Categories
-
-**Duplicate & Similar Elements:**
-- **Duplicate buttons**: Similar button nearby ("Submit" next to "Submit for Review")
-- **Similar names in list**: Multiple items with near-identical names ("Report_v2", "Report_v2_final", "Report_v2_final_FINAL")
-- **Multiple forms**: Two forms on page, one correct, one for different purpose
-- **Icon confusion**: Two icons that look similar but do different things
-- **Nested duplicates**: Button inside a button-like container
-
-**Misleading Labels & Text:**
-- **Inverted meaning**: "Continue" actually goes back, "Yes" means cancel
-- **Ambiguous labels**: "OK" button on error dialog - does it retry or dismiss?
-- **Technical jargon**: Options labeled with confusing technical terms
-- **Abbreviated labels**: "Proc." vs "Process" vs "Proceed" - which is which?
-- **Localization quirks**: Partially translated UI with mixed languages
-
-**Decoy Elements:**
-- **Fake download button**: Ad styled as download button near real one
-- **Sponsored results**: Promoted item looks like organic result
-- **Premium upsell**: "Get Pro" button styled more prominently than free option
-- **Social login**: Multiple OAuth buttons when only one works
-- **Newsletter checkbox**: Pre-checked "Subscribe" near submit button
-
-**Visual Deception:**
-- **Hidden correct option**: Correct element needs hover/expand to reveal, decoy visible
-- **Changed positions**: Elements swap positions from previous state
-- **Greyed out decoy**: Disabled-looking element is actually correct target
-- **Color mismatch**: Primary action styled as secondary, vice versa
-- **Size hierarchy wrong**: Less important button is larger/more prominent
-- **Buried in footer**: Key action hidden among footer links
-
-**State-Based Deception:**
-- **Phantom selection**: Previously selected item appears selected but isn't
-- **Stale highlighting**: Old search highlight on wrong element
-- **Cached state**: UI shows old state, action operates on new state
-- **Partial update**: Some elements updated, others stale
-
-**Dark Patterns (Realistic):**
-- **Confirm-shaming**: "No thanks, I don't want to save money" as cancel option
-- **Roach motel**: Easy to get in, hard to get out (cancel subscription flow)
-- **Misdirection**: Visual emphasis on unwanted option
-- **Trick questions**: Double-negative checkboxes
-
-### Custom Deceptions
-
-You may create NEW deception types not listed above IF:
-1. It represents a real UI/UX pattern found on actual websites (even if poor design)
-2. The confusion is plausible (bad design, dark patterns, or honest mistakes happen)
-3. The correct path still EXISTS (just harder to identify)
-
-When using a custom deception: "Custom deception: [description] - Realistic because: [example site or pattern]"
-
-### Rules
-- Deception must be realistic (real websites do this, often unintentionally)
-- The correct path must still EXIST (just harder to find)
-- Don't make it impossible, just confusing
-- Avoid repeating the same trick consecutively
-
-Output format: "Deception: [type] - [how it misleads]"
+Rules: Correct path must always EXIST. Don't make it impossible, just confusing. Vary tricks.
+Output: "Deception: [type] - [how it misleads]"
 """
 
 HOSTILE_ADVERSARIAL_PROMPT = """
 ## Adversarial Mode: Hostile Environment
 
-Your goal: ACTIVELY interfere with agent progress using realistic system behaviors.
+ACTIVELY interfere with agent progress using realistic system behaviors. Force recovery and retry.
 
-Before generating state changes:
-1. Identify the agent's current objective
-2. Disrupt progress with system-level interference
-3. Force agent to recover and retry
+**Session/Auth:** Session timeout to login page, sudden permission denied, token refresh, unexpected MFA, account locked, SSO redirect
+**Network:** Connection lost on submit (data ambiguous), request timeout, 502/503, DNS failure, SSL error, retry storm
+**Data/State Loss:** Page refresh loses form data, form reset on validation fail, draft lost, concurrent edit conflict, version mismatch
+**Redirects:** Forced logout redirect, broken deep links (404), maintenance mode, feature flag off, A/B test layout change
+**Rate/Resource Limits:** Rate limiting, quota exceeded, upload size limit, storage full, concurrent session limit
+**Content Changes:** Target element changes/removed/disabled mid-task, list reordered, search results refreshed
+**Process Interruption:** Mandatory update, terms changed, survey intercept, feedback modal, announcement banner
 
-### Hostile Categories
+Rules: ALWAYS provide recovery path. Don't repeat same tactic consecutively. Track count in hidden_state._adversarial_count. After 3 hostile actions, reduce intensity for 2 steps. Agent should eventually succeed.
+Output: "Hostile: [type] - [recovery path available]"
+"""
 
-**Session & Authentication:**
-- **Session timeout**: "Session expired, please log in again" - reset to login page
-- **Permission denied**: "You don't have access" suddenly on previously accessible resource
-- **Token refresh**: "Please re-authenticate" - credentials still valid but token expired
-- **MFA challenge**: Unexpected 2FA prompt ("Verify it's you")
-- **Account locked**: "Too many failed attempts" (even without failures)
-- **Password change required**: "Your password has expired"
-- **Device verification**: "New device detected, please verify"
-- **SSO redirect**: Kicked to SSO provider, need to re-auth
 
-**Network & Connectivity:**
-- **Network error**: "Connection lost" on form submission - data may/may not be saved
-- **Timeout**: Request hangs then fails ("Request timed out")
-- **502/503 error**: "Service temporarily unavailable"
-- **DNS failure**: "Could not resolve host" (simulated)
-- **SSL error**: "Certificate error" warning page
-- **Retry storm**: Each retry gets "Server busy, try again"
+# =============================================================================
+# Per-Primitive Prompt Blocks
+# =============================================================================
 
-**Data & State Loss:**
-- **Page refresh**: Content reloads, losing unsaved form data
-- **Form reset**: Form clears on failed validation
-- **Draft lost**: "Could not save draft" after long input
-- **Concurrent edit conflict**: "This record was modified by another user"
-- **Version mismatch**: "This page has been updated, please refresh"
-- **Cache invalidation**: Cached data cleared, need to re-fetch
+PRIMITIVE_PROMPTS: dict[str, str] = {
+    AdversarialPrimitive.REFLECTION.value: """\
+#### reflection
+Test ability to critically evaluate own actions and recognize mistakes.
+- **Fake success signals**: Show "Success!" toast but operation actually failed (error hidden in secondary panel)
+- **Contradictory secondary UI**: Status bar contradicts main content ("Cart: 0 items" vs "Item added")
+- **Silent regression**: Quietly revert part of state after success (checkbox unchecks via "auto-save conflict")
+- **Misleading progress indicators**: Progress at 100% or "Complete" badge while required fields empty
+- **Partial application**: Apply only some requested changes (fill 2 of 3 fields)
+Recovery: Correct state always discoverable by reading actual UI elements.""",
 
-**Redirects & Navigation:**
-- **Forced redirect**: Navigate away ("You've been logged out due to inactivity")
-- **Deep link broken**: Link leads to 404 or homepage
-- **Maintenance mode**: "System under maintenance, try again in 5 minutes"
-- **Feature flag off**: Feature suddenly unavailable
-- **Geo-restriction**: "This content is not available in your region"
-- **A/B test switch**: UI layout changes mid-session
+    AdversarialPrimitive.VERIFICATION.value: """\
+#### verification
+Test ability to confirm outcomes match expectations before moving on.
+- **False positive feedback**: "Saved successfully" but data not persisted (reverts on refresh)
+- **Subtle state inconsistencies**: Displayed value differs from entered (whitespace stripped, date reformatted, currency rounded)
+- **Off-by-one in lists**: Select item N but N-1 or N+1 actually selected (elements shifted by "live update")
+- **Stale confirmation dialog**: Confirmation shown for PREVIOUS action, not current one
+- **Hidden validation errors**: Validation error in collapsed section or below the fold
+- **Async save failure**: Optimistic "Saving..." UI, then quietly show small error icon
+Recovery: Ground truth always present in actual DOM state.""",
 
-**Rate & Resource Limits:**
-- **Rate limiting**: "Too many requests, please wait 60 seconds"
-- **Quota exceeded**: "You've reached your daily limit"
-- **File size limit**: "Upload too large" (even for small files)
-- **Storage full**: "Not enough space"
-- **Concurrent session limit**: "You're logged in elsewhere"
+    AdversarialPrimitive.BACKTRACKING.value: """\
+#### backtracking
+Test ability to recognize dead ends and revert to earlier states.
+- **Semantic dead-end**: Agent navigates deep into wrong path; target only exists under different path. Must use back/breadcrumb.
+- **Wizard lock-out**: Early selection disables required option on later step ("Requires Pro Plan"). Must go back and choose differently.
+- **Missing prerequisite reveal**: Submit error reveals prerequisite on different page (e.g., enable 2FA first). Must navigate away and return.
+- **Cascading undo**: System reverts step A after step B completed; both must be redone in order.
+- **False shortcut**: Prominent "Skip to end" leads to incomplete config missing required fields. Must go back to full flow.
+Recovery: Back buttons, breadcrumbs, and navigation always provide path to previous decision points.""",
 
-**Content & Element Changes:**
-- **Content update**: Target element changes while agent was acting elsewhere
-- **Element removed**: Target element no longer exists after page update
-- **Element disabled**: Previously enabled button now greyed out
-- **List reordered**: Items shuffled, target moved to different position
-- **Search results changed**: New results loaded, target item gone
-- **Notification clears target**: System notification covers/removes target area
+    AdversarialPrimitive.EXPLORATION.value: """\
+#### exploration
+Test ability to discover non-obvious paths to achieve goal.
+- **Hidden in accordion/collapsible**: Target inside collapsed "Advanced Options" section with no strong hint.
+- **Pagination depth**: Target on page 3+ of paginated list; must navigate pages or use search/filter.
+- **Hamburger/overflow menu**: Target behind three-dot overflow or hamburger menu, not in main toolbar.
+- **Nested tab navigation**: Target behind two levels of tabs (Settings > Notifications > Email Preferences).
+- **Search-required discovery**: Target among 50+ items; must use search bar or filter controls.
+- **Contextual menu only**: Target only available via right-click context menu, not in any toolbar.
+Recovery: Target always reachable through standard UI interactions. Multiple discovery paths exist.""",
 
-**Process Interruption:**
-- **Mandatory update**: "Please update the app to continue"
-- **Terms updated**: "Our terms have changed, please review and accept"
-- **Survey intercept**: "Help us improve! Take a 30-second survey"
-- **Feedback request**: "How was your experience?" modal
-- **Announcement banner**: New feature announcement blocks content
+    AdversarialPrimitive.PLANNING.value: """\
+#### planning
+Test ability to sequence actions correctly toward a multi-step goal.
+- **Order dependency with misleading UI**: UI allows step B before step A; attempting B gives confusing error instead of stating prerequisite.
+- **Information gathering first**: Must visit different page to look up required value before filling form; guessing fails validation.
+- **Parallel prerequisites**: Two independent steps must both complete before step C becomes available (vague "Complete all prerequisites").
+- **Trap of premature submission**: Prominent Submit visible but required sections in other tabs/below fold. Early submit shows "N fields missing."
+- **Resource allocation sequencing**: Resource pool empty; must navigate to provisioning first, then return to complete assignment.
+Recovery: Error messages and UI states provide enough info to deduce correct sequence.""",
 
-### Custom Hostile Actions
+    AdversarialPrimitive.MEMORY.value: """\
+#### memory
+Test ability to retain and use information from earlier in the episode.
+- **Cross-page value recall**: Display confirmation number in dismissible dialog; require entering it on different page steps later.
+- **Context switch and return**: Mandatory interruption clears form; agent must remember and re-fill values from memory.
+- **Detail-based selection**: Show data table on page A; require selection based on those details on page B.
+- **Instruction retention**: Show specific instruction in banner, remove after first action; agent must apply it later without reminder.
+- **Running total tracking**: Track cumulative value across sub-tasks; final step requires entering correct total.
+Recovery: Information always accessible by navigating back, or was prominently displayed long enough to process.""",
 
-You may create NEW hostile actions not listed above IF:
-1. It represents a real failure mode or system behavior in production applications
-2. You can cite a realistic cause (server issues, security policies, scaling problems)
-3. A recovery path exists (even if painful - like re-doing work)
+    AdversarialPrimitive.PATIENCE.value: """\
+#### patience
+Test ability to wait for async operations and avoid premature actions.
+- **Extended loading state**: Show spinner for 2-3 ticks; clicking during shows "Please wait." Must issue noop/wait.
+- **Progressive loading**: Page loads in stages; target only appears in final stage. Premature interaction gets "Element not yet available."
+- **Retry after cooldown**: First two attempts fail with "Rate limited." Only succeeds after issuing noop (wait).
+- **Queue processing**: Progress bar across multiple steps; "Continue" only clickable at 100%.
+- **Delayed confirmation**: Multi-step save ("Saving..." → "Syncing..." → "Saved"). Navigating away early loses save.
+Recovery: Operations complete when agent waits required steps. Premature actions safely rejected.""",
 
-When using a custom hostile action: "Custom hostile: [description] - Realistic because: [production scenario]"
+    AdversarialPrimitive.ERROR_RECOVERY.value: """\
+#### error_recovery
+Test ability to recover from unexpected errors gracefully.
+- **Transient server error**: "500 Internal Server Error" modal; retrying same action succeeds. Must dismiss and retry.
+- **Validation error with correction**: Specific field errors on submit; must read, correct specific fields, resubmit (not restart).
+- **Session interruption**: "Session expired" modal mid-task; after re-auth, form data lost. Must re-enter.
+- **Partial failure**: Bulk op: "3 of 5 saved, 2 failed." Must identify failures, resolve conflicts, retry only failed items.
+- **Network timeout with ambiguous state**: "Request timed out." Must check if submission went through before retrying.
+- **Cascading error**: Error in one field invalidates related field; must fix root cause, not symptom.
+Recovery: Every error has clear recovery path. System never enters unrecoverable state.""",
+
+    AdversarialPrimitive.CONSTRAINT_SATISFACTION.value: """\
+#### constraint_satisfaction
+Test ability to satisfy multiple simultaneous requirements.
+- **Interdependent form fields**: Selecting option reveals/changes required fields; fixing one may invalidate another.
+- **Budget/resource limits**: Must find valid combination within budget; obvious choices exceed limit.
+- **Mid-task constraint addition**: New constraint appears after selections made ("Items over $100 require approval"). Must adjust without restarting.
+- **Mutually exclusive options**: Two options can't combine; UI allows selecting both but errors on submit. Must deselect one.
+- **Cross-form validation**: Value on page 1 limits options on page 3; error only on page 3, must go back.
+- **Dynamic constraint tightening**: Constraints get stricter as form fills (venue limits available dates). Must re-check earlier fields.
+Recovery: Valid combination always exists. Error messages indicate violated constraints.""",
+
+    AdversarialPrimitive.ADVERSARIAL_ROBUSTNESS.value: """\
+#### adversarial_robustness
+Test resistance to intentionally misleading UI patterns.
+- **Confirm-shaming**: Cancel option phrased as "No thanks, I don't want to save money." Must select it to decline unwanted subscription.
+- **Double-negative checkboxes**: "Uncheck to not opt out of receiving no communications." Must parse logic correctly.
+- **Decoy prominence**: Correct "Submit" is small/grey; large colorful "Upgrade to Pro" positioned where submit expected. Must read labels.
+- **Misleading icons**: Trash icon means "Archive", download means "Share". Must read tooltips/labels, not assume icon meaning.
+- **Pre-checked unwanted options**: Newsletter, data sharing checkboxes pre-checked. Must uncheck irrelevant options before submit.
+- **Fake urgency/scarcity**: "Only 2 left!" or "Expires in 5 minutes!" banners. Must ignore urgency and complete task methodically.
+Recovery: Correct action always identifiable by carefully reading element text and labels.""",
+
+    AdversarialPrimitive.ATTENTION_FOCUS.value: """\
+#### attention_focus
+Test ability to maintain focus on primary task amid distractions.
+- **Notification popup**: Prominent chat/notification popup overlays workspace; irrelevant to task. Must dismiss or ignore.
+- **Competing calls-to-action**: Multiple large colorful buttons alongside small plain text link needed for task. Must identify task-relevant element.
+- **Mid-task advertisement**: Full-page interstitial with prominent "Learn More" and tiny "Skip" link. Must find and click "Skip."
+- **Badge/counter distraction**: Red notification badge on unrelated nav item. Must resist investigating and stay on task.
+- **Dynamic content insertion**: New banner inserted above form, pushing elements down. Must re-locate at new positions.
+- **Visual emphasis swap**: Target element de-emphasized while irrelevant element made prominent. Must track by identity (bid/label).
+Recovery: Correct target remains present and functional. Distractions dismissible or ignorable.""",
+
+    AdversarialPrimitive.SPATIAL_REASONING.value: """\
+#### spatial_reasoning
+Test ability to understand UI layout and spatial relationships.
+- **Unconventional button placement**: Primary action in footer, sidebar, or floating panel instead of expected position. Must scan full layout.
+- **Ambiguous containment**: Adjacent panels each have "Delete" button; must determine which belongs to which via DOM hierarchy.
+- **Scrollable container mismatch**: Target in scrollable sub-container; main page scroll doesn't reveal it. Must scroll inner container.
+- **Overlapping elements**: Dropdown/modal/tooltip overlaps target; must dismiss overlay first.
+- **Split-view layout**: Info split across side-by-side panels; must correlate across panels (select left, act on right).
+- **Responsive layout shift**: Elements wrap/stack at current width; must find target at actual wrapped position.
+Recovery: Target always exists and is interactable at its actual position.""",
+}
+
+
+def _build_primitive_targeted_prompt(target_primitives: list[str]) -> str:
+    """Build the master prompt for primitive-targeted adversarial mode.
+
+    Args:
+        target_primitives: List of primitive names to include. If empty, all
+            12 primitives are included.
+
+    Returns:
+        Complete prompt string.
+    """
+    if not target_primitives:
+        primitives_to_include = list(PRIMITIVE_PROMPTS.keys())
+    else:
+        primitives_to_include = [p for p in target_primitives if p in PRIMITIVE_PROMPTS]
+
+    primitive_descriptions = "\n\n".join(
+        PRIMITIVE_PROMPTS[p] for p in primitives_to_include
+    )
+
+    return f"""\
+## Adversarial Mode: Primitive-Targeted
+
+Before generating state changes, choose ONE agent primitive to challenge this step.
+Pick the primitive most relevant to the current task context and agent behavior.
+
+You MUST include `"adversarial_primitive": "<primitive_name>"` in your JSON response
+to indicate which primitive you targeted.
+
+### Available Primitives
+
+{primitive_descriptions}
 
 ### Rules
-- Each tactic must be a REAL scenario that happens in production systems
-- ALWAYS provide a recovery path (login button, retry option, refresh suggestion)
-- Don't use same tactic twice in a row
-- Track interference count in hidden_state._adversarial_count
-- After 3 hostile actions, reduce intensity for 2 steps (let agent recover)
-- Hostile doesn't mean impossible - agent should be able to eventually succeed
-
-Output format: "Hostile: [type] - [recovery path available]"
+- Choose exactly ONE primitive per step
+- Always provide a realistic recovery path -- the agent should be able to succeed
+- Vary primitives across steps to test breadth (don't repeat the same one consecutively)
+- Report which primitive you targeted via the "adversarial_primitive" field
+- Obstacles must be explainable as realistic system/UI behavior
 """
 
 
@@ -290,6 +285,20 @@ class HostileAdversarialBlock(BasePromptBlock):
         super().__init__("hostile_adversarial", HOSTILE_ADVERSARIAL_PROMPT)
 
 
+class PrimitiveTargetedBlock(BasePromptBlock):
+    """Prompt block for primitive-targeted adversarial mode.
+
+    When target_primitives is empty, all 12 primitives are included so the
+    simulator can choose freely. When non-empty, only the specified
+    primitives are injected.
+    """
+
+    def __init__(self, target_primitives: Optional[list[str]] = None):
+        self._target_primitives = target_primitives or []
+        prompt = _build_primitive_targeted_prompt(self._target_primitives)
+        super().__init__("primitive_targeted_adversarial", prompt)
+
+
 # =============================================================================
 # Adversarial State Tracker
 # =============================================================================
@@ -302,6 +311,7 @@ class AdversarialTracker:
     - Avoid repeating the same obstacle
     - Back off after multiple consecutive obstacles
     - Track agent's struggle points for analysis
+    - Track per-primitive success/failure for curriculum learning
     """
 
     def __init__(self, max_consecutive: int = 3, cooldown_steps: int = 2):
@@ -319,14 +329,30 @@ class AdversarialTracker:
             return False
         return True
 
-    def record_obstacle(self, tactic: str, target: str, success: bool) -> None:
-        """Record an obstacle application."""
-        self._history.append({
+    def record_obstacle(
+        self,
+        tactic: str,
+        target: str,
+        success: bool,
+        primitive: Optional[str] = None,
+    ) -> None:
+        """Record an obstacle application.
+
+        Args:
+            tactic: The obstacle tactic used.
+            target: What the obstacle targeted.
+            success: Whether the agent overcame the obstacle.
+            primitive: Optional primitive name (for primitive-targeted mode).
+        """
+        entry = {
             "tactic": tactic,
             "target": target,
             "agent_succeeded": success,
             "step": len(self._history),
-        })
+        }
+        if primitive is not None:
+            entry["primitive"] = primitive
+        self._history.append(entry)
         self._last_tactic = tactic
         self._obstacle_count += 1
 
@@ -356,6 +382,38 @@ class AdversarialTracker:
                 consecutive_failures = 0
         return struggles
 
+    def get_primitive_stats(self) -> dict:
+        """Get per-primitive success/failure breakdown.
+
+        Returns:
+            Dict mapping primitive names to stats, e.g.::
+
+                {
+                    "reflection": {"count": 3, "agent_success_rate": 0.33},
+                    "verification": {"count": 2, "agent_success_rate": 0.50},
+                }
+        """
+        primitive_data: dict[str, dict] = {}
+        for entry in self._history:
+            prim = entry.get("primitive")
+            if prim is None:
+                continue
+            if prim not in primitive_data:
+                primitive_data[prim] = {"count": 0, "successes": 0}
+            primitive_data[prim]["count"] += 1
+            if entry["agent_succeeded"]:
+                primitive_data[prim]["successes"] += 1
+
+        result = {}
+        for prim, data in primitive_data.items():
+            result[prim] = {
+                "count": data["count"],
+                "agent_success_rate": (
+                    data["successes"] / data["count"] if data["count"] > 0 else 0.0
+                ),
+            }
+        return result
+
     def get_stats(self) -> dict:
         """Get adversarial statistics for analysis."""
         total = len(self._history)
@@ -368,12 +426,19 @@ class AdversarialTracker:
             t = h["tactic"]
             tactics_used[t] = tactics_used.get(t, 0) + 1
 
-        return {
+        stats = {
             "total_obstacles": total,
             "agent_success_rate": successes / total,
             "tactics_breakdown": tactics_used,
             "struggle_points": len(self.get_struggle_points()),
         }
+
+        # Include primitive breakdown when primitive data exists
+        primitive_stats = self.get_primitive_stats()
+        if primitive_stats:
+            stats["primitive_breakdown"] = primitive_stats
+
+        return stats
 
     def reset(self) -> None:
         """Reset for new episode."""
@@ -398,6 +463,7 @@ class AdversarialModule(Module):
     mode: AdversarialMode = AdversarialMode.NONE
     max_consecutive_obstacles: int = 3
     cooldown_steps: int = 2
+    target_primitives: list[str] = field(default_factory=list)
 
     def __post_init__(self):
         self.name = f"adversarial_{self.mode.value}"
@@ -415,6 +481,8 @@ class AdversarialModule(Module):
             AdversarialMode.DECEPTIVE: DeceptiveAdversarialBlock(),
             AdversarialMode.HOSTILE: HostileAdversarialBlock(),
         }
+        if self.mode == AdversarialMode.PRIMITIVE_TARGETED:
+            return [PrimitiveTargetedBlock(self.target_primitives)]
         return [blocks[self.mode]]
 
     def get_tracker(self) -> AdversarialTracker:

@@ -77,3 +77,25 @@ class AdversarialMode(str, Enum):
     SUBTLE = "subtle"
     DECEPTIVE = "deceptive"
     HOSTILE = "hostile"
+    PRIMITIVE_TARGETED = "primitive_targeted"
+
+
+class AdversarialPrimitive(str, Enum):
+    """Agent primitives that can be targeted by adversarial simulation.
+
+    Based on the WebAgentBench agent primitive taxonomy (Section 3).
+    Each primitive represents a distinct capability that can be
+    independently challenged and measured.
+    """
+    BACKTRACKING = "backtracking"
+    REFLECTION = "reflection"
+    EXPLORATION = "exploration"
+    PLANNING = "planning"
+    MEMORY = "memory"
+    PATIENCE = "patience"
+    ERROR_RECOVERY = "error_recovery"
+    VERIFICATION = "verification"
+    CONSTRAINT_SATISFACTION = "constraint_satisfaction"
+    ADVERSARIAL_ROBUSTNESS = "adversarial_robustness"
+    ATTENTION_FOCUS = "attention_focus"
+    SPATIAL_REASONING = "spatial_reasoning"

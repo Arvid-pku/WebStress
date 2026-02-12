@@ -47,3 +47,7 @@ Discussion.md
 docs/
 
 benchmarks/*.pkl
+
+*.pdf
+
+llmos/tests/*

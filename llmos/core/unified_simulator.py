@@ -64,6 +64,7 @@ from .modules.enums import (
     UncertaintyMode,
     GroundingStrategy,
     AdversarialMode,
+    AdversarialPrimitive,
 )
 from .modules.prompt_blocks import build_simulator_prompt
 
@@ -135,6 +136,7 @@ class SimulatorConfig:
     uncertainty_selection_strategy: str = "most_likely"
     adversarial_max_consecutive: int = 3
     adversarial_cooldown: int = 2
+    adversarial_primitives: list[str] = field(default_factory=list)
 
     # State representation
     state_representation_mode: Optional[str] = None  # full_json, filtered_json, text_axtree, compressed, hybrid
@@ -198,6 +200,7 @@ class SimulatorConfig:
             "uncertainty_selection_strategy": self.uncertainty_selection_strategy,
             "adversarial_max_consecutive": self.adversarial_max_consecutive,
             "adversarial_cooldown": self.adversarial_cooldown,
+            "adversarial_primitives": self.adversarial_primitives,
             "state_representation_mode": self.state_representation_mode,
             "include_hidden_state": self.include_hidden_state,
             "include_filesystem": self.include_filesystem,
@@ -242,6 +245,7 @@ class SimulatorConfig:
             uncertainty_selection_strategy=d.get("uncertainty_selection_strategy", "most_likely"),
             adversarial_max_consecutive=d.get("adversarial_max_consecutive", 3),
             adversarial_cooldown=d.get("adversarial_cooldown", 2),
+            adversarial_primitives=d.get("adversarial_primitives", []),
             state_representation_mode=d.get("state_representation_mode"),
             include_hidden_state=d.get("include_hidden_state", True),
             include_filesystem=d.get("include_filesystem", True),
@@ -645,6 +649,7 @@ class Simulator:
             mode=self.sim_config.adversarial,
             max_consecutive_obstacles=self.sim_config.adversarial_max_consecutive,
             cooldown_steps=self.sim_config.adversarial_cooldown,
+            target_primitives=self.sim_config.adversarial_primitives,
         )
 
         # Collect all modules
@@ -699,30 +704,16 @@ class Simulator:
 1. Given `current_state` and `action`, output `state_ops` to transform the state.
 2. Target elements by `bid` (browser ID). NEVER use array indices or paths.
 3. Only output properties that CHANGE. Never output unchanged elements.
-4. BID Consistency: Only reference bids that EXIST in current state.
+4. Only reference bids that EXIST in current state.
+5. Every new element MUST have explicit `visible` property (true = displayed, false = hidden).
+   - `visible: false` → closing dialogs, menus, spinners (may reappear)
+   - `delete` → permanent removal only (deleted files, closed tabs)
 
-## Element Visibility
-Every new element MUST have explicit `visible` property:
-- `visible: true` - Displayed on screen
-- `visible: false` - Hidden (for buttons revealed on hover, etc.)
-
-**Hide vs Delete**:
-- `visible: false` → closing dialogs, menus, loading spinners (may reappear)
-- `delete` → permanent removal only (deleted files, closed tabs)
-
-Other properties: `state` (normal/minimized/maximized), `collapsed`, `bounds`
-
-## On-Demand Content Generation
-When agent navigates to a path in `hidden_state.task_paths`:
-- Generate realistic files/folders for that directory
-- Use varied names, sizes, timestamps (NO hints like "best_", "correct_", "third_")
-- Include enough items for the task (e.g., 5+ files if task involves selection)
-- Use `filesystem_update` to add entries
+## On-Demand Content
+When agent navigates to `hidden_state.task_paths`: generate realistic files/folders with varied names, sizes, timestamps. NO hints ("best_", "correct_"). Include 5+ items. Use `filesystem_update`.
 
 ## Temporal Behavior
-- Most actions have immediate effects
-- Loading states: Show loading UI, then on NEXT action show content
-- Don't skip steps - if loading is shown, content appears after next interaction
+Most actions immediate. Loading states: show loading UI, then content on NEXT action.
 
 ## Output Format
 ```json
@@ -1046,6 +1037,9 @@ When agent navigates to a path in `hidden_state.task_paths`:
         if isinstance(events, str):
             events = [events]
 
+        # Extract adversarial primitive if present (primitive-targeted mode)
+        adversarial_primitive = llm_response.get("adversarial_primitive")
+
         # Validate operations
         op_errors = validate_ops(state_ops)
         if op_errors:
@@ -1077,6 +1071,8 @@ When agent navigates to a path in `hidden_state.task_paths`:
             "agent_llm_data": dict(agent_llm_data),
             "simulator_llm_data": dict(llm_response.get("_llm_data", {})),
         }
+        if adversarial_primitive:
+            step_record["adversarial_primitive"] = adversarial_primitive
         history_manager.add_step(step_record)
         self.history.append(step_record)
 
@@ -1095,6 +1091,8 @@ When agent navigates to a path in `hidden_state.task_paths`:
             "verification_errors": verification_errors,
             "modules": self.get_module_config(),
         }
+        if adversarial_primitive:
+            info["adversarial_primitive"] = adversarial_primitive
 
         return self._get_observation(), done, info
 
@@ -1460,7 +1458,7 @@ When agent navigates to a path in `hidden_state.task_paths`:
 
     def get_settings_dict(self) -> dict:
         """Get all settings as a dict for logging/display."""
-        return {
+        settings = {
             "preset": getattr(self, "_preset_name", "custom"),
             "provider": self.provider or "default",
             "model": self.model_name or "default",
@@ -1477,6 +1475,9 @@ When agent navigates to a path in `hidden_state.task_paths`:
             "adversarial": self.sim_config.adversarial.value,
             "domain": self.sim_config.domain,
         }
+        if self.sim_config.adversarial_primitives:
+            settings["adversarial_primitives"] = self.sim_config.adversarial_primitives
+        return settings
 
     # =========================================================================
     # Configuration Updates
