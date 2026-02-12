@@ -46,9 +46,7 @@ Output COMPLETE next state (not just changes):
 DELTA_ONLY_PROMPT = """
 ## Output Format: Delta Only (State Operations)
 
-You must output ONLY the changes to apply to the current state.
-
-Output JSON with this structure:
+Output ONLY changes. JSON structure:
 ```json
 {
   "thought": "Your reasoning about what changes",
@@ -63,19 +61,6 @@ Output JSON with this structure:
   "events": ["event1", "event2"]
 }
 ```
-
-Operation types:
-- `update`: Modify properties of element with given bid
-- `delete`: Remove element with given bid
-- `append`: Add new node as last child of parent
-- `insert`: Insert new node at specific index under parent
-- `hidden_update`: Update hidden_state key
-- `meta_update`: Update meta key (e.g., status)
-
-Important:
-- Only output operations for elements that CHANGE
-- Do NOT output unchanged elements
-- Use element `bid` (browser ID) to identify elements
 """
 
 SEMANTIC_DESCRIPTION_PROMPT = """

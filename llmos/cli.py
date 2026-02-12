@@ -14,6 +14,7 @@ from typing import Optional
 
 from .main import Orchestrator, _configure_logging
 from .core.agent import HumanAgent
+from .core.modules.enums import AdversarialPrimitive
 
 
 def main():
@@ -87,8 +88,11 @@ Examples:
                                choices=["llm_knowledge", "example_grounded", "doc_grounded", "trace_grounded"],
                                help="Grounding strategy")
     common_parser.add_argument("--adversarial", type=str,
-                               choices=["none", "subtle", "deceptive", "hostile"],
+                               choices=["none", "subtle", "deceptive", "hostile", "primitive_targeted"],
                                help="Adversarial mode (creates realistic obstacles)")
+    common_parser.add_argument("--adversarial-primitives", type=str, nargs="+",
+                               choices=[p.value for p in AdversarialPrimitive],
+                               help="Target specific primitives (used with --adversarial primitive_targeted)")
     # Simulator model arguments
     common_parser.add_argument("--sim-model", type=str,
                                help="Simulator model name (e.g., gpt-4o, gemini-1.5-pro)")
@@ -161,6 +165,7 @@ Examples:
     uncertainty = getattr(args, "uncertainty", None)
     grounding = getattr(args, "grounding", None)
     adversarial = getattr(args, "adversarial", None)
+    adversarial_primitives = getattr(args, "adversarial_primitives", None) or []
     # Simulator model settings
     sim_model = getattr(args, "sim_model", None)
     sim_provider = getattr(args, "sim_provider", None)
@@ -183,6 +188,7 @@ Examples:
         uncertainty=uncertainty,
         grounding=grounding,
         adversarial=adversarial,
+        adversarial_primitives=adversarial_primitives,
         sim_model=sim_model,
         sim_provider=sim_provider,
         agent_model=agent_model,
@@ -275,6 +281,7 @@ Examples:
                 uncertainty=args.uncertainty,
                 grounding=args.grounding,
                 adversarial=args.adversarial,
+                adversarial_primitives=adversarial_primitives,
                 sim_model=args.sim_model,
                 sim_provider=args.sim_provider,
                 agent_model=args.agent_model,

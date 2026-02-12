@@ -38,29 +38,15 @@ def _get_fallback_base_prompt() -> str:
     return """# World Engine - Base System Prompt
 
 You are the World Engine. You simulate a computer OS environment.
-
-## Priority Order (IMPORTANT)
-When instructions conflict, follow this precedence (highest to lowest):
-1. **STRICTNESS MODE** - Realism rules (click behavior, loading, validation)
-2. **DIFFICULTY MODE** - Chaos/noise level (errors, verbosity)
-3. **TEMPORAL MODE** - Async behavior specifics
-4. **Base rules** - General guidelines below
+Precedence: STRICTNESS > DIFFICULTY > TEMPORAL > Base rules.
 
 ## Core Rules
 1. Target elements by `bid` (browser ID). NEVER use array indices or paths.
 2. Only output properties that CHANGE. Never output unchanged elements.
 3. Only reference bids that EXIST in current state.
-
-## Element Visibility
-Every new element MUST have explicit `visible` property:
-- `visible: true` - Displayed on screen
-- `visible: false` - Hidden (for buttons revealed on hover, etc.)
-
-**Hide vs Delete**:
-- `visible: false` → closing dialogs, menus, loading spinners (may reappear)
-- `delete` → permanent removal only (deleted files, closed tabs)
-
-Other properties: `state` (normal/minimized/maximized), `collapsed`, `bounds`
+4. Every new element MUST have explicit `visible` property (true = displayed, false = hidden).
+   - `visible: false` → closing dialogs, menus, spinners (may reappear)
+   - `delete` → permanent removal only (deleted files, closed tabs)
 """
 
 
@@ -130,61 +116,20 @@ Before outputting state changes, structure your reasoning:
 WEB_UI_KNOWLEDGE_BLOCK = """
 ## Web UI Knowledge
 
-Common UI behaviors to model correctly:
-
-**Buttons:**
-- Click -> triggers associated action, may show loading state
-- Disabled buttons -> no effect on click
-- Submit buttons -> trigger form validation first
-
-**Forms:**
-- Fill input -> update value, may trigger validation
-- Submit -> validate all fields, show errors or submit
-- Reset -> clear all fields to initial values
-
-**Checkboxes/Radio:**
-- Click -> toggle state (checkbox) or select (radio)
-- Radio buttons -> selecting one deselects others in group
-
-**Links:**
-- Click -> navigate (in browser) or trigger action
-- Target="_blank" -> opens new tab (state may not change much)
-
-**Dialogs/Modals:**
-- Open -> appears, may dim background
-- Close -> disappears, focus returns to trigger element
-
-**Dropdowns/Selects:**
-- Click -> opens option list
-- Select option -> closes, updates value
+- Submit buttons trigger form validation before submission
+- Radio buttons: selecting one deselects others in group
+- target="_blank" links open new tab
+- Modals: dim background on open, return focus on close
+- Dropdowns: click opens list, select closes and updates value
 """
 
 DESKTOP_UI_KNOWLEDGE_BLOCK = """
 ## Desktop UI Knowledge
 
-Common desktop UI behaviors:
-
-**Windows:**
-- Click title bar -> window gains focus
-- Drag title bar -> window moves
-- Click close button -> window closes
-- Click minimize -> window minimizes to taskbar
-- Click maximize -> window fills screen
-
-**Files/Folders:**
-- Single click -> select
-- Double click -> open
-- Right click -> context menu
-- Drag -> move (or copy with modifier)
-
-**Menus:**
-- Click menu item -> opens submenu or triggers action
-- Hover -> may preview or highlight
-- Click outside -> closes menu
-
-**Taskbar/Dock:**
-- Click icon -> focus/open application
-- Right click -> application menu
+- Single click selects files/folders; double click opens them
+- Right click opens context menu
+- Window operations: close, minimize to taskbar, maximize to fullscreen
+- Taskbar: single click opens/focuses app; right click shows app menu
 """
 
 SERVICENOW_KNOWLEDGE_BLOCK = """
@@ -222,32 +167,12 @@ ServiceNow-specific behaviors:
 ERROR_HANDLING_BLOCK = """
 ## Error Handling
 
-Model realistic error scenarios:
+- **Validation**: Error message near field, highlight, block submit
+- **Network**: Error notification with optional retry; state may partially update
+- **Permission**: Access denied message; may redirect to login
+- **Not Found**: 404 or not found message
 
-1. **Validation Errors:** When input doesn't meet requirements
-   - Show error message near the field
-   - Highlight field with error styling
-   - Prevent form submission
-
-2. **Network Errors:** When actions fail due to connectivity
-   - Show error notification
-   - May show retry option
-   - State may partially update
-
-3. **Permission Errors:** When user lacks access
-   - Show access denied message
-   - May redirect to login
-
-4. **Not Found Errors:** When resource doesn't exist
-   - Show 404 or not found message
-   - May suggest alternatives
-
-Output appropriate events for errors:
-```json
-{
-  "events": ["error:validation", "error:field_email_invalid"]
-}
-```
+Emit events: `["error:validation", "error:field_email_invalid"]`
 """
 
 

@@ -78,6 +78,7 @@ class Orchestrator:
         uncertainty: Optional[str] = None,
         grounding: Optional[str] = None,
         adversarial: Optional[str] = None,
+        adversarial_primitives: Optional[list[str]] = None,
         # Simulator model parameters
         sim_model: Optional[str] = None,
         sim_provider: Optional[str] = None,
@@ -103,7 +104,8 @@ class Orchestrator:
             temporal: Temporal mode.
             uncertainty: Uncertainty mode.
             grounding: Grounding strategy.
-            adversarial: Adversarial mode ("none", "subtle", "deceptive", "hostile").
+            adversarial: Adversarial mode ("none", "subtle", "deceptive", "hostile", "primitive_targeted").
+            adversarial_primitives: List of primitive names to target (for primitive_targeted mode).
             sim_model: Simulator LLM model name.
             sim_provider: Simulator LLM provider.
             agent_model: Agent model name.
@@ -133,6 +135,9 @@ class Orchestrator:
 
         # Create simulator with configurable modules
         simulator_preset = preset or "classic"
+        sim_kwargs = {}
+        if adversarial_primitives:
+            sim_kwargs["adversarial_primitives"] = adversarial_primitives
         self.simulator = Simulator.from_preset(
             simulator_preset,
             llm_client=self.llm_client,
@@ -150,6 +155,7 @@ class Orchestrator:
             adversarial=adversarial,
             llm_model=sim_model,
             llm_provider=sim_provider,
+            **sim_kwargs,
         )
         self.judge = Judge(self.llm_client, config_path, config=self.config)
         self.proposer = Proposer(self.llm_client, config_path, config=self.config)
@@ -204,6 +210,7 @@ class Orchestrator:
         uncertainty: Optional[str] = None,
         grounding: Optional[str] = None,
         adversarial: Optional[str] = None,
+        adversarial_primitives: Optional[list[str]] = None,
         # Simulator model parameters
         sim_model: Optional[str] = None,
         sim_provider: Optional[str] = None,
@@ -224,6 +231,7 @@ class Orchestrator:
             preset: Simulator preset.
             state_output, abstraction, memory, reasoning, verification,
             temporal, uncertainty, grounding: Simulator module parameters.
+            adversarial_primitives: List of primitive names to target.
             sim_model: Simulator LLM model name.
             sim_provider: Simulator LLM provider.
             agent_model: Agent model name.
@@ -250,6 +258,7 @@ class Orchestrator:
             uncertainty=uncertainty,
             grounding=grounding,
             adversarial=adversarial,
+            adversarial_primitives=adversarial_primitives,
             sim_model=sim_model,
             sim_provider=sim_provider,
             agent_model=agent_model,

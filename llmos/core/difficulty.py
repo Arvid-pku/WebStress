@@ -48,100 +48,39 @@ DIFFICULTY_PRESETS = {
 # Prompt modifiers for each dimension
 INFORMATION_DENSITY_PROMPTS = {
     "simple": """
-## Information Density: SIMPLE (Abstracted)
-- Show only information relevant to the user's intent
-- Hide hidden files (dotfiles like .bashrc, .cache, .config) unless explicitly requested
-- Summarize verbose outputs into key information
-- Omit metadata like permissions, timestamps, inodes unless relevant
-- Present clean, focused UI states without clutter
+**Information Density: SIMPLE** -- Show only task-relevant info. Hide dotfiles unless requested. Summarize verbose outputs. Omit metadata. Clean, focused UI.
 """,
     "moderate": """
-## Information Density: MODERATE (Balanced)
-- Show relevant information plus some context
-- Include commonly accessed hidden files if they might be relevant
-- Show moderate detail in outputs (first few lines of files, key metadata)
-- Include basic metadata when useful (file sizes, modification times)
-- Present UI with standard detail level
+**Information Density: MODERATE** -- Show relevant info plus context. Include common dotfiles if relevant. Moderate detail (first lines, key metadata like sizes/dates). Standard UI detail.
 """,
     "rich": """
-## Information Density: RICH (Raw Reality)
-- Show full raw output without summarization
-- Include ALL files including hidden dotfiles (.bashrc, .cache, .config, .git, etc.)
-- Show verbose metadata: permissions, timestamps, inodes, ownership
-- Include system processes and background tasks in state
-- Present UI with full detail including invisible elements, z-indices, overflow states
-- Show environment variables, shell state, and process context
+**Information Density: RICH** -- Full raw output, no summarization. ALL files including dotfiles. Verbose metadata (permissions, timestamps, inodes, ownership). System processes, invisible elements, z-indices, env vars, shell state.
 """,
 }
 
 
 SIGNAL_NOISE_PROMPTS = {
     "clean": """
-## Signal-to-Noise: CLEAN (Perfect Formatting)
-- All text is perfectly formatted (valid JSON, aligned tables, proper indentation)
-- Clear separation between stdout and stderr
-- No encoding errors or special characters
-- Consistent line endings and spacing
-- UI elements have clean, predictable structure
+**Signal-to-Noise: CLEAN** -- Perfect formatting (valid JSON, aligned tables). Clear stdout/stderr separation. No encoding errors. Consistent spacing. Clean UI structure.
 """,
     "moderate": """
-## Signal-to-Noise: MODERATE (Realistic)
-- Mostly clean output with occasional formatting quirks
-- stdout and stderr may occasionally interleave
-- Some outputs may have trailing whitespace or inconsistent indentation
-- Occasional warning messages mixed with output
-- UI may have minor rendering inconsistencies
+**Signal-to-Noise: MODERATE** -- Mostly clean with occasional quirks. stdout/stderr may interleave. Trailing whitespace, inconsistent indent. Occasional warnings mixed in. Minor UI inconsistencies.
 """,
     "noisy": """
-## Signal-to-Noise: NOISY (Dirty/Raw)
-- Include raw ANSI escape codes in terminal output (e.g., \\033[0;31m for colors)
-- stdout and stderr interleaved due to race conditions
-- Outputs may have broken formatting, line wrapping issues, or truncation
-- Include progress bars, spinners, and cursor control sequences
-- May include "garbled" text simulating encoding issues or buffer corruption
-- UI may have overlapping elements, broken layouts, or rendering artifacts
-- Include debug output, deprecation warnings, and verbose logging
+**Signal-to-Noise: NOISY** -- Raw ANSI escape codes, interleaved stdout/stderr, broken formatting, progress bars/spinners, garbled text from encoding issues, overlapping UI elements, debug output, deprecation warnings, verbose logging.
 """,
 }
 
 
 DETERMINISM_PROMPTS = {
     "idealized": """
-## System Determinism: IDEALIZED (Perfect)
-- Commands always succeed if syntactically correct
-- Instant execution with no delays
-- Resources are always available
-- Network is always connected and fast
-- Files are always accessible with correct permissions
-- No race conditions or timing issues
+**System Determinism: IDEALIZED** -- Commands always succeed if correct. Instant execution. Resources always available. Network always connected. No race conditions.
 """,
     "moderate": """
-## System Determinism: MODERATE (Realistic)
-- Most commands succeed, but some may have warnings
-- Occasional "file not found" for edge cases
-- Some operations may take time (show progress)
-- Network may have minor latency
-- Permissions are enforced realistically
-- May encounter "file in use" or similar transient issues
-- Do not "teleport" through complex workflows; require prerequisite UI steps and explicit submissions before success
+**System Determinism: MODERATE** -- Most commands succeed with occasional warnings. Possible "file not found" edge cases, minor latency, realistic permissions, transient "file in use" errors. No teleporting through workflows; require prerequisite steps and explicit submissions.
 """,
     "hostile": """
-## System Determinism: HOSTILE (Chaotic)
-- Simulate real-world flakiness and failures:
-  * "Resource temporarily unavailable" errors
-  * Network timeouts and connection resets
-  * "Permission denied" for some operations
-  * "Disk quota exceeded" or "No space left on device"
-  * Partial file writes or corrupted saves
-  * Version mismatch warnings
-  * "Too many open files" errors
-  * Process killed by OOM killer
-  * Stale NFS file handles
-- Commands may fail intermittently even if correct
-- Race conditions between concurrent operations
-- System may be "slow" (operations take multiple ticks)
-- Background processes may interfere with user operations
-- Strongly avoid shortcutting: complex tasks often require additional confirmations, retries, or missing-info prompts
+**System Determinism: HOSTILE** -- Real-world flakiness: resource unavailable, network timeouts, permission denied, disk quota exceeded, partial writes, version mismatches, OOM kills, stale NFS handles. Intermittent failures, race conditions, multi-tick operations, background interference. Strongly avoid shortcutting; require confirmations, retries, missing-info prompts.
 """,
 }
 
