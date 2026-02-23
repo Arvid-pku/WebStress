@@ -16,6 +16,17 @@ Usage:
         --model gpt-4o \
         --provider openai
 
+    # OpenAI reasoning (gpt-5*):
+    python -m webagentbench.agent_eval \
+        --model gpt-5.2 \
+        --provider openai \
+        --reasoning-effort high
+
+    # Gemini model:
+    python -m webagentbench.agent_eval \
+        --model gemini-1.5-pro \
+        --provider gemini
+
     # Specific pages only:
     python -m webagentbench.agent_eval \
         --model meta-llama/Llama-3.1-8B-Instruct \
@@ -61,6 +72,11 @@ def _create_openai_client(base_url: str, api_key: str):
     from openai import OpenAI
     return OpenAI(base_url=base_url, api_key=api_key)
 
+def _create_gemini_client(api_key: str):
+    """Create a Gemini client using google-genai."""
+    from google import genai
+    return genai.Client(api_key=api_key)
+
 
 def _strip_thinking_tags(text: str) -> str:
     """Strip <think>...</think> tags (Qwen3 / reasoning model pattern)."""
@@ -101,15 +117,98 @@ def _parse_action(raw: str) -> dict:
     return {"action": "noop", "thought": f"Failed to parse: {raw[:200]}"}
 
 
-def llm_complete(client, model: str, messages: list[dict], temperature: float = 0.3) -> str:
+def _convert_to_gemini_format(messages: list[dict]) -> list[dict]:
+    """Convert OpenAI-style messages to Gemini format."""
+    converted = []
+    for msg in messages:
+        role = msg.get("role", "user")
+        content = msg.get("content", "")
+        if role == "assistant":
+            role = "model"
+        converted.append({"role": role, "content": content})
+    return converted
+
+
+def _llm_complete_openai(
+    client,
+    model: str,
+    messages: list[dict],
+    temperature: float | None,
+    reasoning_effort: str | None,
+) -> str:
     """Send a chat completion request and return the text response."""
-    response = client.chat.completions.create(
-        model=model,
-        messages=messages,
-        temperature=temperature,
-        max_tokens=1024,
-    )
+    kwargs: dict[str, object] = {
+        "model": model,
+        "messages": messages,
+    }
+    if temperature is not None:
+        # GPT-5.* only supports the default temperature (=1); omit otherwise.
+        if model.startswith("gpt-5") and temperature != 1:
+            pass
+        else:
+            kwargs["temperature"] = temperature
+    # GPT-5.* models require max_completion_tokens instead of max_tokens.
+    if model.startswith("gpt-5"):
+        kwargs["max_completion_tokens"] = 1024
+    else:
+        kwargs["max_tokens"] = 1024
+
+    if reasoning_effort:
+        kwargs["reasoning_effort"] = reasoning_effort
+
+    response = client.chat.completions.create(**kwargs)
     return response.choices[0].message.content or ""
+
+
+def _llm_complete_gemini(
+    client,
+    model: str,
+    messages: list[dict],
+    temperature: float | None,
+) -> str:
+    """Send a Gemini generate_content request and return the text response."""
+    from google.genai import types
+
+    gemini_messages = _convert_to_gemini_format(messages)
+    system_instruction = None
+    contents = []
+
+    for msg in gemini_messages:
+        if msg["role"] == "system":
+            system_instruction = msg["content"]
+        else:
+            contents.append(
+                types.Content(
+                    role="user" if msg["role"] == "user" else "model",
+                    parts=[types.Part(text=msg["content"])],
+                )
+            )
+
+    config_kwargs = {"system_instruction": system_instruction}
+    if temperature is not None:
+        config_kwargs["temperature"] = temperature
+    generation_config = types.GenerateContentConfig(**config_kwargs)
+
+    response = client.models.generate_content(
+        model=model,
+        contents=contents,
+        config=generation_config,
+    )
+    return response.text or ""
+
+
+def llm_complete(
+    client,
+    model: str,
+    messages: list[dict],
+    temperature: float | None = None,
+    provider: str = "openai",
+    reasoning_effort: str | None = None,
+) -> str:
+    """Send a completion request and return the text response."""
+    if provider == "gemini":
+        return _llm_complete_gemini(client, model, messages, temperature)
+    return _llm_complete_openai(client, model, messages, temperature, reasoning_effort)
 
 
 # =============================================================================
@@ -310,19 +409,22 @@ def run_agent_on_page(
     page,
     client,
     model: str,
+    provider: str,
     instruction: str,
+    reasoning_effort: str | None = None,
     max_steps: int = 30,
     timeout_seconds: int = 180,
     verbose: bool = True,
-    temperature: float = 0.3,
+    temperature: float | None = None,
 ) -> dict:
     """
     Run the LLM agent on a single page until completion or timeout.
 
     Args:
         page: Playwright page object (already navigated to the benchmark page).
-        client: OpenAI-compatible client.
+        client: LLM client (OpenAI-compatible or Gemini).
         model: Model name.
+        provider: LLM provider.
         instruction: Task instruction from the manifest.
         max_steps: Maximum number of agent steps.
         timeout_seconds: Hard timeout in seconds.
@@ -347,7 +449,14 @@ def run_agent_on_page(
             break
 
         # Get action from LLM
-        raw_response = llm_complete(client, model, messages, temperature=temperature)
+        raw_response = llm_complete(
+            client,
+            model,
+            messages,
+            temperature=temperature,
+            provider=provider,
+            reasoning_effort=reasoning_effort,
+        )
         action = _parse_action(raw_response)
         thought = action.get("thought", "")
 
@@ -406,7 +515,8 @@ def run_evaluation(
     timeout_per_page: int = 180,
     headless: bool = True,
     verbose: bool = True,
-    temperature: float = 0.3,
+    temperature: float | None = None,
+    reasoning_effort: str | None = None,
     server_host: str = "127.0.0.1",
     server_port: int = 8080,
     output_path: str = "results.json",
@@ -416,7 +526,7 @@ def run_evaluation(
 
     Args:
         model: Model name (e.g., "meta-llama/Llama-3.1-8B-Instruct").
-        provider: LLM provider ("vllm", "openai").
+        provider: LLM provider ("vllm", "openai", "gemini").
         base_url: API base URL for the LLM.
         api_key: API key.
         pages_filter: Optional list of page_ids to evaluate.
@@ -424,7 +534,8 @@ def run_evaluation(
         timeout_per_page: Timeout per page in seconds.
         headless: Run browser in headless mode.
         verbose: Print progress.
-        temperature: LLM sampling temperature.
+        temperature: LLM sampling temperature (None = provider default).
+        reasoning_effort: Reasoning effort for OpenAI models (low/medium/high/xhigh).
         server_host: WebAgentBench server host.
         server_port: WebAgentBench server port.
         output_path: Path to write results JSON.
@@ -440,7 +551,10 @@ def run_evaluation(
         sys.exit(1)
 
     # Create LLM client
-    client = _create_openai_client(base_url, api_key)
+    if provider == "gemini":
+        client = _create_gemini_client(api_key)
+    else:
+        client = _create_openai_client(base_url, api_key)
 
     # Start WebAgentBench server
     bench_url = f"http://{server_host}:{server_port}"
@@ -499,7 +613,9 @@ def run_evaluation(
                         page=page,
                         client=client,
                         model=model,
+                        provider=provider,
                         instruction=instruction,
+                        reasoning_effort=reasoning_effort,
                         max_steps=max_steps,
                         timeout_seconds=timeout_per_page,
                         verbose=verbose,
@@ -616,14 +732,17 @@ def main():
     parser.add_argument("--model", type=str, required=True,
                         help="Model name (e.g., meta-llama/Llama-3.1-8B-Instruct, gpt-4o)")
     parser.add_argument("--provider", type=str, default="vllm",
-                        choices=["vllm", "openai"],
+                        choices=["vllm", "openai", "gemini"],
                         help="LLM provider (default: vllm)")
     parser.add_argument("--api-base-url", type=str, default=None,
                         help="API base URL (default: provider-dependent)")
     parser.add_argument("--api-key", type=str, default=None,
                         help="API key (default: provider-dependent)")
-    parser.add_argument("--temperature", type=float, default=0.3,
-                        help="LLM sampling temperature (default: 0.3)")
+    parser.add_argument("--temperature", type=float, default=None,
+                        help="LLM sampling temperature (default: provider default)")
+    parser.add_argument("--reasoning-effort", type=str, default=None,
+                        choices=["none", "minimal", "low", "medium", "high", "xhigh"],
+                        help="OpenAI reasoning effort (gpt-5*)")
 
     # Benchmark
     parser.add_argument("--pages", nargs="*",
@@ -669,6 +788,12 @@ def main():
             if not args.api_key:
                 print("ERROR: Set OPENAI_API_KEY or pass --api-key", file=sys.stderr)
                 sys.exit(1)
+        elif args.provider == "gemini":
+            import os
+            args.api_key = os.environ.get("GEMINI_API_KEY", "")
+            if not args.api_key:
+                print("ERROR: Set GEMINI_API_KEY or pass --api-key", file=sys.stderr)
+                sys.exit(1)
 
     run_evaluation(
         model=args.model,
@@ -681,6 +806,7 @@ def main():
         headless=args.headless,
         verbose=not args.quiet,
         temperature=args.temperature,
+        reasoning_effort=args.reasoning_effort,
         server_host=args.server_host,
         server_port=args.server_port,
         output_path=args.output,
