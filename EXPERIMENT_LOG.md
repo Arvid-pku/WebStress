@@ -85,27 +85,68 @@ Establish the full pipeline: evaluate baseline agent, collect simulated training
 
 ### 1.5 WebAgentBench Evaluation
 
-**Status**: Pending
-
-| Model | Passed | Avg Score | Notes |
+| Model | Passed | Avg Score | Delta |
 |-------|--------|-----------|-------|
-| Baseline (Qwen3-30B-A3B) | | | TODO |
-| After SFT | | | TODO |
-| After SFT + DPO | | | TODO |
+| Baseline (Qwen3-30B-A3B) | 1/12 | -0.542 | — |
+| After SFT | 1/12 | -0.583 | -0.041 |
+| After SFT + DPO | 1/12 | -0.708 | -0.166 |
 
-### 1.6 Takeaways
+Per-primitive breakdown (baseline → SFT → SFT+DPO):
+
+| Primitive | Baseline | SFT | SFT+DPO | Trend |
+|-----------|----------|-----|---------|-------|
+| adversarial_robustness | +1.00 | +1.00 | **-1.00** | destroyed by DPO |
+| attention | -0.81 | -0.88 | **-0.63** | DPO helped |
+| backtracking | -1.00 | -1.00 | -1.00 | no change |
+| constraint_satisfaction | -1.00 | -1.00 | -1.00 | no change |
+| error_recovery | -0.50 | -0.50 | -0.50 | no change |
+| exploration | -0.75 | -0.88 | -0.75 | SFT hurt, DPO recovered |
+| memory | -0.75 | -0.75 | **-0.38** | DPO helped |
+| patience | -0.67 | -0.83 | -0.67 | SFT hurt, DPO recovered |
+| planning | -0.75 | -0.75 | **+0.00** | DPO helped |
+| reflection | +0.50 | +0.50 | **-1.00** | destroyed by DPO |
+| spatial_reasoning | -1.00 | -1.00 | -1.00 | no change |
+| verification | +0.75 | +0.75 | **-1.00** | destroyed by DPO |
+
+### 1.6 Analysis
+
+**Overall**: Both SFT and DPO degraded performance. SFT was mostly neutral (-0.04), DPO caused significant regression (-0.17).
+
+**DPO showed targeted improvement** on primitives it was trained on:
+- memory: -0.75 → -0.38 (+0.37) — had 7 DPO pairs
+- planning: -0.75 → +0.00 (+0.75) — had 6 DPO pairs
+- attention: -0.81 → -0.63 (+0.19) — had 3 DPO pairs
+
+**DPO caused catastrophic forgetting** on primitives the model already handled:
+- verification: +0.75 → -1.00 (-1.75)
+- reflection: +0.50 → -1.00 (-1.50)
+- adversarial_robustness: +1.00 → -1.00 (-2.00)
+
+**Root causes**:
+1. **Too little data**: 88 episodes, 37 DPO pairs, only 2 DPO gradient steps — not enough to learn robustly
+2. **Catastrophic forgetting**: DPO without sufficient data destroyed existing capabilities. No regularization or replay of good behaviors.
+3. **Sim-to-real gap**: LLMOS-generated observations differ from real browser HTML — model may have overfitted to simulator patterns
+4. **SFT was nearly a no-op**: 18 steps with NLL already at 0.18 — the model may have memorized rather than generalized
+
+**Key insight**: DPO can improve targeted primitives (memory, planning) but at the cost of others. Need much more data + strategies to prevent forgetting.
+
+### 1.7 Takeaways
 
 - Pipeline works end-to-end: collect -> prepare -> SFT -> DPO -> eval
-- Data is small (88 episodes, 37 DPO pairs) — expect limited improvement
-- Key bottleneck: lazy agent behavior (24% of episodes wasted)
-- Next: collect more data, especially for primitives with few pairs (attention: 3)
+- Small data + DPO = catastrophic forgetting on existing strengths
+- DPO does show targeted improvement where it has training pairs
+- Need to preserve existing capabilities (mix in general data? lower LR? fewer epochs?)
 
 ---
 
 ## Next Steps
 
-- [ ] Run WebAgentBench evaluation on baseline, SFT, and SFT+DPO checkpoints
-- [ ] Collect more episodes (target: 200+ per primitive) with more workers
-- [ ] Investigate lazy agent behavior — can prompt engineering reduce it?
-- [ ] Try higher LoRA rank (64) and more DPO epochs with larger dataset
-- [ ] Add W&B logging (needs `WANDB_API_KEY` in `.env`)
+- [ ] Collect much more data (target: 50+ episodes per primitive, 500+ total)
+- [ ] Investigate catastrophic forgetting mitigation:
+  - Mix simulator DPO data with general chat/instruction data
+  - Use lower DPO beta (0.01-0.05) to reduce preference signal strength
+  - Try SFT-only (skip DPO) with more data
+- [ ] Reduce sim-to-real gap: compare LLMOS observations vs real browser observations side by side
+- [ ] Try training only on primitives the model struggles with (exclude verification, reflection, adversarial_robustness from training)
+- [ ] Add W&B logging (needs `WANDB_API_KEY` in `.env`) for better training monitoring
+- [ ] Investigate lazy agent behavior (24% of episodes) — prompt engineering or filtering
