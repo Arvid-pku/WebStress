@@ -24,6 +24,7 @@ Usage:
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -33,16 +34,30 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from shared.trajectory import export_conversations, batch_export
 
 
-def load_llmos_episodes(runs_dir: str) -> list[dict]:
+def _primitive_from_filename(filename: str) -> str | None:
+    """Extract primitive name from episode filename like 'episode_*_collect_{primitive}_{n}.json'."""
+    m = re.search(r'collect_(.+?)_\d+\.json$', filename)
+    return m.group(1) if m else None
+
+
+def load_llmos_episodes(runs_dir: str, exclude_primitives: set[str] | None = None) -> list[dict]:
     """Load all LLMOS episode JSON files from a directory."""
     episodes = []
+    excluded = 0
     for f in sorted(Path(runs_dir).glob("*.json")):
+        if exclude_primitives:
+            prim = _primitive_from_filename(f.name)
+            if prim and prim in exclude_primitives:
+                excluded += 1
+                continue
         with open(f) as fh:
             ep = json.load(fh)
         # Skip if no history (e.g. index files)
         if "history" not in ep:
             continue
         episodes.append(ep)
+    if excluded:
+        print(f"Excluded {excluded} episodes from primitives: {', '.join(sorted(exclude_primitives))}")
     return episodes
 
 
@@ -64,6 +79,8 @@ def main():
                         help="Number of conversations to hold out for test set (written to _test.jsonl)")
     parser.add_argument("--no-split", action="store_true",
                         help="Don't split multi-turn conversations into sub-conversations")
+    parser.add_argument("--exclude-primitives", nargs="+", default=None,
+                        help="Primitives to exclude (e.g. verification reflection adversarial_robustness)")
     args = parser.parse_args()
 
     if not args.llmos_dir and not args.wab_results:
@@ -72,8 +89,10 @@ def main():
     all_convos = []
 
     # Load LLMOS episodes
+    exclude_set = set(args.exclude_primitives) if args.exclude_primitives else None
+
     if args.llmos_dir:
-        episodes = load_llmos_episodes(args.llmos_dir)
+        episodes = load_llmos_episodes(args.llmos_dir, exclude_primitives=exclude_set)
         convos = batch_export(
             episodes, source="llmos", fmt="messages",
             min_score=args.min_score, only_success=args.only_success,
