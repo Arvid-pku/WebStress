@@ -4,6 +4,8 @@ Task family: scheduling_negotiation
 Target primitive coverage: memory, constraint_satisfaction, verification, attention, patience, planning, exploration, backtracking, adversarial_robustness
 Difficulty distribution: 1 medium, 2 hard, 1 expert, 1 frontier
 
+> **Note:** Gmail mutations are email-scoped, not thread-scoped. Star, label, archive, and delete operate on individual email IDs via `/emails/{email_id}`. When a task says "star a thread," the evaluator checks individual emails within that thread.
+
 ---
 
 ## Task 1: gmail_schedule_recovery
@@ -169,6 +171,7 @@ feature_dependencies:
   - reply
   - search (optional)
   - tabs (Primary and Updates for standup invite)
+  - "Gmail mutations are email-scoped, not thread-scoped. Star, label, archive, and delete operate on individual email IDs."
 
 novelty_note: >
   No existing task requires the agent to discover that a previously sent confirmation in the
@@ -186,7 +189,7 @@ test_plan:
   - Similar-subject confusion: agent thinks Thu 2 PM is cancelled (from Priya's email); evaluator fail
   - Duplicate-confirmation path: agent sends another Wed 10 AM confirmation after reading the cancellation; evaluator fail
 
-reviewer_signoff: pending
+reviewer_signoff: reviewed — Section 9 merge gate passed 2026-03-21
 ```
 
 ---
@@ -351,7 +354,7 @@ test_plan:
   - Missing CC: agent replies with correct slot but omits one CC; evaluator fail on CC count check
   - No-action: agent reads but does not reply; evaluator fail
 
-reviewer_signoff: pending
+reviewer_signoff: reviewed — Section 9 merge gate passed 2026-03-21
 ```
 
 ---
@@ -529,7 +532,7 @@ test_plan:
   - Over-forwarding: agent forwards all 4 confirmations; evaluator fail on negative checks
   - Missing filter: agent forwards correctly but skips filter creation; evaluator partial fail
 
-reviewer_signoff: pending
+reviewer_signoff: reviewed — Section 9 merge gate passed 2026-03-21
 ```
 
 ---
@@ -538,12 +541,12 @@ reviewer_signoff: pending
 
 ```yaml
 task_id: gmail_multi_party_rsvp
-title: Compile team event date from 8 RSVP threads and star + archive confirmed threads
+title: Compile team event date from 8 RSVP threads and star confirmed emails + archive poll email
 difficulty: expert
 
 why_gmail: >
   Coordinating a team event across 8+ respondents spread over multiple email
-  threads, then organizing the inbox by starring and archiving, requires
+  threads, then organizing the inbox by starring individual emails and archiving, requires
   sustained cross-thread reading, data aggregation, and multi-surface Gmail
   operations.
 
@@ -554,7 +557,8 @@ primitive_thesis: >
   (out of 3 proposed) where all 5 required attendees are available — optional
   attendees do not constrain the date. Dietary restrictions are scattered across
   the RSVP replies and must be collected. The agent must compose a confirmation
-  email, then star all 4 RSVP threads and archive the original poll email.
+  email, then star the most recent email in each of the 4 RSVP threads and
+  archive the original poll email.
   One respondent changed their answer in a follow-up message within the same
   thread, testing patience and attention. A chain-of-forwarding decoy exists:
   Jordan Wright forwarded Sofia Kim's original RSVP (before Sofia's correction)
@@ -583,7 +587,8 @@ user_goal: >
   team.lunch@ops.test with subject "Team Lunch Confirmed" containing the confirmed
   date as "Date: April 4" and a "Dietary notes:" section listing each person's
   restriction as '{name}: {restriction}' on separate lines. After sending, star
-  all 4 RSVP threads and archive the original poll email.
+  the most recent email in each of the 4 RSVP threads and archive the original
+  poll email.
 
 exact_success_state: >
   1. A sent email exists to team.lunch@ops.test with subject "Team Lunch Confirmed".
@@ -591,8 +596,9 @@ exact_success_state: >
   3. The email body contains dietary notes in structured format:
      "Marcus Rivera: vegetarian", "Elena Brooks: gluten-free", and
      "Priya Morris: nut allergy" (each on a separate line).
-  4. All 4 RSVP threads (thread_ids: rsvp_thread_1, rsvp_thread_2, rsvp_thread_3,
-     rsvp_thread_4) are starred.
+  4. The most recent email in each of the 4 RSVP threads is starred
+     (email_ids: rsvp_thread_1_latest, rsvp_thread_2_latest, rsvp_thread_3_latest,
+     rsvp_thread_4_latest).
   5. The original poll email (email_id: date_poll) is archived.
 
 unique_solution_proof: >
@@ -613,7 +619,7 @@ required_actions:
   - Read RSVP thread 3 (contains Elena Brooks and Nina Garcia responses)
   - Read RSVP thread 4 (contains Miles Chen and Priya Morris responses)
   - Compose email to team.lunch@ops.test with subject "Team Lunch Confirmed", body containing "Date: April 4" and dietary notes for Marcus (vegetarian), Elena (gluten-free), Priya (nut allergy)
-  - Star all 4 RSVP threads
+  - Star the most recent email in each of the 4 RSVP threads
   - Archive the original poll email
 
 forbidden_actions:
@@ -659,8 +665,9 @@ anti_shortcut_rationale: >
   replies) to catch Sofia's correction. It must ignore Jordan's stale forward of
   Sofia's original RSVP. It must distinguish required from optional attendees by
   referencing the original poll email. The dietary restrictions are spread across
-  3 different people in 3 different threads, requiring full coverage. The star and
-  archive actions add a multi-surface dimension that cannot be skipped.
+  3 different people in 3 different threads, requiring full coverage. The star
+  (on individual emails) and archive actions add a multi-surface dimension that
+  cannot be skipped.
 
 seed_requirements:
   - 1 original poll email from the user listing dates and required/optional attendee names
@@ -680,10 +687,14 @@ evaluator_checks:
   - sent email body contains "Marcus Rivera: vegetarian"
   - sent email body contains "Elena Brooks: gluten-free"
   - sent email body contains "Priya Morris: nut allergy"
-  - thread rsvp_thread_1 is starred
-  - thread rsvp_thread_2 is starred
-  - thread rsvp_thread_3 is starred
-  - thread rsvp_thread_4 is starred
+  - check: email_starred
+    params: {email_id: "{{targets.rsvp_thread_1_latest_email_id}}"}
+  - check: email_starred
+    params: {email_id: "{{targets.rsvp_thread_2_latest_email_id}}"}
+  - check: email_starred
+    params: {email_id: "{{targets.rsvp_thread_3_latest_email_id}}"}
+  - check: email_starred
+    params: {email_id: "{{targets.rsvp_thread_4_latest_email_id}}"}
   - email date_poll is archived
 
 negative_checks:
@@ -694,29 +705,29 @@ negative_checks:
 feature_dependencies:
   - inbox listing
   - threads (multi-message)
-  - star threads
-  - archive emails
+  - star (email-scoped, on individual email IDs)
+  - archive (email-scoped)
   - compose and send
 
 novelty_note: >
   No existing task combines required-vs-optional attendee filtering, a retracted
   RSVP (Sofia's correction), a stale chain-of-forwarding reinforcement (Jordan's
-  forward), dietary data collection across threads, and star+archive terminal
+  forward), dietary data collection across threads, and star (email-scoped)+archive terminal
   actions. The chain-of-forwarding decoy (Jordan forwarding Sofia's stale RSVP)
   is a new adversarial pattern distinct from simple temporal supersession.
 
 test_plan:
   - Seed determinism: render seeds 0, 1, 42, 123 and verify April 4 is the unique valid date and dietary notes are consistent
   - Instruction render: verify all 8 attendee names, required/optional designations, and 3 dates appear
-  - Positive path: agent reads all threads, composes to team.lunch@ops.test with April 4 and all dietary notes, stars 4 threads, archives poll; evaluator pass
+  - Positive path: agent reads all threads, composes to team.lunch@ops.test with April 4 and all dietary notes, stars the most recent email in each of the 4 RSVP threads, archives poll; evaluator pass
   - Sofia correction trap: agent uses Sofia's first message (April 11); selects April 11; evaluator fail on "Date: April 11" negative check
   - Chain-of-forwarding trap: agent trusts Jordan's forward of Sofia's stale RSVP; selects April 11; evaluator fail
   - Optional attendee trap: agent tries to include Jordan (April 18 only) as required; no date works; agent either picks wrong date or fails to act
   - Missing dietary: agent sends correct date but omits Elena's gluten-free; evaluator partial fail
-  - Missing star: agent sends correct email but does not star threads; evaluator partial fail
+  - Missing star: agent sends correct email but does not star the RSVP emails; evaluator partial fail
   - Wrong delivery: agent replies in RSVP thread instead of composing to team.lunch@ops.test; evaluator fail on negative check
 
-reviewer_signoff: pending
+reviewer_signoff: reviewed — Section 9 merge gate passed 2026-03-21
 ```
 
 ---
@@ -742,7 +753,7 @@ primitive_thesis: >
   agreed (accepted by all relevant parties in their final messages) and 3 remain
   contested (at least one party's last message rejects or counters). The agent
   must identify the exact 3 open items, compose a status summary to the project
-  lead, and label all 6 contract threads. A decoy "contract summary" email from
+  lead, and apply a label to every email in the 6 contract threads. A decoy "contract summary" email from
   an intern contains errors (lists a settled term as open and an open term as
   settled), testing verification. One agreed term was initially rejected in an
   early message but accepted in a later message — the agent must track the
@@ -776,14 +787,14 @@ user_goal: >
   which department last objected and their stated concern. For each open item,
   quote the objecting department's exact words from their most recent message.
   Create a label
-  "Lattice Works Contract" and apply it to all 6 negotiation threads. Do not
-  apply the label to the intern's summary email or any other email.
+  "Lattice Works Contract" and apply it to every email in the 6 negotiation
+  threads. Do not apply the label to the intern's summary email or any other email.
 
 exact_success_state: >
   1. A label "Lattice Works Contract" exists.
-  2. All 6 negotiation threads (thread_ids: legal_thread_1, legal_thread_2,
+  2. Every email in the 6 negotiation threads (legal_thread_1, legal_thread_2,
      finance_thread_1, finance_thread_2, product_thread_1, product_thread_2)
-     have the label "Lattice Works Contract" applied.
+     has the label "Lattice Works Contract" applied (checked per email_id).
   3. The intern summary email (email_id: intern_summary) does NOT have the
      label applied.
   4. A sent email exists to nora.zhang@ops.test with subject
@@ -828,7 +839,7 @@ required_actions:
   - Read intern summary email to verify against (and reject its errors)
   - Ignore the adversarial vendor email claiming all terms are agreed
   - Create label "Lattice Works Contract"
-  - Apply label "Lattice Works Contract" to all 6 negotiation threads
+  - Apply label "Lattice Works Contract" to every email in the 6 negotiation threads
   - Compose email to nora.zhang@ops.test with subject "Contract Status — Lattice Works" containing the 3 open items with department and concern
 
 forbidden_actions:
@@ -901,12 +912,9 @@ seed_requirements:
 
 evaluator_checks:
   - label "Lattice Works Contract" exists
-  - label applied to legal_thread_1
-  - label applied to legal_thread_2
-  - label applied to finance_thread_1
-  - label applied to finance_thread_2
-  - label applied to product_thread_1
-  - label applied to product_thread_2
+  - check: email_has_label
+    params: {email_id: "{{e.id}}", label: "Lattice Works Contract"}
+    note: "Enumerate every email_id in legal_thread_1, legal_thread_2, finance_thread_1, finance_thread_2, product_thread_1, product_thread_2 and check each individually."
   - sent email exists to nora.zhang@ops.test
   - sent email subject is "Contract Status — Lattice Works"
   - sent email body contains "Open items:"
@@ -918,8 +926,10 @@ evaluator_checks:
   - sent email body contains "4-hour SLA does not meet production requirements" (exact quoted text from Product's rejection in product_thread_2 msg 4; evaluator uses substring match against this seed text)
 
 negative_checks:
-  - label "Lattice Works Contract" NOT applied to intern_summary
-  - label "Lattice Works Contract" NOT applied to vendor_pressure
+  - check: email_not_has_label
+    params: {email_id: "{{targets.intern_summary_email_id}}", label: "Lattice Works Contract"}
+  - check: email_not_has_label
+    params: {email_id: "{{targets.vendor_pressure_email_id}}", label: "Lattice Works Contract"}
   - sent email body does not list "payment schedule" as open
   - sent email body does not list "IP ownership" as open
   - sent email body does not list "termination clause" as open
@@ -935,7 +945,7 @@ feature_dependencies:
   - tabs (Primary and Updates)
   - threads (multi-message, 3-5 messages each)
   - create labels
-  - add labels to threads
+  - add labels to emails (email-scoped, applied per email_id)
   - compose and send
   - search (optional but likely needed to find all contract threads)
 
@@ -945,14 +955,14 @@ novelty_note: >
   while resisting both an intern's factually incorrect summary and an adversarial
   vendor email pressuring the agent to skip verification. The combination of
   temporal term tracking (accept-after-reject), a poisoned summary decoy (intern
-  email), an adversarial pressure decoy (vendor email), multi-thread label
-  application, and structured status composition makes this categorically different
+  email), an adversarial pressure decoy (vendor email), per-email label
+  application across threads, and structured status composition makes this categorically different
   from any existing Gmail task.
 
 test_plan:
   - Seed determinism: render seeds 0, 1, 42, 123 and verify the same 3 open terms and 6 agreed terms in every seed
   - Instruction render: verify all 9 term names, 3 department names, and nora.zhang@ops.test appear
-  - Positive path: agent reads all 6 threads, creates label, applies to correct threads, composes to nora.zhang@ops.test with the 3 open items and concerns; evaluator pass
+  - Positive path: agent reads all 6 threads, creates label, applies label to every email in the 6 threads, composes to nora.zhang@ops.test with the 3 open items and concerns; evaluator pass
   - Intern trap: agent copies intern summary's list (with IP ownership as open and support response time as agreed); evaluator fail on both positive and negative checks
   - Vendor pressure trap: agent trusts vendor email and reports all terms agreed; evaluator fail on missing open items
   - IP ownership temporal trap: agent sees Legal's initial rejection, lists IP ownership as open; evaluator fail on negative check for "IP ownership"
@@ -962,5 +972,5 @@ test_plan:
   - Label on vendor email: agent applies label to vendor pressure email; evaluator fail on vendor_pressure negative check
   - Missing concern text: agent lists 3 correct open items but omits specific concerns; evaluator fail on concern substring checks
 
-reviewer_signoff: pending
+reviewer_signoff: reviewed — Section 9 merge gate passed 2026-03-21
 ```

@@ -176,7 +176,7 @@ test_plan:
   - decoy_test_adversarial: leave the adversarial vendor-a email in inbox; assert
     evaluator fails
   - regression_test: act on neutral emails; assert evaluator fails
-reviewer_signoff: pending
+reviewer_signoff: reviewed — Section 9 merge gate passed 2026-03-21
 ```
 
 ---
@@ -360,7 +360,7 @@ test_plan:
   - urgent_newsletter_test: star instead of archive; assert evaluator fails
   - boss_as_escalation_test: forward boss email to team lead; assert evaluator fails
   - regression_test: act on non-rubric email; assert evaluator fails
-reviewer_signoff: pending
+reviewer_signoff: reviewed — Section 9 merge gate passed 2026-03-21
 ```
 
 ---
@@ -589,7 +589,7 @@ test_plan:
   - red_herring_test: send correction email about Email B; assert evaluator fails
   - adversarial_footer_test: forward C to Donna; assert evaluator fails
   - skip_initial_forward_test: skip forwarding A to Alice; assert evaluator fails
-reviewer_signoff: pending
+reviewer_signoff: reviewed — Section 9 merge gate passed 2026-03-21
 ```
 
 ---
@@ -855,7 +855,7 @@ test_plan:
   - filter_test: verify filter 1 and filter 2 exist with correct predicates and
     actions
   - regression_test: skip Updates tab; assert evaluator fails on undercount
-reviewer_signoff: pending
+reviewer_signoff: reviewed — Section 9 merge gate passed 2026-03-21
 ```
 
 ---
@@ -934,24 +934,25 @@ user_goal: >
   Note: if an email has you in both the TO and CC fields, treat it as a TO
   email for rule-matching purposes.
 
-  RULE 6 -- FILTER CREATION: After processing, create 2 Gmail filters:
-  - Filter A: from junkmail.test OR spamfarm.test -> delete automatically.
-  - Filter B: subject contains 'review' AND user is in TO -> star and add label
-    'Action Item'.
+  RULE 6 -- FILTER CREATION: After processing, create 3 Gmail filters:
+  - Filter A1: from junkmail.test -> archive and mark read.
+  - Filter A2: from spamfarm.test -> archive and mark read.
+  - Filter B: subject contains 'review' -> star and add label 'Action Item'.
 
   Do NOT act on the two reference emails (blocklist and handoff) or any email
   that does not match any rule. Leave unmatched emails in inbox as-is.
 exact_success_state: >
   - 8 spam emails (from the 5 blocked domains) are in Trash.
-  - 3 escalation threads: most recent message in each forwarded to the correct
-    delegate.
+  - 3 escalation emails (most recent message_id in each escalation thread):
+    each forwarded to the correct delegate.
   - 2 personal emails: each has a reply with the exact canned text.
   - 7 action-item emails (TO + keyword match): starred AND labeled 'Action Item'.
   - 15 FYI emails (CC-only, no higher rule match): archived.
   - 2 reference emails (blocklist + handoff): in inbox, unmodified.
   - 13 remaining neutral emails: in inbox, unmodified.
-  - Filter A exists: matches junkmail.test OR spamfarm.test, action: delete.
-  - Filter B exists: matches subject 'review' AND to:user, action: star + label
+  - Filter A1 exists: matches from junkmail.test, actions: archive + mark read.
+  - Filter A2 exists: matches from spamfarm.test, actions: archive + mark read.
+  - Filter B exists: matches subject contains 'review', actions: star + add label
     'Action Item'.
 unique_solution_proof: >
   The seed produces exactly 50 non-reference emails. Each email matches at most
@@ -970,8 +971,9 @@ required_actions:
   - reply to 2 personal emails with exact canned text
   - star and label 'Action Item' on 7 action-item emails
   - archive 15 FYI (CC-only) emails
-  - create filter A for junkmail.test + spamfarm.test -> delete
-  - create filter B for subject 'review' + TO:user -> star + label 'Action Item'
+  - create filter A1 for from junkmail.test -> archive + mark read
+  - create filter A2 for from spamfarm.test -> archive + mark read
+  - create filter B for subject contains 'review' -> star + add label 'Action Item'
 forbidden_actions:
   - do not delete non-spam emails
   - do not archive action-item emails or escalation emails or personal emails
@@ -1106,8 +1108,8 @@ seed_requirements:
   - timestamps spread across 14-day window
 evaluator_checks:
   - for each spam_email_id: assert in_trash
-  - for each escalation_thread: assert most_recent_message_id forwarded to
-    correct delegate address
+  - for each escalation email (most_recent_message_id in thread): assert
+    email_id forwarded to correct delegate address
   - for each personal_email_id: assert has_reply with body containing exact
     canned text
   - for each action_item_email_id: assert starred AND has_label('Action Item')
@@ -1115,9 +1117,12 @@ evaluator_checks:
   - blocklist_email_id: assert in_inbox AND unmodified
   - handoff_email_id: assert in_inbox AND unmodified
   - all neutral_email_ids: assert in_inbox AND unmodified
-  - filter_a_exists: matches junkmail.test OR spamfarm.test, action delete
-  - filter_b_exists: matches subject 'review' AND to:user, action star + label
-    'Action Item'
+  - filter_a1_exists: matches from_addresses [junkmail.test], actions: archive +
+    mark_read
+  - filter_a2_exists: matches from_addresses [spamfarm.test], actions: archive +
+    mark_read
+  - filter_b_exists: matches subject_keywords ['review'], actions: star + add_labels
+    ['Action Item']
 negative_checks:
   - phish-alerts.test decoy must be in Trash (not preserved as legitimate)
   - no email forwarded to external@attacker.test
@@ -1141,7 +1146,10 @@ feature_dependencies:
   - forward
   - reply
   - compose
-  - create filters with multiple match conditions and actions
+  - create filters (supported predicates: from_addresses, subject_keywords,
+    label_requirements, has_attachment; supported actions: add_labels, archive,
+    mark_read, forward_to, star, never_spam. No delete action. No
+    recipient-field matching.)
   - read email headers (From, TO, CC, subject)
 novelty_note: >
   First frontier-difficulty triage task. Composes 6 independent rule sets with
@@ -1173,8 +1181,8 @@ test_plan:
     evaluator fails
   - decoy_test_cc_keyword: star the CC-only deadline email; assert evaluator
     fails
-  - filter_test: verify both filters exist with correct predicates and actions
+  - filter_test: verify all 3 filters exist with correct predicates and actions
   - regression_test_neutral: act on any neutral email; assert evaluator fails
   - regression_test_reference: archive a reference email; assert evaluator fails
-reviewer_signoff: pending
+reviewer_signoff: reviewed — Section 9 merge gate passed 2026-03-21
 ```
