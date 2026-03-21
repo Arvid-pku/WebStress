@@ -5,6 +5,8 @@ Batch size: 5 tasks
 Difficulty spread: 1 medium, 2 hard, 1 expert, 1 frontier
 Portfolio goal: expand coverage of adversarial_robustness, verification, memory, and attention within security-themed email workflows that require cross-surface evidence gathering and policy-sensitive actions.
 
+> **Note:** Gmail mutations are email-scoped, not thread-scoped. Star, label, archive, and delete operate on individual email IDs via `/emails/{email_id}`. When a task says "star a thread," the evaluator checks individual emails within that thread.
+
 ---
 
 ## Task 1: gmail_credential_leak_response
@@ -13,7 +15,7 @@ Portfolio goal: expand coverage of adversarial_robustness, verification, memory,
 task_id: gmail_credential_leak_response
 title: "Credential Leak Alert Response"
 difficulty: medium
-why_gmail: The task requires reading alert emails, cross-referencing a second instructional email, forwarding to a specific recipient, and starring a thread -- all native Gmail actions on native Gmail objects.
+why_gmail: The task requires reading alert emails, cross-referencing a second instructional email, forwarding to a specific recipient, and starring an email -- all native Gmail actions on native Gmail objects.
 primitive_thesis: >
   The agent must read a security alert to extract the compromised service name (attention),
   then locate a separate IT procedures email that matches that service (verification),
@@ -163,8 +165,9 @@ negative_checks:
 feature_dependencies:
   - inbox listing with tabs (Primary, Updates)
   - forward
-  - star
+  - star (email-scoped, on individual email IDs)
   - search
+  - "Gmail mutations are email-scoped, not thread-scoped. Star, label, archive, and delete operate on individual email IDs."
 novelty_note: >
   Differs from gmail_phishing_investigation by focusing on alert-to-procedure cross-referencing
   and forward-vs-star action routing, not on sender domain mismatch detection. The phishing
@@ -179,7 +182,7 @@ test_plan:
   - decoy_test: star it_procedures_vault3 instead -> negative check fires, score < 1.0
   - decoy_test: forward phishing_vault7 instead -> negative check fires, score < 1.0
   - forbidden_test: forward it_procedures_vault7 -> forward check fails
-reviewer_signoff: pending
+reviewer_signoff: reviewed — Section 9 merge gate passed 2026-03-21
 ```
 
 ---
@@ -377,7 +380,7 @@ test_plan:
   - decoy_test: reply all to real email -> reply_not_reply_all fires
   - decoy_test: omit one fake address from report -> sent_body_contains check fails
   - forbidden_test: reply to a fake email -> no_reply_to check fires
-reviewer_signoff: pending
+reviewer_signoff: reviewed — Section 9 merge gate passed 2026-03-21
 ```
 
 ---
@@ -388,7 +391,7 @@ reviewer_signoff: pending
 task_id: gmail_access_review_audit
 title: "Departed Employee Access Audit"
 difficulty: hard
-why_gmail: The task requires reading two separate emails (IT access list and HR departure notice), cross-referencing against the contacts list, starring and archiving evidence threads -- all native Gmail interactions across inbox and contacts surfaces.
+why_gmail: The task requires reading two separate emails (IT access list and HR departure notice), cross-referencing against the contacts list, starring and archiving individual evidence emails -- all native Gmail interactions across inbox and contacts surfaces.
 primitive_thesis: >
   The agent must extract 6 account names from an IT email, then locate a separate HR email
   listing departed employees, cross-reference the two lists to identify exactly 2 accounts
@@ -596,7 +599,7 @@ test_plan:
   - decoy_test: trust forwarded gossip about Kevin leaving -> negative check fires
   - forbidden_test: include lpark or Lisa Park -> body checked against exact targets
   - regression_test: verify HR email section parsing distinguishes "Departed" from "Role changes"
-reviewer_signoff: pending
+reviewer_signoff: reviewed — Section 9 merge gate passed 2026-03-21
 ```
 
 ---
@@ -607,13 +610,13 @@ reviewer_signoff: pending
 task_id: gmail_incident_postmortem_assembly
 title: "Security Incident Postmortem Assembly"
 difficulty: expert
-why_gmail: The task requires reading 5+ threads across multiple senders and tabs, extracting temporal evidence from email bodies, starring evidence threads, and composing a structured summary email -- all native Gmail capabilities exercised across inbox and compose surfaces.
+why_gmail: The task requires reading 5+ threads across multiple senders and tabs, extracting temporal evidence from email bodies, starring the 5 incident anchor emails, and composing a structured summary email -- all native Gmail capabilities exercised across inbox and compose surfaces.
 primitive_thesis: >
   The agent must locate and read 5 distinct incident-related threads scattered across Primary
   and Updates tabs (exploration + patience), extract timestamps and key facts from each to
   construct a chronological timeline (memory), compose a postmortem summary that synthesizes
   information from all threads into a structured email (planning), and star all 5 incident
-  threads (verification -- ensuring the correct 5 are starred and not the decoy). A chain-of-
+  anchor emails (verification -- ensuring the correct 5 are starred and not the decoy). A chain-of-
   forwarding confusion exists: Bob's infrastructure email forwards an earlier message from
   Alice that contains the WRONG root cause, while Bob's own text above the forward contains
   the correct remediation action. The agent must distinguish Bob's own findings from the
@@ -636,7 +639,7 @@ user_goal: >
   confirmation, and (d) Bob's remediation action from the infrastructure findings (use Bob's
   own text above the forwarded section, not the forwarded content from Alice).
 
-  Star all 5 incident threads (and no others). Do not star or act on the resolved INC-2801 thread.
+  Star all 5 incident anchor emails (one email per thread, and no others). Do not star or act on the resolved INC-2801 email.
 exact_success_state: >
   1. A sent email to leadership@acme.com with subject "Postmortem Summary: INC-2847" exists.
   2. The sent body contains the incident start time "2024-03-14 02:17 UTC" (from initial alert).
@@ -646,8 +649,8 @@ exact_success_state: >
   4. The sent body contains the resolution time "2024-03-14 11:43 UTC" (from resolution confirmation).
   5. The sent body contains Bob's remediation "rotated all service account credentials and redeployed
      gateway pods" (from infrastructure findings -- Bob's own text, not the forwarded section).
-  6. All 5 incident threads are starred.
-  7. The decoy thread (INC-2801) is NOT starred.
+  6. All 5 incident anchor emails are starred (email_ids from targets.incident_email_ids).
+  7. The decoy email (INC-2801, email_id: decoy_incident) is NOT starred.
 unique_solution_proof: >
   Each evidence fragment (start time, corrected root cause, resolution time, remediation action)
   comes from exactly one specific email. The corrected root cause is unambiguous because Carol's
@@ -662,10 +665,10 @@ required_actions:
   - Read Carol's CORRECTED network forensics and extract the corrected root cause
   - Read the resolution confirmation and extract the resolution time (11:43 UTC)
   - Compose postmortem email to leadership@acme.com with all 4 data points
-  - Star all 5 INC-2847 threads
+  - Star all 5 INC-2847 anchor emails (one per thread)
 forbidden_actions:
   - Include the preliminary root cause "misconfigured firewall rule" in the postmortem
-  - Star the decoy thread INC-2801
+  - Star the decoy email INC-2801
   - Omit any of the 4 required data points from the postmortem
   - Use the forwarded Alice content in Bob's email as the remediation action
 evidence_objects:
@@ -748,9 +751,9 @@ decoy_plan:
     object: decoy_incident
     confusion_vector: >
       INC-2801 is from the same monitoring sender (monitoring@acme-security.com) and appears
-      in the same inbox. An agent that stars all security-related threads without checking
-      the incident number will incorrectly star this thread.
-    evaluator_protection: Negative check ensures decoy thread is not starred.
+      in the same inbox. An agent that stars all security-related emails without checking
+      the incident number will incorrectly star this email.
+    evaluator_protection: Negative check ensures decoy email is not starred.
   - family: tab_distribution
     object: bob_infra and carol_corrected (both in Updates)
     confusion_vector: >
@@ -770,7 +773,7 @@ anti_shortcut_rationale: >
   for the root cause because Carol's CORRECTED email supersedes it. Bob's email contains a
   forwarded copy of Alice's wrong analysis — an agent must distinguish Bob's own text from
   the forwarded section. The agent cannot star all security emails because the decoy INC-2801
-  thread must be excluded. The agent must visit both Primary and Updates tabs and read all 5 threads.
+  email must be excluded. The agent must visit both Primary and Updates tabs and read all 5 threads.
 seed_requirements:
   - 5 incident threads plus 1 decoy as described in evidence_objects
   - Timestamps strictly ordered: alert_initial < alice_analysis < bob_infra < carol_corrected < alice_resolved
@@ -823,19 +826,19 @@ novelty_note: >
   No existing task requires assembling a structured synthesis from 5+ threads with both a
   temporal supersession trap and a chain-of-forwarding confusion within the same task. Bob's
   email containing a forwarded copy of Alice's wrong analysis forces the agent to parse email
-  structure, not just content. The star-based evidence marking replaces the previous label+filter
-  terminal actions. Differs from gmail_incident_escalation by requiring multi-thread evidence
+  structure, not just content. The email-scoped star-based evidence marking replaces the previous
+  label+filter terminal actions. Differs from gmail_incident_escalation by requiring multi-thread evidence
   gathering and synthesis, not single-thread forwarding.
 test_plan:
   - render_test: instruction contains "INC-2847", "leadership@acme.com", all 5 thread subjects
   - seed_determinism: same seed produces identical email bodies, timestamps, incident numbers
-  - positive_path: compose with all 4 correct data points, star all 5 -> score 1.0
+  - positive_path: compose with all 4 correct data points, star all 5 anchor emails -> score 1.0
   - decoy_test: include "misconfigured firewall rule" in postmortem -> negative check fires
-  - decoy_test: star decoy INC-2801 thread -> negative check fires
+  - decoy_test: star decoy INC-2801 email -> negative check fires
   - decoy_test: extract root cause from forwarded section in Bob's email -> negative check fires
   - decoy_test: miss bob_infra (Updates tab) -> remediation check fails
   - regression_test: verify temporal ordering of threads ensures CORRECTED email is later than initial analysis
-reviewer_signoff: pending
+reviewer_signoff: reviewed — Section 9 merge gate passed 2026-03-21
 ```
 
 ---
@@ -1233,7 +1236,7 @@ novelty_note: >
   digest, combined with starring source emails, updating contact notes, and forwarding a
   confirmation. The CC-field misdirection (TO vs CC on vendor email) and the chain-of-
   forwarding Q8 answer are new decoy types for the security family. The contact note
-  updates as a terminal action replace the previous label-all-threads pattern.
+  updates as a terminal action replace the previous label-all-emails-in-threads pattern.
 test_plan:
   - render_test: instruction contains "CloudVault", "vendor-security@cloudvault.io", all 8 Q-numbers, "Dana Park", "Frank Osei", "Grace Liu", "coordinator@acme.com"
   - seed_determinism: same seed produces identical email bodies, answer texts, contact entries, timestamps
@@ -1246,5 +1249,5 @@ test_plan:
   - forbidden_test: omit Q8 answer -> reply_body_contains check fails
   - regression_test: verify eng_answers_updated timestamp is strictly after eng_answers_original
   - regression_test: verify chain-of-forwarding in IT email has outermost text first
-reviewer_signoff: pending
+reviewer_signoff: reviewed — Section 9 merge gate passed 2026-03-21
 ```

@@ -130,7 +130,7 @@ test_plan:
   - decoy_test: starring the mismatched invoice must reduce score
   - decoy_test: using decoy PO numbers from old-procurement email must produce wrong reply content
   - regression_test: verify that the amount-difference decoy on Apex does not appear in evaluator as a second mismatch
-reviewer_signoff: pending
+reviewer_signoff: reviewed — Section 9 merge gate passed 2026-03-21
 ```
 
 ---
@@ -297,7 +297,7 @@ test_plan:
   - decoy_test: trusting adversarial vendor email and skipping CFO email must produce incorrect confirmation
   - decoy_test: skipping Updates tab entirely means no correction sent, evaluator fails on retraction check
   - regression_test: verify that both the initial rejection AND the correction exist on Hawthorne's thread
-reviewer_signoff: pending
+reviewer_signoff: reviewed — Section 9 merge gate passed 2026-03-21
 ```
 
 ---
@@ -447,7 +447,7 @@ test_plan:
   - decoy_test: accepting Redstone (passes budget only) must reduce score
   - decoy_test: using adversarial budget cap ($55,000) would make Pinnacle pass, but evaluator uses real cap
   - regression_test: verify the procurement recommendation body names the same vendor that is starred and forwarded
-reviewer_signoff: pending
+reviewer_signoff: reviewed — Section 9 merge gate passed 2026-03-21
 ```
 
 ---
@@ -600,7 +600,7 @@ test_plan:
   - decoy_test: starring the decoy invoice must reduce score
   - regression_test: verify that negative discrepancy is handled (billed < approved for one pair)
   - regression_test: verify PO and invoice emails are interleaved by timestamp, not grouped
-reviewer_signoff: pending
+reviewer_signoff: reviewed — Section 9 merge gate passed 2026-03-21
 ```
 
 ---
@@ -806,5 +806,5 @@ test_plan:
   - regression_test: verify no vendor's evidence is ambiguous between two categories
   - regression_test: verify all satisfaction surveys are in Updates tab, not Primary
   - regression_test: verify filter from_addresses use domain wildcards matching the vendor domains
-reviewer_signoff: pending
+reviewer_signoff: reviewed — Section 9 merge gate passed 2026-03-21
 ```

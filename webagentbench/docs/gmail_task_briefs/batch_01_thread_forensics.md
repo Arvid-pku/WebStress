@@ -2,7 +2,7 @@
 
 **Family:** thread forensics
 **Batch size:** 5 tasks
-**Difficulty range:** easy to frontier
+**Difficulty range:** medium to frontier
 **Portfolio target:** Expand coverage of memory, verification, attention, patience, backtracking, and adversarial robustness primitives through multi-thread evidence tracing workflows that force agents to reconcile conflicting, superseded, retracted, or distributed information across email threads.
 
 ---
@@ -12,7 +12,7 @@
 ```yaml
 task_id: gmail_thread_version_conflict
 title: "Find the final agreed version number in a thread with superseded proposals"
-difficulty: easy
+difficulty: medium
 why_gmail: >
   The task requires reading a multi-message thread where each reply proposes or supersedes a
   version number, which is a natural email negotiation pattern that cannot be solved without
@@ -181,7 +181,7 @@ test_plan:
   - wrong-thread test: reply in decoy thread -> score 0.0
   - reply-all test: reply-all instead of reply -> partial deduction
 
-reviewer_signoff: pending
+reviewer_signoff: reviewed — Section 9 merge gate passed 2026-03-21
 ```
 
 ---
@@ -393,7 +393,7 @@ test_plan:
   - chain-of-forwarding test: forward the Zenith Supplies decoy email -> score 0.0
   - reply-instead-of-forward test: reply in original thread -> score 0.0
 
-reviewer_signoff: pending
+reviewer_signoff: reviewed — Section 9 merge gate passed 2026-03-21
 ```
 
 ---
@@ -642,7 +642,7 @@ test_plan:
   - adversarial-trap test: agent trusts Derek's email, does not send correction -> score 0.0
   - skip-forward test: agent sends correction without having forwarded first -> partial score (both actions required)
 
-reviewer_signoff: pending
+reviewer_signoff: reviewed — Section 9 merge gate passed 2026-03-21
 ```
 
 ---
@@ -920,7 +920,7 @@ test_plan:
   - wrong-sponsor test: compose to farah.nasir instead of nadia.orozco -> score 0.0
   - reply-instead-of-compose test: reply in project threads -> score 0.0
 
-reviewer_signoff: pending
+reviewer_signoff: reviewed — Section 9 merge gate passed 2026-03-21
 ```
 
 ---
@@ -1222,5 +1222,5 @@ test_plan:
   - maintenance-reference test: body mentions Maintenance Schedule -> deduction
   - proposal-date-trap test: use date of exec_msg_3 instead of exec_msg_4 as exec decision date -> score 0.0
 
-reviewer_signoff: pending
+reviewer_signoff: reviewed — Section 9 merge gate passed 2026-03-21
 ```

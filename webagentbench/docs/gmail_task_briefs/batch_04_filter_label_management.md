@@ -180,7 +180,7 @@ test_plan:
   - decoy_test: Create subject-based filter per old suggestion -> negative check fires
   - decoy_test: Stop after creating narrow filter without repair -> evaluator fails (narrow filter present, wildcard absent)
   - regression_test: Leave narrow filter alongside wildcard -> negative check fires (narrow filter must be deleted)
-reviewer_signoff: pending
+reviewer_signoff: reviewed — Section 9 merge gate passed 2026-03-21
 ```
 
 ---
@@ -367,7 +367,7 @@ test_plan:
   - decoy_test: Execute Raj Patel's taxonomy instead, assert evaluator fails (wrong label names)
   - forbidden_action_test: Delete "Engineering/Planning", assert negative check fires
   - regression_test: Rename "Projects" but forget to relabel the [BLOCKED] email; verify partial credit is not full pass
-reviewer_signoff: pending
+reviewer_signoff: reviewed — Section 9 merge gate passed 2026-03-21
 ```
 
 ---
@@ -531,7 +531,7 @@ test_plan:
   - decoy_test: Stop because adversarial email claims filters are fine, assert evaluator fails
   - forbidden_action_test: Create a from-only filter (no subject constraint) for reports@dataviz.io, assert negative check fires
   - regression_test: Delete only filter B (following the colleague suggestion), assert evaluator fails because filter A still exists
-reviewer_signoff: pending
+reviewer_signoff: reviewed — Section 9 merge gate passed 2026-03-21
 ```
 
 ---
@@ -770,7 +770,7 @@ test_plan:
   - forbidden_action_test: Archive Priya's directive email, assert negative check fires
   - regression_test: Create filters but skip archiving existing emails; verify evaluator fails on archive checks
   - regression_test_2: Star a non-matching old email; verify negative check fires
-reviewer_signoff: pending
+reviewer_signoff: reviewed — Section 9 merge gate passed 2026-03-21
 ```
 
 ---
@@ -1045,5 +1045,5 @@ test_plan:
   - forbidden_action_test_3: Include resolution proposal in conflict report, assert negative check fires
   - regression_test: Implement all 9 filters (including conflicting ones), assert negative checks fire for both conflict addresses
   - regression_test_2: Apply "Team/Martinez" to a backend domain email, assert negative check fires
-reviewer_signoff: pending
+reviewer_signoff: reviewed — Section 9 merge gate passed 2026-03-21
 ```
