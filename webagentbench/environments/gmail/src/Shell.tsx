@@ -46,7 +46,7 @@ export function GmailShell({ sessionId }: { sessionId: string }) {
   // depending on it, so its identity stays stable across route changes.
   const locationRef = useRef(location);
   locationRef.current = location;
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const refreshMailbox = useCallback(async () => {
     setIsRefreshing(true);
