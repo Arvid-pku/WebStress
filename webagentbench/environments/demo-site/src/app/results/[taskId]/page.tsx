@@ -1,8 +1,14 @@
+import dynamic from "next/dynamic";
 import fs from "fs";
 import path from "path";
-import TrajectoryPage from "./TrajectoryPage";
 
-export function generateStaticParams() {
+const TrajectoryPage = dynamic(
+  () => import("./TrajectoryPage"),
+);
+
+export const dynamicParams = false;
+
+export async function generateStaticParams() {
   try {
     const summaryPath = path.join(process.cwd(), "public", "results", "summary.json");
     const summary = JSON.parse(fs.readFileSync(summaryPath, "utf-8"));
@@ -14,6 +20,7 @@ export function generateStaticParams() {
   }
 }
 
-export default function Page({ params }: { params: { taskId: string } }) {
-  return <TrajectoryPage taskId={params.taskId} />;
+export default async function Page({ params }: { params: Promise<{ taskId: string }> }) {
+  const { taskId } = await params;
+  return <TrajectoryPage taskId={taskId} />;
 }
