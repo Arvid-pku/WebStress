@@ -2,134 +2,126 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import {
-  fetchSummary,
-  fetchTrajectory,
-  type TaskResult,
-  type TrajectoryStep,
-} from "@/lib/results";
 import { TrajectoryViewer } from "@/components/replay/TrajectoryViewer";
 
+interface TrajectoryStep {
+  step: number;
+  thought: string;
+  action: Record<string, unknown>;
+  targets: { role: string; name: string };
+  status: string;
+  elapsed_seconds: number;
+}
+
+interface TrajectoryData {
+  task_id: string;
+  title: string;
+  instruction: string;
+  difficulty: string;
+  model: string;
+  total_steps: number;
+  elapsed_seconds: number;
+  completed: boolean;
+  evaluation: {
+    score: number;
+    success: boolean;
+    reasoning: string;
+    criteria_results?: Array<{ desc: string; passed: boolean; penalty?: number }>;
+  };
+  steps: TrajectoryStep[];
+}
+
 export default function TrajectoryPage({ taskId }: { taskId: string }) {
-  const [task, setTask] = useState<TaskResult | null>(null);
-  const [steps, setSteps] = useState<TrajectoryStep[] | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [instructionOpen, setInstructionOpen] = useState(false);
+  const [data, setData] = useState<TrajectoryData | null>(null);
+  const [showInstruction, setShowInstruction] = useState(false);
 
   useEffect(() => {
-    Promise.all([fetchSummary(), fetchTrajectory(taskId)]).then(
-      ([summary, traj]) => {
-        if (summary) {
-          const found = summary.tasks.find((t) => t.task_id === taskId) ?? null;
-          setTask(found);
-        }
-        setSteps(traj);
-        setLoading(false);
-      },
-    );
+    fetch(`/results/trajectories/${taskId}.json`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then(setData)
+      .catch(() => setData(null));
   }, [taskId]);
 
-  if (loading) {
+  if (!data) {
     return (
-      <div className="max-w-[720px] mx-auto px-12 pt-[120px]">
-        <p className="font-mono text-sm text-[var(--text-tertiary)]">Loading...</p>
+      <div className="max-w-[720px] mx-auto px-12 py-20">
+        <Link href="/results" className="text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] no-underline">
+          ← Results
+        </Link>
+        <p className="mt-8 text-[var(--text-secondary)]">Loading trajectory...</p>
       </div>
     );
   }
 
-  if (!task || !steps) {
-    return (
-      <div className="max-w-[720px] mx-auto px-12 pt-[120px]">
-        <Link
-          href="/results"
-          className="font-mono text-xs text-[var(--text-tertiary)] no-underline hover:text-[var(--text-secondary)] transition-colors"
-        >
-          &larr; Results
-        </Link>
-        <p className="mt-8 text-[var(--text-secondary)]">
-          Trajectory not found.
-        </p>
-      </div>
-    );
-  }
+  const score = data.evaluation?.score;
+  const success = data.evaluation?.success;
 
   return (
-    <div className="max-w-[720px] mx-auto px-12 pt-[120px] pb-24">
-      <Link
-        href="/results"
-        className="font-mono text-xs text-[var(--text-tertiary)] no-underline hover:text-[var(--text-secondary)] transition-colors"
-      >
-        &larr; Results
+    <div className="max-w-[960px] mx-auto px-12 py-20">
+      <Link href="/results" className="text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] no-underline">
+        ← Results
       </Link>
 
-      {/* header */}
-      <div className="mt-8 mb-8">
-        <h1 className="text-2xl font-medium tracking-tight mb-2">
-          {task.title}
-        </h1>
-        <div className="flex items-center gap-4 text-[13px]">
-          <span className="font-mono text-[var(--text-secondary)]">
-            {task.difficulty}
+      {/* Header */}
+      <div className="mt-6 mb-8">
+        <h1 className="text-2xl font-medium tracking-tight">{data.title}</h1>
+        <div className="flex gap-4 mt-2 font-mono text-sm">
+          <span className="text-[var(--text-tertiary)]">{data.difficulty}</span>
+          <span className={success ? "text-[var(--green)]" : "text-[var(--red)]"}>
+            {score !== undefined ? score.toFixed(2) : "—"}
           </span>
-          <span className="font-mono text-[var(--text-primary)]">
-            {task.score.toFixed(2)}
-          </span>
-          <span
-            className={`font-mono ${
-              task.success ? "text-[var(--green)]" : "text-[var(--red)]"
-            }`}
-          >
-            {task.success ? "pass" : "fail"}
-          </span>
-          <span className="font-mono text-[var(--text-tertiary)]">
-            {task.steps} steps &middot; {task.elapsed_seconds.toFixed(1)}s
+          <span className="text-[var(--text-tertiary)]">
+            {data.total_steps} steps · {data.elapsed_seconds.toFixed(0)}s
           </span>
         </div>
       </div>
 
-      {/* instruction (collapsible) */}
-      <div className="mb-10">
-        <button
-          onClick={() => setInstructionOpen((o) => !o)}
-          className="font-mono text-xs tracking-[2px] uppercase text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors bg-transparent border-none cursor-pointer p-0"
-        >
-          Instruction {instructionOpen ? "\u25B4" : "\u25BE"}
-        </button>
-        {instructionOpen && (
-          <p className="mt-3 text-[14px] text-[var(--text-secondary)] leading-[1.7] border-l-2 border-[var(--border)] pl-4">
-            {task.instruction}
+      {/* Collapsible instruction */}
+      <button
+        onClick={() => setShowInstruction(!showInstruction)}
+        className="text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] mb-6 cursor-pointer bg-transparent border-none font-[inherit]"
+      >
+        {showInstruction ? "▾ Hide instruction" : "▸ Show instruction"}
+      </button>
+      {showInstruction && (
+        <div className="mb-8 p-4 bg-[var(--surface)] border border-[var(--border)] rounded text-sm text-[var(--text-secondary)] leading-relaxed">
+          {data.instruction}
+        </div>
+      )}
+
+      {/* Trajectory viewer (manages its own step state + controls) */}
+      <TrajectoryViewer steps={data.steps} />
+
+      {/* Evaluation panel */}
+      {data.evaluation && (
+        <div className="mt-12 border-t border-[var(--border)] pt-8">
+          <p className="font-mono text-xs tracking-[3px] uppercase text-[var(--text-tertiary)] mb-4">
+            Evaluation
           </p>
-        )}
-      </div>
-
-      {/* trajectory */}
-      <TrajectoryViewer steps={steps} />
-
-      {/* evaluation */}
-      <div className="mt-12">
-        <p className="font-mono text-xs tracking-[2px] uppercase text-[var(--text-tertiary)] mb-4">
-          Evaluation
-        </p>
-        <div className="border border-[var(--border)] rounded-md p-5">
-          <div className="flex items-center gap-3 mb-3">
-            <span
-              className={`font-mono text-sm font-medium ${
-                task.success ? "text-[var(--green)]" : "text-[var(--red)]"
-              }`}
-            >
-              {task.success ? "PASS" : "FAIL"}
-            </span>
-            <span className="font-mono text-sm text-[var(--text-primary)]">
-              {task.score.toFixed(2)}
-            </span>
-          </div>
-          {task.reasoning && (
-            <p className="text-[14px] text-[var(--text-secondary)] leading-[1.7]">
-              {task.reasoning}
+          {data.evaluation.reasoning && (
+            <p className="text-sm text-[var(--text-secondary)] mb-4 leading-relaxed">
+              {data.evaluation.reasoning}
             </p>
           )}
+          {data.evaluation.criteria_results && data.evaluation.criteria_results.length > 0 && (
+            <div className="flex flex-col gap-2">
+              {data.evaluation.criteria_results.map((cr, i) => (
+                <div key={i} className="flex items-baseline gap-2 text-sm">
+                  <span className={cr.passed ? "text-[var(--green)]" : "text-[var(--red)]"}>
+                    {cr.passed ? "✓" : "✗"}
+                  </span>
+                  <span className="text-[var(--text-secondary)]">{cr.desc}</span>
+                  {cr.penalty !== undefined && !cr.passed && (
+                    <span className="font-mono text-xs text-[var(--text-tertiary)]">
+                      (-{cr.penalty})
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-      </div>
+      )}
     </div>
   );
 }
