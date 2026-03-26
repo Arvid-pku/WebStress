@@ -49,9 +49,14 @@ def generate_fixture(task, session_manager: SessionManager) -> dict:
         "env_id": task.env_id,
         "title": task.title,
         "difficulty": task.difficulty,
+        "primary_primitives": task.primary_primitives,
+        "secondary_primitives": task.secondary_primitives,
+        "expected_steps": task.expected_steps,
+        "time_limit_seconds": task.time_limit_seconds,
         "seed": seed,
         "start_path": task.start_path or "/inbox",
         "instruction": instruction,
+        "eval_check_descriptions": [check.desc for check in task.eval.checks],
         "resolved_targets": resolved_targets,
         "state": state_dict,
     }
@@ -67,9 +72,10 @@ def build_manifest_entry(task) -> dict:
         "task_id": task.task_id,
         "title": task.title,
         "difficulty": task.difficulty,
-        "primitives": task.primary_primitives + task.secondary_primitives,
+        "primary_primitives": task.primary_primitives,
+        "secondary_primitives": task.secondary_primitives,
         "expected_steps": task.expected_steps,
-        "time_limit": task.time_limit_seconds,
+        "time_limit_seconds": task.time_limit_seconds,
     }
 
 

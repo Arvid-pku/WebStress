@@ -1,10 +1,6 @@
-import dynamic from "next/dynamic";
 import fs from "fs";
 import path from "path";
-
-const TrajectoryPage = dynamic(
-  () => import("./TrajectoryPage"),
-);
+import TrajectoryPage from "./TrajectoryPage";
 
 export const dynamicParams = false;
 
