@@ -1,7 +1,8 @@
 {
-  "buildCommand": "pnpm --filter @webagentbench/demo-site run build",
-  "outputDirectory": "demo-site/out",
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
   "installCommand": "pnpm install",
-  "framework": null
+  "buildCommand": "pnpm --filter @webagentbench/demo-site build",
+  "outputDirectory": "demo-site/out",
+  "cleanUrls": true
 }
-
