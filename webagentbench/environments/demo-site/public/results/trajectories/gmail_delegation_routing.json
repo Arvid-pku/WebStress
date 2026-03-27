@@ -7,43 +7,44 @@
   "total_steps": 35,
   "elapsed_seconds": 364.7,
   "completed": false,
+  "start_path": "/inbox",
   "evaluation": {
     "score": 0.3333,
     "success": false,
     "reasoning": "Missing: Budget email forwarded to CFO; Missing: Tech email forwarded to CTO",
     "criteria_results": [
       {
-        "desc": "",
+        "desc": "Budget email forwarded to CFO",
         "passed": false,
         "penalty": null
       },
       {
-        "desc": "",
+        "desc": "Tech email forwarded to CTO",
         "passed": false,
         "penalty": null
       },
       {
-        "desc": "",
+        "desc": "Complaint forwarded to support lead",
         "passed": false,
         "penalty": null
       },
       {
-        "desc": "",
+        "desc": "Manager BCC'd on complaint",
         "passed": true,
         "penalty": null
       },
       {
-        "desc": "",
+        "desc": "Complaint starred",
         "passed": true,
         "penalty": null
       },
       {
-        "desc": "",
+        "desc": "Delegated label applied",
         "passed": false,
         "penalty": null
       },
       {
-        "desc": "",
+        "desc": "Decoy not forwarded",
         "passed": true,
         "penalty": 0.15
       }
@@ -58,11 +59,23 @@
         "ref": 39
       },
       "targets": {
-        "role": "link",
-        "name": "Open thread Unresolved billing dispute — customer escalation"
+        "ref": {
+          "role": "link",
+          "name": "Open thread Unresolved billing dispute — customer escalation",
+          "nth": 0,
+          "selector": "main.gmail-page > section.gmail-email-list > article.gmail-email-row.gmail-email-row--unread:nth-of-type(1) > div.gmail-email-row__main:nth-of-type(1) > a.gmail-email-row__subject",
+          "bbox": {
+            "x": 512,
+            "y": 126.5,
+            "width": 603.265625,
+            "height": 16
+          }
+        }
       },
       "status": "Clicked [39] link \"Open thread Unresolved billing dispute — customer escalation\"",
-      "elapsed_seconds": 4.3
+      "elapsed_seconds": 4.3,
+      "replay_path": "/inbox",
+      "result_path": "/thread/email_3"
     },
     {
       "step": 2,
@@ -72,11 +85,23 @@
         "ref": 33
       },
       "targets": {
-        "role": "button",
-        "name": "Star this thread"
+        "ref": {
+          "role": "button",
+          "name": "Star this thread",
+          "nth": 0,
+          "selector": "div.gmail-main-column > main.gmail-page > div.gmail-toolbar > div.gmail-toolbar__left:nth-of-type(1) > button.gmail-toolbar__icon-btn:nth-of-type(4)",
+          "bbox": {
+            "x": 384,
+            "y": 68,
+            "width": 36,
+            "height": 36
+          }
+        }
       },
       "status": "Clicked [33] button \"Star this thread\"",
-      "elapsed_seconds": 10.1
+      "elapsed_seconds": 10.1,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
     },
     {
       "step": 3,
@@ -86,11 +111,23 @@
         "ref": 35
       },
       "targets": {
-        "role": "button",
-        "name": "Forward this thread"
+        "ref": {
+          "role": "button",
+          "name": "Forward this thread",
+          "nth": 0,
+          "selector": "div.gmail-main-column > main.gmail-page > div.gmail-toolbar > div.gmail-toolbar__left:nth-of-type(1) > button.gmail-toolbar__icon-btn:nth-of-type(5)",
+          "bbox": {
+            "x": 464,
+            "y": 68,
+            "width": 36,
+            "height": 36
+          }
+        }
       },
       "status": "Clicked [35] button \"Forward this thread\"",
-      "elapsed_seconds": 13.4
+      "elapsed_seconds": 13.4,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
     },
     {
       "step": 4,
@@ -100,11 +137,23 @@
         "ref": 50
       },
       "targets": {
-        "role": "button",
-        "name": "Show BCC field"
+        "ref": {
+          "role": "button",
+          "name": "Show BCC field",
+          "nth": 0,
+          "selector": "section.gmail-compose-form.wab-card:nth-of-type(2) > div.gmail-compose-form__grid > div.gmail-compose-form__to-row > span.gmail-compose-form__toggles > button.gmail-compose-form__toggle:nth-of-type(2)",
+          "bbox": {
+            "x": 1217.328125,
+            "y": 439,
+            "width": 29.671875,
+            "height": 15
+          }
+        }
       },
       "status": "Clicked [50] button \"Show BCC field\"",
-      "elapsed_seconds": 24.4
+      "elapsed_seconds": 24.4,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
     },
     {
       "step": 5,
@@ -115,11 +164,23 @@
         "value": "avery.kim@leadership.test"
       },
       "targets": {
-        "role": "textbox",
-        "name": "Blind carbon copy recipients"
+        "ref": {
+          "role": "textbox",
+          "name": "Blind carbon copy recipients",
+          "nth": 0,
+          "selector": "#Forward-bcc",
+          "bbox": {
+            "x": 289,
+            "y": 514.78125,
+            "width": 473,
+            "height": 29.78125
+          }
+        }
       },
       "status": "Filled [51] with \"avery.kim@leadership.test\"",
-      "elapsed_seconds": 30.7
+      "elapsed_seconds": 30.7,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
     },
     {
       "step": 6,
@@ -130,11 +191,23 @@
         "value": "maria.chen@finance.test"
       },
       "targets": {
-        "role": "textbox",
-        "name": "Recipients"
+        "ref": {
+          "role": "textbox",
+          "name": "Recipients",
+          "nth": 0,
+          "selector": "#Forward-to",
+          "bbox": {
+            "x": 289,
+            "y": 458,
+            "width": 958,
+            "height": 29.78125
+          }
+        }
       },
       "status": "Filled [47] with \"maria.chen@finance.test\"",
-      "elapsed_seconds": 37.1
+      "elapsed_seconds": 37.1,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
     },
     {
       "step": 7,
@@ -144,11 +217,23 @@
         "ref": 67
       },
       "targets": {
-        "role": "button",
-        "name": "Forward"
+        "ref": {
+          "role": "button",
+          "name": "Forward",
+          "nth": 0,
+          "selector": "div.gmail-main-column > main.gmail-page > section.gmail-compose-form.wab-card:nth-of-type(2) > footer.gmail-compose-form__footer > button.wab-button.wab-button--primary:nth-of-type(2)",
+          "bbox": {
+            "x": 375.46875,
+            "y": 894.90625,
+            "width": 103.5,
+            "height": 41.03125
+          }
+        }
       },
       "status": "ERROR: TimeoutError: Locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for get_by_role(\"button\", name=\"Forward\", exact=True).first\n    - locator resolved to <button disabled type=\"button\" aria-label=\"Forward\" class=\"wab-button wab-button--primary\">Forward</button>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not enabled\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not enabled\n    - retrying click action\n      - waiting 100ms\n    58 × waiting for element to be visible, enabled and stable\n       - element is not enabled\n     - retrying click action\n       - waiting 500ms\n",
-      "elapsed_seconds": 71.6
+      "elapsed_seconds": 71.6,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
     },
     {
       "step": 8,
@@ -158,11 +243,23 @@
         "ref": 30
       },
       "targets": {
-        "role": "button",
-        "name": "Back to inbox"
+        "ref": {
+          "role": "button",
+          "name": "Back to inbox",
+          "nth": 0,
+          "selector": "div.gmail-main-column > main.gmail-page > div.gmail-toolbar > div.gmail-toolbar__left:nth-of-type(1) > button.gmail-toolbar__icon-btn:nth-of-type(1)",
+          "bbox": {
+            "x": 264,
+            "y": 68,
+            "width": 36,
+            "height": 36
+          }
+        }
       },
       "status": "Clicked [30] button \"Back to inbox\"",
-      "elapsed_seconds": 77.0
+      "elapsed_seconds": 77.0,
+      "replay_path": "/thread/email_3",
+      "result_path": "/inbox"
     },
     {
       "step": 9,
@@ -172,11 +269,23 @@
         "ref": 27
       },
       "targets": {
-        "role": "link",
-        "name": "Labels"
+        "ref": {
+          "role": "link",
+          "name": "Labels",
+          "nth": 0,
+          "selector": "div.gmail-body > nav.gmail-sidebar > aside.wab-sidebar.wab-card > section.wab-sidebar__section:nth-of-type(2) > a.wab-sidebar__link:nth-of-type(2)",
+          "bbox": {
+            "x": 0,
+            "y": 403.1875,
+            "width": 256,
+            "height": 32
+          }
+        }
       },
       "status": "Clicked [27] link \"Labels\"",
-      "elapsed_seconds": 82.0
+      "elapsed_seconds": 82.0,
+      "replay_path": "/inbox",
+      "result_path": "/labels"
     },
     {
       "step": 10,
@@ -187,11 +296,23 @@
         "value": "Delegated"
       },
       "targets": {
-        "role": "textbox",
-        "name": "New label name"
+        "ref": {
+          "role": "textbox",
+          "name": "New label name",
+          "nth": 0,
+          "selector": "#new-label-name",
+          "bbox": {
+            "x": 289,
+            "y": 936.34375,
+            "width": 386,
+            "height": 59.875
+          }
+        }
       },
       "status": "Filled [34] with \"Delegated\"",
-      "elapsed_seconds": 85.6
+      "elapsed_seconds": 85.6,
+      "replay_path": "/labels",
+      "result_path": "/labels"
     },
     {
       "step": 11,
@@ -201,11 +322,23 @@
         "ref": 37
       },
       "targets": {
-        "role": "button",
-        "name": "Create label"
+        "ref": {
+          "role": "button",
+          "name": "Create label",
+          "nth": 0,
+          "selector": "div.gmail-main-column > main.gmail-page.gmail-page--labels > section.gmail-settings-grid > section.wab-card.gmail-settings-card:nth-of-type(1) > button.wab-button.wab-button--primary",
+          "bbox": {
+            "x": 289,
+            "y": 854.78125,
+            "width": 386,
+            "height": 123.78125
+          }
+        }
       },
       "status": "Clicked [37] button \"Create label\"",
-      "elapsed_seconds": 89.9
+      "elapsed_seconds": 89.9,
+      "replay_path": "/labels",
+      "result_path": "/labels"
     },
     {
       "step": 12,
@@ -215,11 +348,23 @@
         "ref": 8
       },
       "targets": {
-        "role": "link",
-        "name": "Inbox"
+        "ref": {
+          "role": "link",
+          "name": "Inbox",
+          "nth": 0,
+          "selector": "div.gmail-body > nav.gmail-sidebar > aside.wab-sidebar.wab-card > section.wab-sidebar__section:nth-of-type(1) > a.wab-sidebar__link:nth-of-type(1)",
+          "bbox": {
+            "x": 0,
+            "y": -399,
+            "width": 256,
+            "height": 32
+          }
+        }
       },
       "status": "Clicked [8] link \"Inbox\"",
-      "elapsed_seconds": 97.2
+      "elapsed_seconds": 97.2,
+      "replay_path": "/labels",
+      "result_path": "/inbox?label=inbox"
     },
     {
       "step": 13,
@@ -229,11 +374,23 @@
         "ref": 39
       },
       "targets": {
-        "role": "link",
-        "name": "Open thread Unresolved billing dispute — customer escalation"
+        "ref": {
+          "role": "link",
+          "name": "Open thread Unresolved billing dispute — customer escalation",
+          "nth": 0,
+          "selector": "main.gmail-page > section.gmail-email-list > article.gmail-email-row:nth-of-type(1) > div.gmail-email-row__main:nth-of-type(1) > a.gmail-email-row__subject",
+          "bbox": {
+            "x": 512,
+            "y": 126.5,
+            "width": 545.234375,
+            "height": 16
+          }
+        }
       },
       "status": "Clicked [39] link \"Open thread Unresolved billing dispute — customer escalation\"",
-      "elapsed_seconds": 103.9
+      "elapsed_seconds": 103.9,
+      "replay_path": "/inbox?label=inbox",
+      "result_path": "/thread/email_3"
     },
     {
       "step": 14,
@@ -243,11 +400,23 @@
         "ref": 35
       },
       "targets": {
-        "role": "button",
-        "name": "Forward this thread"
+        "ref": {
+          "role": "button",
+          "name": "Forward this thread",
+          "nth": 0,
+          "selector": "div.gmail-main-column > main.gmail-page > div.gmail-toolbar > div.gmail-toolbar__left:nth-of-type(1) > button.gmail-toolbar__icon-btn:nth-of-type(5)",
+          "bbox": {
+            "x": 464,
+            "y": 68,
+            "width": 36,
+            "height": 36
+          }
+        }
       },
       "status": "Clicked [35] button \"Forward this thread\"",
-      "elapsed_seconds": 113.3
+      "elapsed_seconds": 113.3,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
     },
     {
       "step": 15,
@@ -257,11 +426,23 @@
         "ref": 50
       },
       "targets": {
-        "role": "button",
-        "name": "Show BCC field"
+        "ref": {
+          "role": "button",
+          "name": "Show BCC field",
+          "nth": 0,
+          "selector": "section.gmail-compose-form.wab-card:nth-of-type(2) > div.gmail-compose-form__grid > div.gmail-compose-form__to-row > span.gmail-compose-form__toggles > button.gmail-compose-form__toggle:nth-of-type(2)",
+          "bbox": {
+            "x": 1217.328125,
+            "y": 439,
+            "width": 29.671875,
+            "height": 15
+          }
+        }
       },
       "status": "Clicked [50] button \"Show BCC field\"",
-      "elapsed_seconds": 118.3
+      "elapsed_seconds": 118.3,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
     },
     {
       "step": 16,
@@ -272,11 +453,23 @@
         "value": "avery.kim@leadership.test"
       },
       "targets": {
-        "role": "textbox",
-        "name": "Blind carbon copy recipients"
+        "ref": {
+          "role": "textbox",
+          "name": "Blind carbon copy recipients",
+          "nth": 0,
+          "selector": "#Forward-bcc",
+          "bbox": {
+            "x": 289,
+            "y": 514.78125,
+            "width": 473,
+            "height": 29.78125
+          }
+        }
       },
       "status": "Filled [51] with \"avery.kim@leadership.test\"",
-      "elapsed_seconds": 123.5
+      "elapsed_seconds": 123.5,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
     },
     {
       "step": 17,
@@ -287,11 +480,23 @@
         "value": "maria.chen@finance.test"
       },
       "targets": {
-        "role": "textbox",
-        "name": "Recipients"
+        "ref": {
+          "role": "textbox",
+          "name": "Recipients",
+          "nth": 0,
+          "selector": "#Forward-to",
+          "bbox": {
+            "x": 289,
+            "y": 458,
+            "width": 958,
+            "height": 29.78125
+          }
+        }
       },
       "status": "Filled [47] with \"maria.chen@finance.test\"",
-      "elapsed_seconds": 131.9
+      "elapsed_seconds": 131.9,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
     },
     {
       "step": 18,
@@ -302,11 +507,23 @@
         "value": "This is an urgent customer billing dispute that needs immediate attention. Please prioritize."
       },
       "targets": {
-        "role": "textbox",
-        "name": "Email body"
+        "ref": {
+          "role": "textbox",
+          "name": "Email body",
+          "nth": 0,
+          "selector": "#Forward-body",
+          "bbox": {
+            "x": 289,
+            "y": 628.34375,
+            "width": 958,
+            "height": 173.78125
+          }
+        }
       },
       "status": "Filled [60] with \"This is an urgent customer billing dispute that ne\"",
-      "elapsed_seconds": 147.5
+      "elapsed_seconds": 147.5,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
     },
     {
       "step": 19,
@@ -316,11 +533,23 @@
         "ref": 68
       },
       "targets": {
-        "role": "button",
-        "name": "Forward"
+        "ref": {
+          "role": "button",
+          "name": "Forward",
+          "nth": 0,
+          "selector": "div.gmail-main-column > main.gmail-page > section.gmail-compose-form.wab-card:nth-of-type(2) > footer.gmail-compose-form__footer > button.wab-button.wab-button--primary:nth-of-type(2)",
+          "bbox": {
+            "x": 375.46875,
+            "y": 894.90625,
+            "width": 103.5,
+            "height": 41.03125
+          }
+        }
       },
       "status": "Clicked [68] button \"Forward\"",
-      "elapsed_seconds": 161.3
+      "elapsed_seconds": 161.3,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
     },
     {
       "step": 20,
@@ -330,11 +559,23 @@
         "ref": 34
       },
       "targets": {
-        "role": "button",
-        "name": "Apply label to this thread"
+        "ref": {
+          "role": "button",
+          "name": "Apply label to this thread",
+          "nth": 0,
+          "selector": "main.gmail-page > div.gmail-toolbar > div.gmail-toolbar__left:nth-of-type(1) > div.gmail-toolbar__label-menu-wrapper > button.gmail-toolbar__icon-btn",
+          "bbox": {
+            "x": 424,
+            "y": 68,
+            "width": 36,
+            "height": 36
+          }
+        }
       },
       "status": "Clicked [34] button \"Apply label to this thread\"",
-      "elapsed_seconds": 169.6
+      "elapsed_seconds": 169.6,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
     },
     {
       "step": 21,
@@ -344,11 +585,23 @@
         "ref": 37
       },
       "targets": {
-        "role": "menuitem",
-        "name": "Apply label Delegated"
+        "ref": {
+          "role": "menuitem",
+          "name": "Apply label Delegated",
+          "nth": 0,
+          "selector": "div.gmail-toolbar > div.gmail-toolbar__left:nth-of-type(1) > div.gmail-toolbar__label-menu-wrapper > div.gmail-label-menu > button.gmail-label-menu__item:nth-of-type(2)",
+          "bbox": {
+            "x": 425,
+            "y": 162,
+            "width": 198,
+            "height": 27
+          }
+        }
       },
       "status": "Clicked [37] menuitem \"Apply label Delegated\"",
-      "elapsed_seconds": 182.0
+      "elapsed_seconds": 182.0,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
     },
     {
       "step": 22,
@@ -358,11 +611,23 @@
         "ref": 30
       },
       "targets": {
-        "role": "button",
-        "name": "Back to inbox"
+        "ref": {
+          "role": "button",
+          "name": "Back to inbox",
+          "nth": 0,
+          "selector": "div.gmail-main-column > main.gmail-page > div.gmail-toolbar > div.gmail-toolbar__left:nth-of-type(1) > button.gmail-toolbar__icon-btn:nth-of-type(1)",
+          "bbox": {
+            "x": 264,
+            "y": 68,
+            "width": 36,
+            "height": 36
+          }
+        }
       },
       "status": "Clicked [30] button \"Back to inbox\"",
-      "elapsed_seconds": 192.1
+      "elapsed_seconds": 192.1,
+      "replay_path": "/thread/email_3",
+      "result_path": "/inbox?label=inbox"
     },
     {
       "step": 23,
@@ -372,11 +637,23 @@
         "ref": 44
       },
       "targets": {
-        "role": "link",
-        "name": "Open thread Q2 budget allocation question"
+        "ref": {
+          "role": "link",
+          "name": "Open thread Q2 budget allocation question",
+          "nth": 0,
+          "selector": "main.gmail-page > section.gmail-email-list > article.gmail-email-row.gmail-email-row--unread:nth-of-type(2) > div.gmail-email-row__main:nth-of-type(1) > a.gmail-email-row__subject",
+          "bbox": {
+            "x": 512,
+            "y": 166.5,
+            "width": 603.265625,
+            "height": 16
+          }
+        }
       },
       "status": "Clicked [44] link \"Open thread Q2 budget allocation question\"",
-      "elapsed_seconds": 206.3
+      "elapsed_seconds": 206.3,
+      "replay_path": "/inbox?label=inbox",
+      "result_path": "/thread/email_1"
     },
     {
       "step": 24,
@@ -386,11 +663,23 @@
         "ref": 35
       },
       "targets": {
-        "role": "button",
-        "name": "Forward this thread"
+        "ref": {
+          "role": "button",
+          "name": "Forward this thread",
+          "nth": 0,
+          "selector": "div.gmail-main-column > main.gmail-page > div.gmail-toolbar > div.gmail-toolbar__left:nth-of-type(1) > button.gmail-toolbar__icon-btn:nth-of-type(5)",
+          "bbox": {
+            "x": 464,
+            "y": 68,
+            "width": 36,
+            "height": 36
+          }
+        }
       },
       "status": "Clicked [35] button \"Forward this thread\"",
-      "elapsed_seconds": 218.4
+      "elapsed_seconds": 218.4,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
     },
     {
       "step": 25,
@@ -401,11 +690,23 @@
         "value": "maria.chen@finance.test"
       },
       "targets": {
-        "role": "textbox",
-        "name": "Recipients"
+        "ref": {
+          "role": "textbox",
+          "name": "Recipients",
+          "nth": 0,
+          "selector": "#Forward-to",
+          "bbox": {
+            "x": 289,
+            "y": 458,
+            "width": 958,
+            "height": 29.78125
+          }
+        }
       },
       "status": "Filled [47] with \"maria.chen@finance.test\"",
-      "elapsed_seconds": 229.6
+      "elapsed_seconds": 229.6,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
     },
     {
       "step": 26,
@@ -416,11 +717,23 @@
         "value": "This is a Q2 budget allocation question that needs your attention."
       },
       "targets": {
-        "role": "textbox",
-        "name": "Email body"
+        "ref": {
+          "role": "textbox",
+          "name": "Email body",
+          "nth": 0,
+          "selector": "#Forward-body",
+          "bbox": {
+            "x": 289,
+            "y": 571.5625,
+            "width": 958,
+            "height": 173.78125
+          }
+        }
       },
       "status": "Filled [57] with \"This is a Q2 budget allocation question that needs\"",
-      "elapsed_seconds": 246.9
+      "elapsed_seconds": 246.9,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
     },
     {
       "step": 27,
@@ -430,11 +743,23 @@
         "ref": 65
       },
       "targets": {
-        "role": "button",
-        "name": "Forward"
+        "ref": {
+          "role": "button",
+          "name": "Forward",
+          "nth": 0,
+          "selector": "div.gmail-main-column > main.gmail-page > section.gmail-compose-form.wab-card:nth-of-type(2) > footer.gmail-compose-form__footer > button.wab-button.wab-button--primary:nth-of-type(2)",
+          "bbox": {
+            "x": 375.46875,
+            "y": 838.125,
+            "width": 103.5,
+            "height": 41.03125
+          }
+        }
       },
       "status": "Clicked [65] button \"Forward\"",
-      "elapsed_seconds": 263.6
+      "elapsed_seconds": 263.6,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
     },
     {
       "step": 28,
@@ -444,11 +769,23 @@
         "ref": 34
       },
       "targets": {
-        "role": "button",
-        "name": "Apply label to this thread"
+        "ref": {
+          "role": "button",
+          "name": "Apply label to this thread",
+          "nth": 0,
+          "selector": "main.gmail-page > div.gmail-toolbar > div.gmail-toolbar__left:nth-of-type(1) > div.gmail-toolbar__label-menu-wrapper > button.gmail-toolbar__icon-btn",
+          "bbox": {
+            "x": 424,
+            "y": 68,
+            "width": 36,
+            "height": 36
+          }
+        }
       },
       "status": "Clicked [34] button \"Apply label to this thread\"",
-      "elapsed_seconds": 272.1
+      "elapsed_seconds": 272.1,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
     },
     {
       "step": 29,
@@ -458,11 +795,23 @@
         "ref": 37
       },
       "targets": {
-        "role": "menuitem",
-        "name": "Apply label Delegated"
+        "ref": {
+          "role": "menuitem",
+          "name": "Apply label Delegated",
+          "nth": 0,
+          "selector": "div.gmail-toolbar > div.gmail-toolbar__left:nth-of-type(1) > div.gmail-toolbar__label-menu-wrapper > div.gmail-label-menu > button.gmail-label-menu__item:nth-of-type(2)",
+          "bbox": {
+            "x": 425,
+            "y": 162,
+            "width": 198,
+            "height": 27
+          }
+        }
       },
       "status": "Clicked [37] menuitem \"Apply label Delegated\"",
-      "elapsed_seconds": 281.3
+      "elapsed_seconds": 281.3,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
     },
     {
       "step": 30,
@@ -472,11 +821,23 @@
         "ref": 30
       },
       "targets": {
-        "role": "button",
-        "name": "Back to inbox"
+        "ref": {
+          "role": "button",
+          "name": "Back to inbox",
+          "nth": 0,
+          "selector": "div.gmail-main-column > main.gmail-page > div.gmail-toolbar > div.gmail-toolbar__left:nth-of-type(1) > button.gmail-toolbar__icon-btn:nth-of-type(1)",
+          "bbox": {
+            "x": 264,
+            "y": 68,
+            "width": 36,
+            "height": 36
+          }
+        }
       },
       "status": "Clicked [30] button \"Back to inbox\"",
-      "elapsed_seconds": 295.3
+      "elapsed_seconds": 295.3,
+      "replay_path": "/thread/email_1",
+      "result_path": "/inbox?label=inbox"
     },
     {
       "step": 31,
@@ -486,11 +847,23 @@
         "ref": 49
       },
       "targets": {
-        "role": "link",
-        "name": "Open thread API rate limiting issue on staging"
+        "ref": {
+          "role": "link",
+          "name": "Open thread API rate limiting issue on staging",
+          "nth": 0,
+          "selector": "main.gmail-page > section.gmail-email-list > article.gmail-email-row.gmail-email-row--unread:nth-of-type(3) > div.gmail-email-row__main:nth-of-type(1) > a.gmail-email-row__subject",
+          "bbox": {
+            "x": 512,
+            "y": 206.5,
+            "width": 603.265625,
+            "height": 16
+          }
+        }
       },
       "status": "Clicked [49] link \"Open thread API rate limiting issue on staging\"",
-      "elapsed_seconds": 308.4
+      "elapsed_seconds": 308.4,
+      "replay_path": "/inbox?label=inbox",
+      "result_path": "/thread/email_2"
     },
     {
       "step": 32,
@@ -500,11 +873,23 @@
         "ref": 35
       },
       "targets": {
-        "role": "button",
-        "name": "Forward this thread"
+        "ref": {
+          "role": "button",
+          "name": "Forward this thread",
+          "nth": 0,
+          "selector": "div.gmail-main-column > main.gmail-page > div.gmail-toolbar > div.gmail-toolbar__left:nth-of-type(1) > button.gmail-toolbar__icon-btn:nth-of-type(5)",
+          "bbox": {
+            "x": 464,
+            "y": 68,
+            "width": 36,
+            "height": 36
+          }
+        }
       },
       "status": "Clicked [35] button \"Forward this thread\"",
-      "elapsed_seconds": 324.1
+      "elapsed_seconds": 324.1,
+      "replay_path": "/thread/email_2",
+      "result_path": "/thread/email_2"
     },
     {
       "step": 33,
@@ -515,11 +900,23 @@
         "value": "james.wilson@engineering.test"
       },
       "targets": {
-        "role": "textbox",
-        "name": "Recipients"
+        "ref": {
+          "role": "textbox",
+          "name": "Recipients",
+          "nth": 0,
+          "selector": "#Forward-to",
+          "bbox": {
+            "x": 289,
+            "y": 458,
+            "width": 958,
+            "height": 29.78125
+          }
+        }
       },
       "status": "Filled [47] with \"james.wilson@engineering.test\"",
-      "elapsed_seconds": 342.4
+      "elapsed_seconds": 342.4,
+      "replay_path": "/thread/email_2",
+      "result_path": "/thread/email_2"
     },
     {
       "step": 34,
@@ -530,11 +927,23 @@
         "value": "This is an urgent API rate limiting issue on staging that's blocking QA. Please prioritize."
       },
       "targets": {
-        "role": "textbox",
-        "name": "Email body"
+        "ref": {
+          "role": "textbox",
+          "name": "Email body",
+          "nth": 0,
+          "selector": "#Forward-body",
+          "bbox": {
+            "x": 289,
+            "y": 571.5625,
+            "width": 958,
+            "height": 173.78125
+          }
+        }
       },
       "status": "Filled [57] with \"This is an urgent API rate limiting issue on stagi\"",
-      "elapsed_seconds": 354.1
+      "elapsed_seconds": 354.1,
+      "replay_path": "/thread/email_2",
+      "result_path": "/thread/email_2"
     },
     {
       "step": 35,
@@ -544,11 +953,23 @@
         "ref": 65
       },
       "targets": {
-        "role": "button",
-        "name": "Forward"
+        "ref": {
+          "role": "button",
+          "name": "Forward",
+          "nth": 0,
+          "selector": "div.gmail-main-column > main.gmail-page > section.gmail-compose-form.wab-card:nth-of-type(2) > footer.gmail-compose-form__footer > button.wab-button.wab-button--primary:nth-of-type(2)",
+          "bbox": {
+            "x": 375.46875,
+            "y": 838.125,
+            "width": 103.5,
+            "height": 41.03125
+          }
+        }
       },
       "status": "Clicked [65] button \"Forward\"",
-      "elapsed_seconds": 364.2
+      "elapsed_seconds": 364.2,
+      "replay_path": "/thread/email_2",
+      "result_path": "/thread/email_2"
     }
   ]
 }

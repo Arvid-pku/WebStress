@@ -7,48 +7,49 @@
   "total_steps": 29,
   "elapsed_seconds": 228.2,
   "completed": true,
+  "start_path": "/inbox",
   "evaluation": {
     "score": 1.0,
     "success": true,
     "reasoning": "All checks passed; final score 1.00",
     "criteria_results": [
       {
-        "desc": "",
+        "desc": "Broken filter deleted",
         "passed": true,
         "penalty": null
       },
       {
-        "desc": "",
+        "desc": "Fixed filter created with correct domain",
         "passed": true,
         "penalty": null
       },
       {
-        "desc": "",
+        "desc": "Keyword filter created",
         "passed": true,
         "penalty": null
       },
       {
-        "desc": "",
+        "desc": "Archive filter created",
         "passed": true,
         "penalty": null
       },
       {
-        "desc": "",
+        "desc": "Forward filter created",
         "passed": true,
         "penalty": null
       },
       {
-        "desc": "",
+        "desc": "Good filter A preserved",
         "passed": true,
         "penalty": null
       },
       {
-        "desc": "",
+        "desc": "Good filter B preserved",
         "passed": true,
         "penalty": null
       },
       {
-        "desc": "",
+        "desc": "Broken filter not left in place",
         "passed": true,
         "penalty": 0.2
       }
@@ -63,11 +64,23 @@
         "ref": 31
       },
       "targets": {
-        "role": "tab",
-        "name": "Promotions"
+        "ref": {
+          "role": "tab",
+          "name": "Promotions",
+          "nth": 0,
+          "selector": "main.gmail-page > div.gmail-toolbar > div.gmail-toolbar__left:nth-of-type(1) > div.wab-tabs > button.wab-tabs__trigger:nth-of-type(2)",
+          "bbox": {
+            "x": 348.15625,
+            "y": 68,
+            "width": 109.78125,
+            "height": 42
+          }
+        }
       },
       "status": "Clicked [31] tab \"Promotions\"",
-      "elapsed_seconds": 2.5
+      "elapsed_seconds": 2.5,
+      "replay_path": "/inbox",
+      "result_path": "/inbox?category=promotions&page=1"
     },
     {
       "step": 2,
@@ -77,11 +90,23 @@
         "ref": 32
       },
       "targets": {
-        "role": "tab",
-        "name": "Updates"
+        "ref": {
+          "role": "tab",
+          "name": "Updates",
+          "nth": 0,
+          "selector": "main.gmail-page > div.gmail-toolbar > div.gmail-toolbar__left:nth-of-type(1) > div.wab-tabs > button.wab-tabs__trigger:nth-of-type(3)",
+          "bbox": {
+            "x": 457.9375,
+            "y": 68,
+            "width": 87.234375,
+            "height": 42
+          }
+        }
       },
       "status": "Clicked [32] tab \"Updates\"",
-      "elapsed_seconds": 5.7
+      "elapsed_seconds": 5.7,
+      "replay_path": "/inbox?category=promotions&page=1",
+      "result_path": "/inbox?category=updates&page=1"
     },
     {
       "step": 3,
@@ -91,11 +116,23 @@
         "ref": 25
       },
       "targets": {
-        "role": "link",
-        "name": "Settings"
+        "ref": {
+          "role": "link",
+          "name": "Settings",
+          "nth": 0,
+          "selector": "div.gmail-body > nav.gmail-sidebar > aside.wab-sidebar.wab-card > section.wab-sidebar__section:nth-of-type(2) > a.wab-sidebar__link:nth-of-type(1)",
+          "bbox": {
+            "x": 0,
+            "y": 367.1875,
+            "width": 256,
+            "height": 32
+          }
+        }
       },
       "status": "Clicked [25] link \"Settings\"",
-      "elapsed_seconds": 8.9
+      "elapsed_seconds": 8.9,
+      "replay_path": "/inbox?category=updates&page=1",
+      "result_path": "/settings"
     },
     {
       "step": 4,
@@ -105,11 +142,23 @@
         "ref": 36
       },
       "targets": {
-        "role": "tab",
-        "name": "Filters and Blocked Addresses"
+        "ref": {
+          "role": "tab",
+          "name": "Filters and Blocked Addresses",
+          "nth": 0,
+          "selector": "div.gmail-main-column > main.gmail-page.gmail-page--settings > nav.gmail-settings-tabs > div.gmail-settings-tabs__row:nth-of-type(1) > button.gmail-settings-tabs__tab:nth-of-type(5)",
+          "bbox": {
+            "x": 605.78125,
+            "y": 105,
+            "width": 198.875,
+            "height": 36.1875
+          }
+        }
       },
       "status": "Clicked [36] tab \"Filters and Blocked Addresses\"",
-      "elapsed_seconds": 11.8
+      "elapsed_seconds": 11.8,
+      "replay_path": "/settings",
+      "result_path": "/settings"
     },
     {
       "step": 5,
@@ -119,11 +168,23 @@
         "ref": 54
       },
       "targets": {
-        "role": "button",
-        "name": "Delete filter Billing auto-archive"
+        "ref": {
+          "role": "button",
+          "name": "Delete filter Billing auto-archive",
+          "nth": 0,
+          "selector": "table.wab-data-table > tbody > tr:nth-of-type(1) > td:nth-of-type(4) > button.gmail-toolbar__icon-btn",
+          "bbox": {
+            "x": 1175.796875,
+            "y": 288.546875,
+            "width": 36,
+            "height": 36
+          }
+        }
       },
       "status": "Clicked [54] button \"Delete filter Billing auto-archive\"",
-      "elapsed_seconds": 17.6
+      "elapsed_seconds": 17.6,
+      "replay_path": "/settings",
+      "result_path": "/settings"
     },
     {
       "step": 6,
@@ -133,11 +194,23 @@
         "ref": 61
       },
       "targets": {
-        "role": "button",
-        "name": "Create a new filter"
+        "ref": {
+          "role": "button",
+          "name": "Create a new filter",
+          "nth": 0,
+          "selector": "main.gmail-page.gmail-page--settings > div.gmail-settings-content:nth-of-type(2) > div.gmail-settings-filters > div:nth-of-type(2) > button.wab-button.wab-button--secondary",
+          "bbox": {
+            "x": 272,
+            "y": 418.71875,
+            "width": 178.203125,
+            "height": 41.03125
+          }
+        }
       },
       "status": "Clicked [61] button \"Create a new filter\"",
-      "elapsed_seconds": 21.9
+      "elapsed_seconds": 21.9,
+      "replay_path": "/settings",
+      "result_path": "/settings"
     },
     {
       "step": 7,
@@ -148,11 +221,23 @@
         "value": "@billing-services.test"
       },
       "targets": {
-        "role": "textbox",
-        "name": "Filter from address"
+        "ref": {
+          "role": "textbox",
+          "name": "Filter from address",
+          "nth": 0,
+          "selector": "#new-filter-from",
+          "bbox": {
+            "x": 327.390625,
+            "y": 252.359375,
+            "width": 625.21875,
+            "height": 39.1875
+          }
+        }
       },
       "status": "Filled [67] with \"@billing-services.test\"",
-      "elapsed_seconds": 27.9
+      "elapsed_seconds": 27.9,
+      "replay_path": "/settings",
+      "result_path": "/settings"
     },
     {
       "step": 8,
@@ -162,11 +247,23 @@
         "ref": 78
       },
       "targets": {
-        "role": "button",
-        "name": "Continue to filter actions"
+        "ref": {
+          "role": "button",
+          "name": "Continue to filter actions",
+          "nth": 0,
+          "selector": "main.gmail-page.gmail-page--settings > div.wab-modal-backdrop:nth-of-type(3) > section.wab-modal.wab-card > footer > button.wab-button.wab-button--primary:nth-of-type(2)",
+          "bbox": {
+            "x": 842.90625,
+            "y": 529.78125,
+            "width": 109.703125,
+            "height": 41.03125
+          }
+        }
       },
       "status": "Clicked [78] button \"Continue to filter actions\"",
-      "elapsed_seconds": 35.0
+      "elapsed_seconds": 35.0,
+      "replay_path": "/settings",
+      "result_path": "/settings"
     },
     {
       "step": 9,
@@ -176,11 +273,23 @@
         "ref": 76
       },
       "targets": {
-        "role": "checkbox",
-        "name": "Skip Inbox (Archive it)"
+        "ref": {
+          "role": "checkbox",
+          "name": "Skip Inbox (Archive it)",
+          "nth": 0,
+          "selector": "section.wab-modal.wab-card > div > div.gmail-modal-grid > label.gmail-settings-card__checkbox:nth-of-type(4) > input",
+          "bbox": {
+            "x": 331.390625,
+            "y": 492.1875,
+            "width": 13,
+            "height": 13
+          }
+        }
       },
       "status": "Checked [76]",
-      "elapsed_seconds": 41.1
+      "elapsed_seconds": 41.1,
+      "replay_path": "/settings",
+      "result_path": "/settings"
     },
     {
       "step": 10,
@@ -191,11 +300,23 @@
         "value": "Billing"
       },
       "targets": {
-        "role": "textbox",
-        "name": "Filter labels"
+        "ref": {
+          "role": "textbox",
+          "name": "Filter labels",
+          "nth": 0,
+          "selector": "#new-filter-labels",
+          "bbox": {
+            "x": 327.390625,
+            "y": 274.0625,
+            "width": 625.21875,
+            "height": 39.1875
+          }
+        }
       },
       "status": "Filled [68] with \"Billing\"",
-      "elapsed_seconds": 46.3
+      "elapsed_seconds": 46.3,
+      "replay_path": "/settings",
+      "result_path": "/settings"
     },
     {
       "step": 11,
@@ -205,11 +326,23 @@
         "ref": 84
       },
       "targets": {
-        "role": "button",
-        "name": "Save new filter"
+        "ref": {
+          "role": "button",
+          "name": "Save new filter",
+          "nth": 0,
+          "selector": "main.gmail-page.gmail-page--settings > div.wab-modal-backdrop:nth-of-type(3) > section.wab-modal.wab-card > footer > button.wab-button.wab-button--primary:nth-of-type(2)",
+          "bbox": {
+            "x": 823.3125,
+            "y": 581.375,
+            "width": 129.296875,
+            "height": 41.03125
+          }
+        }
       },
       "status": "Clicked [84] button \"Save new filter\"",
-      "elapsed_seconds": 51.0
+      "elapsed_seconds": 51.0,
+      "replay_path": "/settings",
+      "result_path": "/settings"
     },
     {
       "step": 12,
@@ -219,11 +352,23 @@
         "ref": 67
       },
       "targets": {
-        "role": "button",
-        "name": "Create a new filter"
+        "ref": {
+          "role": "button",
+          "name": "Create a new filter",
+          "nth": 0,
+          "selector": "main.gmail-page.gmail-page--settings > div.gmail-settings-content:nth-of-type(2) > div.gmail-settings-filters > div:nth-of-type(2) > button.wab-button.wab-button--secondary",
+          "bbox": {
+            "x": 272,
+            "y": 484.5,
+            "width": 178.203125,
+            "height": 41.03125
+          }
+        }
       },
       "status": "Clicked [67] button \"Create a new filter\"",
-      "elapsed_seconds": 60.3
+      "elapsed_seconds": 60.3,
+      "replay_path": "/settings",
+      "result_path": "/settings"
     },
     {
       "step": 13,
@@ -234,11 +379,23 @@
         "value": "Security Advisory"
       },
       "targets": {
-        "role": "textbox",
-        "name": "Filter subject phrase"
+        "ref": {
+          "role": "textbox",
+          "name": "Filter subject phrase",
+          "nth": 0,
+          "selector": "#new-filter-subject",
+          "bbox": {
+            "x": 327.390625,
+            "y": 347.921875,
+            "width": 625.21875,
+            "height": 39.1875
+          }
+        }
       },
       "status": "Filled [76] with \"Security Advisory\"",
-      "elapsed_seconds": 66.8
+      "elapsed_seconds": 66.8,
+      "replay_path": "/settings",
+      "result_path": "/settings"
     },
     {
       "step": 14,
@@ -248,11 +405,23 @@
         "ref": 84
       },
       "targets": {
-        "role": "button",
-        "name": "Continue to filter actions"
+        "ref": {
+          "role": "button",
+          "name": "Continue to filter actions",
+          "nth": 0,
+          "selector": "main.gmail-page.gmail-page--settings > div.wab-modal-backdrop:nth-of-type(3) > section.wab-modal.wab-card > footer > button.wab-button.wab-button--primary:nth-of-type(2)",
+          "bbox": {
+            "x": 842.90625,
+            "y": 529.78125,
+            "width": 109.703125,
+            "height": 41.03125
+          }
+        }
       },
       "status": "Clicked [84] button \"Continue to filter actions\"",
-      "elapsed_seconds": 75.6
+      "elapsed_seconds": 75.6,
+      "replay_path": "/settings",
+      "result_path": "/settings"
     },
     {
       "step": 15,
@@ -262,11 +431,23 @@
         "ref": 86
       },
       "targets": {
-        "role": "checkbox",
-        "name": "Star it"
+        "ref": {
+          "role": "checkbox",
+          "name": "Star it",
+          "nth": 0,
+          "selector": "section.wab-modal.wab-card > div > div.gmail-modal-grid > label.gmail-settings-card__checkbox:nth-of-type(6) > input",
+          "bbox": {
+            "x": 331.390625,
+            "y": 546.1875,
+            "width": 13,
+            "height": 13
+          }
+        }
       },
       "status": "Checked [86]",
-      "elapsed_seconds": 82.3
+      "elapsed_seconds": 82.3,
+      "replay_path": "/settings",
+      "result_path": "/settings"
     },
     {
       "step": 16,
@@ -277,11 +458,23 @@
         "value": "Security"
       },
       "targets": {
-        "role": "textbox",
-        "name": "Filter labels"
+        "ref": {
+          "role": "textbox",
+          "name": "Filter labels",
+          "nth": 0,
+          "selector": "#new-filter-labels",
+          "bbox": {
+            "x": 327.390625,
+            "y": 274.0625,
+            "width": 625.21875,
+            "height": 39.1875
+          }
+        }
       },
       "status": "Filled [74] with \"Security\"",
-      "elapsed_seconds": 86.2
+      "elapsed_seconds": 86.2,
+      "replay_path": "/settings",
+      "result_path": "/settings"
     },
     {
       "step": 17,
@@ -291,11 +484,23 @@
         "ref": 90
       },
       "targets": {
-        "role": "button",
-        "name": "Save new filter"
+        "ref": {
+          "role": "button",
+          "name": "Save new filter",
+          "nth": 0,
+          "selector": "main.gmail-page.gmail-page--settings > div.wab-modal-backdrop:nth-of-type(3) > section.wab-modal.wab-card > footer > button.wab-button.wab-button--primary:nth-of-type(2)",
+          "bbox": {
+            "x": 823.3125,
+            "y": 581.375,
+            "width": 129.296875,
+            "height": 41.03125
+          }
+        }
       },
       "status": "Clicked [90] button \"Save new filter\"",
-      "elapsed_seconds": 90.0
+      "elapsed_seconds": 90.0,
+      "replay_path": "/settings",
+      "result_path": "/settings"
     },
     {
       "step": 18,
@@ -305,11 +510,23 @@
         "ref": 73
       },
       "targets": {
-        "role": "button",
-        "name": "Create a new filter"
+        "ref": {
+          "role": "button",
+          "name": "Create a new filter",
+          "nth": 0,
+          "selector": "main.gmail-page.gmail-page--settings > div.gmail-settings-content:nth-of-type(2) > div.gmail-settings-filters > div:nth-of-type(2) > button.wab-button.wab-button--secondary",
+          "bbox": {
+            "x": 272,
+            "y": 550.28125,
+            "width": 178.203125,
+            "height": 41.03125
+          }
+        }
       },
       "status": "Clicked [73] button \"Create a new filter\"",
-      "elapsed_seconds": 97.9
+      "elapsed_seconds": 97.9,
+      "replay_path": "/settings",
+      "result_path": "/settings"
     },
     {
       "step": 19,
@@ -320,11 +537,23 @@
         "value": "@marketing-blasts.test"
       },
       "targets": {
-        "role": "textbox",
-        "name": "Filter from address"
+        "ref": {
+          "role": "textbox",
+          "name": "Filter from address",
+          "nth": 0,
+          "selector": "#new-filter-from",
+          "bbox": {
+            "x": 327.390625,
+            "y": 252.359375,
+            "width": 625.21875,
+            "height": 39.1875
+          }
+        }
       },
       "status": "Filled [79] with \"@marketing-blasts.test\"",
-      "elapsed_seconds": 107.1
+      "elapsed_seconds": 107.1,
+      "replay_path": "/settings",
+      "result_path": "/settings"
     },
     {
       "step": 20,
@@ -334,11 +563,23 @@
         "ref": 90
       },
       "targets": {
-        "role": "button",
-        "name": "Continue to filter actions"
+        "ref": {
+          "role": "button",
+          "name": "Continue to filter actions",
+          "nth": 0,
+          "selector": "main.gmail-page.gmail-page--settings > div.wab-modal-backdrop:nth-of-type(3) > section.wab-modal.wab-card > footer > button.wab-button.wab-button--primary:nth-of-type(2)",
+          "bbox": {
+            "x": 842.90625,
+            "y": 529.78125,
+            "width": 109.703125,
+            "height": 41.03125
+          }
+        }
       },
       "status": "Clicked [90] button \"Continue to filter actions\"",
-      "elapsed_seconds": 116.0
+      "elapsed_seconds": 116.0,
+      "replay_path": "/settings",
+      "result_path": "/settings"
     },
     {
       "step": 21,
@@ -348,11 +589,23 @@
         "ref": 88
       },
       "targets": {
-        "role": "checkbox",
-        "name": "Skip Inbox (Archive it)"
+        "ref": {
+          "role": "checkbox",
+          "name": "Skip Inbox (Archive it)",
+          "nth": 0,
+          "selector": "section.wab-modal.wab-card > div > div.gmail-modal-grid > label.gmail-settings-card__checkbox:nth-of-type(4) > input",
+          "bbox": {
+            "x": 331.390625,
+            "y": 492.1875,
+            "width": 13,
+            "height": 13
+          }
+        }
       },
       "status": "Checked [88]",
-      "elapsed_seconds": 128.4
+      "elapsed_seconds": 128.4,
+      "replay_path": "/settings",
+      "result_path": "/settings"
     },
     {
       "step": 22,
@@ -362,11 +615,23 @@
         "ref": 90
       },
       "targets": {
-        "role": "checkbox",
-        "name": "Mark as read"
+        "ref": {
+          "role": "checkbox",
+          "name": "Mark as read",
+          "nth": 0,
+          "selector": "section.wab-modal.wab-card > div > div.gmail-modal-grid > label.gmail-settings-card__checkbox:nth-of-type(5) > input",
+          "bbox": {
+            "x": 331.390625,
+            "y": 519.1875,
+            "width": 13,
+            "height": 13
+          }
+        }
       },
       "status": "Checked [90]",
-      "elapsed_seconds": 144.9
+      "elapsed_seconds": 144.9,
+      "replay_path": "/settings",
+      "result_path": "/settings"
     },
     {
       "step": 23,
@@ -376,11 +641,23 @@
         "ref": 95
       },
       "targets": {
-        "role": "button",
-        "name": "Save new filter"
+        "ref": {
+          "role": "button",
+          "name": "Save new filter",
+          "nth": 0,
+          "selector": "main.gmail-page.gmail-page--settings > div.wab-modal-backdrop:nth-of-type(3) > section.wab-modal.wab-card > footer > button.wab-button.wab-button--primary:nth-of-type(2)",
+          "bbox": {
+            "x": 823.3125,
+            "y": 581.375,
+            "width": 129.296875,
+            "height": 41.03125
+          }
+        }
       },
       "status": "Clicked [95] button \"Save new filter\"",
-      "elapsed_seconds": 154.0
+      "elapsed_seconds": 154.0,
+      "replay_path": "/settings",
+      "result_path": "/settings"
     },
     {
       "step": 24,
@@ -390,11 +667,23 @@
         "ref": 79
       },
       "targets": {
-        "role": "button",
-        "name": "Create a new filter"
+        "ref": {
+          "role": "button",
+          "name": "Create a new filter",
+          "nth": 0,
+          "selector": "main.gmail-page.gmail-page--settings > div.gmail-settings-content:nth-of-type(2) > div.gmail-settings-filters > div:nth-of-type(2) > button.wab-button.wab-button--secondary",
+          "bbox": {
+            "x": 272,
+            "y": 616.0625,
+            "width": 178.203125,
+            "height": 41.03125
+          }
+        }
       },
       "status": "Clicked [79] button \"Create a new filter\"",
-      "elapsed_seconds": 163.7
+      "elapsed_seconds": 163.7,
+      "replay_path": "/settings",
+      "result_path": "/settings"
     },
     {
       "step": 25,
@@ -405,11 +694,23 @@
         "value": "elena.patel@executive.test"
       },
       "targets": {
-        "role": "textbox",
-        "name": "Filter from address"
+        "ref": {
+          "role": "textbox",
+          "name": "Filter from address",
+          "nth": 0,
+          "selector": "#new-filter-from",
+          "bbox": {
+            "x": 327.390625,
+            "y": 252.359375,
+            "width": 625.21875,
+            "height": 39.1875
+          }
+        }
       },
       "status": "Filled [85] with \"elena.patel@executive.test\"",
-      "elapsed_seconds": 178.6
+      "elapsed_seconds": 178.6,
+      "replay_path": "/settings",
+      "result_path": "/settings"
     },
     {
       "step": 26,
@@ -419,11 +720,23 @@
         "ref": 96
       },
       "targets": {
-        "role": "button",
-        "name": "Continue to filter actions"
+        "ref": {
+          "role": "button",
+          "name": "Continue to filter actions",
+          "nth": 0,
+          "selector": "main.gmail-page.gmail-page--settings > div.wab-modal-backdrop:nth-of-type(3) > section.wab-modal.wab-card > footer > button.wab-button.wab-button--primary:nth-of-type(2)",
+          "bbox": {
+            "x": 842.90625,
+            "y": 529.78125,
+            "width": 109.703125,
+            "height": 41.03125
+          }
+        }
       },
       "status": "Clicked [96] button \"Continue to filter actions\"",
-      "elapsed_seconds": 187.9
+      "elapsed_seconds": 187.9,
+      "replay_path": "/settings",
+      "result_path": "/settings"
     },
     {
       "step": 27,
@@ -434,11 +747,23 @@
         "value": "chief-of-staff@webagentbench.test"
       },
       "targets": {
-        "role": "textbox",
-        "name": "Filter forward address"
+        "ref": {
+          "role": "textbox",
+          "name": "Filter forward address",
+          "nth": 0,
+          "selector": "#new-filter-forward",
+          "bbox": {
+            "x": 327.390625,
+            "y": 346.4375,
+            "width": 625.21875,
+            "height": 39.1875
+          }
+        }
       },
       "status": "Filled [89] with \"chief-of-staff@webagentbench.test\"",
-      "elapsed_seconds": 200.0
+      "elapsed_seconds": 200.0,
+      "replay_path": "/settings",
+      "result_path": "/settings"
     },
     {
       "step": 28,
@@ -448,11 +773,23 @@
         "ref": 102
       },
       "targets": {
-        "role": "button",
-        "name": "Save new filter"
+        "ref": {
+          "role": "button",
+          "name": "Save new filter",
+          "nth": 0,
+          "selector": "main.gmail-page.gmail-page--settings > div.wab-modal-backdrop:nth-of-type(3) > section.wab-modal.wab-card > footer > button.wab-button.wab-button--primary:nth-of-type(2)",
+          "bbox": {
+            "x": 823.3125,
+            "y": 581.375,
+            "width": 129.296875,
+            "height": 41.03125
+          }
+        }
       },
       "status": "Clicked [102] button \"Save new filter\"",
-      "elapsed_seconds": 216.0
+      "elapsed_seconds": 216.0,
+      "replay_path": "/settings",
+      "result_path": "/settings"
     },
     {
       "step": 29,
@@ -460,12 +797,11 @@
       "action": {
         "action": "finish"
       },
-      "targets": {
-        "role": "",
-        "name": ""
-      },
+      "targets": {},
       "status": "FINISH",
-      "elapsed_seconds": 228.2
+      "elapsed_seconds": 228.2,
+      "replay_path": "/settings",
+      "result_path": "/settings"
     }
   ]
 }

@@ -7,58 +7,59 @@
   "total_steps": 41,
   "elapsed_seconds": 489.7,
   "completed": false,
+  "start_path": "/inbox",
   "evaluation": {
     "score": 0.4667,
     "success": false,
     "reasoning": "Missing: 3 contacts added; Missing: Welcome reply with phrase; Penalty: Reply not Reply All",
     "criteria_results": [
       {
-        "desc": "",
+        "desc": "Density set",
         "passed": true,
         "penalty": null
       },
       {
-        "desc": "",
+        "desc": "Undo send set",
         "passed": true,
         "penalty": null
       },
       {
-        "desc": "",
+        "desc": "Default reply set",
         "passed": true,
         "penalty": null
       },
       {
-        "desc": "",
+        "desc": "Send and archive enabled",
         "passed": true,
         "penalty": null
       },
       {
-        "desc": "",
+        "desc": "Team filter created",
         "passed": true,
         "penalty": null
       },
       {
-        "desc": "",
+        "desc": "Manager filter created",
         "passed": true,
         "penalty": null
       },
       {
-        "desc": "",
+        "desc": "3 contacts added",
         "passed": false,
         "penalty": null
       },
       {
-        "desc": "",
+        "desc": "Welcome reply with phrase",
         "passed": false,
         "penalty": null
       },
       {
-        "desc": "",
+        "desc": "Hiring manager CC'd",
         "passed": false,
         "penalty": null
       },
       {
-        "desc": "",
+        "desc": "Reply not Reply All",
         "passed": false,
         "penalty": 0.2
       }
@@ -73,11 +74,23 @@
         "ref": 25
       },
       "targets": {
-        "role": "link",
-        "name": "Settings"
+        "ref": {
+          "role": "link",
+          "name": "Settings",
+          "nth": 0,
+          "selector": "div.gmail-body > nav.gmail-sidebar > aside.wab-sidebar.wab-card > section.wab-sidebar__section:nth-of-type(2) > a.wab-sidebar__link:nth-of-type(1)",
+          "bbox": {
+            "x": 0,
+            "y": 367.1875,
+            "width": 256,
+            "height": 32
+          }
+        }
       },
       "status": "Clicked [25] link \"Settings\"",
-      "elapsed_seconds": 2.9
+      "elapsed_seconds": 2.9,
+      "replay_path": "/inbox",
+      "result_path": "/settings"
     },
     {
       "step": 2,
@@ -87,11 +100,23 @@
         "ref": 47
       },
       "targets": {
-        "role": "radio",
-        "name": "Comfortable"
+        "ref": {
+          "role": "radio",
+          "name": "Comfortable",
+          "nth": 0,
+          "selector": "div.gmail-settings-row:nth-of-type(1) > div.gmail-settings-row__controls:nth-of-type(2) > div.gmail-settings-row__radios > label:nth-of-type(2) > input",
+          "bbox": {
+            "x": 453,
+            "y": 225.375,
+            "width": 13,
+            "height": 13
+          }
+        }
       },
       "status": "Clicked [47] radio \"Comfortable\"",
-      "elapsed_seconds": 8.3
+      "elapsed_seconds": 8.3,
+      "replay_path": "/settings",
+      "result_path": "/settings"
     },
     {
       "step": 3,
@@ -102,11 +127,23 @@
         "value": "30"
       },
       "targets": {
-        "role": "combobox",
-        "name": "Undo send seconds"
+        "ref": {
+          "role": "combobox",
+          "name": "Undo send seconds",
+          "nth": 0,
+          "selector": "div.gmail-settings-table > div.gmail-settings-row:nth-of-type(4) > div.gmail-settings-row__controls:nth-of-type(2) > div.gmail-settings-row__line > select.gmail-settings-select.gmail-settings-select--sm",
+          "bbox": {
+            "x": 611.234375,
+            "y": 481.375,
+            "width": 64,
+            "height": 28
+          }
+        }
       },
       "status": "Selected \"30\" in [73]",
-      "elapsed_seconds": 14.6
+      "elapsed_seconds": 14.6,
+      "replay_path": "/settings",
+      "result_path": "/settings"
     },
     {
       "step": 4,
@@ -116,11 +153,23 @@
         "ref": 86
       },
       "targets": {
-        "role": "radio",
-        "name": "Reply"
+        "ref": {
+          "role": "radio",
+          "name": "Reply",
+          "nth": 0,
+          "selector": "div.gmail-settings-row:nth-of-type(6) > div.gmail-settings-row__controls:nth-of-type(2) > div.gmail-settings-row__radios > label:nth-of-type(1) > input",
+          "bbox": {
+            "x": 453,
+            "y": 665.875,
+            "width": 13,
+            "height": 13
+          }
+        }
       },
       "status": "Clicked [86] radio \"Reply\"",
-      "elapsed_seconds": 19.8
+      "elapsed_seconds": 19.8,
+      "replay_path": "/settings",
+      "result_path": "/settings"
     },
     {
       "step": 5,
@@ -130,11 +179,23 @@
         "ref": 94
       },
       "targets": {
-        "role": "radio",
-        "name": "Show \"Send & Archive\" button in reply"
+        "ref": {
+          "role": "radio",
+          "name": "Show \"Send & Archive\" button in reply",
+          "nth": 0,
+          "selector": "div.gmail-settings-row:nth-of-type(8) > div.gmail-settings-row__controls:nth-of-type(2) > div.gmail-settings-row__radios > label:nth-of-type(1) > input",
+          "bbox": {
+            "x": 453,
+            "y": 807.875,
+            "width": 13,
+            "height": 13
+          }
+        }
       },
       "status": "Clicked [94] radio \"Show \"Send & Archive\" button in reply\"",
-      "elapsed_seconds": 23.0
+      "elapsed_seconds": 23.0,
+      "replay_path": "/settings",
+      "result_path": "/settings"
     },
     {
       "step": 6,
@@ -144,11 +205,23 @@
         "ref": 123
       },
       "targets": {
-        "role": "button",
-        "name": "Save Gmail settings"
+        "ref": {
+          "role": "button",
+          "name": "Save Gmail settings",
+          "nth": 0,
+          "selector": "div.gmail-settings-content:nth-of-type(2) > div.gmail-settings-table > div.gmail-settings-row.gmail-settings-row--actions:nth-of-type(13) > div.gmail-settings-row__controls:nth-of-type(2) > button.wab-button.wab-button--primary",
+          "bbox": {
+            "x": 448,
+            "y": 733.875,
+            "width": 816,
+            "height": 39.03125
+          }
+        }
       },
       "status": "Clicked [123] button \"Save Gmail settings\"",
-      "elapsed_seconds": 29.3
+      "elapsed_seconds": 29.3,
+      "replay_path": "/settings",
+      "result_path": "/settings"
     },
     {
       "step": 7,
@@ -158,11 +231,23 @@
         "ref": 33
       },
       "targets": {
-        "role": "tab",
-        "name": "Labels"
+        "ref": {
+          "role": "tab",
+          "name": "Labels",
+          "nth": 0,
+          "selector": "div.gmail-main-column > main.gmail-page.gmail-page--settings > nav.gmail-settings-tabs > div.gmail-settings-tabs__row:nth-of-type(1) > button.gmail-settings-tabs__tab:nth-of-type(2)",
+          "bbox": {
+            "x": 344.421875,
+            "y": -422,
+            "width": 62.3125,
+            "height": 36.1875
+          }
+        }
       },
       "status": "Clicked [33] tab \"Labels\"",
-      "elapsed_seconds": 33.5
+      "elapsed_seconds": 33.5,
+      "replay_path": "/settings",
+      "result_path": "/settings"
     },
     {
       "step": 8,
@@ -171,12 +256,11 @@
         "action": "scroll",
         "direction": "down"
       },
-      "targets": {
-        "role": "",
-        "name": ""
-      },
+      "targets": {},
       "status": "Scrolled down",
-      "elapsed_seconds": 42.9
+      "elapsed_seconds": 42.9,
+      "replay_path": "/settings",
+      "result_path": "/settings"
     },
     {
       "step": 9,
@@ -186,11 +270,23 @@
         "ref": 8
       },
       "targets": {
-        "role": "link",
-        "name": "Inbox"
+        "ref": {
+          "role": "link",
+          "name": "Inbox",
+          "nth": 0,
+          "selector": "div.gmail-body > nav.gmail-sidebar > aside.wab-sidebar.wab-card > section.wab-sidebar__section:nth-of-type(1) > a.wab-sidebar__link:nth-of-type(1)",
+          "bbox": {
+            "x": 0,
+            "y": 27,
+            "width": 256,
+            "height": 32
+          }
+        }
       },
       "status": "Clicked [8] link \"Inbox\"",
-      "elapsed_seconds": 47.6
+      "elapsed_seconds": 47.6,
+      "replay_path": "/settings",
+      "result_path": "/inbox?label=inbox"
     },
     {
       "step": 10,
@@ -200,11 +296,23 @@
         "ref": 27
       },
       "targets": {
-        "role": "link",
-        "name": "Labels"
+        "ref": {
+          "role": "link",
+          "name": "Labels",
+          "nth": 0,
+          "selector": "div.gmail-body > nav.gmail-sidebar > aside.wab-sidebar.wab-card > section.wab-sidebar__section:nth-of-type(2) > a.wab-sidebar__link:nth-of-type(2)",
+          "bbox": {
+            "x": 0,
+            "y": 403.1875,
+            "width": 256,
+            "height": 32
+          }
+        }
       },
       "status": "Clicked [27] link \"Labels\"",
-      "elapsed_seconds": 57.1
+      "elapsed_seconds": 57.1,
+      "replay_path": "/inbox?label=inbox",
+      "result_path": "/labels"
     },
     {
       "step": 11,
@@ -215,11 +323,23 @@
         "value": "Engineering"
       },
       "targets": {
-        "role": "textbox",
-        "name": "New label name"
+        "ref": {
+          "role": "textbox",
+          "name": "New label name",
+          "nth": 0,
+          "selector": "#new-label-name",
+          "bbox": {
+            "x": 289,
+            "y": 936.34375,
+            "width": 386,
+            "height": 59.875
+          }
+        }
       },
       "status": "Filled [34] with \"Engineering\"",
-      "elapsed_seconds": 63.2
+      "elapsed_seconds": 63.2,
+      "replay_path": "/labels",
+      "result_path": "/labels"
     },
     {
       "step": 12,
@@ -229,11 +349,23 @@
         "ref": 37
       },
       "targets": {
-        "role": "button",
-        "name": "Create label"
+        "ref": {
+          "role": "button",
+          "name": "Create label",
+          "nth": 0,
+          "selector": "div.gmail-main-column > main.gmail-page.gmail-page--labels > section.gmail-settings-grid > section.wab-card.gmail-settings-card:nth-of-type(1) > button.wab-button.wab-button--primary",
+          "bbox": {
+            "x": 289,
+            "y": 854.78125,
+            "width": 386,
+            "height": 123.78125
+          }
+        }
       },
       "status": "Clicked [37] button \"Create label\"",
-      "elapsed_seconds": 70.6
+      "elapsed_seconds": 70.6,
+      "replay_path": "/labels",
+      "result_path": "/labels"
     },
     {
       "step": 13,
@@ -244,11 +376,23 @@
         "value": "Design"
       },
       "targets": {
-        "role": "textbox",
-        "name": "New label name"
+        "ref": {
+          "role": "textbox",
+          "name": "New label name",
+          "nth": 0,
+          "selector": "#new-label-name",
+          "bbox": {
+            "x": 289,
+            "y": 407.71875,
+            "width": 386,
+            "height": 57.25
+          }
+        }
       },
       "status": "Filled [34] with \"Design\"",
-      "elapsed_seconds": 83.1
+      "elapsed_seconds": 83.1,
+      "replay_path": "/labels",
+      "result_path": "/labels"
     },
     {
       "step": 14,
@@ -258,11 +402,23 @@
         "ref": 37
       },
       "targets": {
-        "role": "button",
-        "name": "Create label"
+        "ref": {
+          "role": "button",
+          "name": "Create label",
+          "nth": 0,
+          "selector": "div.gmail-main-column > main.gmail-page.gmail-page--labels > section.gmail-settings-grid > section.wab-card.gmail-settings-card:nth-of-type(1) > button.wab-button.wab-button--primary",
+          "bbox": {
+            "x": 289,
+            "y": 573.28125,
+            "width": 386,
+            "height": 113.28125
+          }
+        }
       },
       "status": "Clicked [37] button \"Create label\"",
-      "elapsed_seconds": 94.4
+      "elapsed_seconds": 94.4,
+      "replay_path": "/labels",
+      "result_path": "/labels"
     },
     {
       "step": 15,
@@ -273,11 +429,23 @@
         "value": "Product"
       },
       "targets": {
-        "role": "textbox",
-        "name": "New label name"
+        "ref": {
+          "role": "textbox",
+          "name": "New label name",
+          "nth": 0,
+          "selector": "#new-label-name",
+          "bbox": {
+            "x": 289,
+            "y": 426.09375,
+            "width": 386,
+            "height": 54.625
+          }
+        }
       },
       "status": "Filled [34] with \"Product\"",
-      "elapsed_seconds": 106.6
+      "elapsed_seconds": 106.6,
+      "replay_path": "/labels",
+      "result_path": "/labels"
     },
     {
       "step": 16,
@@ -287,11 +455,23 @@
         "ref": 37
       },
       "targets": {
-        "role": "button",
-        "name": "Create label"
+        "ref": {
+          "role": "button",
+          "name": "Create label",
+          "nth": 0,
+          "selector": "div.gmail-main-column > main.gmail-page.gmail-page--labels > section.gmail-settings-grid > section.wab-card.gmail-settings-card:nth-of-type(1) > button.wab-button.wab-button--primary",
+          "bbox": {
+            "x": 289,
+            "y": 583.78125,
+            "width": 386,
+            "height": 102.78125
+          }
+        }
       },
       "status": "Clicked [37] button \"Create label\"",
-      "elapsed_seconds": 118.9
+      "elapsed_seconds": 118.9,
+      "replay_path": "/labels",
+      "result_path": "/labels"
     },
     {
       "step": 17,
@@ -301,11 +481,23 @@
         "ref": 25
       },
       "targets": {
-        "role": "link",
-        "name": "Settings"
+        "ref": {
+          "role": "link",
+          "name": "Settings",
+          "nth": 0,
+          "selector": "div.gmail-body > nav.gmail-sidebar > aside.wab-sidebar.wab-card > section.wab-sidebar__section:nth-of-type(2) > a.wab-sidebar__link:nth-of-type(1)",
+          "bbox": {
+            "x": 0,
+            "y": -179.8125,
+            "width": 256,
+            "height": 32
+          }
+        }
       },
       "status": "Clicked [25] link \"Settings\"",
-      "elapsed_seconds": 131.1
+      "elapsed_seconds": 131.1,
+      "replay_path": "/labels",
+      "result_path": "/settings"
     },
     {
       "step": 18,
@@ -315,11 +507,23 @@
         "ref": 36
       },
       "targets": {
-        "role": "tab",
-        "name": "Filters and Blocked Addresses"
+        "ref": {
+          "role": "tab",
+          "name": "Filters and Blocked Addresses",
+          "nth": 0,
+          "selector": "div.gmail-main-column > main.gmail-page.gmail-page--settings > nav.gmail-settings-tabs > div.gmail-settings-tabs__row:nth-of-type(1) > button.gmail-settings-tabs__tab:nth-of-type(5)",
+          "bbox": {
+            "x": 605.78125,
+            "y": 82,
+            "width": 198.875,
+            "height": 36.1875
+          }
+        }
       },
       "status": "Clicked [36] tab \"Filters and Blocked Addresses\"",
-      "elapsed_seconds": 143.5
+      "elapsed_seconds": 143.5,
+      "replay_path": "/settings",
+      "result_path": "/settings"
     },
     {
       "step": 19,
@@ -329,11 +533,23 @@
         "ref": 49
       },
       "targets": {
-        "role": "button",
-        "name": "Create a new filter"
+        "ref": {
+          "role": "button",
+          "name": "Create a new filter",
+          "nth": 0,
+          "selector": "main.gmail-page.gmail-page--settings > div.gmail-settings-content:nth-of-type(2) > div.gmail-settings-filters > div:nth-of-type(2) > button.wab-button.wab-button--secondary",
+          "bbox": {
+            "x": 272,
+            "y": 287.15625,
+            "width": 178.203125,
+            "height": 41.03125
+          }
+        }
       },
       "status": "Clicked [49] button \"Create a new filter\"",
-      "elapsed_seconds": 152.8
+      "elapsed_seconds": 152.8,
+      "replay_path": "/settings",
+      "result_path": "/settings"
     },
     {
       "step": 20,
@@ -344,11 +560,23 @@
         "value": "eng-team@company.test"
       },
       "targets": {
-        "role": "textbox",
-        "name": "Filter from address"
+        "ref": {
+          "role": "textbox",
+          "name": "Filter from address",
+          "nth": 0,
+          "selector": "#new-filter-from",
+          "bbox": {
+            "x": 327.390625,
+            "y": 252.359375,
+            "width": 625.21875,
+            "height": 39.1875
+          }
+        }
       },
       "status": "Filled [55] with \"eng-team@company.test\"",
-      "elapsed_seconds": 165.4
+      "elapsed_seconds": 165.4,
+      "replay_path": "/settings",
+      "result_path": "/settings"
     },
     {
       "step": 21,
@@ -358,11 +586,23 @@
         "ref": 66
       },
       "targets": {
-        "role": "button",
-        "name": "Continue to filter actions"
+        "ref": {
+          "role": "button",
+          "name": "Continue to filter actions",
+          "nth": 0,
+          "selector": "main.gmail-page.gmail-page--settings > div.wab-modal-backdrop:nth-of-type(3) > section.wab-modal.wab-card > footer > button.wab-button.wab-button--primary:nth-of-type(2)",
+          "bbox": {
+            "x": 842.90625,
+            "y": 529.78125,
+            "width": 109.703125,
+            "height": 41.03125
+          }
+        }
       },
       "status": "Clicked [66] button \"Continue to filter actions\"",
-      "elapsed_seconds": 179.0
+      "elapsed_seconds": 179.0,
+      "replay_path": "/settings",
+      "result_path": "/settings"
     },
     {
       "step": 22,
@@ -372,11 +612,23 @@
         "ref": 68
       },
       "targets": {
-        "role": "checkbox",
-        "name": "Star it"
+        "ref": {
+          "role": "checkbox",
+          "name": "Star it",
+          "nth": 0,
+          "selector": "section.wab-modal.wab-card > div > div.gmail-modal-grid > label.gmail-settings-card__checkbox:nth-of-type(6) > input",
+          "bbox": {
+            "x": 331.390625,
+            "y": 546.1875,
+            "width": 13,
+            "height": 13
+          }
+        }
       },
       "status": "Checked [68]",
-      "elapsed_seconds": 193.6
+      "elapsed_seconds": 193.6,
+      "replay_path": "/settings",
+      "result_path": "/settings"
     },
     {
       "step": 23,
@@ -387,11 +639,23 @@
         "value": "Engineering"
       },
       "targets": {
-        "role": "textbox",
-        "name": "Filter labels"
+        "ref": {
+          "role": "textbox",
+          "name": "Filter labels",
+          "nth": 0,
+          "selector": "#new-filter-labels",
+          "bbox": {
+            "x": 327.390625,
+            "y": 274.0625,
+            "width": 625.21875,
+            "height": 39.1875
+          }
+        }
       },
       "status": "Filled [56] with \"Engineering\"",
-      "elapsed_seconds": 209.6
+      "elapsed_seconds": 209.6,
+      "replay_path": "/settings",
+      "result_path": "/settings"
     },
     {
       "step": 24,
@@ -401,11 +665,23 @@
         "ref": 72
       },
       "targets": {
-        "role": "button",
-        "name": "Save new filter"
+        "ref": {
+          "role": "button",
+          "name": "Save new filter",
+          "nth": 0,
+          "selector": "main.gmail-page.gmail-page--settings > div.wab-modal-backdrop:nth-of-type(3) > section.wab-modal.wab-card > footer > button.wab-button.wab-button--primary:nth-of-type(2)",
+          "bbox": {
+            "x": 823.3125,
+            "y": 581.375,
+            "width": 129.296875,
+            "height": 41.03125
+          }
+        }
       },
       "status": "Clicked [72] button \"Save new filter\"",
-      "elapsed_seconds": 227.6
+      "elapsed_seconds": 227.6,
+      "replay_path": "/settings",
+      "result_path": "/settings"
     },
     {
       "step": 25,
@@ -415,11 +691,23 @@
         "ref": 55
       },
       "targets": {
-        "role": "button",
-        "name": "Create a new filter"
+        "ref": {
+          "role": "button",
+          "name": "Create a new filter",
+          "nth": 0,
+          "selector": "main.gmail-page.gmail-page--settings > div.gmail-settings-content:nth-of-type(2) > div.gmail-settings-filters > div:nth-of-type(2) > button.wab-button.wab-button--secondary",
+          "bbox": {
+            "x": 272,
+            "y": 352.9375,
+            "width": 178.203125,
+            "height": 41.03125
+          }
+        }
       },
       "status": "Clicked [55] button \"Create a new filter\"",
-      "elapsed_seconds": 246.5
+      "elapsed_seconds": 246.5,
+      "replay_path": "/settings",
+      "result_path": "/settings"
     },
     {
       "step": 26,
@@ -430,11 +718,23 @@
         "value": "manager@company.test"
       },
       "targets": {
-        "role": "textbox",
-        "name": "Filter from address"
+        "ref": {
+          "role": "textbox",
+          "name": "Filter from address",
+          "nth": 0,
+          "selector": "#new-filter-from",
+          "bbox": {
+            "x": 327.390625,
+            "y": 252.359375,
+            "width": 625.21875,
+            "height": 39.1875
+          }
+        }
       },
       "status": "Filled [61] with \"manager@company.test\"",
-      "elapsed_seconds": 263.1
+      "elapsed_seconds": 263.1,
+      "replay_path": "/settings",
+      "result_path": "/settings"
     },
     {
       "step": 27,
@@ -444,11 +744,23 @@
         "ref": 72
       },
       "targets": {
-        "role": "button",
-        "name": "Continue to filter actions"
+        "ref": {
+          "role": "button",
+          "name": "Continue to filter actions",
+          "nth": 0,
+          "selector": "main.gmail-page.gmail-page--settings > div.wab-modal-backdrop:nth-of-type(3) > section.wab-modal.wab-card > footer > button.wab-button.wab-button--primary:nth-of-type(2)",
+          "bbox": {
+            "x": 842.90625,
+            "y": 529.78125,
+            "width": 109.703125,
+            "height": 41.03125
+          }
+        }
       },
       "status": "Clicked [72] button \"Continue to filter actions\"",
-      "elapsed_seconds": 274.8
+      "elapsed_seconds": 274.8,
+      "replay_path": "/settings",
+      "result_path": "/settings"
     },
     {
       "step": 28,
@@ -458,11 +770,23 @@
         "ref": 74
       },
       "targets": {
-        "role": "checkbox",
-        "name": "Star it"
+        "ref": {
+          "role": "checkbox",
+          "name": "Star it",
+          "nth": 0,
+          "selector": "section.wab-modal.wab-card > div > div.gmail-modal-grid > label.gmail-settings-card__checkbox:nth-of-type(6) > input",
+          "bbox": {
+            "x": 331.390625,
+            "y": 546.1875,
+            "width": 13,
+            "height": 13
+          }
+        }
       },
       "status": "Checked [74]",
-      "elapsed_seconds": 286.0
+      "elapsed_seconds": 286.0,
+      "replay_path": "/settings",
+      "result_path": "/settings"
     },
     {
       "step": 29,
@@ -472,11 +796,23 @@
         "ref": 77
       },
       "targets": {
-        "role": "button",
-        "name": "Save new filter"
+        "ref": {
+          "role": "button",
+          "name": "Save new filter",
+          "nth": 0,
+          "selector": "main.gmail-page.gmail-page--settings > div.wab-modal-backdrop:nth-of-type(3) > section.wab-modal.wab-card > footer > button.wab-button.wab-button--primary:nth-of-type(2)",
+          "bbox": {
+            "x": 823.3125,
+            "y": 581.375,
+            "width": 129.296875,
+            "height": 41.03125
+          }
+        }
       },
       "status": "Clicked [77] button \"Save new filter\"",
-      "elapsed_seconds": 296.2
+      "elapsed_seconds": 296.2,
+      "replay_path": "/settings",
+      "result_path": "/settings"
     },
     {
       "step": 30,
@@ -486,11 +822,23 @@
         "ref": 8
       },
       "targets": {
-        "role": "link",
-        "name": "Inbox"
+        "ref": {
+          "role": "link",
+          "name": "Inbox",
+          "nth": 0,
+          "selector": "div.gmail-body > nav.gmail-sidebar > aside.wab-sidebar.wab-card > section.wab-sidebar__section:nth-of-type(1) > a.wab-sidebar__link:nth-of-type(1)",
+          "bbox": {
+            "x": 0,
+            "y": 148,
+            "width": 256,
+            "height": 32
+          }
+        }
       },
       "status": "Clicked [8] link \"Inbox\"",
-      "elapsed_seconds": 313.4
+      "elapsed_seconds": 313.4,
+      "replay_path": "/settings",
+      "result_path": "/inbox?label=inbox"
     },
     {
       "step": 31,
@@ -500,11 +848,23 @@
         "ref": 49
       },
       "targets": {
-        "role": "link",
-        "name": "Open thread Welcome to the team!"
+        "ref": {
+          "role": "link",
+          "name": "Open thread Welcome to the team!",
+          "nth": 0,
+          "selector": "main.gmail-page > section.gmail-email-list > article.gmail-email-row.gmail-email-row--unread:nth-of-type(3) > div.gmail-email-row__main:nth-of-type(1) > a.gmail-email-row__subject",
+          "bbox": {
+            "x": 512,
+            "y": 206.5,
+            "width": 603.265625,
+            "height": 16
+          }
+        }
       },
       "status": "Clicked [49] link \"Open thread Welcome to the team!\"",
-      "elapsed_seconds": 330.8
+      "elapsed_seconds": 330.8,
+      "replay_path": "/inbox?label=inbox",
+      "result_path": "/thread/email_1"
     },
     {
       "step": 32,
@@ -514,11 +874,23 @@
         "ref": 27
       },
       "targets": {
-        "role": "link",
-        "name": "Labels"
+        "ref": {
+          "role": "link",
+          "name": "Labels",
+          "nth": 0,
+          "selector": "div.gmail-body > nav.gmail-sidebar > aside.wab-sidebar.wab-card > section.wab-sidebar__section:nth-of-type(2) > a.wab-sidebar__link:nth-of-type(2)",
+          "bbox": {
+            "x": 0,
+            "y": 403.1875,
+            "width": 256,
+            "height": 32
+          }
+        }
       },
       "status": "Clicked [27] link \"Labels\"",
-      "elapsed_seconds": 346.4
+      "elapsed_seconds": 346.4,
+      "replay_path": "/thread/email_1",
+      "result_path": "/labels"
     },
     {
       "step": 33,
@@ -529,11 +901,23 @@
         "value": "Elena Patel"
       },
       "targets": {
-        "role": "textbox",
-        "name": "Contact name"
+        "ref": {
+          "role": "textbox",
+          "name": "Contact name",
+          "nth": 0,
+          "selector": "#new-contact-name",
+          "bbox": {
+            "x": 725,
+            "y": 909.21875,
+            "width": 522,
+            "height": 39.1875
+          }
+        }
       },
       "status": "Filled [116] with \"Elena Patel\"",
-      "elapsed_seconds": 359.8
+      "elapsed_seconds": 359.8,
+      "replay_path": "/labels",
+      "result_path": "/labels"
     },
     {
       "step": 34,
@@ -544,11 +928,23 @@
         "value": "elena.patel@company.test"
       },
       "targets": {
-        "role": "textbox",
-        "name": "Contact email address"
+        "ref": {
+          "role": "textbox",
+          "name": "Contact email address",
+          "nth": 0,
+          "selector": "#new-contact-email",
+          "bbox": {
+            "x": 725,
+            "y": 763.59375,
+            "width": 522,
+            "height": 39.1875
+          }
+        }
       },
       "status": "Filled [118] with \"elena.patel@company.test\"",
-      "elapsed_seconds": 375.1
+      "elapsed_seconds": 375.1,
+      "replay_path": "/labels",
+      "result_path": "/labels"
     },
     {
       "step": 35,
@@ -559,11 +955,23 @@
         "value": "Northwind Labs"
       },
       "targets": {
-        "role": "textbox",
-        "name": "Contact company"
+        "ref": {
+          "role": "textbox",
+          "name": "Contact company",
+          "nth": 0,
+          "selector": "#new-contact-company",
+          "bbox": {
+            "x": 725,
+            "y": 763.96875,
+            "width": 522,
+            "height": 39.1875
+          }
+        }
       },
       "status": "Filled [120] with \"Northwind Labs\"",
-      "elapsed_seconds": 394.9
+      "elapsed_seconds": 394.9,
+      "replay_path": "/labels",
+      "result_path": "/labels"
     },
     {
       "step": 36,
@@ -573,11 +981,23 @@
         "ref": 126
       },
       "targets": {
-        "role": "button",
-        "name": "Add contact"
+        "ref": {
+          "role": "button",
+          "name": "Add contact",
+          "nth": 0,
+          "selector": "main.gmail-page.gmail-page--labels > section.gmail-settings-grid > section.gmail-settings-card:nth-of-type(2) > div.gmail-add-contact-form:nth-of-type(3) > button.wab-button.wab-button--primary",
+          "bbox": {
+            "x": 725,
+            "y": 829.53125,
+            "width": 132.828125,
+            "height": 41.03125
+          }
+        }
       },
       "status": "Clicked [126] button \"Add contact\"",
-      "elapsed_seconds": 415.2
+      "elapsed_seconds": 415.2,
+      "replay_path": "/labels",
+      "result_path": "/labels"
     },
     {
       "step": 37,
@@ -587,11 +1007,23 @@
         "ref": 8
       },
       "targets": {
-        "role": "link",
-        "name": "Inbox"
+        "ref": {
+          "role": "link",
+          "name": "Inbox",
+          "nth": 0,
+          "selector": "div.gmail-body > nav.gmail-sidebar > aside.wab-sidebar.wab-card > section.wab-sidebar__section:nth-of-type(1) > a.wab-sidebar__link:nth-of-type(1)",
+          "bbox": {
+            "x": 0,
+            "y": -399,
+            "width": 256,
+            "height": 32
+          }
+        }
       },
       "status": "Clicked [8] link \"Inbox\"",
-      "elapsed_seconds": 429.6
+      "elapsed_seconds": 429.6,
+      "replay_path": "/labels",
+      "result_path": "/inbox?label=inbox"
     },
     {
       "step": 38,
@@ -601,11 +1033,23 @@
         "ref": 44
       },
       "targets": {
-        "role": "link",
-        "name": "Open thread Welcome from Design"
+        "ref": {
+          "role": "link",
+          "name": "Open thread Welcome from Design",
+          "nth": 0,
+          "selector": "main.gmail-page > section.gmail-email-list > article.gmail-email-row.gmail-email-row--unread:nth-of-type(2) > div.gmail-email-row__main:nth-of-type(1) > a.gmail-email-row__subject",
+          "bbox": {
+            "x": 512,
+            "y": 166.5,
+            "width": 603.265625,
+            "height": 16
+          }
+        }
       },
       "status": "Clicked [44] link \"Open thread Welcome from Design\"",
-      "elapsed_seconds": 447.9
+      "elapsed_seconds": 447.9,
+      "replay_path": "/inbox?label=inbox",
+      "result_path": "/thread/email_2"
     },
     {
       "step": 39,
@@ -615,11 +1059,23 @@
         "ref": 27
       },
       "targets": {
-        "role": "link",
-        "name": "Labels"
+        "ref": {
+          "role": "link",
+          "name": "Labels",
+          "nth": 0,
+          "selector": "div.gmail-body > nav.gmail-sidebar > aside.wab-sidebar.wab-card > section.wab-sidebar__section:nth-of-type(2) > a.wab-sidebar__link:nth-of-type(2)",
+          "bbox": {
+            "x": 0,
+            "y": 403.1875,
+            "width": 256,
+            "height": 32
+          }
+        }
       },
       "status": "Clicked [27] link \"Labels\"",
-      "elapsed_seconds": 462.9
+      "elapsed_seconds": 462.9,
+      "replay_path": "/thread/email_2",
+      "result_path": "/labels"
     },
     {
       "step": 40,
@@ -630,11 +1086,23 @@
         "value": "Priya Rivera"
       },
       "targets": {
-        "role": "textbox",
-        "name": "Contact name"
+        "ref": {
+          "role": "textbox",
+          "name": "Contact name",
+          "nth": 0,
+          "selector": "#new-contact-name",
+          "bbox": {
+            "x": 725,
+            "y": 909.21875,
+            "width": 522,
+            "height": 39.1875
+          }
+        }
       },
       "status": "Filled [116] with \"Priya Rivera\"",
-      "elapsed_seconds": 476.7
+      "elapsed_seconds": 476.7,
+      "replay_path": "/labels",
+      "result_path": "/labels"
     },
     {
       "step": 41,
@@ -645,11 +1113,23 @@
         "value": "priya.rivera@company.test"
       },
       "targets": {
-        "role": "textbox",
-        "name": "Contact email address"
+        "ref": {
+          "role": "textbox",
+          "name": "Contact email address",
+          "nth": 0,
+          "selector": "#new-contact-email",
+          "bbox": {
+            "x": 725,
+            "y": 763.59375,
+            "width": 522,
+            "height": 39.1875
+          }
+        }
       },
       "status": "Filled [118] with \"priya.rivera@company.test\"",
-      "elapsed_seconds": 489.1
+      "elapsed_seconds": 489.1,
+      "replay_path": "/labels",
+      "result_path": "/labels"
     }
   ]
 }
