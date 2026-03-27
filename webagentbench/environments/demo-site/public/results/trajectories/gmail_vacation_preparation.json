@@ -7,63 +7,64 @@
   "total_steps": 43,
   "elapsed_seconds": 464.6,
   "completed": true,
+  "start_path": "/inbox",
   "evaluation": {
     "score": 1.0,
     "success": true,
     "reasoning": "All checks passed; final score 1.00",
     "criteria_results": [
       {
-        "desc": "",
+        "desc": "Vacation responder enabled",
         "passed": true,
         "penalty": null
       },
       {
-        "desc": "",
+        "desc": "Vacation message set correctly",
         "passed": true,
         "penalty": null
       },
       {
-        "desc": "",
+        "desc": "Signature updated with OOO note",
         "passed": true,
         "penalty": null
       },
       {
-        "desc": "",
+        "desc": "Undo send set to 30 seconds",
         "passed": true,
         "penalty": null
       },
       {
-        "desc": "",
+        "desc": "Boss email filter created with forward and star",
         "passed": true,
         "penalty": null
       },
       {
-        "desc": "",
+        "desc": "Vendor proposal replied to",
         "passed": true,
         "penalty": null
       },
       {
-        "desc": "",
+        "desc": "Timeline email replied to",
         "passed": true,
         "penalty": null
       },
       {
-        "desc": "",
+        "desc": "Attendance confirmation replied to",
         "passed": true,
         "penalty": null
       },
       {
-        "desc": "",
+        "desc": "Return emails starred",
         "passed": true,
         "penalty": null
       },
       {
-        "desc": "",
+        "desc": "Return Attention label applied to return emails",
         "passed": true,
         "penalty": null
       },
       {
-        "desc": "",
+        "desc": "Timeline reply was not Reply All",
         "passed": true,
         "penalty": 0.15
       }
@@ -78,11 +79,23 @@
         "ref": 25
       },
       "targets": {
-        "role": "link",
-        "name": "Settings"
+        "ref": {
+          "role": "link",
+          "name": "Settings",
+          "nth": 0,
+          "selector": "div.gmail-body > nav.gmail-sidebar > aside.wab-sidebar.wab-card > section.wab-sidebar__section:nth-of-type(2) > a.wab-sidebar__link:nth-of-type(1)",
+          "bbox": {
+            "x": 0,
+            "y": 367.1875,
+            "width": 256,
+            "height": 32
+          }
+        }
       },
       "status": "Clicked [25] link \"Settings\"",
-      "elapsed_seconds": 2.7
+      "elapsed_seconds": 2.7,
+      "replay_path": "/inbox",
+      "result_path": "/settings"
     },
     {
       "step": 2,
@@ -92,11 +105,23 @@
         "ref": 121
       },
       "targets": {
-        "role": "radio",
-        "name": "Vacation responder on"
+        "ref": {
+          "role": "radio",
+          "name": "Vacation responder on",
+          "nth": 0,
+          "selector": "div.gmail-settings-row:nth-of-type(12) > div.gmail-settings-row__controls:nth-of-type(2) > div.gmail-settings-row__radios > label:nth-of-type(2) > input",
+          "bbox": {
+            "x": 453,
+            "y": 1141.875,
+            "width": 13,
+            "height": 13
+          }
+        }
       },
       "status": "Clicked [121] radio \"Vacation responder on\"",
-      "elapsed_seconds": 6.0
+      "elapsed_seconds": 6.0,
+      "replay_path": "/settings",
+      "result_path": "/settings"
     },
     {
       "step": 3,
@@ -107,11 +132,23 @@
         "value": "I am out of office until March 21. For urgent matters, contact my backup."
       },
       "targets": {
-        "role": "textbox",
-        "name": "Vacation responder message"
+        "ref": {
+          "role": "textbox",
+          "name": "Vacation responder message",
+          "nth": 0,
+          "selector": "div.gmail-settings-content:nth-of-type(2) > div.gmail-settings-table > div.gmail-settings-row:nth-of-type(12) > div.gmail-settings-row__controls:nth-of-type(2) > textarea.gmail-settings-textarea",
+          "bbox": {
+            "x": 448,
+            "y": 639.875,
+            "width": 816,
+            "height": 102
+          }
+        }
       },
       "status": "Filled [123] with \"I am out of office until March 21. For urgent matt\"",
-      "elapsed_seconds": 11.3
+      "elapsed_seconds": 11.3,
+      "replay_path": "/settings",
+      "result_path": "/settings"
     },
     {
       "step": 4,
@@ -122,11 +159,23 @@
         "value": "Avery Quinn Operations Lead\nOOO until March 21"
       },
       "targets": {
-        "role": "textbox",
-        "name": "Email signature"
+        "ref": {
+          "role": "textbox",
+          "name": "Email signature",
+          "nth": 0,
+          "selector": "div.gmail-settings-content:nth-of-type(2) > div.gmail-settings-table > div.gmail-settings-row:nth-of-type(11) > div.gmail-settings-row__controls:nth-of-type(2) > textarea.gmail-settings-textarea",
+          "bbox": {
+            "x": 448,
+            "y": 458.875,
+            "width": 816,
+            "height": 102
+          }
+        }
       },
       "status": "Filled [117] with \"Avery Quinn Operations Lead\nOOO until March 21\"",
-      "elapsed_seconds": 15.3
+      "elapsed_seconds": 15.3,
+      "replay_path": "/settings",
+      "result_path": "/settings"
     },
     {
       "step": 5,
@@ -137,11 +186,23 @@
         "value": "30"
       },
       "targets": {
-        "role": "combobox",
-        "name": "Undo send seconds"
+        "ref": {
+          "role": "combobox",
+          "name": "Undo send seconds",
+          "nth": 0,
+          "selector": "div.gmail-settings-table > div.gmail-settings-row:nth-of-type(4) > div.gmail-settings-row__controls:nth-of-type(2) > div.gmail-settings-row__line > select.gmail-settings-select.gmail-settings-select--sm",
+          "bbox": {
+            "x": 611.234375,
+            "y": -45.625,
+            "width": 64,
+            "height": 28
+          }
+        }
       },
       "status": "Selected \"30\" in [73]",
-      "elapsed_seconds": 20.8
+      "elapsed_seconds": 20.8,
+      "replay_path": "/settings",
+      "result_path": "/settings"
     },
     {
       "step": 6,
@@ -151,11 +212,23 @@
         "ref": 126
       },
       "targets": {
-        "role": "button",
-        "name": "Save Gmail settings"
+        "ref": {
+          "role": "button",
+          "name": "Save Gmail settings",
+          "nth": 0,
+          "selector": "div.gmail-settings-content:nth-of-type(2) > div.gmail-settings-table > div.gmail-settings-row.gmail-settings-row--actions:nth-of-type(13) > div.gmail-settings-row__controls:nth-of-type(2) > button.wab-button.wab-button--primary",
+          "bbox": {
+            "x": 448,
+            "y": 770.875,
+            "width": 816,
+            "height": 39.03125
+          }
+        }
       },
       "status": "Clicked [126] button \"Save Gmail settings\"",
-      "elapsed_seconds": 25.3
+      "elapsed_seconds": 25.3,
+      "replay_path": "/settings",
+      "result_path": "/settings"
     },
     {
       "step": 7,
@@ -165,11 +238,23 @@
         "ref": 36
       },
       "targets": {
-        "role": "tab",
-        "name": "Filters and Blocked Addresses"
+        "ref": {
+          "role": "tab",
+          "name": "Filters and Blocked Addresses",
+          "nth": 0,
+          "selector": "div.gmail-main-column > main.gmail-page.gmail-page--settings > nav.gmail-settings-tabs > div.gmail-settings-tabs__row:nth-of-type(1) > button.gmail-settings-tabs__tab:nth-of-type(5)",
+          "bbox": {
+            "x": 605.78125,
+            "y": -532,
+            "width": 198.875,
+            "height": 36.1875
+          }
+        }
       },
       "status": "Clicked [36] tab \"Filters and Blocked Addresses\"",
-      "elapsed_seconds": 30.2
+      "elapsed_seconds": 30.2,
+      "replay_path": "/settings",
+      "result_path": "/settings"
     },
     {
       "step": 8,
@@ -179,11 +264,23 @@
         "ref": 49
       },
       "targets": {
-        "role": "button",
-        "name": "Create a new filter"
+        "ref": {
+          "role": "button",
+          "name": "Create a new filter",
+          "nth": 0,
+          "selector": "main.gmail-page.gmail-page--settings > div.gmail-settings-content:nth-of-type(2) > div.gmail-settings-filters > div:nth-of-type(2) > button.wab-button.wab-button--secondary",
+          "bbox": {
+            "x": 272,
+            "y": 287.15625,
+            "width": 178.203125,
+            "height": 41.03125
+          }
+        }
       },
       "status": "Clicked [49] button \"Create a new filter\"",
-      "elapsed_seconds": 37.4
+      "elapsed_seconds": 37.4,
+      "replay_path": "/settings",
+      "result_path": "/settings"
     },
     {
       "step": 9,
@@ -194,11 +291,23 @@
         "value": "elena.patel@executive.test"
       },
       "targets": {
-        "role": "textbox",
-        "name": "Filter from address"
+        "ref": {
+          "role": "textbox",
+          "name": "Filter from address",
+          "nth": 0,
+          "selector": "#new-filter-from",
+          "bbox": {
+            "x": 327.390625,
+            "y": 252.359375,
+            "width": 625.21875,
+            "height": 39.1875
+          }
+        }
       },
       "status": "Filled [55] with \"elena.patel@executive.test\"",
-      "elapsed_seconds": 44.5
+      "elapsed_seconds": 44.5,
+      "replay_path": "/settings",
+      "result_path": "/settings"
     },
     {
       "step": 10,
@@ -208,11 +317,23 @@
         "ref": 66
       },
       "targets": {
-        "role": "button",
-        "name": "Continue to filter actions"
+        "ref": {
+          "role": "button",
+          "name": "Continue to filter actions",
+          "nth": 0,
+          "selector": "main.gmail-page.gmail-page--settings > div.wab-modal-backdrop:nth-of-type(3) > section.wab-modal.wab-card > footer > button.wab-button.wab-button--primary:nth-of-type(2)",
+          "bbox": {
+            "x": 842.90625,
+            "y": 529.78125,
+            "width": 109.703125,
+            "height": 41.03125
+          }
+        }
       },
       "status": "Clicked [66] button \"Continue to filter actions\"",
-      "elapsed_seconds": 48.3
+      "elapsed_seconds": 48.3,
+      "replay_path": "/settings",
+      "result_path": "/settings"
     },
     {
       "step": 11,
@@ -223,11 +344,23 @@
         "value": "priya.rivera@ops-backup.test"
       },
       "targets": {
-        "role": "textbox",
-        "name": "Filter forward address"
+        "ref": {
+          "role": "textbox",
+          "name": "Filter forward address",
+          "nth": 0,
+          "selector": "#new-filter-forward",
+          "bbox": {
+            "x": 327.390625,
+            "y": 346.4375,
+            "width": 625.21875,
+            "height": 39.1875
+          }
+        }
       },
       "status": "Filled [59] with \"priya.rivera@ops-backup.test\"",
-      "elapsed_seconds": 54.8
+      "elapsed_seconds": 54.8,
+      "replay_path": "/settings",
+      "result_path": "/settings"
     },
     {
       "step": 12,
@@ -237,11 +370,23 @@
         "ref": 69
       },
       "targets": {
-        "role": "checkbox",
-        "name": "Star it"
+        "ref": {
+          "role": "checkbox",
+          "name": "Star it",
+          "nth": 0,
+          "selector": "section.wab-modal.wab-card > div > div.gmail-modal-grid > label.gmail-settings-card__checkbox:nth-of-type(6) > input",
+          "bbox": {
+            "x": 331.390625,
+            "y": 546.1875,
+            "width": 13,
+            "height": 13
+          }
+        }
       },
       "status": "Checked [69]",
-      "elapsed_seconds": 57.9
+      "elapsed_seconds": 57.9,
+      "replay_path": "/settings",
+      "result_path": "/settings"
     },
     {
       "step": 13,
@@ -251,11 +396,23 @@
         "ref": 72
       },
       "targets": {
-        "role": "button",
-        "name": "Save new filter"
+        "ref": {
+          "role": "button",
+          "name": "Save new filter",
+          "nth": 0,
+          "selector": "main.gmail-page.gmail-page--settings > div.wab-modal-backdrop:nth-of-type(3) > section.wab-modal.wab-card > footer > button.wab-button.wab-button--primary:nth-of-type(2)",
+          "bbox": {
+            "x": 823.3125,
+            "y": 581.375,
+            "width": 129.296875,
+            "height": 41.03125
+          }
+        }
       },
       "status": "Clicked [72] button \"Save new filter\"",
-      "elapsed_seconds": 69.5
+      "elapsed_seconds": 69.5,
+      "replay_path": "/settings",
+      "result_path": "/settings"
     },
     {
       "step": 14,
@@ -265,11 +422,23 @@
         "ref": 8
       },
       "targets": {
-        "role": "link",
-        "name": "Inbox"
+        "ref": {
+          "role": "link",
+          "name": "Inbox",
+          "nth": 0,
+          "selector": "div.gmail-body > nav.gmail-sidebar > aside.wab-sidebar.wab-card > section.wab-sidebar__section:nth-of-type(1) > a.wab-sidebar__link:nth-of-type(1)",
+          "bbox": {
+            "x": 0,
+            "y": 148,
+            "width": 256,
+            "height": 32
+          }
+        }
       },
       "status": "Clicked [8] link \"Inbox\"",
-      "elapsed_seconds": 78.1
+      "elapsed_seconds": 78.1,
+      "replay_path": "/settings",
+      "result_path": "/inbox?label=inbox"
     },
     {
       "step": 15,
@@ -279,11 +448,23 @@
         "ref": 54
       },
       "targets": {
-        "role": "link",
-        "name": "Open thread Vendor proposal for Q2 office supplies"
+        "ref": {
+          "role": "link",
+          "name": "Open thread Vendor proposal for Q2 office supplies",
+          "nth": 0,
+          "selector": "main.gmail-page > section.gmail-email-list > article.gmail-email-row.gmail-email-row--unread:nth-of-type(4) > div.gmail-email-row__main:nth-of-type(1) > a.gmail-email-row__subject",
+          "bbox": {
+            "x": 512,
+            "y": 246.5,
+            "width": 603.265625,
+            "height": 16
+          }
+        }
       },
       "status": "Clicked [54] link \"Open thread Vendor proposal for Q2 office supplies\"",
-      "elapsed_seconds": 83.1
+      "elapsed_seconds": 83.1,
+      "replay_path": "/inbox?label=inbox",
+      "result_path": "/thread/email_1"
     },
     {
       "step": 16,
@@ -293,11 +474,23 @@
         "ref": 39
       },
       "targets": {
-        "role": "button",
-        "name": "Reply to Vendor proposal for Q2 office supplies"
+        "ref": {
+          "role": "button",
+          "name": "Reply to Vendor proposal for Q2 office supplies",
+          "nth": 0,
+          "selector": "section.gmail-thread > article.gmail-thread__message > header.gmail-thread__header > div:nth-of-type(2) > button.wab-button.wab-button--ghost:nth-of-type(1)",
+          "bbox": {
+            "x": 1034.953125,
+            "y": 183,
+            "width": 98.375,
+            "height": 38
+          }
+        }
       },
       "status": "Clicked [39] button \"Reply to Vendor proposal for Q2 office supplies\"",
-      "elapsed_seconds": 87.4
+      "elapsed_seconds": 87.4,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
     },
     {
       "step": 17,
@@ -308,11 +501,23 @@
         "value": "Hi Theo,\n\nThanks for sending over the vendor proposal for Q2 office supplies. I've received it and will review it thoroughly when I return from vacation on March 21.\n\nBest regards,\nAvery Quinn\nOOO until March 21"
       },
       "targets": {
-        "role": "textbox",
-        "name": "Email body"
+        "ref": {
+          "role": "textbox",
+          "name": "Email body",
+          "nth": 0,
+          "selector": "#Reply-body",
+          "bbox": {
+            "x": 289,
+            "y": 550.5625,
+            "width": 958,
+            "height": 173.78125
+          }
+        }
       },
       "status": "Filled [57] with \"Hi Theo,\n\nThanks for sending over the vendor propo\"",
-      "elapsed_seconds": 97.2
+      "elapsed_seconds": 97.2,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
     },
     {
       "step": 18,
@@ -322,11 +527,23 @@
         "ref": 65
       },
       "targets": {
-        "role": "button",
-        "name": "Send reply"
+        "ref": {
+          "role": "button",
+          "name": "Send reply",
+          "nth": 0,
+          "selector": "div.gmail-main-column > main.gmail-page > section.gmail-compose-form.wab-card:nth-of-type(2) > footer.gmail-compose-form__footer > button.wab-button.wab-button--primary:nth-of-type(2)",
+          "bbox": {
+            "x": 375.46875,
+            "y": 817.125,
+            "width": 122.1875,
+            "height": 41.03125
+          }
+        }
       },
       "status": "Clicked [65] button \"Send reply\"",
-      "elapsed_seconds": 104.4
+      "elapsed_seconds": 104.4,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
     },
     {
       "step": 19,
@@ -336,11 +553,23 @@
         "ref": 30
       },
       "targets": {
-        "role": "button",
-        "name": "Back to inbox"
+        "ref": {
+          "role": "button",
+          "name": "Back to inbox",
+          "nth": 0,
+          "selector": "div.gmail-main-column > main.gmail-page > div.gmail-toolbar > div.gmail-toolbar__left:nth-of-type(1) > button.gmail-toolbar__icon-btn:nth-of-type(1)",
+          "bbox": {
+            "x": 264,
+            "y": 68,
+            "width": 36,
+            "height": 36
+          }
+        }
       },
       "status": "Clicked [30] button \"Back to inbox\"",
-      "elapsed_seconds": 113.8
+      "elapsed_seconds": 113.8,
+      "replay_path": "/thread/email_1",
+      "result_path": "/inbox?label=inbox"
     },
     {
       "step": 20,
@@ -350,11 +579,23 @@
         "ref": 44
       },
       "targets": {
-        "role": "link",
-        "name": "Open thread Project timeline for the infrastructure rollout"
+        "ref": {
+          "role": "link",
+          "name": "Open thread Project timeline for the infrastructure rollout",
+          "nth": 0,
+          "selector": "main.gmail-page > section.gmail-email-list > article.gmail-email-row.gmail-email-row--unread:nth-of-type(2) > div.gmail-email-row__main:nth-of-type(1) > a.gmail-email-row__subject",
+          "bbox": {
+            "x": 512,
+            "y": 166.5,
+            "width": 603.265625,
+            "height": 16
+          }
+        }
       },
       "status": "Clicked [44] link \"Open thread Project timeline for the infrastructure rollout\"",
-      "elapsed_seconds": 129.1
+      "elapsed_seconds": 129.1,
+      "replay_path": "/inbox?label=inbox",
+      "result_path": "/thread/email_2"
     },
     {
       "step": 21,
@@ -364,11 +605,23 @@
         "ref": 39
       },
       "targets": {
-        "role": "button",
-        "name": "Reply to Project timeline for the infrastructure rollout"
+        "ref": {
+          "role": "button",
+          "name": "Reply to Project timeline for the infrastructure rollout",
+          "nth": 0,
+          "selector": "section.gmail-thread > article.gmail-thread__message > header.gmail-thread__header > div:nth-of-type(2) > button.wab-button.wab-button--ghost:nth-of-type(1)",
+          "bbox": {
+            "x": 1034.953125,
+            "y": 183,
+            "width": 98.375,
+            "height": 38
+          }
+        }
       },
       "status": "Clicked [39] button \"Reply to Project timeline for the infrastructure rollout\"",
-      "elapsed_seconds": 138.4
+      "elapsed_seconds": 138.4,
+      "replay_path": "/thread/email_2",
+      "result_path": "/thread/email_2"
     },
     {
       "step": 22,
@@ -379,11 +632,23 @@
         "value": "Hi Avery,\n\nThanks for sending the updated timeline for the infrastructure rollout. I've received it and will review it thoroughly when I return from vacation on March 21.\n\nBest regards,\nAvery Quinn\nOOO until March 21"
       },
       "targets": {
-        "role": "textbox",
-        "name": "Email body"
+        "ref": {
+          "role": "textbox",
+          "name": "Email body",
+          "nth": 0,
+          "selector": "#Reply-body",
+          "bbox": {
+            "x": 289,
+            "y": 550.5625,
+            "width": 958,
+            "height": 173.78125
+          }
+        }
       },
       "status": "Filled [57] with \"Hi Avery,\n\nThanks for sending the updated timeline\"",
-      "elapsed_seconds": 151.9
+      "elapsed_seconds": 151.9,
+      "replay_path": "/thread/email_2",
+      "result_path": "/thread/email_2"
     },
     {
       "step": 23,
@@ -393,11 +658,23 @@
         "ref": 65
       },
       "targets": {
-        "role": "button",
-        "name": "Send reply"
+        "ref": {
+          "role": "button",
+          "name": "Send reply",
+          "nth": 0,
+          "selector": "div.gmail-main-column > main.gmail-page > section.gmail-compose-form.wab-card:nth-of-type(2) > footer.gmail-compose-form__footer > button.wab-button.wab-button--primary:nth-of-type(2)",
+          "bbox": {
+            "x": 375.46875,
+            "y": 817.125,
+            "width": 122.1875,
+            "height": 41.03125
+          }
+        }
       },
       "status": "Clicked [65] button \"Send reply\"",
-      "elapsed_seconds": 162.8
+      "elapsed_seconds": 162.8,
+      "replay_path": "/thread/email_2",
+      "result_path": "/thread/email_2"
     },
     {
       "step": 24,
@@ -407,11 +684,23 @@
         "ref": 30
       },
       "targets": {
-        "role": "button",
-        "name": "Back to inbox"
+        "ref": {
+          "role": "button",
+          "name": "Back to inbox",
+          "nth": 0,
+          "selector": "div.gmail-main-column > main.gmail-page > div.gmail-toolbar > div.gmail-toolbar__left:nth-of-type(1) > button.gmail-toolbar__icon-btn:nth-of-type(1)",
+          "bbox": {
+            "x": 264,
+            "y": 68,
+            "width": 36,
+            "height": 36
+          }
+        }
       },
       "status": "Clicked [30] button \"Back to inbox\"",
-      "elapsed_seconds": 173.2
+      "elapsed_seconds": 173.2,
+      "replay_path": "/thread/email_2",
+      "result_path": "/inbox?label=inbox"
     },
     {
       "step": 25,
@@ -421,11 +710,23 @@
         "ref": 39
       },
       "targets": {
-        "role": "link",
-        "name": "Open thread Confirm attendance for the leadership retreat"
+        "ref": {
+          "role": "link",
+          "name": "Open thread Confirm attendance for the leadership retreat",
+          "nth": 0,
+          "selector": "main.gmail-page > section.gmail-email-list > article.gmail-email-row.gmail-email-row--unread:nth-of-type(1) > div.gmail-email-row__main:nth-of-type(1) > a.gmail-email-row__subject",
+          "bbox": {
+            "x": 512,
+            "y": 126.5,
+            "width": 603.265625,
+            "height": 16
+          }
+        }
       },
       "status": "Clicked [39] link \"Open thread Confirm attendance for the leadership retreat\"",
-      "elapsed_seconds": 185.6
+      "elapsed_seconds": 185.6,
+      "replay_path": "/inbox?label=inbox",
+      "result_path": "/thread/email_3"
     },
     {
       "step": 26,
@@ -435,11 +736,23 @@
         "ref": 39
       },
       "targets": {
-        "role": "button",
-        "name": "Reply to Confirm attendance for the leadership retreat"
+        "ref": {
+          "role": "button",
+          "name": "Reply to Confirm attendance for the leadership retreat",
+          "nth": 0,
+          "selector": "section.gmail-thread > article.gmail-thread__message > header.gmail-thread__header > div:nth-of-type(2) > button.wab-button.wab-button--ghost:nth-of-type(1)",
+          "bbox": {
+            "x": 1034.953125,
+            "y": 183,
+            "width": 98.375,
+            "height": 38
+          }
+        }
       },
       "status": "Clicked [39] button \"Reply to Confirm attendance for the leadership retreat\"",
-      "elapsed_seconds": 200.1
+      "elapsed_seconds": 200.1,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
     },
     {
       "step": 27,
@@ -450,11 +763,23 @@
         "value": "Hi Sofia,\n\nYes, I will attend the leadership retreat on March 25. Thank you for organizing this event.\n\nBest regards,\nAvery Quinn\nOOO until March 21"
       },
       "targets": {
-        "role": "textbox",
-        "name": "Email body"
+        "ref": {
+          "role": "textbox",
+          "name": "Email body",
+          "nth": 0,
+          "selector": "#Reply-body",
+          "bbox": {
+            "x": 289,
+            "y": 550.5625,
+            "width": 958,
+            "height": 173.78125
+          }
+        }
       },
       "status": "Filled [57] with \"Hi Sofia,\n\nYes, I will attend the leadership retre\"",
-      "elapsed_seconds": 217.8
+      "elapsed_seconds": 217.8,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
     },
     {
       "step": 28,
@@ -464,11 +789,23 @@
         "ref": 65
       },
       "targets": {
-        "role": "button",
-        "name": "Send reply"
+        "ref": {
+          "role": "button",
+          "name": "Send reply",
+          "nth": 0,
+          "selector": "div.gmail-main-column > main.gmail-page > section.gmail-compose-form.wab-card:nth-of-type(2) > footer.gmail-compose-form__footer > button.wab-button.wab-button--primary:nth-of-type(2)",
+          "bbox": {
+            "x": 375.46875,
+            "y": 817.125,
+            "width": 122.1875,
+            "height": 41.03125
+          }
+        }
       },
       "status": "Clicked [65] button \"Send reply\"",
-      "elapsed_seconds": 229.0
+      "elapsed_seconds": 229.0,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
     },
     {
       "step": 29,
@@ -478,11 +815,23 @@
         "ref": 30
       },
       "targets": {
-        "role": "button",
-        "name": "Back to inbox"
+        "ref": {
+          "role": "button",
+          "name": "Back to inbox",
+          "nth": 0,
+          "selector": "div.gmail-main-column > main.gmail-page > div.gmail-toolbar > div.gmail-toolbar__left:nth-of-type(1) > button.gmail-toolbar__icon-btn:nth-of-type(1)",
+          "bbox": {
+            "x": 264,
+            "y": 68,
+            "width": 36,
+            "height": 36
+          }
+        }
       },
       "status": "Clicked [30] button \"Back to inbox\"",
-      "elapsed_seconds": 247.3
+      "elapsed_seconds": 247.3,
+      "replay_path": "/thread/email_3",
+      "result_path": "/inbox?label=inbox"
     },
     {
       "step": 30,
@@ -492,11 +841,23 @@
         "ref": 55
       },
       "targets": {
-        "role": "button",
-        "name": "Star Vendor proposal for Q2 office supplies"
+        "ref": {
+          "role": "button",
+          "name": "Star Vendor proposal for Q2 office supplies",
+          "nth": 0,
+          "selector": "div.gmail-main-column > main.gmail-page > section.gmail-email-list > article.gmail-email-row:nth-of-type(4) > button.gmail-email-row__star",
+          "bbox": {
+            "x": 268,
+            "y": 244.5,
+            "width": 28,
+            "height": 20
+          }
+        }
       },
       "status": "Clicked [55] button \"Star Vendor proposal for Q2 office supplies\"",
-      "elapsed_seconds": 261.4
+      "elapsed_seconds": 261.4,
+      "replay_path": "/inbox?label=inbox",
+      "result_path": "/inbox?label=inbox"
     },
     {
       "step": 31,
@@ -506,11 +867,23 @@
         "ref": 44
       },
       "targets": {
-        "role": "button",
-        "name": "Star Project timeline for the infrastructure rollout"
+        "ref": {
+          "role": "button",
+          "name": "Star Project timeline for the infrastructure rollout",
+          "nth": 0,
+          "selector": "div.gmail-main-column > main.gmail-page > section.gmail-email-list > article.gmail-email-row:nth-of-type(2) > button.gmail-email-row__star",
+          "bbox": {
+            "x": 268,
+            "y": 164.5,
+            "width": 28,
+            "height": 20
+          }
+        }
       },
       "status": "Clicked [44] button \"Star Project timeline for the infrastructure rollout\"",
-      "elapsed_seconds": 278.8
+      "elapsed_seconds": 278.8,
+      "replay_path": "/inbox?label=inbox",
+      "result_path": "/inbox?label=inbox"
     },
     {
       "step": 32,
@@ -520,11 +893,23 @@
         "ref": 27
       },
       "targets": {
-        "role": "link",
-        "name": "Labels"
+        "ref": {
+          "role": "link",
+          "name": "Labels",
+          "nth": 0,
+          "selector": "div.gmail-body > nav.gmail-sidebar > aside.wab-sidebar.wab-card > section.wab-sidebar__section:nth-of-type(2) > a.wab-sidebar__link:nth-of-type(2)",
+          "bbox": {
+            "x": 0,
+            "y": 403.1875,
+            "width": 256,
+            "height": 32
+          }
+        }
       },
       "status": "Clicked [27] link \"Labels\"",
-      "elapsed_seconds": 293.6
+      "elapsed_seconds": 293.6,
+      "replay_path": "/inbox?label=inbox",
+      "result_path": "/labels"
     },
     {
       "step": 33,
@@ -535,11 +920,23 @@
         "value": "Return Attention"
       },
       "targets": {
-        "role": "textbox",
-        "name": "New label name"
+        "ref": {
+          "role": "textbox",
+          "name": "New label name",
+          "nth": 0,
+          "selector": "#new-label-name",
+          "bbox": {
+            "x": 289,
+            "y": 936.34375,
+            "width": 386,
+            "height": 59.875
+          }
+        }
       },
       "status": "Filled [34] with \"Return Attention\"",
-      "elapsed_seconds": 306.7
+      "elapsed_seconds": 306.7,
+      "replay_path": "/labels",
+      "result_path": "/labels"
     },
     {
       "step": 34,
@@ -549,11 +946,23 @@
         "ref": 37
       },
       "targets": {
-        "role": "button",
-        "name": "Create label"
+        "ref": {
+          "role": "button",
+          "name": "Create label",
+          "nth": 0,
+          "selector": "div.gmail-main-column > main.gmail-page.gmail-page--labels > section.gmail-settings-grid > section.wab-card.gmail-settings-card:nth-of-type(1) > button.wab-button.wab-button--primary",
+          "bbox": {
+            "x": 289,
+            "y": 854.78125,
+            "width": 386,
+            "height": 123.78125
+          }
+        }
       },
       "status": "Clicked [37] button \"Create label\"",
-      "elapsed_seconds": 317.0
+      "elapsed_seconds": 317.0,
+      "replay_path": "/labels",
+      "result_path": "/labels"
     },
     {
       "step": 35,
@@ -563,11 +972,23 @@
         "ref": 8
       },
       "targets": {
-        "role": "link",
-        "name": "Inbox"
+        "ref": {
+          "role": "link",
+          "name": "Inbox",
+          "nth": 0,
+          "selector": "div.gmail-body > nav.gmail-sidebar > aside.wab-sidebar.wab-card > section.wab-sidebar__section:nth-of-type(1) > a.wab-sidebar__link:nth-of-type(1)",
+          "bbox": {
+            "x": 0,
+            "y": -399,
+            "width": 256,
+            "height": 32
+          }
+        }
       },
       "status": "Clicked [8] link \"Inbox\"",
-      "elapsed_seconds": 334.9
+      "elapsed_seconds": 334.9,
+      "replay_path": "/labels",
+      "result_path": "/inbox?label=inbox"
     },
     {
       "step": 36,
@@ -577,11 +998,23 @@
         "ref": 57
       },
       "targets": {
-        "role": "link",
-        "name": "Open thread Vendor proposal for Q2 office supplies"
+        "ref": {
+          "role": "link",
+          "name": "Open thread Vendor proposal for Q2 office supplies",
+          "nth": 0,
+          "selector": "main.gmail-page > section.gmail-email-list > article.gmail-email-row:nth-of-type(4) > div.gmail-email-row__main:nth-of-type(1) > a.gmail-email-row__subject",
+          "bbox": {
+            "x": 512,
+            "y": 246.5,
+            "width": 545.234375,
+            "height": 16
+          }
+        }
       },
       "status": "Clicked [57] link \"Open thread Vendor proposal for Q2 office supplies\"",
-      "elapsed_seconds": 348.0
+      "elapsed_seconds": 348.0,
+      "replay_path": "/inbox?label=inbox",
+      "result_path": "/thread/email_1"
     },
     {
       "step": 37,
@@ -591,11 +1024,23 @@
         "ref": 34
       },
       "targets": {
-        "role": "button",
-        "name": "Apply label to this thread"
+        "ref": {
+          "role": "button",
+          "name": "Apply label to this thread",
+          "nth": 0,
+          "selector": "main.gmail-page > div.gmail-toolbar > div.gmail-toolbar__left:nth-of-type(1) > div.gmail-toolbar__label-menu-wrapper > button.gmail-toolbar__icon-btn",
+          "bbox": {
+            "x": 424,
+            "y": 68,
+            "width": 36,
+            "height": 36
+          }
+        }
       },
       "status": "Clicked [34] button \"Apply label to this thread\"",
-      "elapsed_seconds": 364.2
+      "elapsed_seconds": 364.2,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
     },
     {
       "step": 38,
@@ -605,11 +1050,23 @@
         "ref": 37
       },
       "targets": {
-        "role": "menuitem",
-        "name": "Apply label Return Attention"
+        "ref": {
+          "role": "menuitem",
+          "name": "Apply label Return Attention",
+          "nth": 0,
+          "selector": "div.gmail-toolbar > div.gmail-toolbar__left:nth-of-type(1) > div.gmail-toolbar__label-menu-wrapper > div.gmail-label-menu > button.gmail-label-menu__item:nth-of-type(2)",
+          "bbox": {
+            "x": 425,
+            "y": 162,
+            "width": 198,
+            "height": 27
+          }
+        }
       },
       "status": "Clicked [37] menuitem \"Apply label Return Attention\"",
-      "elapsed_seconds": 380.2
+      "elapsed_seconds": 380.2,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
     },
     {
       "step": 39,
@@ -619,11 +1076,23 @@
         "ref": 30
       },
       "targets": {
-        "role": "button",
-        "name": "Back to inbox"
+        "ref": {
+          "role": "button",
+          "name": "Back to inbox",
+          "nth": 0,
+          "selector": "div.gmail-main-column > main.gmail-page > div.gmail-toolbar > div.gmail-toolbar__left:nth-of-type(1) > button.gmail-toolbar__icon-btn:nth-of-type(1)",
+          "bbox": {
+            "x": 264,
+            "y": 68,
+            "width": 36,
+            "height": 36
+          }
+        }
       },
       "status": "Clicked [30] button \"Back to inbox\"",
-      "elapsed_seconds": 396.8
+      "elapsed_seconds": 396.8,
+      "replay_path": "/thread/email_1",
+      "result_path": "/inbox?label=inbox"
     },
     {
       "step": 40,
@@ -633,11 +1102,23 @@
         "ref": 46
       },
       "targets": {
-        "role": "link",
-        "name": "Open thread Project timeline for the infrastructure rollout"
+        "ref": {
+          "role": "link",
+          "name": "Open thread Project timeline for the infrastructure rollout",
+          "nth": 0,
+          "selector": "main.gmail-page > section.gmail-email-list > article.gmail-email-row:nth-of-type(2) > div.gmail-email-row__main:nth-of-type(1) > a.gmail-email-row__subject",
+          "bbox": {
+            "x": 512,
+            "y": 166.5,
+            "width": 545.234375,
+            "height": 16
+          }
+        }
       },
       "status": "Clicked [46] link \"Open thread Project timeline for the infrastructure rollout\"",
-      "elapsed_seconds": 411.7
+      "elapsed_seconds": 411.7,
+      "replay_path": "/inbox?label=inbox",
+      "result_path": "/thread/email_2"
     },
     {
       "step": 41,
@@ -647,11 +1128,23 @@
         "ref": 34
       },
       "targets": {
-        "role": "button",
-        "name": "Apply label to this thread"
+        "ref": {
+          "role": "button",
+          "name": "Apply label to this thread",
+          "nth": 0,
+          "selector": "main.gmail-page > div.gmail-toolbar > div.gmail-toolbar__left:nth-of-type(1) > div.gmail-toolbar__label-menu-wrapper > button.gmail-toolbar__icon-btn",
+          "bbox": {
+            "x": 424,
+            "y": 68,
+            "width": 36,
+            "height": 36
+          }
+        }
       },
       "status": "Clicked [34] button \"Apply label to this thread\"",
-      "elapsed_seconds": 434.7
+      "elapsed_seconds": 434.7,
+      "replay_path": "/thread/email_2",
+      "result_path": "/thread/email_2"
     },
     {
       "step": 42,
@@ -661,11 +1154,23 @@
         "ref": 37
       },
       "targets": {
-        "role": "menuitem",
-        "name": "Apply label Return Attention"
+        "ref": {
+          "role": "menuitem",
+          "name": "Apply label Return Attention",
+          "nth": 0,
+          "selector": "div.gmail-toolbar > div.gmail-toolbar__left:nth-of-type(1) > div.gmail-toolbar__label-menu-wrapper > div.gmail-label-menu > button.gmail-label-menu__item:nth-of-type(2)",
+          "bbox": {
+            "x": 425,
+            "y": 162,
+            "width": 198,
+            "height": 27
+          }
+        }
       },
       "status": "Clicked [37] menuitem \"Apply label Return Attention\"",
-      "elapsed_seconds": 447.7
+      "elapsed_seconds": 447.7,
+      "replay_path": "/thread/email_2",
+      "result_path": "/thread/email_2"
     },
     {
       "step": 43,
@@ -674,12 +1179,11 @@
         "action": "finish",
         "answer": "All vacation preparation tasks have been completed successfully."
       },
-      "targets": {
-        "role": "",
-        "name": ""
-      },
+      "targets": {},
       "status": "FINISH",
-      "elapsed_seconds": 464.6
+      "elapsed_seconds": 464.6,
+      "replay_path": "/thread/email_2",
+      "result_path": "/thread/email_2"
     }
   ]
 }

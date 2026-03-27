@@ -7,48 +7,49 @@
   "total_steps": 37,
   "elapsed_seconds": 366.9,
   "completed": false,
+  "start_path": "/inbox",
   "evaluation": {
     "score": 0.7143,
     "success": false,
     "reasoning": "Missing: PA visibility correct; Missing: CF visibility correct",
     "criteria_results": [
       {
-        "desc": "",
+        "desc": "Project Alpha label created",
         "passed": true,
         "penalty": null
       },
       {
-        "desc": "",
+        "desc": "Needs Review label created",
         "passed": true,
         "penalty": null
       },
       {
-        "desc": "",
+        "desc": "Client Feedback label created",
         "passed": true,
         "penalty": null
       },
       {
-        "desc": "",
+        "desc": "Client emails labeled",
         "passed": true,
         "penalty": null
       },
       {
-        "desc": "",
+        "desc": "PA visibility correct",
         "passed": false,
         "penalty": null
       },
       {
-        "desc": "",
+        "desc": "CF visibility correct",
         "passed": false,
         "penalty": null
       },
       {
-        "desc": "",
+        "desc": "Wrong review label removed",
         "passed": true,
         "penalty": null
       },
       {
-        "desc": "",
+        "desc": "Non-review email not mis-labeled",
         "passed": true,
         "penalty": 0.15
       }
@@ -63,11 +64,23 @@
         "ref": 27
       },
       "targets": {
-        "role": "link",
-        "name": "Labels"
+        "ref": {
+          "role": "link",
+          "name": "Labels",
+          "nth": 0,
+          "selector": "div.gmail-body > nav.gmail-sidebar > aside.wab-sidebar.wab-card > section.wab-sidebar__section:nth-of-type(2) > a.wab-sidebar__link:nth-of-type(2)",
+          "bbox": {
+            "x": 0,
+            "y": 403.1875,
+            "width": 256,
+            "height": 32
+          }
+        }
       },
       "status": "Clicked [27] link \"Labels\"",
-      "elapsed_seconds": 3.6
+      "elapsed_seconds": 3.6,
+      "replay_path": "/inbox",
+      "result_path": "/labels"
     },
     {
       "step": 2,
@@ -78,11 +91,23 @@
         "value": "Project Alpha"
       },
       "targets": {
-        "role": "textbox",
-        "name": "New label name"
+        "ref": {
+          "role": "textbox",
+          "name": "New label name",
+          "nth": 0,
+          "selector": "#new-label-name",
+          "bbox": {
+            "x": 289,
+            "y": 936.34375,
+            "width": 386,
+            "height": 59.875
+          }
+        }
       },
       "status": "Filled [34] with \"Project Alpha\"",
-      "elapsed_seconds": 7.3
+      "elapsed_seconds": 7.3,
+      "replay_path": "/labels",
+      "result_path": "/labels"
     },
     {
       "step": 3,
@@ -92,11 +117,23 @@
         "ref": 37
       },
       "targets": {
-        "role": "button",
-        "name": "Create label"
+        "ref": {
+          "role": "button",
+          "name": "Create label",
+          "nth": 0,
+          "selector": "div.gmail-main-column > main.gmail-page.gmail-page--labels > section.gmail-settings-grid > section.wab-card.gmail-settings-card:nth-of-type(1) > button.wab-button.wab-button--primary",
+          "bbox": {
+            "x": 289,
+            "y": 854.78125,
+            "width": 386,
+            "height": 123.78125
+          }
+        }
       },
       "status": "Clicked [37] button \"Create label\"",
-      "elapsed_seconds": 13.0
+      "elapsed_seconds": 13.0,
+      "replay_path": "/labels",
+      "result_path": "/labels"
     },
     {
       "step": 4,
@@ -107,11 +144,23 @@
         "value": "Needs Review"
       },
       "targets": {
-        "role": "textbox",
-        "name": "New label name"
+        "ref": {
+          "role": "textbox",
+          "name": "New label name",
+          "nth": 0,
+          "selector": "#new-label-name",
+          "bbox": {
+            "x": 289,
+            "y": 407.71875,
+            "width": 386,
+            "height": 57.25
+          }
+        }
       },
       "status": "Filled [34] with \"Needs Review\"",
-      "elapsed_seconds": 16.9
+      "elapsed_seconds": 16.9,
+      "replay_path": "/labels",
+      "result_path": "/labels"
     },
     {
       "step": 5,
@@ -121,11 +170,23 @@
         "ref": 37
       },
       "targets": {
-        "role": "button",
-        "name": "Create label"
+        "ref": {
+          "role": "button",
+          "name": "Create label",
+          "nth": 0,
+          "selector": "div.gmail-main-column > main.gmail-page.gmail-page--labels > section.gmail-settings-grid > section.wab-card.gmail-settings-card:nth-of-type(1) > button.wab-button.wab-button--primary",
+          "bbox": {
+            "x": 289,
+            "y": 573.28125,
+            "width": 386,
+            "height": 113.28125
+          }
+        }
       },
       "status": "Clicked [37] button \"Create label\"",
-      "elapsed_seconds": 22.7
+      "elapsed_seconds": 22.7,
+      "replay_path": "/labels",
+      "result_path": "/labels"
     },
     {
       "step": 6,
@@ -136,11 +197,23 @@
         "value": "Client Feedback"
       },
       "targets": {
-        "role": "textbox",
-        "name": "New label name"
+        "ref": {
+          "role": "textbox",
+          "name": "New label name",
+          "nth": 0,
+          "selector": "#new-label-name",
+          "bbox": {
+            "x": 289,
+            "y": 426.09375,
+            "width": 386,
+            "height": 54.625
+          }
+        }
       },
       "status": "Filled [34] with \"Client Feedback\"",
-      "elapsed_seconds": 28.0
+      "elapsed_seconds": 28.0,
+      "replay_path": "/labels",
+      "result_path": "/labels"
     },
     {
       "step": 7,
@@ -150,11 +223,23 @@
         "ref": 37
       },
       "targets": {
-        "role": "button",
-        "name": "Create label"
+        "ref": {
+          "role": "button",
+          "name": "Create label",
+          "nth": 0,
+          "selector": "div.gmail-main-column > main.gmail-page.gmail-page--labels > section.gmail-settings-grid > section.wab-card.gmail-settings-card:nth-of-type(1) > button.wab-button.wab-button--primary",
+          "bbox": {
+            "x": 289,
+            "y": 583.78125,
+            "width": 386,
+            "height": 102.78125
+          }
+        }
       },
       "status": "Clicked [37] button \"Create label\"",
-      "elapsed_seconds": 31.9
+      "elapsed_seconds": 31.9,
+      "replay_path": "/labels",
+      "result_path": "/labels"
     },
     {
       "step": 8,
@@ -164,11 +249,23 @@
         "ref": 8
       },
       "targets": {
-        "role": "link",
-        "name": "Inbox"
+        "ref": {
+          "role": "link",
+          "name": "Inbox",
+          "nth": 0,
+          "selector": "div.gmail-body > nav.gmail-sidebar > aside.wab-sidebar.wab-card > section.wab-sidebar__section:nth-of-type(1) > a.wab-sidebar__link:nth-of-type(1)",
+          "bbox": {
+            "x": 0,
+            "y": -399,
+            "width": 256,
+            "height": 32
+          }
+        }
       },
       "status": "Clicked [8] link \"Inbox\"",
-      "elapsed_seconds": 35.5
+      "elapsed_seconds": 35.5,
+      "replay_path": "/labels",
+      "result_path": "/inbox?label=inbox"
     },
     {
       "step": 9,
@@ -179,11 +276,23 @@
         "value": "from:client.test"
       },
       "targets": {
-        "role": "textbox",
-        "name": "Search mail"
+        "ref": {
+          "role": "textbox",
+          "name": "Search mail",
+          "nth": 0,
+          "selector": "div.gmail-shell > header.gmail-topbar > div.gmail-topbar__center:nth-of-type(2) > form.wab-searchbar.gmail-topbar__search > input.wab-searchbar__input",
+          "bbox": {
+            "x": 441.640625,
+            "y": 9.5,
+            "width": 583.390625,
+            "height": 44
+          }
+        }
       },
       "status": "Filled [2] with \"from:client.test\"",
-      "elapsed_seconds": 43.9
+      "elapsed_seconds": 43.9,
+      "replay_path": "/inbox?label=inbox",
+      "result_path": "/inbox?label=inbox"
     },
     {
       "step": 10,
@@ -193,11 +302,23 @@
         "ref": 3
       },
       "targets": {
-        "role": "button",
-        "name": "Run search"
+        "ref": {
+          "role": "button",
+          "name": "Run search",
+          "nth": 0,
+          "selector": "div.gmail-shell > header.gmail-topbar > div.gmail-topbar__center:nth-of-type(2) > form.wab-searchbar.gmail-topbar__search > button.wab-searchbar__submit",
+          "bbox": {
+            "x": 1037.03125,
+            "y": 15.3125,
+            "width": 78.96875,
+            "height": 32.375
+          }
+        }
       },
       "status": "Clicked [3] button \"Run search\"",
-      "elapsed_seconds": 47.2
+      "elapsed_seconds": 47.2,
+      "replay_path": "/inbox?label=inbox",
+      "result_path": "/search?q=from%3Aclient.test"
     },
     {
       "step": 11,
@@ -207,11 +328,23 @@
         "ref": 32
       },
       "targets": {
-        "role": "link",
-        "name": "Open thread Client contract renewal"
+        "ref": {
+          "role": "link",
+          "name": "Open thread Client contract renewal",
+          "nth": 0,
+          "selector": "main.gmail-page.gmail-page--search > section.gmail-email-list > article.gmail-email-row.gmail-email-row--unread:nth-of-type(1) > div.gmail-email-row__main:nth-of-type(1) > a.gmail-email-row__subject",
+          "bbox": {
+            "x": 512,
+            "y": 75.5,
+            "width": 603.265625,
+            "height": 16
+          }
+        }
       },
       "status": "Clicked [32] link \"Open thread Client contract renewal\"",
-      "elapsed_seconds": 55.5
+      "elapsed_seconds": 55.5,
+      "replay_path": "/search?q=from%3Aclient.test",
+      "result_path": "/thread/email_2"
     },
     {
       "step": 12,
@@ -221,11 +354,23 @@
         "ref": 34
       },
       "targets": {
-        "role": "button",
-        "name": "Apply label to this thread"
+        "ref": {
+          "role": "button",
+          "name": "Apply label to this thread",
+          "nth": 0,
+          "selector": "main.gmail-page > div.gmail-toolbar > div.gmail-toolbar__left:nth-of-type(1) > div.gmail-toolbar__label-menu-wrapper > button.gmail-toolbar__icon-btn",
+          "bbox": {
+            "x": 424,
+            "y": 68,
+            "width": 36,
+            "height": 36
+          }
+        }
       },
       "status": "Clicked [34] button \"Apply label to this thread\"",
-      "elapsed_seconds": 59.3
+      "elapsed_seconds": 59.3,
+      "replay_path": "/thread/email_2",
+      "result_path": "/thread/email_2"
     },
     {
       "step": 13,
@@ -235,11 +380,23 @@
         "ref": 39
       },
       "targets": {
-        "role": "menuitem",
-        "name": "Apply label Client Feedback"
+        "ref": {
+          "role": "menuitem",
+          "name": "Apply label Client Feedback",
+          "nth": 0,
+          "selector": "div.gmail-toolbar > div.gmail-toolbar__left:nth-of-type(1) > div.gmail-toolbar__label-menu-wrapper > div.gmail-label-menu > button.gmail-label-menu__item:nth-of-type(4)",
+          "bbox": {
+            "x": 425,
+            "y": 216,
+            "width": 198,
+            "height": 27
+          }
+        }
       },
       "status": "Clicked [39] menuitem \"Apply label Client Feedback\"",
-      "elapsed_seconds": 68.6
+      "elapsed_seconds": 68.6,
+      "replay_path": "/thread/email_2",
+      "result_path": "/thread/email_2"
     },
     {
       "step": 14,
@@ -249,11 +406,23 @@
         "ref": 34
       },
       "targets": {
-        "role": "button",
-        "name": "Apply label to this thread"
+        "ref": {
+          "role": "button",
+          "name": "Apply label to this thread",
+          "nth": 0,
+          "selector": "main.gmail-page > div.gmail-toolbar > div.gmail-toolbar__left:nth-of-type(1) > div.gmail-toolbar__label-menu-wrapper > button.gmail-toolbar__icon-btn",
+          "bbox": {
+            "x": 424,
+            "y": 68,
+            "width": 36,
+            "height": 36
+          }
+        }
       },
       "status": "Clicked [34] button \"Apply label to this thread\"",
-      "elapsed_seconds": 76.5
+      "elapsed_seconds": 76.5,
+      "replay_path": "/thread/email_2",
+      "result_path": "/thread/email_2"
     },
     {
       "step": 15,
@@ -263,11 +432,23 @@
         "ref": 37
       },
       "targets": {
-        "role": "menuitem",
-        "name": "Apply label Project Alpha"
+        "ref": {
+          "role": "menuitem",
+          "name": "Apply label Project Alpha",
+          "nth": 0,
+          "selector": "div.gmail-toolbar > div.gmail-toolbar__left:nth-of-type(1) > div.gmail-toolbar__label-menu-wrapper > div.gmail-label-menu > button.gmail-label-menu__item:nth-of-type(2)",
+          "bbox": {
+            "x": 425,
+            "y": 162,
+            "width": 198,
+            "height": 27
+          }
+        }
       },
       "status": "Clicked [37] menuitem \"Apply label Project Alpha\"",
-      "elapsed_seconds": 80.6
+      "elapsed_seconds": 80.6,
+      "replay_path": "/thread/email_2",
+      "result_path": "/thread/email_2"
     },
     {
       "step": 16,
@@ -277,11 +458,23 @@
         "ref": 30
       },
       "targets": {
-        "role": "button",
-        "name": "Back to inbox"
+        "ref": {
+          "role": "button",
+          "name": "Back to inbox",
+          "nth": 0,
+          "selector": "div.gmail-main-column > main.gmail-page > div.gmail-toolbar > div.gmail-toolbar__left:nth-of-type(1) > button.gmail-toolbar__icon-btn:nth-of-type(1)",
+          "bbox": {
+            "x": 264,
+            "y": 68,
+            "width": 36,
+            "height": 36
+          }
+        }
       },
       "status": "Clicked [30] button \"Back to inbox\"",
-      "elapsed_seconds": 90.1
+      "elapsed_seconds": 90.1,
+      "replay_path": "/thread/email_2",
+      "result_path": "/search?q=from%3Aclient.test"
     },
     {
       "step": 17,
@@ -291,11 +484,23 @@
         "ref": 39
       },
       "targets": {
-        "role": "link",
-        "name": "Open thread Client deliverable feedback"
+        "ref": {
+          "role": "link",
+          "name": "Open thread Client deliverable feedback",
+          "nth": 0,
+          "selector": "main.gmail-page.gmail-page--search > section.gmail-email-list > article.gmail-email-row.gmail-email-row--unread:nth-of-type(2) > div.gmail-email-row__main:nth-of-type(1) > a.gmail-email-row__subject",
+          "bbox": {
+            "x": 512,
+            "y": 115.5,
+            "width": 603.265625,
+            "height": 16
+          }
+        }
       },
       "status": "Clicked [39] link \"Open thread Client deliverable feedback\"",
-      "elapsed_seconds": 105.9
+      "elapsed_seconds": 105.9,
+      "replay_path": "/search?q=from%3Aclient.test",
+      "result_path": "/thread/email_1"
     },
     {
       "step": 18,
@@ -305,11 +510,23 @@
         "ref": 34
       },
       "targets": {
-        "role": "button",
-        "name": "Apply label to this thread"
+        "ref": {
+          "role": "button",
+          "name": "Apply label to this thread",
+          "nth": 0,
+          "selector": "main.gmail-page > div.gmail-toolbar > div.gmail-toolbar__left:nth-of-type(1) > div.gmail-toolbar__label-menu-wrapper > button.gmail-toolbar__icon-btn",
+          "bbox": {
+            "x": 424,
+            "y": 68,
+            "width": 36,
+            "height": 36
+          }
+        }
       },
       "status": "Clicked [34] button \"Apply label to this thread\"",
-      "elapsed_seconds": 116.3
+      "elapsed_seconds": 116.3,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
     },
     {
       "step": 19,
@@ -319,11 +536,23 @@
         "ref": 39
       },
       "targets": {
-        "role": "menuitem",
-        "name": "Apply label Client Feedback"
+        "ref": {
+          "role": "menuitem",
+          "name": "Apply label Client Feedback",
+          "nth": 0,
+          "selector": "div.gmail-toolbar > div.gmail-toolbar__left:nth-of-type(1) > div.gmail-toolbar__label-menu-wrapper > div.gmail-label-menu > button.gmail-label-menu__item:nth-of-type(4)",
+          "bbox": {
+            "x": 425,
+            "y": 216,
+            "width": 198,
+            "height": 27
+          }
+        }
       },
       "status": "Clicked [39] menuitem \"Apply label Client Feedback\"",
-      "elapsed_seconds": 124.3
+      "elapsed_seconds": 124.3,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
     },
     {
       "step": 20,
@@ -333,11 +562,23 @@
         "ref": 34
       },
       "targets": {
-        "role": "button",
-        "name": "Apply label to this thread"
+        "ref": {
+          "role": "button",
+          "name": "Apply label to this thread",
+          "nth": 0,
+          "selector": "main.gmail-page > div.gmail-toolbar > div.gmail-toolbar__left:nth-of-type(1) > div.gmail-toolbar__label-menu-wrapper > button.gmail-toolbar__icon-btn",
+          "bbox": {
+            "x": 424,
+            "y": 68,
+            "width": 36,
+            "height": 36
+          }
+        }
       },
       "status": "Clicked [34] button \"Apply label to this thread\"",
-      "elapsed_seconds": 139.7
+      "elapsed_seconds": 139.7,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
     },
     {
       "step": 21,
@@ -347,11 +588,23 @@
         "ref": 37
       },
       "targets": {
-        "role": "menuitem",
-        "name": "Apply label Project Alpha"
+        "ref": {
+          "role": "menuitem",
+          "name": "Apply label Project Alpha",
+          "nth": 0,
+          "selector": "div.gmail-toolbar > div.gmail-toolbar__left:nth-of-type(1) > div.gmail-toolbar__label-menu-wrapper > div.gmail-label-menu > button.gmail-label-menu__item:nth-of-type(2)",
+          "bbox": {
+            "x": 425,
+            "y": 162,
+            "width": 198,
+            "height": 27
+          }
+        }
       },
       "status": "Clicked [37] menuitem \"Apply label Project Alpha\"",
-      "elapsed_seconds": 156.1
+      "elapsed_seconds": 156.1,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
     },
     {
       "step": 22,
@@ -361,11 +614,23 @@
         "ref": 30
       },
       "targets": {
-        "role": "button",
-        "name": "Back to inbox"
+        "ref": {
+          "role": "button",
+          "name": "Back to inbox",
+          "nth": 0,
+          "selector": "div.gmail-main-column > main.gmail-page > div.gmail-toolbar > div.gmail-toolbar__left:nth-of-type(1) > button.gmail-toolbar__icon-btn:nth-of-type(1)",
+          "bbox": {
+            "x": 264,
+            "y": 68,
+            "width": 36,
+            "height": 36
+          }
+        }
       },
       "status": "Clicked [30] button \"Back to inbox\"",
-      "elapsed_seconds": 170.0
+      "elapsed_seconds": 170.0,
+      "replay_path": "/thread/email_1",
+      "result_path": "/search?q=from%3Aclient.test"
     },
     {
       "step": 23,
@@ -376,11 +641,23 @@
         "value": "subject:review"
       },
       "targets": {
-        "role": "textbox",
-        "name": "Search mail"
+        "ref": {
+          "role": "textbox",
+          "name": "Search mail",
+          "nth": 0,
+          "selector": "div.gmail-shell > header.gmail-topbar > div.gmail-topbar__center:nth-of-type(2) > form.wab-searchbar.gmail-topbar__search > input.wab-searchbar__input",
+          "bbox": {
+            "x": 441.640625,
+            "y": 9.5,
+            "width": 583.390625,
+            "height": 44
+          }
+        }
       },
       "status": "Filled [2] with \"subject:review\"",
-      "elapsed_seconds": 187.1
+      "elapsed_seconds": 187.1,
+      "replay_path": "/search?q=from%3Aclient.test",
+      "result_path": "/search?q=from%3Aclient.test"
     },
     {
       "step": 24,
@@ -390,11 +667,23 @@
         "ref": 3
       },
       "targets": {
-        "role": "button",
-        "name": "Run search"
+        "ref": {
+          "role": "button",
+          "name": "Run search",
+          "nth": 0,
+          "selector": "div.gmail-shell > header.gmail-topbar > div.gmail-topbar__center:nth-of-type(2) > form.wab-searchbar.gmail-topbar__search > button.wab-searchbar__submit",
+          "bbox": {
+            "x": 1037.03125,
+            "y": 15.3125,
+            "width": 78.96875,
+            "height": 32.375
+          }
+        }
       },
       "status": "Clicked [3] button \"Run search\"",
-      "elapsed_seconds": 198.5
+      "elapsed_seconds": 198.5,
+      "replay_path": "/search?q=from%3Aclient.test",
+      "result_path": "/search?q=subject%3Areview"
     },
     {
       "step": 25,
@@ -404,11 +693,23 @@
         "ref": 32
       },
       "targets": {
-        "role": "link",
-        "name": "Open thread Design review notes"
+        "ref": {
+          "role": "link",
+          "name": "Open thread Design review notes",
+          "nth": 0,
+          "selector": "main.gmail-page.gmail-page--search > section.gmail-email-list > article.gmail-email-row.gmail-email-row--unread:nth-of-type(1) > div.gmail-email-row__main:nth-of-type(1) > a.gmail-email-row__subject",
+          "bbox": {
+            "x": 512,
+            "y": 75.5,
+            "width": 597.03125,
+            "height": 16
+          }
+        }
       },
       "status": "Clicked [32] link \"Open thread Design review notes\"",
-      "elapsed_seconds": 211.1
+      "elapsed_seconds": 211.1,
+      "replay_path": "/search?q=subject%3Areview",
+      "result_path": "/thread/email_4"
     },
     {
       "step": 26,
@@ -418,11 +719,23 @@
         "ref": 34
       },
       "targets": {
-        "role": "button",
-        "name": "Apply label to this thread"
+        "ref": {
+          "role": "button",
+          "name": "Apply label to this thread",
+          "nth": 0,
+          "selector": "main.gmail-page > div.gmail-toolbar > div.gmail-toolbar__left:nth-of-type(1) > div.gmail-toolbar__label-menu-wrapper > button.gmail-toolbar__icon-btn",
+          "bbox": {
+            "x": 424,
+            "y": 68,
+            "width": 36,
+            "height": 36
+          }
+        }
       },
       "status": "Clicked [34] button \"Apply label to this thread\"",
-      "elapsed_seconds": 222.6
+      "elapsed_seconds": 222.6,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
     },
     {
       "step": 27,
@@ -432,11 +745,23 @@
         "ref": 38
       },
       "targets": {
-        "role": "menuitem",
-        "name": "Apply label Needs Review"
+        "ref": {
+          "role": "menuitem",
+          "name": "Apply label Needs Review",
+          "nth": 0,
+          "selector": "div.gmail-toolbar > div.gmail-toolbar__left:nth-of-type(1) > div.gmail-toolbar__label-menu-wrapper > div.gmail-label-menu > button.gmail-label-menu__item:nth-of-type(3)",
+          "bbox": {
+            "x": 425,
+            "y": 189,
+            "width": 198,
+            "height": 27
+          }
+        }
       },
       "status": "Clicked [38] menuitem \"Apply label Needs Review\"",
-      "elapsed_seconds": 240.0
+      "elapsed_seconds": 240.0,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
     },
     {
       "step": 28,
@@ -446,11 +771,23 @@
         "ref": 34
       },
       "targets": {
-        "role": "button",
-        "name": "Apply label to this thread"
+        "ref": {
+          "role": "button",
+          "name": "Apply label to this thread",
+          "nth": 0,
+          "selector": "main.gmail-page > div.gmail-toolbar > div.gmail-toolbar__left:nth-of-type(1) > div.gmail-toolbar__label-menu-wrapper > button.gmail-toolbar__icon-btn",
+          "bbox": {
+            "x": 424,
+            "y": 68,
+            "width": 36,
+            "height": 36
+          }
+        }
       },
       "status": "Clicked [34] button \"Apply label to this thread\"",
-      "elapsed_seconds": 249.0
+      "elapsed_seconds": 249.0,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
     },
     {
       "step": 29,
@@ -460,11 +797,23 @@
         "ref": 37
       },
       "targets": {
-        "role": "menuitem",
-        "name": "Apply label Project Alpha"
+        "ref": {
+          "role": "menuitem",
+          "name": "Apply label Project Alpha",
+          "nth": 0,
+          "selector": "div.gmail-toolbar > div.gmail-toolbar__left:nth-of-type(1) > div.gmail-toolbar__label-menu-wrapper > div.gmail-label-menu > button.gmail-label-menu__item:nth-of-type(2)",
+          "bbox": {
+            "x": 425,
+            "y": 162,
+            "width": 198,
+            "height": 27
+          }
+        }
       },
       "status": "Clicked [37] menuitem \"Apply label Project Alpha\"",
-      "elapsed_seconds": 262.0
+      "elapsed_seconds": 262.0,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
     },
     {
       "step": 30,
@@ -474,11 +823,23 @@
         "ref": 30
       },
       "targets": {
-        "role": "button",
-        "name": "Back to inbox"
+        "ref": {
+          "role": "button",
+          "name": "Back to inbox",
+          "nth": 0,
+          "selector": "div.gmail-main-column > main.gmail-page > div.gmail-toolbar > div.gmail-toolbar__left:nth-of-type(1) > button.gmail-toolbar__icon-btn:nth-of-type(1)",
+          "bbox": {
+            "x": 264,
+            "y": 68,
+            "width": 36,
+            "height": 36
+          }
+        }
       },
       "status": "Clicked [30] button \"Back to inbox\"",
-      "elapsed_seconds": 277.5
+      "elapsed_seconds": 277.5,
+      "replay_path": "/thread/email_4",
+      "result_path": "/search?q=subject%3Areview"
     },
     {
       "step": 31,
@@ -488,11 +849,23 @@
         "ref": 39
       },
       "targets": {
-        "role": "link",
-        "name": "Open thread Code review for sprint 12"
+        "ref": {
+          "role": "link",
+          "name": "Open thread Code review for sprint 12",
+          "nth": 0,
+          "selector": "main.gmail-page.gmail-page--search > section.gmail-email-list > article.gmail-email-row.gmail-email-row--unread:nth-of-type(2) > div.gmail-email-row__main:nth-of-type(1) > a.gmail-email-row__subject",
+          "bbox": {
+            "x": 512,
+            "y": 115.5,
+            "width": 603.265625,
+            "height": 16
+          }
+        }
       },
       "status": "Clicked [39] link \"Open thread Code review for sprint 12\"",
-      "elapsed_seconds": 289.5
+      "elapsed_seconds": 289.5,
+      "replay_path": "/search?q=subject%3Areview",
+      "result_path": "/thread/email_3"
     },
     {
       "step": 32,
@@ -502,11 +875,23 @@
         "ref": 34
       },
       "targets": {
-        "role": "button",
-        "name": "Apply label to this thread"
+        "ref": {
+          "role": "button",
+          "name": "Apply label to this thread",
+          "nth": 0,
+          "selector": "main.gmail-page > div.gmail-toolbar > div.gmail-toolbar__left:nth-of-type(1) > div.gmail-toolbar__label-menu-wrapper > button.gmail-toolbar__icon-btn",
+          "bbox": {
+            "x": 424,
+            "y": 68,
+            "width": 36,
+            "height": 36
+          }
+        }
       },
       "status": "Clicked [34] button \"Apply label to this thread\"",
-      "elapsed_seconds": 298.1
+      "elapsed_seconds": 298.1,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
     },
     {
       "step": 33,
@@ -516,11 +901,23 @@
         "ref": 38
       },
       "targets": {
-        "role": "menuitem",
-        "name": "Apply label Needs Review"
+        "ref": {
+          "role": "menuitem",
+          "name": "Apply label Needs Review",
+          "nth": 0,
+          "selector": "div.gmail-toolbar > div.gmail-toolbar__left:nth-of-type(1) > div.gmail-toolbar__label-menu-wrapper > div.gmail-label-menu > button.gmail-label-menu__item:nth-of-type(3)",
+          "bbox": {
+            "x": 425,
+            "y": 189,
+            "width": 198,
+            "height": 27
+          }
+        }
       },
       "status": "Clicked [38] menuitem \"Apply label Needs Review\"",
-      "elapsed_seconds": 310.5
+      "elapsed_seconds": 310.5,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
     },
     {
       "step": 34,
@@ -530,11 +927,23 @@
         "ref": 34
       },
       "targets": {
-        "role": "button",
-        "name": "Apply label to this thread"
+        "ref": {
+          "role": "button",
+          "name": "Apply label to this thread",
+          "nth": 0,
+          "selector": "main.gmail-page > div.gmail-toolbar > div.gmail-toolbar__left:nth-of-type(1) > div.gmail-toolbar__label-menu-wrapper > button.gmail-toolbar__icon-btn",
+          "bbox": {
+            "x": 424,
+            "y": 68,
+            "width": 36,
+            "height": 36
+          }
+        }
       },
       "status": "Clicked [34] button \"Apply label to this thread\"",
-      "elapsed_seconds": 319.2
+      "elapsed_seconds": 319.2,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
     },
     {
       "step": 35,
@@ -544,11 +953,23 @@
         "ref": 37
       },
       "targets": {
-        "role": "menuitem",
-        "name": "Apply label Project Alpha"
+        "ref": {
+          "role": "menuitem",
+          "name": "Apply label Project Alpha",
+          "nth": 0,
+          "selector": "div.gmail-toolbar > div.gmail-toolbar__left:nth-of-type(1) > div.gmail-toolbar__label-menu-wrapper > div.gmail-label-menu > button.gmail-label-menu__item:nth-of-type(2)",
+          "bbox": {
+            "x": 425,
+            "y": 162,
+            "width": 198,
+            "height": 27
+          }
+        }
       },
       "status": "Clicked [37] menuitem \"Apply label Project Alpha\"",
-      "elapsed_seconds": 335.2
+      "elapsed_seconds": 335.2,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
     },
     {
       "step": 36,
@@ -558,11 +979,23 @@
         "ref": 30
       },
       "targets": {
-        "role": "button",
-        "name": "Back to inbox"
+        "ref": {
+          "role": "button",
+          "name": "Back to inbox",
+          "nth": 0,
+          "selector": "div.gmail-main-column > main.gmail-page > div.gmail-toolbar > div.gmail-toolbar__left:nth-of-type(1) > button.gmail-toolbar__icon-btn:nth-of-type(1)",
+          "bbox": {
+            "x": 264,
+            "y": 68,
+            "width": 36,
+            "height": 36
+          }
+        }
       },
       "status": "Clicked [30] button \"Back to inbox\"",
-      "elapsed_seconds": 349.7
+      "elapsed_seconds": 349.7,
+      "replay_path": "/thread/email_3",
+      "result_path": "/search?q=subject%3Areview"
     },
     {
       "step": 37,
@@ -572,11 +1005,23 @@
         "ref": 49
       },
       "targets": {
-        "role": "link",
-        "name": "Open thread Reminder on document review timing"
+        "ref": {
+          "role": "link",
+          "name": "Open thread Reminder on document review timing",
+          "nth": 0,
+          "selector": "main.gmail-page.gmail-page--search > section.gmail-email-list > article.gmail-email-row:nth-of-type(4) > div.gmail-email-row__main:nth-of-type(1) > a.gmail-email-row__subject",
+          "bbox": {
+            "x": 512,
+            "y": 195.5,
+            "width": 604.59375,
+            "height": 16
+          }
+        }
       },
       "status": "Clicked [49] link \"Open thread Reminder on document review timing\"",
-      "elapsed_seconds": 366.4
+      "elapsed_seconds": 366.4,
+      "replay_path": "/search?q=subject%3Areview",
+      "result_path": "/search?q=subject%3Areview"
     }
   ]
 }
