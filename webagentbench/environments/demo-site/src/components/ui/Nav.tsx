@@ -19,22 +19,26 @@ export function Nav() {
   const { theme, toggle } = useTheme();
 
   return (
-    <nav className="flex justify-between items-center px-12 py-6 max-w-[1200px] mx-auto">
-      <Link href="/" className="text-[15px] font-medium text-[var(--text-primary)] tracking-tight no-underline">
+    <nav className="flex justify-between items-center w-full px-6 py-4">
+      <Link href="/" className="text-[15px] font-semibold text-[var(--text-primary)] tracking-tight no-underline">
         WebAgentBench
       </Link>
-      <div className="flex items-center gap-8 text-sm text-[var(--text-secondary)]">
+      <div className="flex items-center gap-1 bg-[var(--surface)] rounded-xl p-1">
         {links.map((link) => (
           <Link
             key={link.href}
             href={link.href}
-            className={`no-underline transition-colors duration-150 ${
-              pathname.startsWith(link.href) ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+            className={`no-underline text-[13px] px-4 py-[6px] rounded-[10px] transition-colors duration-150 ${
+              pathname.startsWith(link.href)
+                ? "bg-[var(--bg)] text-[var(--text-primary)] font-medium"
+                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             }`}
           >
             {link.label}
           </Link>
         ))}
+      </div>
+      <div className="flex items-center gap-6 text-[13px] text-[var(--text-secondary)]">
         {external.map((link) => (
           <a
             key={link.label}
@@ -47,7 +51,7 @@ export function Nav() {
         <button
           onClick={toggle}
           aria-label="Toggle theme"
-          className="p-1.5 rounded-md text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface)] transition-colors duration-150"
+          className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface)] transition-colors duration-150"
         >
           {theme === "dark" ? (
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
