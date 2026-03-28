@@ -24,40 +24,29 @@ export function StepControls({ current, total, onStep, isBusy = false }: StepCon
     };
   }, [playing, isBusy, current, total, onStep]);
 
-  // pause when reaching end
   useEffect(() => {
     if (current >= total - 1) setPlaying(false);
   }, [current, total]);
 
+  const btnClass =
+    "text-sm px-3 py-1 border border-[var(--border)] rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--text-tertiary)] transition-colors disabled:opacity-30 disabled:pointer-events-none bg-transparent";
+
   return (
-    <div className="flex items-center gap-4">
-      <button
-        onClick={() => onStep(Math.max(0, current - 1))}
-        disabled={current === 0}
-        className="font-mono text-sm px-3 py-1 border border-[var(--border)] rounded text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--text-tertiary)] transition-colors disabled:opacity-30 disabled:pointer-events-none bg-transparent"
-      >
+    <div className="flex items-center gap-3">
+      <button onClick={() => onStep(Math.max(0, current - 1))} disabled={current === 0} className={btnClass}>
         &larr;
       </button>
-      <button
-        onClick={() => setPlaying((p) => !p)}
-        className="font-mono text-sm px-3 py-1 border border-[var(--border)] rounded text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--text-tertiary)] transition-colors bg-transparent"
-      >
+      <button onClick={() => setPlaying((p) => !p)} className={btnClass}>
         {playing ? "Pause" : "Play"}
       </button>
-      <button
-        onClick={() => onStep(Math.min(total - 1, current + 1))}
-        disabled={current >= total - 1}
-        className="font-mono text-sm px-3 py-1 border border-[var(--border)] rounded text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--text-tertiary)] transition-colors disabled:opacity-30 disabled:pointer-events-none bg-transparent"
-      >
+      <button onClick={() => onStep(Math.min(total - 1, current + 1))} disabled={current >= total - 1} className={btnClass}>
         &rarr;
       </button>
-      <span className="font-mono text-xs text-[var(--text-tertiary)]">
+      <span className="text-[12px] text-[var(--text-tertiary)]">
         Step {current + 1} of {total}
       </span>
       {isBusy ? (
-        <span className="font-mono text-xs text-[var(--accent)]">
-          Syncing…
-        </span>
+        <span className="text-[12px] text-[var(--accent)]">Syncing…</span>
       ) : null}
     </div>
   );

@@ -10,7 +10,7 @@ export function DifficultyBar({ items }: { items: BarItem[] }) {
     <div className="flex flex-col gap-3">
       {items.map((item) => (
         <div key={item.label} className="flex items-center gap-3">
-          <span className="font-mono text-[13px] text-[var(--text-secondary)] w-[80px] text-right shrink-0">
+          <span className="text-[13px] text-[var(--text-secondary)] w-[80px] text-right shrink-0">
             {item.label}
           </span>
           <div className="flex-1 h-[4px] rounded-full bg-[var(--border)] overflow-hidden">
