@@ -63,6 +63,14 @@ html {
   color-scheme: dark light !important;
 }
 
+/* Hide scrollbars but keep scrolling */
+* {
+  scrollbar-width: none;
+}
+*::-webkit-scrollbar {
+  display: none;
+}
+
 /* Undo shared base.css min-height: 100% on #root */
 #root {
   min-height: auto;

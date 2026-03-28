@@ -1,12 +1,14 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTheme } from "./ThemeProvider";
 
 const links = [
-  { href: "/environment", label: "Environment" },
-  { href: "/tasks", label: "Tasks" },
-  { href: "/results", label: "Results" },
+  { href: "/", label: "Home", exact: true },
+  { href: "/environment", label: "Environment", exact: false },
+  { href: "/tasks", label: "Tasks", exact: false },
+  { href: "/results", label: "Results", exact: false },
 ];
 
 const external = [
@@ -14,23 +16,61 @@ const external = [
   { href: "#", label: "GitHub" },
 ];
 
+function isActive(pathname: string, link: { href: string; exact: boolean }) {
+  if (link.exact) return pathname === link.href;
+  return pathname.startsWith(link.href);
+}
+
 export function Nav() {
   const pathname = usePathname();
   const { theme, toggle } = useTheme();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const linkRefs = useRef<(HTMLAnchorElement | null)[]>([]);
+  const [pill, setPill] = useState<{ left: number; width: number } | null>(null);
+
+  const updatePill = useCallback(() => {
+    const activeIdx = links.findIndex((l) => isActive(pathname, l));
+    const el = linkRefs.current[activeIdx];
+    const container = containerRef.current;
+    if (!el || !container) {
+      setPill(null);
+      return;
+    }
+    const cRect = container.getBoundingClientRect();
+    const eRect = el.getBoundingClientRect();
+    setPill({ left: eRect.left - cRect.left, width: eRect.width });
+  }, [pathname]);
+
+  useEffect(() => {
+    updatePill();
+  }, [updatePill]);
+
+  useEffect(() => {
+    window.addEventListener("resize", updatePill);
+    return () => window.removeEventListener("resize", updatePill);
+  }, [updatePill]);
 
   return (
     <nav className="flex justify-between items-center w-full px-6 py-4">
       <Link href="/" className="text-[15px] font-semibold text-[var(--text-primary)] tracking-tight no-underline">
         WebAgentBench
       </Link>
-      <div className="flex items-center gap-1 bg-[var(--surface)] rounded-xl p-1">
-        {links.map((link) => (
+      <div ref={containerRef} className="relative flex items-center gap-1 bg-[var(--surface)] rounded-xl p-1">
+        {/* Sliding pill indicator */}
+        {pill && (
+          <div
+            className="absolute top-1 bottom-1 rounded-[10px] bg-[var(--bg)] transition-all duration-300 ease-out"
+            style={{ left: pill.left, width: pill.width }}
+          />
+        )}
+        {links.map((link, i) => (
           <Link
             key={link.href}
             href={link.href}
-            className={`no-underline text-[13px] px-4 py-[6px] rounded-[10px] transition-colors duration-150 ${
-              pathname.startsWith(link.href)
-                ? "bg-[var(--bg)] text-[var(--text-primary)] font-medium"
+            ref={(el) => { linkRefs.current[i] = el; }}
+            className={`relative z-10 no-underline text-[13px] px-4 py-[6px] rounded-[10px] transition-colors duration-150 ${
+              isActive(pathname, link)
+                ? "text-[var(--text-primary)] font-medium"
                 : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             }`}
           >
