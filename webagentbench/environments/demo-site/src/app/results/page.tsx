@@ -61,7 +61,7 @@ export default function ResultsPage() {
   if (loading) {
     return (
       <div className="max-w-[720px] mx-auto px-12 pt-[120px]">
-        <p className="font-mono text-sm text-[var(--text-tertiary)]">Loading...</p>
+        <p className="text-sm text-[var(--text-tertiary)]">Loading...</p>
       </div>
     );
   }
@@ -69,7 +69,7 @@ export default function ResultsPage() {
   if (!data) {
     return (
       <div className="max-w-[720px] mx-auto px-12 pt-[120px]">
-        <p className="font-mono text-xs tracking-[3px] uppercase text-[var(--text-tertiary)] mb-8">
+        <p className="text-[12px] font-medium text-[var(--text-tertiary)] mb-8">
           Results
         </p>
         <p className="text-[var(--text-secondary)]">No results available.</p>
@@ -92,11 +92,11 @@ export default function ResultsPage() {
   const tasks = sorted(data.tasks, sortKey, sortDir);
 
   const thClass =
-    "text-left font-mono text-xs tracking-[1px] uppercase text-[var(--text-tertiary)] py-2 cursor-pointer select-none hover:text-[var(--text-secondary)] transition-colors";
+    "text-left text-[12px] font-medium text-[var(--text-tertiary)] py-2 cursor-pointer select-none hover:text-[var(--text-secondary)] transition-colors";
 
   return (
     <div className="max-w-[720px] mx-auto px-12 pt-[120px] pb-24">
-      <p className="font-mono text-xs tracking-[3px] uppercase text-[var(--text-tertiary)] mb-8">
+      <p className="text-[12px] font-medium text-[var(--text-tertiary)] mb-8">
         Results
       </p>
 
@@ -126,7 +126,7 @@ export default function ResultsPage() {
 
       {/* difficulty bar */}
       <div className="mb-12">
-        <p className="font-mono text-xs tracking-[2px] uppercase text-[var(--text-tertiary)] mb-4">
+        <p className="text-[12px] font-medium text-[var(--text-tertiary)] mb-4">
           Pass rate by difficulty
         </p>
         <DifficultyBar items={diffBars} />
@@ -159,7 +159,7 @@ export default function ResultsPage() {
           {tasks.map((t) => (
             <tr
               key={t.task_id}
-              className="border-b border-[var(--border)] hover:bg-[var(--surface)] transition-colors"
+              className="border-b border-[var(--border)] hover:bg-[var(--surface)] transition-colors rounded-lg"
             >
               <td className="py-3 pr-4">
                 <Link
@@ -169,7 +169,7 @@ export default function ResultsPage() {
                   {t.title}
                 </Link>
               </td>
-              <td className="py-3 pr-4 font-mono text-[13px] text-[var(--text-secondary)]">
+              <td className="py-3 pr-4 text-[13px] text-[var(--text-secondary)]">
                 {t.difficulty}
               </td>
               <td className="py-3 pr-4">
@@ -191,12 +191,12 @@ export default function ResultsPage() {
                   </span>
                 </div>
               </td>
-              <td className="py-3 pr-4 font-mono text-[13px] text-[var(--text-secondary)]">
+              <td className="py-3 pr-4 text-[13px] text-[var(--text-secondary)]">
                 {t.steps}
               </td>
               <td className="py-3">
                 <span
-                  className={`font-mono text-[10px] tracking-[1px] uppercase px-2 py-0.5 rounded ${
+                  className={`text-[10px] font-medium px-2.5 py-0.5 rounded-lg ${
                     t.success
                       ? "text-[var(--green)]"
                       : "text-[var(--red)]"
@@ -207,7 +207,7 @@ export default function ResultsPage() {
                       : "oklch(72% 0.14 25 / 0.1)",
                   }}
                 >
-                  {t.success ? "pass" : "fail"}
+                  {t.success ? "Pass" : "Fail"}
                 </span>
               </td>
             </tr>
