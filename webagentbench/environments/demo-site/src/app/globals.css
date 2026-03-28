@@ -3,12 +3,12 @@
 @tailwind utilities;
 
 :root {
-  --bg: oklch(7% 0.005 260);
-  --surface: oklch(11% 0.005 260);
-  --border: oklch(22% 0.005 260);
+  --bg: oklch(10% 0.005 260);
+  --surface: oklch(15% 0.005 260);
+  --border: oklch(26% 0.008 260);
   --text-primary: oklch(95% 0.005 260);
-  --text-secondary: oklch(75% 0.008 260);
-  --text-tertiary: oklch(55% 0.008 260);
+  --text-secondary: oklch(78% 0.008 260);
+  --text-tertiary: oklch(62% 0.008 260);
   --accent: oklch(78% 0.12 250);
   --green: oklch(78% 0.12 155);
   --red: oklch(72% 0.14 25);
