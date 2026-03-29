@@ -283,12 +283,12 @@ export default function TrajectoryPage({ taskId }: { taskId: string }) {
               {/* Header with tabs + collapse button */}
               <div className="shrink-0 flex items-center gap-2 px-3 py-2.5">
                 {/* Tab pills */}
-                <div className="flex-1 flex gap-1 bg-[var(--surface-raised)] rounded-xl p-1">
+                <div className="flex-1 flex gap-1 bg-[var(--bg)] rounded-xl p-1">
                   <button
                     onClick={() => setRightTab("trajectory")}
                     className={`flex-1 text-[12px] font-medium py-1.5 rounded-[10px] bg-transparent cursor-pointer transition-all duration-150 ${
                       rightTab === "trajectory"
-                        ? "bg-[var(--surface)] text-[var(--text-primary)] shadow-sm"
+                        ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-sm"
                         : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"
                     }`}
                   >
@@ -298,7 +298,7 @@ export default function TrajectoryPage({ taskId }: { taskId: string }) {
                     onClick={() => setRightTab("criteria")}
                     className={`flex-1 text-[12px] font-medium py-1.5 rounded-[10px] bg-transparent cursor-pointer transition-all duration-150 ${
                       rightTab === "criteria"
-                        ? "bg-[var(--surface)] text-[var(--text-primary)] shadow-sm"
+                        ? "bg-[var(--surface-raised)] text-[var(--text-primary)] shadow-sm"
                         : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"
                     }`}
                   >
