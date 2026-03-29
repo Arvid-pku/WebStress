@@ -1,0 +1,2319 @@
+{
+  "meta": {
+    "tick": 0,
+    "status": "running",
+    "random_seed": 42,
+    "platform": "webagentbench",
+    "task_category": "gmail_interview_scheduling",
+    "target_primitives": [
+      "constraint_satisfaction",
+      "memory",
+      "attention",
+      "planning"
+    ]
+  },
+  "hidden_state": {
+    "wab_page_id": "gmail_interview_scheduling",
+    "wab_instruction": "HR coordinator {target.lisa_name} sent an email with subject \"Interview Slots \u2014 Backend Engineer\" listing 5 available times. Three interviewers each sent emails stating which slots they cannot attend: {target.marco_singh_name} (subject \"My availability \u2014 Backend interviews\"), {target.priya_name} (in a thread with subject \"Re: Panel schedule update\"), and {target.avery_name} (subject \"Scheduling conflicts this week\"). Find the one slot where all three interviewers are available. Reply to {target.lisa_name}'s email with the selected slot written as \"Confirmed: Wednesday, 2:00 PM\" and CC {target.marco_singh_email}, {target.priya_email}, and {target.avery_email}.",
+    "task_completion_criteria": {
+      "lisa_name": "Lisa Nguyen",
+      "lisa_email": "lisa.nguyen@hr.test",
+      "marco_singh_name": "Marco Singh",
+      "marco_singh_email": "marco.singh@ops.test",
+      "priya_name": "Priya Chen",
+      "priya_email": "priya.chen@ops.test",
+      "avery_name": "Avery Brooks",
+      "avery_email": "avery.brooks@ops.test",
+      "marco_santos_name": "Marco Santos",
+      "marco_santos_email": "marco.santos@ops.test",
+      "hr_slots_email_id": "email_1",
+      "hr_frontend_decoy_email_id": "email_6"
+    }
+  },
+  "ui": {
+    "bid": "root",
+    "tag": "browser",
+    "role": "application",
+    "text": "Gmail",
+    "visible": true,
+    "bounds": {
+      "x": 0,
+      "y": 0,
+      "width": 800,
+      "height": 30
+    },
+    "children": [
+      {
+        "bid": "toolbar",
+        "tag": "toolbar",
+        "role": "toolbar",
+        "text": "Browser Toolbar",
+        "visible": true,
+        "bounds": {
+          "x": 0,
+          "y": 0,
+          "width": 800,
+          "height": 30
+        },
+        "children": [
+          {
+            "bid": "url_bar",
+            "tag": "input",
+            "role": "textbox",
+            "text": "Address",
+            "visible": true,
+            "bounds": {
+              "x": 0,
+              "y": 0,
+              "width": 800,
+              "height": 30
+            },
+            "value": "https://webagentbench.local/env/gmail/inbox"
+          }
+        ]
+      },
+      {
+        "bid": "page_content",
+        "tag": "main",
+        "role": "main",
+        "text": "Gmail",
+        "visible": true,
+        "bounds": {
+          "x": 0,
+          "y": 0,
+          "width": 800,
+          "height": 30
+        },
+        "children": [
+          {
+            "bid": "banner_gmail_1",
+            "tag": "header",
+            "role": "banner",
+            "text": "Gmail",
+            "visible": true,
+            "bounds": {
+              "x": 0,
+              "y": 0,
+              "width": 800,
+              "height": 30
+            },
+            "children": [
+              {
+                "bid": "text_gmail_2",
+                "tag": "span",
+                "role": "text",
+                "text": "Gmail",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              },
+              {
+                "bid": "searchbox_search_mail_3",
+                "tag": "input",
+                "role": "searchbox",
+                "text": "Search mail",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              }
+            ]
+          },
+          {
+            "bid": "navigation_gmail_navigation_4",
+            "tag": "nav",
+            "role": "navigation",
+            "text": "Gmail navigation",
+            "visible": true,
+            "bounds": {
+              "x": 0,
+              "y": 0,
+              "width": 800,
+              "height": 30
+            },
+            "children": [
+              {
+                "bid": "button_compose_5",
+                "tag": "button",
+                "role": "button",
+                "text": "Compose",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              },
+              {
+                "bid": "link_inbox_6",
+                "tag": "a",
+                "role": "link",
+                "text": "Inbox (47)",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              },
+              {
+                "bid": "link_starred_7",
+                "tag": "a",
+                "role": "link",
+                "text": "Starred",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              },
+              {
+                "bid": "link_sent_8",
+                "tag": "a",
+                "role": "link",
+                "text": "Sent",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              },
+              {
+                "bid": "link_drafts_9",
+                "tag": "a",
+                "role": "link",
+                "text": "Drafts",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              },
+              {
+                "bid": "link_archive_10",
+                "tag": "a",
+                "role": "link",
+                "text": "Archive",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              },
+              {
+                "bid": "link_trash_11",
+                "tag": "a",
+                "role": "link",
+                "text": "Trash",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              },
+              {
+                "bid": "link_settings_12",
+                "tag": "a",
+                "role": "link",
+                "text": "Settings",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              },
+              {
+                "bid": "link_labels_13",
+                "tag": "a",
+                "role": "link",
+                "text": "Labels",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              }
+            ]
+          },
+          {
+            "bid": "main_inbox_165",
+            "tag": "main",
+            "role": "main",
+            "text": "Inbox",
+            "visible": true,
+            "bounds": {
+              "x": 0,
+              "y": 0,
+              "width": 800,
+              "height": 30
+            },
+            "children": [
+              {
+                "bid": "tab_primary_14",
+                "tag": "button",
+                "role": "tab",
+                "text": "Primary",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "selected": true
+              },
+              {
+                "bid": "tab_promotions_15",
+                "tag": "button",
+                "role": "tab",
+                "text": "Promotions",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              },
+              {
+                "bid": "tab_updates_16",
+                "tag": "button",
+                "role": "tab",
+                "text": "Updates",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              },
+              {
+                "bid": "tab_all_mail_17",
+                "tag": "button",
+                "role": "tab",
+                "text": "All Mail",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              },
+              {
+                "bid": "article_quarterly_metrics_recap_18",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_quarterly_metrics_recap_19",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star Quarterly metrics recap",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_miles_wright_20",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Miles Wright",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_quarterly_metrics_recap_21",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread Quarterly metrics recap",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_quarterly_metrics_recap_22",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Quarterly metrics recap",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_sending_a_quick_status_update_from_today_23",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Sending a quick status update from today's working session. Nothing looks blocked right now, but we still need one decision on timing. If yo",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_quarterly_metrics_recap_24",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive Quarterly metrics recap",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_quarterly_metrics_recap_25",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete Quarterly metrics recap",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jul_05_26",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jul 05",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_follow_up_on_venue_estimate_27",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_follow_up_on_venue_estimate_28",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star Follow-up on venue estimate",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_nina_brooks_29",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Nina Brooks",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_follow_up_on_venue_estimate_30",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread Follow-up on venue estimate",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_follow_up_on_venue_estimate_31",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Follow-up on venue estimate",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_passing_along_the_current_draft_so_you_h_32",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Passing along the current draft so you have it in one place. Most of the edits were minor, with one budget line still waiting on approval. N",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_follow_up_on_venue_estimate_33",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive Follow-up on venue estimate",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_follow_up_on_venue_estimate_34",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete Follow-up on venue estimate",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jul_05_35",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jul 05",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_my_availability___frontend_interviews_36",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_my_availability___frontend_intervie_37",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star My availability \u2014 Frontend interviews",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_marco_santos_38",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Marco Santos",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_my_availability___frontend_i_39",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread My availability \u2014 Frontend interviews",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_my_availability___frontend_interviews_40",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "My availability \u2014 Frontend interviews",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_for_the_frontend_panel__i_can_only_do_th_41",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "For the frontend panel: I can only do Thursday 9 AM. Block everything else. Thanks, Marco",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_my_availability___frontend_inter_42",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive My availability \u2014 Frontend interviews",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_my_availability___frontend_interv_43",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete My availability \u2014 Frontend interviews",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jul_05_44",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jul 05",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_interview_slots___frontend_designer_45",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_interview_slots___frontend_designer_46",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star Interview Slots \u2014 Frontend Designer",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_rachel_kim_47",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Rachel Kim",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_interview_slots___frontend_d_48",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread Interview Slots \u2014 Frontend Designer",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_interview_slots___frontend_designer_49",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Interview Slots \u2014 Frontend Designer",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_hi__here_are_the_interview_slots_for_the_50",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Hi, Here are the interview slots for the Frontend Designer position: Available times: - Tuesday 10:00 AM - Wednesday 1:00 PM - Thursday 3:00",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_interview_slots___frontend_desig_51",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive Interview Slots \u2014 Frontend Designer",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_interview_slots___frontend_design_52",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete Interview Slots \u2014 Frontend Designer",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jul_05_53",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jul 05",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_scheduling_conflicts_this_week_54",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_scheduling_conflicts_this_week_55",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star Scheduling conflicts this week",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_avery_brooks_56",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Avery Brooks",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_scheduling_conflicts_this_we_57",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread Scheduling conflicts this week",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_scheduling_conflicts_this_week_58",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Scheduling conflicts this week",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_hi__monday_10_am_and_tuesday_11_am_are_o_59",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Hi, Monday 10 AM and Tuesday 11 AM are out for me. The rest of the week is flexible. Thanks, Avery",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_scheduling_conflicts_this_week_60",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive Scheduling conflicts this week",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_scheduling_conflicts_this_week_61",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete Scheduling conflicts this week",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jul_05_62",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jul 05",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_re__panel_schedule_update_63",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_re__panel_schedule_update_64",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star Re: Panel schedule update",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_priya_chen_65",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Priya Chen",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_re__panel_schedule_update_66",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread Re: Panel schedule update",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_re__panel_schedule_update_67",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Re: Panel schedule update",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_actually__i_need_to_block_tuesday_11_am_68",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Actually, I need to block Tuesday 11 AM and Thursday 9 AM \u2014 client call. Everything else is open. Thanks, Priya",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_re__panel_schedule_update_69",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive Re: Panel schedule update",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_re__panel_schedule_update_70",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete Re: Panel schedule update",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jul_05_71",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jul 05",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_re__panel_schedule_update_72",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_re__panel_schedule_update_73",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star Re: Panel schedule update",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_priya_chen_74",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Priya Chen",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_re__panel_schedule_update_75",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread Re: Panel schedule update",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_re__panel_schedule_update_76",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Re: Panel schedule update",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_i_can_do_most_days__will_confirm_conflic_77",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "I can do most days, will confirm conflicts shortly. Thanks, Priya",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_re__panel_schedule_update_78",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive Re: Panel schedule update",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_re__panel_schedule_update_79",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete Re: Panel schedule update",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jul_04_80",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jul 04",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_my_availability___backend_interviews_81",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_my_availability___backend_interview_82",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star My availability \u2014 Backend interviews",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_marco_singh_83",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Marco Singh",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_my_availability___backend_in_84",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread My availability \u2014 Backend interviews",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_my_availability___backend_interviews_85",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "My availability \u2014 Backend interviews",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_hey__for_the_backend_panel__i_cannot_do_86",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Hey, For the backend panel: I cannot do Monday 10 AM, Thursday 9 AM, or Friday 3 PM. The other two slots work fine for me. Thanks, Marco",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_my_availability___backend_interv_87",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive My availability \u2014 Backend interviews",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_my_availability___backend_intervi_88",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete My availability \u2014 Backend interviews",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jul_04_89",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jul 04",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_interview_slots___backend_engineer_90",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_interview_slots___backend_engineer_91",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star Interview Slots \u2014 Backend Engineer",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_lisa_nguyen_92",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Lisa Nguyen",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_interview_slots___backend_en_93",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread Interview Slots \u2014 Backend Engineer",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_interview_slots___backend_engineer_94",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Interview Slots \u2014 Backend Engineer",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_hi__here_are_the_available_interview_slo_95",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Hi, Here are the available interview slots for the Backend Engineer role. Please coordinate with the panel to confirm which slot works for e",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_interview_slots___backend_engine_96",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive Interview Slots \u2014 Backend Engineer",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_interview_slots___backend_enginee_97",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete Interview Slots \u2014 Backend Engineer",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jul_04_98",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jul 04",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_reminder_on_document_review_timing_99",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_reminder_on_document_review_timing_100",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star Reminder on document review timing",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_sofia_patel_101",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Sofia Patel",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_reminder_on_document_review_102",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread Reminder on document review timing",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_reminder_on_document_review_timing_103",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Reminder on document review timing",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_passing_along_the_current_draft_so_you_h_104",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Passing along the current draft so you have it in one place. Nothing looks blocked right now, but we still need one decision on timing. Happ",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_reminder_on_document_review_timi_105",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive Reminder on document review timing",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_reminder_on_document_review_timin_106",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete Reminder on document review timing",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jul_03_107",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jul 03",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_quarterly_metrics_recap_108",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_quarterly_metrics_recap_109",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star Quarterly metrics recap",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_theo_rivera_110",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Theo Rivera",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_quarterly_metrics_recap_111",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread Quarterly metrics recap",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_quarterly_metrics_recap_112",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Quarterly metrics recap",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_sending_a_quick_status_update_from_today_113",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Sending a quick status update from today's working session. The open items are mostly ownership questions rather than scope changes. Happy t",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_quarterly_metrics_recap_114",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive Quarterly metrics recap",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_quarterly_metrics_recap_115",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete Quarterly metrics recap",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jul_03_116",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jul 03",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_quarterly_metrics_recap_117",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_quarterly_metrics_recap_118",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star Quarterly metrics recap",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jordan_chen_119",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jordan Chen",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_quarterly_metrics_recap_120",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread Quarterly metrics recap",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_quarterly_metrics_recap_121",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Quarterly metrics recap",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_i_pulled_the_loose_ends_into_one_note_fo_122",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "I pulled the loose ends into one note for easier review. Nothing looks blocked right now, but we still need one decision on timing. Happy to",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_quarterly_metrics_recap_123",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive Quarterly metrics recap",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_quarterly_metrics_recap_124",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete Quarterly metrics recap",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jul_02_125",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jul 02",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_customer_feedback_from_pilot_cohort_126",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_customer_feedback_from_pilot_cohort_127",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star Customer feedback from pilot cohort",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_elena_kim_128",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Elena Kim",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_customer_feedback_from_pilot_129",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread Customer feedback from pilot cohort",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_customer_feedback_from_pilot_cohort_130",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Customer feedback from pilot cohort",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_sharing_the_latest_notes_before_tomorrow_131",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Sharing the latest notes before tomorrow's check-in. The open items are mostly ownership questions rather than scope changes. Happy to conso",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_customer_feedback_from_pilot_coh_132",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive Customer feedback from pilot cohort",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_customer_feedback_from_pilot_coho_133",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete Customer feedback from pilot cohort",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jul_01_134",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jul 01",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_agenda_draft_for_monday_check_in_135",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_agenda_draft_for_monday_check_in_136",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star Agenda draft for Monday check-in",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_nina_garcia_137",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Nina Garcia",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_agenda_draft_for_monday_chec_138",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread Agenda draft for Monday check-in",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_agenda_draft_for_monday_check_in_139",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Agenda draft for Monday check-in",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_sharing_the_latest_notes_before_tomorrow_140",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Sharing the latest notes before tomorrow's check-in. Nothing looks blocked right now, but we still need one decision on timing. If you want,",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_agenda_draft_for_monday_check_in_141",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive Agenda draft for Monday check-in",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_agenda_draft_for_monday_check_in_142",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete Agenda draft for Monday check-in",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jun_29_143",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jun 29",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_agenda_draft_for_monday_check_in_144",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_agenda_draft_for_monday_check_in_145",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star Agenda draft for Monday check-in",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_miles_kim_146",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Miles Kim",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_agenda_draft_for_monday_chec_147",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread Agenda draft for Monday check-in",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_agenda_draft_for_monday_check_in_148",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Agenda draft for Monday check-in",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_sharing_the_latest_notes_before_tomorrow_149",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Sharing the latest notes before tomorrow's check-in. The team is aligned on the main path and only needs confirmation on the follow-up items",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_agenda_draft_for_monday_check_in_150",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive Agenda draft for Monday check-in",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_agenda_draft_for_monday_check_in_151",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete Agenda draft for Monday check-in",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jun_29_152",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jun 29",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_notes_from_the_partner_sync_153",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_notes_from_the_partner_sync_154",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star Notes from the partner sync",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_elena_wright_155",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Elena Wright",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_notes_from_the_partner_sync_156",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread Notes from the partner sync",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_notes_from_the_partner_sync_157",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Notes from the partner sync",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_sending_a_quick_status_update_from_today_158",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Sending a quick status update from today's working session. The open items are mostly ownership questions rather than scope changes. No resp",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_notes_from_the_partner_sync_159",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive Notes from the partner sync",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_notes_from_the_partner_sync_160",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete Notes from the partner sync",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jun_28_161",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jun 28",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "text_1_16_of_34_162",
+                "tag": "span",
+                "role": "text",
+                "text": "1\u201316 of 34",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              },
+              {
+                "bid": "button_previous_page_163",
+                "tag": "button",
+                "role": "button",
+                "text": "Previous page",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "disabled": true
+              },
+              {
+                "bid": "button_next_page_164",
+                "tag": "button",
+                "role": "button",
+                "text": "Next page",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "filesystem": {},
+  "tabs": [
+    {
+      "id": 0,
+      "url": "https://webagentbench.local/env/gmail/inbox",
+      "title": "Gmail",
+      "active": true
+    }
+  ],
+  "history": []
+}

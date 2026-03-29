@@ -113,6 +113,7 @@ def build_config(args) -> rl_train.Config:
         num_epochs=args.num_epochs,
         seed=args.seed,
         use_primitive_weights=args.use_primitive_weights,
+        hint_mode=args.hint_mode,
     )
 
     # Log path
@@ -231,6 +232,9 @@ def main():
                         help="Number of passes through the task set")
     parser.add_argument("--use-primitive-weights", action="store_true",
                         help="Weight primitives by trainability (behavioral > content-dep > floor/ceiling)")
+    parser.add_argument("--hint-mode", type=str, default="curriculum",
+                        choices=["curriculum", "fixed_subtle", "fixed_explicit"],
+                        help="Hint strategy: curriculum (fade), fixed_subtle (permanent), fixed_explicit")
     parser.add_argument("--seed", type=int, default=42)
 
     # Checkpointing

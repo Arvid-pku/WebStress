@@ -217,8 +217,16 @@ def parse_action(raw: str) -> dict:
     return {"action": "wait", "thought": f"Failed to parse: {raw[:200]}"}
 
 
-def _normalize_action(action: dict) -> dict:
+def _normalize_action(action) -> dict:
     """Fix common malformed action patterns from LLMs."""
+    # Handle list output (model generated array instead of object)
+    if isinstance(action, list):
+        if len(action) > 0 and isinstance(action[0], dict):
+            action = action[0]
+        else:
+            return {"action": "wait", "thought": "Malformed: got list"}
+    if not isinstance(action, dict):
+        return {"action": "wait", "thought": f"Malformed: got {type(action).__name__}"}
     # Fix nested action: {"action": {"type": "click", "ref": 7}}
     # Should be:         {"action": "click", "ref": 7}
     inner = action.get("action")

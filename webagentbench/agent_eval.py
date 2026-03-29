@@ -748,10 +748,13 @@ def _run_legacy_page_task(
 
     context = browser.new_context()
     page = context.new_page()
+    # Reduce Playwright action timeout from 30s default to 5s.
+    # Overlay-blocked clicks fail fast instead of burning 30s each.
+    page.set_default_timeout(5000)
 
     try:
-        page.goto(f"{bench_url}/pages/{page_id}")
-        page.wait_for_load_state("networkidle")
+        page.goto(f"{bench_url}/pages/{page_id}", timeout=15000)
+        page.wait_for_load_state("networkidle", timeout=10000)
 
         agent_result = run_agent_on_page(
             page=page,
@@ -870,14 +873,15 @@ def _run_env_task(
 
         context = browser.new_context()
         page = context.new_page()
+        page.set_default_timeout(5000)
         session_url = (
             f"{bench_url}{base_url}{start_path}?session={urllib.parse.quote(session_id)}"
             if start_path.startswith("/")
             else f"{bench_url}{base_url}/{start_path}?session={urllib.parse.quote(session_id)}"
         )
 
-        page.goto(session_url)
-        page.wait_for_load_state("networkidle")
+        page.goto(session_url, timeout=15000)
+        page.wait_for_load_state("networkidle", timeout=10000)
 
         agent_result = run_agent_on_page(
             page=page,
@@ -1272,8 +1276,8 @@ def main():
                         help="API base URL (default: provider-dependent)")
     parser.add_argument("--api-key", type=str, default=None,
                         help="API key (default: provider-dependent)")
-    parser.add_argument("--temperature", type=float, default=None,
-                        help="LLM sampling temperature (default: provider default)")
+    parser.add_argument("--temperature", type=float, default=0,
+                        help="LLM sampling temperature (default: 0 for deterministic)")
     parser.add_argument("--reasoning-effort", type=str, default=None,
                         choices=["none", "minimal", "low", "medium", "high", "xhigh"],
                         help="OpenAI reasoning effort (gpt-5*)")
@@ -1291,8 +1295,8 @@ def main():
                         help="Deterministic seed for advanced environment sessions")
     parser.add_argument("--max-steps", type=int, default=30,
                         help="Max agent steps per page (default: 30)")
-    parser.add_argument("--timeout", type=int, default=180,
-                        help="Timeout per page in seconds (default: 180)")
+    parser.add_argument("--timeout", type=int, default=120,
+                        help="Timeout per page in seconds (default: 120)")
 
     # Browser
     parser.add_argument("--headless", action="store_true", default=True,
@@ -1311,6 +1315,10 @@ def main():
                         help="Output file (default: results/webagentbench/results.json)")
     parser.add_argument("--quiet", "-q", action="store_true",
                         help="Less output")
+
+    # Multi-run evaluation
+    parser.add_argument("--num-runs", type=int, default=1,
+                        help="Number of evaluation runs (default: 1). Use >1 with temperature>0 for statistical evaluation.")
 
     args = parser.parse_args()
 
@@ -1338,26 +1346,148 @@ def main():
                 print("ERROR: Set GEMINI_API_KEY or pass --api-key", file=sys.stderr)
                 sys.exit(1)
 
-    run_evaluation(
-        model=args.model,
-        provider=args.provider,
-        base_url=args.api_base_url,
-        api_key=args.api_key,
-        pages_filter=args.pages,
-        task_filter=args.tasks,
-        environments_filter=args.environments,
-        include_all=args.all,
-        max_steps=args.max_steps,
-        timeout_per_page=args.timeout,
-        headless=args.headless,
-        verbose=not args.quiet,
-        temperature=args.temperature,
-        reasoning_effort=args.reasoning_effort,
-        server_host=args.server_host,
-        server_port=args.server_port,
-        output_path=args.output,
-        seed=args.seed,
-    )
+    num_runs = args.num_runs
+    if num_runs > 1 and args.temperature == 0:
+        print("WARNING: --num-runs > 1 with temperature=0 will produce identical results.")
+        print("         Use --temperature 0.3 for meaningful statistical evaluation.")
+
+    if num_runs == 1:
+        run_evaluation(
+            model=args.model,
+            provider=args.provider,
+            base_url=args.api_base_url,
+            api_key=args.api_key,
+            pages_filter=args.pages,
+            task_filter=args.tasks,
+            environments_filter=args.environments,
+            include_all=args.all,
+            max_steps=args.max_steps,
+            timeout_per_page=args.timeout,
+            headless=args.headless,
+            verbose=not args.quiet,
+            temperature=args.temperature,
+            reasoning_effort=args.reasoning_effort,
+            server_host=args.server_host,
+            server_port=args.server_port,
+            output_path=args.output,
+            seed=args.seed,
+        )
+    else:
+        _run_multi_evaluation(args, num_runs)
+
+
+def _run_multi_evaluation(args, num_runs: int):
+    """Run evaluation multiple times and aggregate statistics."""
+    import statistics as stats_mod
+
+    base_path = Path(args.output)
+    stem = base_path.stem
+    parent = base_path.parent
+    parent.mkdir(parents=True, exist_ok=True)
+
+    all_run_results = []
+    for run_idx in range(1, num_runs + 1):
+        run_output = parent / f"{stem}_run{run_idx}.json"
+        print(f"\n{'='*60}")
+        print(f"  Run {run_idx}/{num_runs}")
+        print(f"{'='*60}")
+        results = run_evaluation(
+            model=args.model,
+            provider=args.provider,
+            base_url=args.api_base_url,
+            api_key=args.api_key,
+            pages_filter=args.pages,
+            task_filter=args.tasks,
+            environments_filter=args.environments,
+            include_all=args.all,
+            max_steps=args.max_steps,
+            timeout_per_page=args.timeout,
+            headless=args.headless,
+            verbose=not args.quiet,
+            temperature=args.temperature,
+            reasoning_effort=args.reasoning_effort,
+            server_host=args.server_host,
+            server_port=args.server_port,
+            output_path=str(run_output),
+            seed=args.seed,
+        )
+        all_run_results.append(results)
+
+    # Aggregate statistics across runs
+    _write_multi_run_summary(all_run_results, num_runs, parent / f"{stem}_summary.json")
+
+
+def _write_multi_run_summary(all_run_results: list[list[dict]], num_runs: int, output_path):
+    """Compute per-page and aggregate statistics across multiple runs."""
+    import statistics as stats_mod
+
+    # Collect per-page scores across runs
+    page_scores: dict[str, list[float]] = {}
+    page_passes: dict[str, list[int]] = {}
+    run_summaries = []
+
+    for run_results in all_run_results:
+        total = len(run_results)
+        passed = sum(1 for r in run_results if r["evaluation"].get("success"))
+        avg = sum(
+            r["evaluation"].get("score", r["evaluation"].get("final_score", 0.0))
+            for r in run_results
+        ) / total if total else 0
+        run_summaries.append({"passed": passed, "total": total, "avg_score": avg})
+
+        for r in run_results:
+            pid = r["page_id"]
+            score = r["evaluation"].get("score", r["evaluation"].get("final_score", 0.0))
+            success = 1 if r["evaluation"].get("success") else 0
+            page_scores.setdefault(pid, []).append(score)
+            page_passes.setdefault(pid, []).append(success)
+
+    # Compute per-page statistics
+    page_stats = {}
+    for pid in sorted(page_scores.keys()):
+        scores = page_scores[pid]
+        passes = page_passes[pid]
+        page_stats[pid] = {
+            "scores": scores,
+            "mean": round(stats_mod.mean(scores), 3),
+            "stdev": round(stats_mod.stdev(scores), 3) if len(scores) > 1 else 0.0,
+            "min": min(scores),
+            "max": max(scores),
+            "pass_rate": round(sum(passes) / len(passes), 3),
+        }
+
+    # Compute aggregate statistics
+    run_avgs = [s["avg_score"] for s in run_summaries]
+    run_passed = [s["passed"] for s in run_summaries]
+
+    summary = {
+        "num_runs": num_runs,
+        "aggregate": {
+            "avg_score_mean": round(stats_mod.mean(run_avgs), 3),
+            "avg_score_stdev": round(stats_mod.stdev(run_avgs), 3) if num_runs > 1 else 0.0,
+            "passed_mean": round(stats_mod.mean(run_passed), 1),
+            "passed_stdev": round(stats_mod.stdev(run_passed), 1) if num_runs > 1 else 0.0,
+            "passed_range": [min(run_passed), max(run_passed)],
+        },
+        "per_run": run_summaries,
+        "per_page": page_stats,
+    }
+
+    with open(output_path, "w") as f:
+        json.dump(summary, f, indent=2)
+
+    # Print summary
+    print(f"\n{'='*60}")
+    print(f"  MULTI-RUN SUMMARY ({num_runs} runs)")
+    print(f"{'='*60}")
+    agg = summary["aggregate"]
+    print(f"  Passed: {agg['passed_mean']:.1f} ± {agg['passed_stdev']:.1f}  (range {agg['passed_range'][0]}-{agg['passed_range'][1]})")
+    print(f"  Avg score: {agg['avg_score_mean']:+.3f} ± {agg['avg_score_stdev']:.3f}")
+    print(f"\n  Per-page:")
+    for pid, ps in sorted(page_stats.items(), key=lambda x: -x[1]["mean"]):
+        bar = "PASS" if ps["pass_rate"] >= 0.5 else "FAIL"
+        print(f"    {pid:30s}  {ps['mean']:+.2f} ± {ps['stdev']:.2f}  pass={ps['pass_rate']:.0%}  [{bar}]")
+    print(f"\n  Written to {output_path}")
 
 
 if __name__ == "__main__":

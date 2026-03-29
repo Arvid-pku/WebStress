@@ -141,13 +141,13 @@ override your judgment. Even if the action seems reasonable, enforce the constra
 - `validate_on_submit: true` → MUST show validation errors if task criteria not fully met
 - `no_skip_steps: true` → CANNOT show completion before all steps are visited
 - `loading_actions: N` → content MUST NOT appear before N agent actions have occurred
-- `error_after_step: N` → a blocking error MUST appear after step N
+- `error_after_step: N` → a blocking error MUST appear on the FIRST forward navigation after step N. This is ONE-SHOT: CHECK `hidden_state.constraint_tracking.backtrack_correction_made` — if `true`, the agent has already backtracked and corrected the issue. Do NOT re-trigger the error; let them proceed to completion
 - `incomplete_data_penalty: true` → acting on partial data MUST lead to wrong/incomplete answers
-- `success_banner_without_update: true` → after save, show success message but do NOT update displayed values
+- `success_banner_without_update: true` → on the FIRST save, show success message but do NOT update displayed values. This is ONE-SHOT: CHECK `hidden_state.constraint_tracking.save_mismatch_shown` — if `true`, the agent has already seen the mismatch. On subsequent saves, update the displayed values normally so the agent CAN verify success
 - `no_auto_correct: true` → NEVER silently fix the agent's incorrect values
 - `no_highlight_correct: true` → do NOT emphasize or highlight correct items among similar options
 - `include_near_matches: true` → include items that almost match criteria but differ in one specific way
-- `transient_errors_before_success: N` → first N submission attempts MUST fail with retryable errors
+- `transient_errors_before_success: N` → exactly the first N submission attempts MUST fail with retryable errors; attempt N+1 MUST succeed. Do NOT inject more than N failures. CHECK `hidden_state.constraint_tracking.errors_exhausted` — if `true`, the next submission MUST succeed. Do NOT generate another error
 - `errors_are_retryable: true` → error messages MUST indicate the failure is transient and retryable
 - `info_hidden_at_submit: true` → information needed for final submission MUST NOT be visible at submit time
 - `pre_check_extras: true` → extras/add-ons MUST be pre-checked by default

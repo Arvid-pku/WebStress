@@ -1,0 +1,2370 @@
+{
+  "meta": {
+    "tick": 0,
+    "status": "running",
+    "random_seed": 42,
+    "platform": "webagentbench",
+    "task_category": "gmail_inbox_zero_automation",
+    "target_primitives": [
+      "planning",
+      "exploration",
+      "memory",
+      "patience",
+      "verification"
+    ]
+  },
+  "hidden_state": {
+    "wab_page_id": "gmail_inbox_zero_automation",
+    "wab_instruction": "Read the email from ops lead Priya Sharma (priya.sharma@blueridge.dev) with subject \"Inbox Zero policy - implement now\". Follow every instruction:\n(1) Create 5 labels with specified visibility:\n    - \"Auto/Vendor\" (show in label list, hide in message list)\n    - \"Auto/CI-CD\" (show in label list, show in message list)\n    - \"Auto/Newsletters\" (hide in label list, hide in message list)\n    - \"Auto/Billing\" (show in label list, show in message list)\n    - \"Auto/Social\" (hide in label list, hide in message list)\n(2) Create 6 filters:\n    - From: *@vendors.blueridge.dev \u2192 add label \"Auto/Vendor\", skip inbox, mark as read\n    - From: ci@github.com, Subject contains: \"build\" \u2192 add label \"Auto/CI-CD\", skip inbox\n    - From: *@newsletter.blueridge.dev \u2192 add label \"Auto/Newsletters\", skip inbox, mark as read\n    - From: billing@stripe.com \u2192 add label \"Auto/Billing\", star\n    - From: billing@aws.amazon.com \u2192 add label \"Auto/Billing\", star\n    - From: *@social.blueridge.dev \u2192 add label \"Auto/Social\", skip inbox\n(3) Archive all existing emails in the inbox that match any of the 6 filter criteria above.\n(4) Star every email in the inbox received in the last 24 hours that does NOT match any of the 6 filter criteria.\nIgnore the older draft policy email \u2014 only follow the latest \"implement now\" version.",
+    "task_completion_criteria": {
+      "directive_email_id": "email_1",
+      "draft_email_id": "email_2",
+      "vendor_email_ids": [
+        "email_3",
+        "email_4",
+        "email_5",
+        "email_6"
+      ],
+      "cicd_email_ids": [
+        "email_7",
+        "email_8",
+        "email_9"
+      ],
+      "newsletter_email_ids": [
+        "email_11",
+        "email_12",
+        "email_13"
+      ],
+      "billing_email_ids": [
+        "email_14",
+        "email_15"
+      ],
+      "social_email_ids": [
+        "email_16",
+        "email_17"
+      ],
+      "cicd_non_matching_email_id": "email_10",
+      "billing_decoy_email_id": "email_18",
+      "domain_decoy_email_id": "email_19",
+      "non_matching_recent_email_ids": [
+        "email_1",
+        "email_20",
+        "email_21"
+      ],
+      "non_matching_old_email_ids": [
+        "email_22",
+        "email_23",
+        "email_24",
+        "email_25"
+      ],
+      "archive_target_ids": [
+        "email_3",
+        "email_4",
+        "email_5",
+        "email_6",
+        "email_7",
+        "email_8",
+        "email_9",
+        "email_11",
+        "email_12",
+        "email_13",
+        "email_16",
+        "email_17"
+      ],
+      "star_target_ids": [
+        "email_1",
+        "email_20",
+        "email_21",
+        "email_10",
+        "email_18",
+        "email_19"
+      ]
+    }
+  },
+  "ui": {
+    "bid": "root",
+    "tag": "browser",
+    "role": "application",
+    "text": "Gmail",
+    "visible": true,
+    "bounds": {
+      "x": 0,
+      "y": 0,
+      "width": 800,
+      "height": 30
+    },
+    "children": [
+      {
+        "bid": "toolbar",
+        "tag": "toolbar",
+        "role": "toolbar",
+        "text": "Browser Toolbar",
+        "visible": true,
+        "bounds": {
+          "x": 0,
+          "y": 0,
+          "width": 800,
+          "height": 30
+        },
+        "children": [
+          {
+            "bid": "url_bar",
+            "tag": "input",
+            "role": "textbox",
+            "text": "Address",
+            "visible": true,
+            "bounds": {
+              "x": 0,
+              "y": 0,
+              "width": 800,
+              "height": 30
+            },
+            "value": "https://webagentbench.local/env/gmail/inbox"
+          }
+        ]
+      },
+      {
+        "bid": "page_content",
+        "tag": "main",
+        "role": "main",
+        "text": "Gmail",
+        "visible": true,
+        "bounds": {
+          "x": 0,
+          "y": 0,
+          "width": 800,
+          "height": 30
+        },
+        "children": [
+          {
+            "bid": "banner_gmail_1",
+            "tag": "header",
+            "role": "banner",
+            "text": "Gmail",
+            "visible": true,
+            "bounds": {
+              "x": 0,
+              "y": 0,
+              "width": 800,
+              "height": 30
+            },
+            "children": [
+              {
+                "bid": "text_gmail_2",
+                "tag": "span",
+                "role": "text",
+                "text": "Gmail",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              },
+              {
+                "bid": "searchbox_search_mail_3",
+                "tag": "input",
+                "role": "searchbox",
+                "text": "Search mail",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              }
+            ]
+          },
+          {
+            "bid": "navigation_gmail_navigation_4",
+            "tag": "nav",
+            "role": "navigation",
+            "text": "Gmail navigation",
+            "visible": true,
+            "bounds": {
+              "x": 0,
+              "y": 0,
+              "width": 800,
+              "height": 30
+            },
+            "children": [
+              {
+                "bid": "button_compose_5",
+                "tag": "button",
+                "role": "button",
+                "text": "Compose",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              },
+              {
+                "bid": "link_inbox_6",
+                "tag": "a",
+                "role": "link",
+                "text": "Inbox (65)",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              },
+              {
+                "bid": "link_starred_7",
+                "tag": "a",
+                "role": "link",
+                "text": "Starred",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              },
+              {
+                "bid": "link_sent_8",
+                "tag": "a",
+                "role": "link",
+                "text": "Sent",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              },
+              {
+                "bid": "link_drafts_9",
+                "tag": "a",
+                "role": "link",
+                "text": "Drafts",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              },
+              {
+                "bid": "link_archive_10",
+                "tag": "a",
+                "role": "link",
+                "text": "Archive",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              },
+              {
+                "bid": "link_trash_11",
+                "tag": "a",
+                "role": "link",
+                "text": "Trash",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              },
+              {
+                "bid": "link_settings_12",
+                "tag": "a",
+                "role": "link",
+                "text": "Settings",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              },
+              {
+                "bid": "link_labels_13",
+                "tag": "a",
+                "role": "link",
+                "text": "Labels",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              }
+            ]
+          },
+          {
+            "bid": "main_inbox_165",
+            "tag": "main",
+            "role": "main",
+            "text": "Inbox",
+            "visible": true,
+            "bounds": {
+              "x": 0,
+              "y": 0,
+              "width": 800,
+              "height": 30
+            },
+            "children": [
+              {
+                "bid": "tab_primary_14",
+                "tag": "button",
+                "role": "tab",
+                "text": "Primary",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "selected": true
+              },
+              {
+                "bid": "tab_promotions_15",
+                "tag": "button",
+                "role": "tab",
+                "text": "Promotions",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              },
+              {
+                "bid": "tab_updates_16",
+                "tag": "button",
+                "role": "tab",
+                "text": "Updates",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              },
+              {
+                "bid": "tab_all_mail_17",
+                "tag": "button",
+                "role": "tab",
+                "text": "All Mail",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              },
+              {
+                "bid": "article_inbox_zero_policy___implement_now_18",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_inbox_zero_policy___implement_now_19",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star Inbox Zero policy - implement now",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_priya_sharma_20",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Priya Sharma",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_inbox_zero_policy___implemen_21",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread Inbox Zero policy - implement now",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_inbox_zero_policy___implement_now_22",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Inbox Zero policy - implement now",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_please_implement_the_following_inbox_zer_23",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Please implement the following Inbox Zero policy immediately. LABELS (with visibility): - Auto/Vendor: show in label list, hide in message l",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_inbox_zero_policy___implement_no_24",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive Inbox Zero policy - implement now",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_inbox_zero_policy___implement_now_25",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete Inbox Zero policy - implement now",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jul_07_26",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jul 07",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_vendor_logistics_update__195_27",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_vendor_logistics_update__195_28",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star Vendor logistics update #195",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_vendor_logistics_29",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Vendor Logistics",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_vendor_logistics_update__195_30",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread Vendor logistics update #195",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_vendor_logistics_update__195_31",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Vendor logistics update #195",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_update_from_vendor_logistics_department_32",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Update from vendor logistics department.",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_vendor_logistics_update__195_33",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive Vendor logistics update #195",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_vendor_logistics_update__195_34",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete Vendor logistics update #195",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jul_07_35",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jul 07",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_your_invoice_is_ready_36",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_your_invoice_is_ready_37",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star Your invoice is ready",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_stripe_invoices_38",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Stripe Invoices",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_your_invoice_is_ready_39",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread Your invoice is ready",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_your_invoice_is_ready_40",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Your invoice is ready",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_your_invoice_from_stripe_invoices_is_rea_41",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Your invoice from Stripe Invoices is ready for review.",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_your_invoice_is_ready_42",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive Your invoice is ready",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_your_invoice_is_ready_43",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete Your invoice is ready",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jul_07_44",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jul 07",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_invoice_for_march_2026___blueridge_dev_45",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_invoice_for_march_2026___blueridge_46",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star Invoice for March 2026 - BlueRidge Dev",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_stripe_billing_47",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Stripe Billing",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_invoice_for_march_2026___blu_48",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread Invoice for March 2026 - BlueRidge Dev",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_invoice_for_march_2026___blueridge_dev_49",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Invoice for March 2026 - BlueRidge Dev",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_your_march_2026_invoice_is_ready__amount_50",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Your March 2026 invoice is ready. Amount: $2,450.00",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_invoice_for_march_2026___bluerid_51",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive Invoice for March 2026 - BlueRidge Dev",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_invoice_for_march_2026___blueridg_52",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete Invoice for March 2026 - BlueRidge Dev",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jul_07_53",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jul 07",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_build__4521_passed___main_branch_54",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_build__4521_passed___main_branch_55",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star build #4521 passed - main branch",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_github_ci_56",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "GitHub CI",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_build__4521_passed___main_br_57",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread build #4521 passed - main branch",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_build__4521_passed___main_branch_58",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "build #4521 passed - main branch",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_ci_cd_notification__build__4521_passed_59",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "CI/CD notification: build #4521 passed - main branch",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_build__4521_passed___main_branch_60",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive build #4521 passed - main branch",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_build__4521_passed___main_branch_61",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete build #4521 passed - main branch",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jul_07_62",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jul 07",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_meeting_tomorrow_at_3pm_63",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_meeting_tomorrow_at_3pm_64",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star Meeting tomorrow at 3pm",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_alex_rivera_65",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Alex Rivera",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_meeting_tomorrow_at_3pm_66",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread Meeting tomorrow at 3pm",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_meeting_tomorrow_at_3pm_67",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Meeting tomorrow at 3pm",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_can_we_sync_tomorrow_at_3pm_about_the_pr_68",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Can we sync tomorrow at 3pm about the project timeline?",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_meeting_tomorrow_at_3pm_69",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive Meeting tomorrow at 3pm",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_meeting_tomorrow_at_3pm_70",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete Meeting tomorrow at 3pm",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jul_07_71",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jul 07",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_release_v3_2_1_deployed_72",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_release_v3_2_1_deployed_73",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star release v3.2.1 deployed",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_github_ci_74",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "GitHub CI",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_release_v3_2_1_deployed_75",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread release v3.2.1 deployed",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_release_v3_2_1_deployed_76",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "release v3.2.1 deployed",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_release_v3_2_1_has_been_deployed_to_prod_77",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Release v3.2.1 has been deployed to production successfully.",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_release_v3_2_1_deployed_78",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive release v3.2.1 deployed",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_release_v3_2_1_deployed_79",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete release v3.2.1 deployed",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jul_07_80",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jul 07",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_vendor_procurement_update__132_81",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_vendor_procurement_update__132_82",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star Vendor procurement update #132",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_vendor_procurement_83",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Vendor Procurement",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_vendor_procurement_update__1_84",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread Vendor procurement update #132",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_vendor_procurement_update__132_85",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Vendor procurement update #132",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_update_from_vendor_procurement_departmen_86",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Update from vendor procurement department.",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_vendor_procurement_update__132_87",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive Vendor procurement update #132",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_vendor_procurement_update__132_88",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete Vendor procurement update #132",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jul_07_89",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jul 07",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_aws_billing_statement___march_2026_90",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_aws_billing_statement___march_2026_91",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star AWS billing statement - March 2026",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_aws_billing_92",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "AWS Billing",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_aws_billing_statement___marc_93",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread AWS billing statement - March 2026",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_aws_billing_statement___march_2026_94",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "AWS billing statement - March 2026",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_your_aws_billing_statement_for_march_202_95",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Your AWS billing statement for March 2026 is available.",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_aws_billing_statement___march_20_96",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive AWS billing statement - March 2026",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_aws_billing_statement___march_202_97",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete AWS billing statement - March 2026",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jul_07_98",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jul 07",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_new_team_event_invitation_99",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_new_team_event_invitation_100",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star New team event invitation",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_blueridge_social_101",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "BlueRidge Social",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_new_team_event_invitation_102",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread New team event invitation",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_new_team_event_invitation_103",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "New team event invitation",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_you_have_been_invited_to_a_team_building_104",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "You have been invited to a team building event.",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_new_team_event_invitation_105",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive New team event invitation",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_new_team_event_invitation_106",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete New team event invitation",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jul_07_107",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jul 07",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_company_all_hands_next_week_108",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_company_all_hands_next_week_109",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star Company all-hands next week",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_blueridge_news_110",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "BlueRidge News",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_company_all_hands_next_week_111",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread Company all-hands next week",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_company_all_hands_next_week_112",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Company all-hands next week",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_reminder__company_all_hands_meeting_is_n_113",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Reminder: company all-hands meeting is next Tuesday at 2pm.",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_company_all_hands_next_week_114",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive Company all-hands next week",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_company_all_hands_next_week_115",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete Company all-hands next week",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jul_06_116",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jul 06",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_ticket__4821_update_117",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_ticket__4821_update_118",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star Ticket #4821 update",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_blueridge_support_119",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "BlueRidge Support",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_ticket__4821_update_120",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread Ticket #4821 update",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_ticket__4821_update_121",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Ticket #4821 update",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_your_support_ticket__4821_has_been_updat_122",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Your support ticket #4821 has been updated.",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_ticket__4821_update_123",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive Ticket #4821 update",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_ticket__4821_update_124",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete Ticket #4821 update",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jul_06_125",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jul 06",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_quarterly_metrics_recap_126",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_quarterly_metrics_recap_127",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star Quarterly metrics recap",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_sofia_morris_128",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Sofia Morris",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_quarterly_metrics_recap_129",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread Quarterly metrics recap",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_quarterly_metrics_recap_130",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Quarterly metrics recap",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_sending_a_quick_status_update_from_today_131",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Sending a quick status update from today's working session. Nothing looks blocked right now, but we still need one decision on timing. If yo",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_quarterly_metrics_recap_132",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive Quarterly metrics recap",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_quarterly_metrics_recap_133",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete Quarterly metrics recap",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jul_05_134",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jul 05",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_vendor_purchasing_update__674_135",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_vendor_purchasing_update__674_136",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star Vendor purchasing update #674",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_vendor_purchasing_137",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Vendor Purchasing",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_vendor_purchasing_update__67_138",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread Vendor purchasing update #674",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_vendor_purchasing_update__674_139",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Vendor purchasing update #674",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_update_from_vendor_purchasing_department_140",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Update from vendor purchasing department.",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_vendor_purchasing_update__674_141",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive Vendor purchasing update #674",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_vendor_purchasing_update__674_142",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete Vendor purchasing update #674",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jul_05_143",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jul 05",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_parking_lot_update_for_next_month_144",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_parking_lot_update_for_next_month_145",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star Parking lot update for next month",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_theo_brooks_146",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Theo Brooks",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_parking_lot_update_for_next_147",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread Parking lot update for next month",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_parking_lot_update_for_next_month_148",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Parking lot update for next month",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_sharing_the_latest_notes_before_tomorrow_149",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Sharing the latest notes before tomorrow's check-in. The open items are mostly ownership questions rather than scope changes. Let me know if",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_parking_lot_update_for_next_mont_150",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive Parking lot update for next month",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_parking_lot_update_for_next_month_151",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete Parking lot update for next month",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jul_05_152",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jul 05",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_health_insurance_enrollment_reminder_153",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_health_insurance_enrollment_reminde_154",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star Health insurance enrollment reminder",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_avery_kim_155",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Avery Kim",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_health_insurance_enrollment_156",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread Health insurance enrollment reminder",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_health_insurance_enrollment_reminder_157",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Health insurance enrollment reminder",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_sending_a_quick_status_update_from_today_158",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Sending a quick status update from today's working session. The team is aligned on the main path and only needs confirmation on the follow-u",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_health_insurance_enrollment_remi_159",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive Health insurance enrollment reminder",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_health_insurance_enrollment_remin_160",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete Health insurance enrollment reminder",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jul_05_161",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jul 05",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "text_1_16_of_53_162",
+                "tag": "span",
+                "role": "text",
+                "text": "1\u201316 of 53",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              },
+              {
+                "bid": "button_previous_page_163",
+                "tag": "button",
+                "role": "button",
+                "text": "Previous page",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "disabled": true
+              },
+              {
+                "bid": "button_next_page_164",
+                "tag": "button",
+                "role": "button",
+                "text": "Next page",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "filesystem": {},
+  "tabs": [
+    {
+      "id": 0,
+      "url": "https://webagentbench.local/env/gmail/inbox",
+      "title": "Gmail",
+      "active": true
+    }
+  ],
+  "history": []
+}

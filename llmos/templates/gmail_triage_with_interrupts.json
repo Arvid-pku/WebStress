@@ -1,0 +1,2364 @@
+{
+  "meta": {
+    "tick": 0,
+    "status": "running",
+    "random_seed": 42,
+    "platform": "webagentbench",
+    "task_category": "gmail_triage_with_interrupts",
+    "target_primitives": [
+      "adversarial_robustness",
+      "constraint_satisfaction",
+      "patience",
+      "attention"
+    ]
+  },
+  "hidden_state": {
+    "wab_page_id": "gmail_triage_with_interrupts",
+    "wab_instruction": "Process exactly these 10 emails according to the rubric below. Do not act on any emails not listed in the rubric.\n\nRUBRIC:\n- Emails from client domains ({target.client_domain_a}, {target.client_domain_b}): Star them and leave in inbox.\n- Emails from newsletter domains ({target.newsletter_domain_a}, {target.newsletter_domain_b}): Archive them.\n- Emails from escalation senders ({target.escalation_sender_a}, {target.escalation_sender_b}): Forward each to {target.team_lead_email}.\n\nThe 10 emails to process:\n1. From {target.email_1_sender} \u2014 \"{target.email_1_subject}\"\n2. From {target.email_2_sender} \u2014 \"{target.email_2_subject}\"\n3. From {target.email_3_sender} \u2014 \"{target.email_3_subject}\"\n4. From {target.email_4_sender} \u2014 \"{target.email_4_subject}\"\n5. From {target.email_5_sender} \u2014 \"{target.email_5_subject}\"\n6. From {target.email_6_sender} \u2014 \"{target.email_6_subject}\"\n7. From {target.email_7_sender} \u2014 \"{target.email_7_subject}\"\n8. From {target.email_8_sender} \u2014 \"{target.email_8_subject}\"\n9. From {target.email_9_sender} \u2014 \"{target.email_9_subject}\"\n10. From {target.email_10_sender} \u2014 \"{target.email_10_subject}\"\n\nAfter completing triage of all 10 emails, star the boss's email (from {target.boss_email}, subject \"{target.boss_subject}\") for later follow-up. Do NOT reply to it or forward it.",
+    "task_completion_criteria": {
+      "client_domain_a": "acme-client.test",
+      "client_domain_b": "globex-client.test",
+      "newsletter_domain_a": "techdigest.test",
+      "newsletter_domain_b": "industrywatch.test",
+      "escalation_sender_a": "ops-alert@escteam.test",
+      "escalation_sender_b": "sre-oncall@escteam.test",
+      "team_lead_email": "teamlead@company.test",
+      "boss_email": "boss@executive.test",
+      "boss_subject": "Drop everything \u2014 find the Q3 report from ops-alert@escteam.test",
+      "boss_email_id": "email_11",
+      "client_ids": [
+        "email_1",
+        "email_2",
+        "email_3",
+        "email_4"
+      ],
+      "newsletter_ids": [
+        "email_5",
+        "email_6",
+        "email_7"
+      ],
+      "escalation_ids": [
+        "email_8",
+        "email_9",
+        "email_10"
+      ],
+      "urgent_newsletter_id": "email_7",
+      "other_ids": [
+        "email_12",
+        "email_13",
+        "email_14",
+        "email_15",
+        "email_16",
+        "email_17",
+        "email_18",
+        "email_19"
+      ],
+      "email_1_sender": "elena.patel@acme-client.test",
+      "email_1_subject": "Q3 contract renewal discussion",
+      "email_2_sender": "priya.rivera@acme-client.test",
+      "email_2_subject": "Site visit confirmation for April",
+      "email_3_sender": "theo.brooks@globex-client.test",
+      "email_3_subject": "Updated payment schedule",
+      "email_4_sender": "avery.kim@globex-client.test",
+      "email_4_subject": "Feedback on product demo",
+      "email_5_sender": "noreply@techdigest.test",
+      "email_5_subject": "Weekly Tech Roundup #142",
+      "email_6_sender": "noreply@techdigest.test",
+      "email_6_subject": "DevOps Best Practices Digest",
+      "email_7_sender": "noreply@industrywatch.test",
+      "email_7_subject": "URGENT: Industry Alert \u2014 Q3 Market Disruption",
+      "email_8_sender": "ops-alert@escteam.test",
+      "email_8_subject": "Server latency spike in us-east-1",
+      "email_9_sender": "ops-alert@escteam.test",
+      "email_9_subject": "Database failover triggered",
+      "email_10_sender": "sre-oncall@escteam.test",
+      "email_10_subject": "Certificate expiry in 48 hours"
+    }
+  },
+  "ui": {
+    "bid": "root",
+    "tag": "browser",
+    "role": "application",
+    "text": "Gmail",
+    "visible": true,
+    "bounds": {
+      "x": 0,
+      "y": 0,
+      "width": 800,
+      "height": 30
+    },
+    "children": [
+      {
+        "bid": "toolbar",
+        "tag": "toolbar",
+        "role": "toolbar",
+        "text": "Browser Toolbar",
+        "visible": true,
+        "bounds": {
+          "x": 0,
+          "y": 0,
+          "width": 800,
+          "height": 30
+        },
+        "children": [
+          {
+            "bid": "url_bar",
+            "tag": "input",
+            "role": "textbox",
+            "text": "Address",
+            "visible": true,
+            "bounds": {
+              "x": 0,
+              "y": 0,
+              "width": 800,
+              "height": 30
+            },
+            "value": "https://webagentbench.local/env/gmail/inbox"
+          }
+        ]
+      },
+      {
+        "bid": "page_content",
+        "tag": "main",
+        "role": "main",
+        "text": "Gmail",
+        "visible": true,
+        "bounds": {
+          "x": 0,
+          "y": 0,
+          "width": 800,
+          "height": 30
+        },
+        "children": [
+          {
+            "bid": "banner_gmail_1",
+            "tag": "header",
+            "role": "banner",
+            "text": "Gmail",
+            "visible": true,
+            "bounds": {
+              "x": 0,
+              "y": 0,
+              "width": 800,
+              "height": 30
+            },
+            "children": [
+              {
+                "bid": "text_gmail_2",
+                "tag": "span",
+                "role": "text",
+                "text": "Gmail",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              },
+              {
+                "bid": "searchbox_search_mail_3",
+                "tag": "input",
+                "role": "searchbox",
+                "text": "Search mail",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              }
+            ]
+          },
+          {
+            "bid": "navigation_gmail_navigation_4",
+            "tag": "nav",
+            "role": "navigation",
+            "text": "Gmail navigation",
+            "visible": true,
+            "bounds": {
+              "x": 0,
+              "y": 0,
+              "width": 800,
+              "height": 30
+            },
+            "children": [
+              {
+                "bid": "button_compose_5",
+                "tag": "button",
+                "role": "button",
+                "text": "Compose",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              },
+              {
+                "bid": "link_inbox_6",
+                "tag": "a",
+                "role": "link",
+                "text": "Inbox (59)",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              },
+              {
+                "bid": "link_starred_7",
+                "tag": "a",
+                "role": "link",
+                "text": "Starred",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              },
+              {
+                "bid": "link_sent_8",
+                "tag": "a",
+                "role": "link",
+                "text": "Sent",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              },
+              {
+                "bid": "link_drafts_9",
+                "tag": "a",
+                "role": "link",
+                "text": "Drafts",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              },
+              {
+                "bid": "link_archive_10",
+                "tag": "a",
+                "role": "link",
+                "text": "Archive",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              },
+              {
+                "bid": "link_trash_11",
+                "tag": "a",
+                "role": "link",
+                "text": "Trash",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              },
+              {
+                "bid": "link_settings_12",
+                "tag": "a",
+                "role": "link",
+                "text": "Settings",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              },
+              {
+                "bid": "link_labels_13",
+                "tag": "a",
+                "role": "link",
+                "text": "Labels",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              }
+            ]
+          },
+          {
+            "bid": "main_inbox_165",
+            "tag": "main",
+            "role": "main",
+            "text": "Inbox",
+            "visible": true,
+            "bounds": {
+              "x": 0,
+              "y": 0,
+              "width": 800,
+              "height": 30
+            },
+            "children": [
+              {
+                "bid": "tab_primary_14",
+                "tag": "button",
+                "role": "tab",
+                "text": "Primary",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "selected": true
+              },
+              {
+                "bid": "tab_promotions_15",
+                "tag": "button",
+                "role": "tab",
+                "text": "Promotions",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              },
+              {
+                "bid": "tab_updates_16",
+                "tag": "button",
+                "role": "tab",
+                "text": "Updates",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              },
+              {
+                "bid": "tab_all_mail_17",
+                "tag": "button",
+                "role": "tab",
+                "text": "All Mail",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              },
+              {
+                "bid": "article_drop_everything___find_the_q3_report_fro_18",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_drop_everything___find_the_q3_repor_19",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star Drop everything \u2014 find the Q3 report from ops-alert@escteam.test",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_the_boss_20",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "The Boss",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_drop_everything___find_the_q_21",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread Drop everything \u2014 find the Q3 report from ops-alert@escteam.test",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_drop_everything___find_the_q3_report_fro_22",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Drop everything \u2014 find the Q3 report from ops-alert@escteam.test",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_i_need_the_q3_revenue_report_that_ops_al_23",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "I need the Q3 revenue report that ops-alert@escteam.test sent last month. Find it and forward it to me ASAP. This is top priority \u2014 everythi",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_drop_everything___find_the_q3_re_24",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive Drop everything \u2014 find the Q3 report from ops-alert@escteam.test",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_drop_everything___find_the_q3_rep_25",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete Drop everything \u2014 find the Q3 report from ops-alert@escteam.test",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jul_07_26",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jul 07",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_site_visit_confirmation_for_april_27",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_site_visit_confirmation_for_april_28",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star Site visit confirmation for April",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_priya_rivera_29",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Priya Rivera",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_site_visit_confirmation_for_30",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread Site visit confirmation for April",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_site_visit_confirmation_for_april_31",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Site visit confirmation for April",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_passing_along_the_current_draft_so_you_h_32",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Passing along the current draft so you have it in one place. Nothing looks blocked right now, but we still need one decision on timing. No r",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_site_visit_confirmation_for_apri_33",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive Site visit confirmation for April",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_site_visit_confirmation_for_april_34",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete Site visit confirmation for April",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jul_07_35",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jul 07",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_friday_happy_hour_rsvp_36",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_friday_happy_hour_rsvp_37",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star Friday happy hour RSVP",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_team_social_38",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Team Social",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_friday_happy_hour_rsvp_39",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread Friday happy hour RSVP",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_friday_happy_hour_rsvp_40",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Friday happy hour RSVP",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_sharing_the_latest_notes_before_tomorrow_41",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Sharing the latest notes before tomorrow's check-in. Most of the edits were minor, with one budget line still waiting on approval. No respon",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_friday_happy_hour_rsvp_42",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive Friday happy hour RSVP",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_friday_happy_hour_rsvp_43",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete Friday happy hour RSVP",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jul_07_44",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jul 07",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_password_policy_update_45",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_password_policy_update_46",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star Password policy update",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_it_helpdesk_47",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "IT Helpdesk",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_password_policy_update_48",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread Password policy update",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_password_policy_update_49",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Password policy update",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_sending_a_quick_status_update_from_today_50",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Sending a quick status update from today's working session. The team is aligned on the main path and only needs confirmation on the follow-u",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_password_policy_update_51",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive Password policy update",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_password_policy_update_52",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete Password policy update",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jul_06_53",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jul 06",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_updated_payment_schedule_54",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_updated_payment_schedule_55",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star Updated payment schedule",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_theo_brooks_56",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Theo Brooks",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_updated_payment_schedule_57",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread Updated payment schedule",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_updated_payment_schedule_58",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Updated payment schedule",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_passing_along_the_current_draft_so_you_h_59",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Passing along the current draft so you have it in one place. Most of the edits were minor, with one budget line still waiting on approval. I",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_updated_payment_schedule_60",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive Updated payment schedule",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_updated_payment_schedule_61",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete Updated payment schedule",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jul_06_62",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jul 06",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_feedback_on_product_demo_63",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_feedback_on_product_demo_64",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star Feedback on product demo",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_avery_kim_65",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Avery Kim",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_feedback_on_product_demo_66",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread Feedback on product demo",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_feedback_on_product_demo_67",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Feedback on product demo",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_sending_a_quick_status_update_from_today_68",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Sending a quick status update from today's working session. The open items are mostly ownership questions rather than scope changes. If you ",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_feedback_on_product_demo_69",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive Feedback on product demo",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_feedback_on_product_demo_70",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete Feedback on product demo",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jul_06_71",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jul 06",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_regression_test_results_72",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_regression_test_results_73",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star Regression test results",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_qa_bot_74",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "QA Bot",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_regression_test_results_75",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread Regression test results",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_regression_test_results_76",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Regression test results",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_i_pulled_the_loose_ends_into_one_note_fo_77",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "I pulled the loose ends into one note for easier review. The team is aligned on the main path and only needs confirmation on the follow-up i",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_regression_test_results_78",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive Regression test results",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_regression_test_results_79",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete Regression test results",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jul_06_80",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jul 06",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_office_ac_maintenance_schedule_81",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_office_ac_maintenance_schedule_82",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star Office AC maintenance schedule",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_facilities_team_83",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Facilities Team",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_office_ac_maintenance_schedu_84",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread Office AC maintenance schedule",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_office_ac_maintenance_schedule_85",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Office AC maintenance schedule",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_sharing_the_latest_notes_before_tomorrow_86",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Sharing the latest notes before tomorrow's check-in. Most of the edits were minor, with one budget line still waiting on approval. No respon",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_office_ac_maintenance_schedule_87",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive Office AC maintenance schedule",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_office_ac_maintenance_schedule_88",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete Office AC maintenance schedule",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jul_06_89",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jul 06",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_weekly_tech_roundup__142_90",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_weekly_tech_roundup__142_91",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star Weekly Tech Roundup #142",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_newsletter__techdigest_test_92",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Newsletter (techdigest.test)",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_weekly_tech_roundup__142_93",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread Weekly Tech Roundup #142",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_weekly_tech_roundup__142_94",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Weekly Tech Roundup #142",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_this_is_your_regular_newsletter_update_95",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "This is your regular newsletter update. Curated content from around the industry.",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_weekly_tech_roundup__142_96",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive Weekly Tech Roundup #142",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_weekly_tech_roundup__142_97",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete Weekly Tech Roundup #142",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jul_06_98",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jul 06",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_database_failover_triggered_99",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_database_failover_triggered_100",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star Database failover triggered",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_ops_alert_101",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Ops Alert",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_database_failover_triggered_102",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread Database failover triggered",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_database_failover_triggered_103",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Database failover triggered",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_escalation__database_failover_triggered_104",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Escalation: Database failover triggered Please review and take appropriate action. Thanks, Ops Team",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_database_failover_triggered_105",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive Database failover triggered",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_database_failover_triggered_106",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete Database failover triggered",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jul_06_107",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jul 06",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_devops_best_practices_digest_108",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_devops_best_practices_digest_109",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star DevOps Best Practices Digest",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_newsletter__techdigest_test_110",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Newsletter (techdigest.test)",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_devops_best_practices_digest_111",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread DevOps Best Practices Digest",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_devops_best_practices_digest_112",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "DevOps Best Practices Digest",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_this_is_your_regular_newsletter_update_113",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "This is your regular newsletter update. Curated content from around the industry.",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_devops_best_practices_digest_114",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive DevOps Best Practices Digest",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_devops_best_practices_digest_115",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete DevOps Best Practices Digest",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jul_06_116",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jul 06",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_campaign_performance_q2_117",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_campaign_performance_q2_118",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star Campaign performance Q2",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_marketing_lead_119",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Marketing Lead",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_campaign_performance_q2_120",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread Campaign performance Q2",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_campaign_performance_q2_121",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Campaign performance Q2",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_passing_along_the_current_draft_so_you_h_122",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Passing along the current draft so you have it in one place. The open items are mostly ownership questions rather than scope changes. Let me",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_campaign_performance_q2_123",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive Campaign performance Q2",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_campaign_performance_q2_124",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete Campaign performance Q2",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jul_06_125",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jul 06",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_server_latency_spike_in_us_east_1_126",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_server_latency_spike_in_us_east_1_127",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star Server latency spike in us-east-1",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_ops_alert_128",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Ops Alert",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_server_latency_spike_in_us_e_129",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread Server latency spike in us-east-1",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_server_latency_spike_in_us_east_1_130",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Server latency spike in us-east-1",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_escalation__server_latency_spike_in_us_e_131",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Escalation: Server latency spike in us-east-1 Please review and take appropriate action. Thanks, Ops Team",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_server_latency_spike_in_us_east_132",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive Server latency spike in us-east-1",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_server_latency_spike_in_us_east_1_133",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete Server latency spike in us-east-1",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jul_06_134",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jul 06",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_follow_up_on_venue_estimate_135",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_follow_up_on_venue_estimate_136",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star Follow-up on venue estimate",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_elena_singh_137",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Elena Singh",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_follow_up_on_venue_estimate_138",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread Follow-up on venue estimate",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_follow_up_on_venue_estimate_139",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Follow-up on venue estimate",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_sharing_the_latest_notes_before_tomorrow_140",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Sharing the latest notes before tomorrow's check-in. Most of the edits were minor, with one budget line still waiting on approval. Let me kn",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_follow_up_on_venue_estimate_141",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive Follow-up on venue estimate",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_follow_up_on_venue_estimate_142",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete Follow-up on venue estimate",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jul_06_143",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jul 06",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_urgent__industry_alert___q3_market_disru_144",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_urgent__industry_alert___q3_market_145",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star URGENT: Industry Alert \u2014 Q3 Market Disruption",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_newsletter__industrywatch_test_146",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Newsletter (industrywatch.test)",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_urgent__industry_alert___q3_147",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread URGENT: Industry Alert \u2014 Q3 Market Disruption",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_urgent__industry_alert___q3_market_disru_148",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "URGENT: Industry Alert \u2014 Q3 Market Disruption",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_this_is_your_regular_newsletter_update_149",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "This is your regular newsletter update. Curated content from around the industry.",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_urgent__industry_alert___q3_mark_150",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive URGENT: Industry Alert \u2014 Q3 Market Disruption",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_urgent__industry_alert___q3_marke_151",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete URGENT: Industry Alert \u2014 Q3 Market Disruption",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jul_05_152",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jul 05",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_certificate_expiry_in_48_hours_153",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_certificate_expiry_in_48_hours_154",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star Certificate expiry in 48 hours",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_sre_oncall_155",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Sre Oncall",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_certificate_expiry_in_48_hou_156",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread Certificate expiry in 48 hours",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_certificate_expiry_in_48_hours_157",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Certificate expiry in 48 hours",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_escalation__certificate_expiry_in_48_hou_158",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Escalation: Certificate expiry in 48 hours Please review and take appropriate action. Thanks, Ops Team",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_certificate_expiry_in_48_hours_159",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive Certificate expiry in 48 hours",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_certificate_expiry_in_48_hours_160",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete Certificate expiry in 48 hours",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jul_05_161",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jul 05",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "text_1_16_of_45_162",
+                "tag": "span",
+                "role": "text",
+                "text": "1\u201316 of 45",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              },
+              {
+                "bid": "button_previous_page_163",
+                "tag": "button",
+                "role": "button",
+                "text": "Previous page",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "disabled": true
+              },
+              {
+                "bid": "button_next_page_164",
+                "tag": "button",
+                "role": "button",
+                "text": "Next page",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "filesystem": {},
+  "tabs": [
+    {
+      "id": 0,
+      "url": "https://webagentbench.local/env/gmail/inbox",
+      "title": "Gmail",
+      "active": true
+    }
+  ],
+  "history": []
+}

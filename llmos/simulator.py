@@ -184,6 +184,9 @@ class Simulator:
             logger.warning(f"Invalid state operations: {op_errors}")
         apply_id_patch(self.current_state, state_ops)
 
+        # Track challenge constraint state in hidden_state for LLM visibility
+        self._update_constraint_tracking(events, action_clean)
+
         # Increment tick
         self.current_state["meta"]["tick"] += 1
         self._step_count += 1
@@ -395,3 +398,54 @@ class Simulator:
             state["hidden_state"]["challenge_constraints"] = challenge_constraints
 
         return state
+
+    def _update_constraint_tracking(self, events: list, action: dict) -> None:
+        """Track challenge constraint counters in hidden_state so the LLM can see them.
+
+        Updates counters based on events emitted by the simulator LLM:
+        - submit_failure_count: how many submit attempts have failed with errors
+        - backtrack_error_fired: whether the one-shot backtrack error has already fired
+        - backtrack_correction_made: whether the agent went back after the error
+        """
+        hs = self.current_state.get("hidden_state", {})
+        cc = hs.get("challenge_constraints")
+        if not cc:
+            return
+
+        tracking = hs.setdefault("constraint_tracking", {})
+
+        # Track transient error count for error_recovery
+        if cc.get("transient_errors_before_success"):
+            has_error = any("error" in e.lower() for e in events)
+            has_success = any("success" in e.lower() for e in events)
+            if has_error and not has_success:
+                tracking["submit_failure_count"] = tracking.get("submit_failure_count", 0) + 1
+            max_failures = cc["transient_errors_before_success"]
+            tracking["max_failures"] = max_failures
+            if tracking.get("submit_failure_count", 0) >= max_failures:
+                tracking["errors_exhausted"] = True
+
+        # Track save mismatch for verification/reflection
+        if cc.get("success_banner_without_update"):
+            action_type = action.get("action_type", "")
+            bid = str(action.get("bid", ""))
+            has_success = any("success" in e.lower() for e in events)
+            is_save = action_type == "click" and any(
+                kw in bid.lower() for kw in ["save", "apply", "update", "submit"]
+            )
+            if is_save and has_success and not tracking.get("save_mismatch_shown"):
+                tracking["save_mismatch_shown"] = True
+
+        # Track backtrack error state
+        if cc.get("error_after_step"):
+            has_error = any("error" in e.lower() for e in events)
+            if has_error and not tracking.get("backtrack_error_fired"):
+                tracking["backtrack_error_fired"] = True
+            # Detect if agent navigated back (clicked a back/previous button)
+            action_type = action.get("action_type", "")
+            bid = str(action.get("bid", ""))
+            if action_type == "click" and any(
+                kw in bid.lower() for kw in ["back", "previous", "prev"]
+            ):
+                if tracking.get("backtrack_error_fired"):
+                    tracking["backtrack_correction_made"] = True
