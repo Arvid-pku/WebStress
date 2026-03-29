@@ -17,6 +17,8 @@ const external = [
   { href: "#", label: "GitHub" },
 ];
 
+const SCROLL_THRESHOLD = 10;
+
 function isActive(pathname: string, link: { href: string; exact: boolean }) {
   if (link.exact) return pathname === link.href;
   return pathname.startsWith(link.href);
@@ -28,6 +30,10 @@ export function Nav() {
   const containerRef = useRef<HTMLDivElement>(null);
   const linkRefs = useRef<(HTMLAnchorElement | null)[]>([]);
   const [pill, setPill] = useState<{ left: number; width: number } | null>(null);
+
+  const [scrolled, setScrolled] = useState(false);
+  const [hidden, setHidden] = useState(false);
+  const lastScrollY = useRef(0);
 
   const updatePill = useCallback(() => {
     const activeIdx = links.findIndex((l) => isActive(pathname, l));
@@ -51,8 +57,35 @@ export function Nav() {
     return () => window.removeEventListener("resize", updatePill);
   }, [updatePill]);
 
+  const scrolledRef = useRef(false);
+  const hiddenRef = useRef(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentY = window.scrollY;
+      const nowScrolled = currentY > 20;
+      if (nowScrolled !== scrolledRef.current) {
+        scrolledRef.current = nowScrolled;
+        setScrolled(nowScrolled);
+      }
+      const delta = currentY - lastScrollY.current;
+      if (delta > SCROLL_THRESHOLD && currentY > 80 && !hiddenRef.current) {
+        hiddenRef.current = true;
+        setHidden(true);
+      } else if (delta < -SCROLL_THRESHOLD && hiddenRef.current) {
+        hiddenRef.current = false;
+        setHidden(false);
+      }
+      lastScrollY.current = currentY;
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   return (
-    <nav className="sticky top-0 z-50 flex justify-between items-center w-full px-6 py-4 bg-[var(--bg)]/80 backdrop-blur-lg">
+    <nav className={`sticky top-0 z-50 flex justify-between items-center w-full px-6 backdrop-blur-lg transition-all duration-300 ease-out ${
+      scrolled ? "py-2.5 bg-[var(--bg)]/90 shadow-[0_1px_0_0_var(--border)]" : "py-4 bg-[var(--bg)]/80"
+    } ${hidden ? "-translate-y-full" : "translate-y-0"}`}>
       <Link href="/" className="text-[15px] font-semibold text-[var(--text-primary)] tracking-tight no-underline">
         WebAgentBench
       </Link>

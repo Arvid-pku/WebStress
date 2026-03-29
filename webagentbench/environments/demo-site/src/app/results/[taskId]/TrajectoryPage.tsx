@@ -183,8 +183,10 @@ export default function TrajectoryPage({ taskId }: { taskId: string }) {
   const allChecks = data.evaluation?.criteria_results ?? [];
   const criteria = allChecks.filter((c) => c.kind !== "penalty");
   const penalties = allChecks.filter((c) => c.kind === "penalty");
-  const passCount = criteria.filter((c) => c.passed).length;
-  const penaltyTriggered = penalties.filter((c) => !c.passed).length;
+  const failedCriteria = criteria.filter((c) => !c.passed);
+  const passedCriteria = criteria.filter((c) => c.passed);
+  const triggeredPenalties = penalties.filter((c) => !c.passed);
+  const avoidedPenalties = penalties.filter((c) => c.passed);
   const scorePct = Math.max(0, Math.min(100, (score ?? 0) * 100));
   const scoreColor = success
     ? "var(--green)"
@@ -323,9 +325,9 @@ export default function TrajectoryPage({ taskId }: { taskId: string }) {
                     Criteria
                     {criteria.length > 0 && (
                       <span className="ml-1.5 text-[10px]" style={{ color: scoreColor }}>
-                        {passCount}/{criteria.length}
-                        {penaltyTriggered > 0 && (
-                          <span className="text-[var(--red)]"> −{penaltyTriggered}p</span>
+                        {passedCriteria.length}/{criteria.length}
+                        {triggeredPenalties.length > 0 && (
+                          <span className="text-[var(--red)]"> −{triggeredPenalties.length}p</span>
                         )}
                       </span>
                     )}
@@ -379,23 +381,35 @@ export default function TrajectoryPage({ taskId }: { taskId: string }) {
                       </p>
                     )}
 
-                    {/* Failed criteria */}
-                    {criteria.some((c) => !c.passed) && (
-                      <div className="mb-4">
+                    {[
+                      { label: "Failed", color: "var(--red)", items: failedCriteria, cardBg: "var(--red)/[0.05]", textColor: "var(--text-primary)", showSteps: true },
+                      { label: "Penalties triggered", color: "var(--amber)", items: triggeredPenalties, cardBg: "var(--amber)/[0.07]", textColor: "var(--text-primary)", showPenalty: true },
+                      { label: "Passed", color: "var(--green)", items: passedCriteria, cardBg: undefined, textColor: "var(--text-secondary)", showSteps: true },
+                      { label: "Penalties avoided", color: "var(--text-tertiary)", items: avoidedPenalties, cardBg: undefined, textColor: "var(--text-tertiary)" },
+                    ].map((section) => section.items.length > 0 && (
+                      <div key={section.label} className="mb-4">
                         <div className="flex items-center gap-2 mb-2 px-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[var(--red)]" />
-                          <span className="text-[11px] font-medium text-[var(--red)]">
-                            Failed ({criteria.filter((c) => !c.passed).length})
+                          <span className="w-1.5 h-1.5 rounded-full" style={{ background: section.color }} />
+                          <span className="text-[11px] font-medium" style={{ color: section.color }}>
+                            {section.label} ({section.items.length})
                           </span>
                         </div>
                         <div className="flex flex-col gap-0.5">
-                          {criteria.filter((cr) => !cr.passed).map((cr, i) => {
-                            const relevantSteps = findRelevantSteps(data.steps, cr.desc);
+                          {section.items.map((cr, i) => {
+                            const relevantSteps = section.showSteps ? findRelevantSteps(data.steps, cr.desc) : [];
                             return (
-                              <div key={i} className="px-3 py-2.5 rounded-xl bg-[var(--red)]/[0.05]">
-                                <p className="text-[12px] leading-[1.5] text-[var(--text-primary)]">
+                              <div
+                                key={i}
+                                className={`px-3 py-2.5 rounded-xl ${section.cardBg ? `bg-[${section.cardBg}]` : "hover:bg-[var(--bg)]/50"} transition-colors`}
+                              >
+                                <p className="text-[12px] leading-[1.5]" style={{ color: section.textColor }}>
                                   {cr.desc}
                                 </p>
+                                {section.showPenalty && cr.penalty != null && cr.penalty > 0 && (
+                                  <span className="text-[10px] mt-0.5 inline-block" style={{ color: section.color }}>
+                                    −{cr.penalty} penalty
+                                  </span>
+                                )}
                                 {relevantSteps.length > 0 && (
                                   <div className="flex flex-wrap gap-1 mt-1.5">
                                     {relevantSteps.map((stepIdx) => (
@@ -414,91 +428,7 @@ export default function TrajectoryPage({ taskId }: { taskId: string }) {
                           })}
                         </div>
                       </div>
-                    )}
-
-                    {/* Triggered penalties (negative checks the agent violated) */}
-                    {penaltyTriggered > 0 && (
-                      <div className="mb-4">
-                        <div className="flex items-center gap-2 mb-2 px-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[var(--amber)]" />
-                          <span className="text-[11px] font-medium text-[var(--amber)]">
-                            Penalties triggered ({penaltyTriggered})
-                          </span>
-                        </div>
-                        <div className="flex flex-col gap-0.5">
-                          {penalties.filter((cr) => !cr.passed).map((cr, i) => (
-                            <div key={i} className="px-3 py-2.5 rounded-xl bg-[var(--amber)]/[0.07]">
-                              <p className="text-[12px] leading-[1.5] text-[var(--text-primary)]">
-                                {cr.desc}
-                              </p>
-                              {cr.penalty != null && cr.penalty > 0 && (
-                                <span className="text-[10px] text-[var(--amber)] mt-0.5 inline-block">
-                                  −{cr.penalty} penalty
-                                </span>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Passed criteria */}
-                    {criteria.some((c) => c.passed) && (
-                      <div className="mb-4">
-                        <div className="flex items-center gap-2 mb-2 px-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[var(--green)]" />
-                          <span className="text-[11px] font-medium text-[var(--green)]">
-                            Passed ({passCount})
-                          </span>
-                        </div>
-                        <div className="flex flex-col gap-0.5">
-                          {criteria.filter((cr) => cr.passed).map((cr, i) => {
-                            const relevantSteps = findRelevantSteps(data.steps, cr.desc);
-                            return (
-                              <div key={i} className="px-3 py-2 rounded-xl hover:bg-[var(--bg)]/50 transition-colors">
-                                <p className="text-[12px] leading-[1.5] text-[var(--text-secondary)]">
-                                  {cr.desc}
-                                </p>
-                                {relevantSteps.length > 0 && (
-                                  <div className="flex flex-wrap gap-1 mt-1.5">
-                                    {relevantSteps.map((stepIdx) => (
-                                      <button
-                                        key={stepIdx}
-                                        onClick={() => handleStepChange(stepIdx)}
-                                        className="text-[10px] px-1.5 py-0.5 rounded-md text-[var(--accent)] bg-[var(--accent)]/[0.08] hover:bg-[var(--accent)]/[0.15] cursor-pointer transition-colors"
-                                      >
-                                        step {data.steps[stepIdx].step}
-                                      </button>
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Penalties avoided (negative checks the agent didn't trigger — good) */}
-                    {penalties.some((c) => c.passed) && (
-                      <div>
-                        <div className="flex items-center gap-2 mb-2 px-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[var(--text-tertiary)]" />
-                          <span className="text-[11px] font-medium text-[var(--text-tertiary)]">
-                            Penalties avoided ({penalties.filter((c) => c.passed).length})
-                          </span>
-                        </div>
-                        <div className="flex flex-col gap-0.5">
-                          {penalties.filter((cr) => cr.passed).map((cr, i) => (
-                            <div key={i} className="px-3 py-2 rounded-xl">
-                              <p className="text-[12px] leading-[1.5] text-[var(--text-tertiary)]">
-                                {cr.desc}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+                    ))}
                   </div>
                 )}
               </div>
