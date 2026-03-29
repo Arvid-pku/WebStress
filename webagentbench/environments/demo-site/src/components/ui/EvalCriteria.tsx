@@ -157,7 +157,6 @@ export function EvalCriteria({
         {criteria.map((cr, i) => {
           const isPassed = cr.passed;
           const isFailed = cr.passed === false;
-          const isUnknown = cr.passed === undefined;
           const isNegativeCheck = cr.penalty != null;
 
           return (
