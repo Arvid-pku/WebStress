@@ -28,14 +28,14 @@ class GmailSeedRunner:
     def run(
         self, task: TaskDefinition, seed: int, fake: Any, rng: random.Random
     ) -> tuple[dict[str, Any], dict[str, Any]]:
-        """Return ``(base_state, targets)`` — same contract as the old seeder."""
+        """Return ``(base_state, targets)`` for one Gmail task seed."""
         now = derive_anchor_time(seed)
 
         # Build the skeleton base state (labels, settings, empty lists).
         base = self._base_skeleton(task.task_id)
 
-        # Create the context *before* generating base contacts so that
-        # fake / rng draws happen in the same order as the legacy seeder.
+        # Create the context before generating base contacts so fake / rng
+        # draws stay stable for deterministic seeds.
         ctx = SeedContext(
             seed=seed,
             rng=rng,
@@ -44,7 +44,7 @@ class GmailSeedRunner:
             base=base,
         )
 
-        # 10 generic contacts — mirrors GmailSeeder._base_state exactly.
+        # 10 generic contacts for the baseline mailbox state.
         base["contacts"] = [ctx.contact(is_vip=False) for _ in range(10)]
 
         seed_cfg = task.seed
@@ -101,8 +101,8 @@ class GmailSeedRunner:
         """Return the mutable base state dict with system labels and settings.
 
         Contacts are *not* included here — they are generated later via the
-        shared :class:`SeedContext` so that ``fake`` / ``rng`` draws match
-        the legacy ``GmailSeeder._base_state`` order exactly.
+        shared :class:`SeedContext` so that ``fake`` / ``rng`` draws remain
+        stable across runs.
         """
         labels = [
             Label(id="label_inbox", name="inbox", color="#202124", system=True),
@@ -179,7 +179,7 @@ class GmailSeedRunner:
         }
 
     # ------------------------------------------------------------------
-    # Generic distractors (mirrors GmailSeeder._add_generic_distractors)
+    # Generic distractors for the baseline mailbox state.
     # ------------------------------------------------------------------
 
     @staticmethod

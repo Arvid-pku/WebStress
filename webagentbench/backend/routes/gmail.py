@@ -1,16 +1,18 @@
 from __future__ import annotations
 
 import shlex
+from collections.abc import Callable
 from datetime import datetime
 from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 
-from ..evaluator_advanced import AdvancedEvaluator
+from ...tasks._evaluator import evaluate as unified_evaluate
+from ...tasks._registry import get_task
 from ..models.gmail import Attachment, Contact, Email, FilterRule, GmailState
 from ..state import SessionManager
-from ..tasks import GMAIL_TASK_INDEX
+from ...task_rendering import render_template
 
 router = APIRouter(prefix="/api/env/gmail", tags=["gmail"])
 
@@ -65,10 +67,15 @@ class SendEmailRequest(SessionScopedRequest):
 class CreateLabelRequest(SessionScopedRequest):
     name: str
     color: str = "#1a73e8"
+    show_in_label_list: str = "show"
+    show_in_message_list: str = "show"
+    show_in_imap: bool = True
 
 
 class UpdateLabelRequest(SessionScopedRequest):
+    name: str | None = None
     show_in_label_list: str | None = None
+    show_in_message_list: str | None = None
     show_in_imap: bool | None = None
 
 
@@ -84,6 +91,7 @@ class CreateFilterRequest(SessionScopedRequest):
     mark_read: bool = False
     forward_to: str | None = None
     star: bool = False
+    never_spam: bool = False
 
 
 class CreateContactRequest(SessionScopedRequest):
@@ -92,6 +100,17 @@ class CreateContactRequest(SessionScopedRequest):
     company: str | None = None
     note: str | None = None
     is_vip: bool = False
+    is_starred: bool = False
+    last_contacted_at: datetime | None = None
+
+
+class UpdateContactRequest(SessionScopedRequest):
+    name: str | None = None
+    email: str | None = None
+    company: str | None = None
+    note: str | None = None
+    is_vip: bool | None = None
+    is_starred: bool | None = None
     last_contacted_at: datetime | None = None
 
 
@@ -226,6 +245,22 @@ def _normalize_filter_from_addresses(values: list[str]) -> list[str]:
     return normalized
 
 
+def _mutate(
+    session_manager: SessionManager,
+    session_id: str,
+    action: str,
+    payload: dict[str, Any],
+    mutator: Callable[[Any], Any],
+) -> Any:
+    """Run a mutation, translating domain errors to HTTP errors."""
+    try:
+        return session_manager.mutate(session_id, action, payload, mutator)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
 def _paginate(items: list[dict[str, Any]], page: int, page_size: int) -> dict[str, Any]:
     page = max(page, 1)
     page_size = min(max(page_size, 1), 100)
@@ -242,16 +277,21 @@ def _paginate(items: list[dict[str, Any]], page: int, page_size: int) -> dict[st
 
 @router.post("/session")
 def create_session(body: SessionCreateRequest, session_manager: SessionManager = Depends(get_session_manager)) -> dict[str, Any]:
-    if body.task_id not in GMAIL_TASK_INDEX:
+    task = get_task(body.task_id)
+    if task.env_id != "gmail":
         raise HTTPException(status_code=404, detail=f"Unknown Gmail task_id: {body.task_id}")
     session_id, resolved_targets, actual_seed = session_manager.create_session("gmail", body.task_id, body.seed)
-    task_def = GMAIL_TASK_INDEX[body.task_id]
+    instruction = render_template(
+        task.instruction_template or task.instruction or "", resolved_targets
+    )
     return {
         "session_id": session_id,
         "task_id": body.task_id,
         "seed": actual_seed,
+        "start_path": task.start_path or "/inbox",
         "resolved_targets": resolved_targets,
-        "start_path": task_def.get("start_path", "/inbox"),
+        "title": task.title,
+        "instruction": instruction,
     }
 
 
@@ -275,13 +315,16 @@ def destroy_session(session_id: str, session_manager: SessionManager = Depends(g
 
 @router.post("/evaluate")
 def evaluate_session(body: EvaluateRequest, session_manager: SessionManager = Depends(get_session_manager)) -> dict[str, Any]:
-    evaluator = AdvancedEvaluator(session_manager)
     try:
-        return evaluator.evaluate(
-            session_id=body.session_id,
-            task_id=body.task_id,
-            benchmark_state=body.benchmark_state,
-            trajectory=body.trajectory,
+        state = session_manager.get(body.session_id)
+        if body.benchmark_state is not None:
+            session_manager.set_benchmark_state(body.session_id, body.benchmark_state)
+        task = get_task(body.task_id or state.task_id)
+        return unified_evaluate(
+            task,
+            server_state=state,
+            targets=state.resolved_targets,
+            trajectory=body.trajectory or [],
         )
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
@@ -338,16 +381,14 @@ def mark_read(
     body: ReadEmailRequest,
     session_manager: SessionManager = Depends(get_session_manager),
 ) -> dict[str, Any]:
-    try:
-        result = session_manager.mutate(
-            body.session_id,
-            "gmail.email.read",
-            {"email_id": email_id, "is_read": body.is_read},
-            lambda state: _gmail_state(session_manager, body.session_id).mark_read(email_id, body.is_read),
-        )
-    except KeyError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-    return {"email": _serialize_email(_gmail_state(session_manager, body.session_id), result)}
+    state = _gmail_state(session_manager, body.session_id)
+    result = _mutate(
+        session_manager, body.session_id,
+        "gmail.email.read",
+        {"email_id": email_id, "is_read": body.is_read},
+        lambda s: state.mark_read(email_id, body.is_read),
+    )
+    return {"email": _serialize_email(state, result)}
 
 
 @router.post("/emails/{email_id}/star")
@@ -356,16 +397,14 @@ def toggle_star(
     body: StarEmailRequest,
     session_manager: SessionManager = Depends(get_session_manager),
 ) -> dict[str, Any]:
-    try:
-        result = session_manager.mutate(
-            body.session_id,
-            "gmail.email.star",
-            {"email_id": email_id, "is_starred": body.is_starred},
-            lambda state: _gmail_state(session_manager, body.session_id).toggle_star(email_id, body.is_starred),
-        )
-    except KeyError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-    return {"email": _serialize_email(_gmail_state(session_manager, body.session_id), result)}
+    state = _gmail_state(session_manager, body.session_id)
+    result = _mutate(
+        session_manager, body.session_id,
+        "gmail.email.star",
+        {"email_id": email_id, "is_starred": body.is_starred},
+        lambda s: state.toggle_star(email_id, body.is_starred),
+    )
+    return {"email": _serialize_email(state, result)}
 
 
 @router.post("/emails/{email_id}/label")
@@ -374,16 +413,14 @@ def label_email(
     body: LabelEmailRequest,
     session_manager: SessionManager = Depends(get_session_manager),
 ) -> dict[str, Any]:
-    try:
-        result = session_manager.mutate(
-            body.session_id,
-            "gmail.email.label",
-            {"email_id": email_id, "label": body.label, "action": body.action},
-            lambda state: _gmail_state(session_manager, body.session_id).apply_label(email_id, body.label, body.action),
-        )
-    except KeyError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-    return {"email": _serialize_email(_gmail_state(session_manager, body.session_id), result)}
+    state = _gmail_state(session_manager, body.session_id)
+    result = _mutate(
+        session_manager, body.session_id,
+        "gmail.email.label",
+        {"email_id": email_id, "label": body.label, "action": body.action},
+        lambda s: state.apply_label(email_id, body.label, body.action),
+    )
+    return {"email": _serialize_email(state, result)}
 
 
 @router.post("/emails/{email_id}/archive")
@@ -392,16 +429,14 @@ def archive_email(
     body: SessionScopedRequest,
     session_manager: SessionManager = Depends(get_session_manager),
 ) -> dict[str, Any]:
-    try:
-        result = session_manager.mutate(
-            body.session_id,
-            "gmail.email.archive",
-            {"email_id": email_id},
-            lambda state: _gmail_state(session_manager, body.session_id).archive_email(email_id),
-        )
-    except KeyError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-    return {"email": _serialize_email(_gmail_state(session_manager, body.session_id), result)}
+    state = _gmail_state(session_manager, body.session_id)
+    result = _mutate(
+        session_manager, body.session_id,
+        "gmail.email.archive",
+        {"email_id": email_id},
+        lambda s: state.archive_email(email_id),
+    )
+    return {"email": _serialize_email(state, result)}
 
 
 @router.post("/emails/{email_id}/delete")
@@ -410,15 +445,13 @@ def delete_email(
     body: SessionScopedRequest,
     session_manager: SessionManager = Depends(get_session_manager),
 ) -> dict[str, Any]:
-    try:
-        result = session_manager.mutate(
-            body.session_id,
-            "gmail.email.delete",
-            {"email_id": email_id},
-            lambda state: _gmail_state(session_manager, body.session_id).delete_email(email_id),
-        )
-    except KeyError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    state = _gmail_state(session_manager, body.session_id)
+    result = _mutate(
+        session_manager, body.session_id,
+        "gmail.email.delete",
+        {"email_id": email_id},
+        lambda s: state.delete_email(email_id),
+    )
     return {"email": result.model_dump(mode="json")}
 
 
@@ -428,21 +461,15 @@ def forward_email(
     body: ForwardEmailRequest,
     session_manager: SessionManager = Depends(get_session_manager),
 ) -> dict[str, Any]:
-    try:
-        result = session_manager.mutate(
-            body.session_id,
-            "gmail.email.forward",
-            {"email_id": email_id, "to": body.to},
-            lambda state: _gmail_state(session_manager, body.session_id).forward_email(
-                email_id,
-                to=body.to,
-                cc=body.cc,
-                bcc=body.bcc,
-                body=body.body,
-            ),
-        )
-    except KeyError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    state = _gmail_state(session_manager, body.session_id)
+    result = _mutate(
+        session_manager, body.session_id,
+        "gmail.email.forward",
+        {"email_id": email_id, "to": body.to},
+        lambda s: state.forward_email(
+            email_id, to=body.to, cc=body.cc, bcc=body.bcc, body=body.body,
+        ),
+    )
     return {"email": result.model_dump(mode="json")}
 
 
@@ -451,25 +478,18 @@ def send_email(
     body: SendEmailRequest,
     session_manager: SessionManager = Depends(get_session_manager),
 ) -> dict[str, Any]:
+    state = _gmail_state(session_manager, body.session_id)
     attachments = [_serialize_attachment(item) for item in body.attachments]
-    try:
-        result = session_manager.mutate(
-            body.session_id,
-            "gmail.send",
-            {"to": body.to, "subject": body.subject, "in_reply_to": body.in_reply_to},
-            lambda state: _gmail_state(session_manager, body.session_id).send_email(
-                subject=body.subject,
-                body=body.body,
-                to=body.to,
-                cc=body.cc,
-                bcc=body.bcc,
-                thread_id=body.thread_id,
-                in_reply_to=body.in_reply_to,
-                attachments=attachments,
-            ),
-        )
-    except KeyError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    result = _mutate(
+        session_manager, body.session_id,
+        "gmail.send",
+        {"to": body.to, "subject": body.subject, "in_reply_to": body.in_reply_to},
+        lambda s: state.send_email(
+            subject=body.subject, body=body.body, to=body.to, cc=body.cc,
+            bcc=body.bcc, thread_id=body.thread_id,
+            in_reply_to=body.in_reply_to, attachments=attachments,
+        ),
+    )
     return {"email": result.model_dump(mode="json")}
 
 
@@ -484,11 +504,17 @@ def create_label(
     body: CreateLabelRequest,
     session_manager: SessionManager = Depends(get_session_manager),
 ) -> dict[str, Any]:
-    result = session_manager.mutate(
-        body.session_id,
+    state = _gmail_state(session_manager, body.session_id)
+    result = _mutate(
+        session_manager, body.session_id,
         "gmail.label.create",
         {"name": body.name, "color": body.color},
-        lambda state: _gmail_state(session_manager, body.session_id).ensure_label(body.name, body.color),
+        lambda s: state.ensure_label(
+            body.name, body.color,
+            show_in_label_list=body.show_in_label_list,
+            show_in_message_list=body.show_in_message_list,
+            show_in_imap=body.show_in_imap,
+        ),
     )
     return {"label": result.model_dump(mode="json")}
 
@@ -500,23 +526,32 @@ def update_label(
     session_manager: SessionManager = Depends(get_session_manager),
 ) -> dict[str, Any]:
     state = _gmail_state(session_manager, body.session_id)
-    label = next((l for l in state.labels if l.id == label_id), None)
-    if label is None:
-        raise HTTPException(status_code=404, detail=f"Unknown label id: {label_id}")
-
-    def apply_update(current_state):
-        if body.show_in_label_list is not None:
-            label.show_in_label_list = body.show_in_label_list
-        if body.show_in_imap is not None:
-            label.show_in_imap = body.show_in_imap
-        state.touch()
-        return label
-
-    result = session_manager.mutate(
-        body.session_id,
+    result = _mutate(
+        session_manager, body.session_id,
         "gmail.label.update",
         {"label_id": label_id},
-        apply_update,
+        lambda s: state.update_label(
+            label_id, name=body.name,
+            show_in_label_list=body.show_in_label_list,
+            show_in_message_list=body.show_in_message_list,
+            show_in_imap=body.show_in_imap,
+        ),
+    )
+    return {"label": result.model_dump(mode="json")}
+
+
+@router.delete("/labels/{label_id}")
+def delete_label(
+    label_id: str,
+    session_id: str = Query(...),
+    session_manager: SessionManager = Depends(get_session_manager),
+) -> dict[str, Any]:
+    state = _gmail_state(session_manager, session_id)
+    result = _mutate(
+        session_manager, session_id,
+        "gmail.label.delete",
+        {"label_id": label_id},
+        lambda s: state.remove_label(label_id),
     )
     return {"label": result.model_dump(mode="json")}
 
@@ -532,9 +567,10 @@ def create_filter(
     body: CreateFilterRequest,
     session_manager: SessionManager = Depends(get_session_manager),
 ) -> dict[str, Any]:
+    state = _gmail_state(session_manager, body.session_id)
     parsed = _parse_filter_query(body.query)
     rule = FilterRule(
-        id=f"filter_{len(_gmail_state(session_manager, body.session_id).filters) + 1}",
+        id=f"filter_{len(state.filters) + 1}",
         name=body.name or body.query or "Untitled filter",
         query=body.query,
         from_addresses=_normalize_filter_from_addresses(body.from_addresses) or parsed["from_addresses"],
@@ -546,12 +582,13 @@ def create_filter(
         mark_read=body.mark_read,
         forward_to=body.forward_to,
         star=body.star,
+        never_spam=body.never_spam,
     )
-    result = session_manager.mutate(
-        body.session_id,
+    result = _mutate(
+        session_manager, body.session_id,
         "gmail.filter.create",
         {"name": body.name, "query": body.query},
-        lambda state: _gmail_state(session_manager, body.session_id).create_filter(rule),
+        lambda s: state.create_filter(rule),
     )
     return {"filter": result.model_dump(mode="json")}
 
@@ -562,15 +599,13 @@ def delete_filter(
     session_id: str = Query(...),
     session_manager: SessionManager = Depends(get_session_manager),
 ) -> dict[str, Any]:
-    try:
-        result = session_manager.mutate(
-            session_id,
-            "gmail.filter.delete",
-            {"filter_id": filter_id},
-            lambda state: _gmail_state(session_manager, session_id).remove_filter(filter_id),
-        )
-    except KeyError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    state = _gmail_state(session_manager, session_id)
+    result = _mutate(
+        session_manager, session_id,
+        "gmail.filter.delete",
+        {"filter_id": filter_id},
+        lambda s: state.remove_filter(filter_id),
+    )
     return {"filter": result.model_dump(mode="json")}
 
 
@@ -597,21 +632,40 @@ def create_contact(
     body: CreateContactRequest,
     session_manager: SessionManager = Depends(get_session_manager),
 ) -> dict[str, Any]:
+    state = _gmail_state(session_manager, body.session_id)
     contact = Contact(
-        id=f"contact_manual_{len(_gmail_state(session_manager, body.session_id).contacts) + 1}",
+        id=f"contact_manual_{len(state.contacts) + 1}",
         name=body.name,
         email=body.email,
         company=body.company,
         note=body.note,
         is_vip=body.is_vip,
+        is_starred=body.is_starred,
         source="manual",
         last_contacted_at=body.last_contacted_at,
     )
-    result = session_manager.mutate(
-        body.session_id,
+    result = _mutate(
+        session_manager, body.session_id,
         "gmail.contact.create",
         {"email": body.email},
-        lambda state: _gmail_state(session_manager, body.session_id).add_contact(contact),
+        lambda s: state.add_contact(contact),
+    )
+    return {"contact": result.model_dump(mode="json")}
+
+
+@router.put("/contacts/{contact_id}")
+def update_contact(
+    contact_id: str,
+    body: UpdateContactRequest,
+    session_manager: SessionManager = Depends(get_session_manager),
+) -> dict[str, Any]:
+    state = _gmail_state(session_manager, body.session_id)
+    updates = body.model_dump(exclude={"session_id"}, exclude_unset=True)
+    result = _mutate(
+        session_manager, body.session_id,
+        "gmail.contact.update",
+        {"contact_id": contact_id, **updates},
+        lambda s: state.update_contact(contact_id, **updates),
     )
     return {"contact": result.model_dump(mode="json")}
 
@@ -622,15 +676,13 @@ def delete_contact(
     session_id: str = Query(...),
     session_manager: SessionManager = Depends(get_session_manager),
 ) -> dict[str, Any]:
-    try:
-        result = session_manager.mutate(
-            session_id,
-            "gmail.contact.delete",
-            {"contact_id": contact_id},
-            lambda state: _gmail_state(session_manager, session_id).remove_contact(contact_id),
-        )
-    except KeyError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    state = _gmail_state(session_manager, session_id)
+    result = _mutate(
+        session_manager, session_id,
+        "gmail.contact.delete",
+        {"contact_id": contact_id},
+        lambda s: state.remove_contact(contact_id),
+    )
     return {"contact": result.model_dump(mode="json")}
 
 
@@ -646,18 +698,18 @@ def update_settings(
     session_manager: SessionManager = Depends(get_session_manager),
 ) -> dict[str, Any]:
     state = _gmail_state(session_manager, body.session_id)
+    updates = body.model_dump(exclude={"session_id"}, exclude_none=True)
 
-    def apply_update(current_state: GmailState):
-        updates = body.model_dump(exclude={"session_id"}, exclude_none=True)
+    def apply_update(current_state: Any) -> Any:
         for key, value in updates.items():
             setattr(state.settings, key, value)
         state.touch()
         return state.settings
 
-    result = session_manager.mutate(
-        body.session_id,
+    result = _mutate(
+        session_manager, body.session_id,
         "gmail.settings.update",
-        body.model_dump(exclude_none=True),
+        updates,
         apply_update,
     )
     return {"settings": result.model_dump(mode="json")}

@@ -7,7 +7,7 @@ import sys
 import pytest
 
 from webagentbench.backend.routes.gmail import SessionCreateRequest, create_session
-from webagentbench.backend.seeder import _FallbackFaker
+from webagentbench.backend.seeder import FakeDataGenerator
 from webagentbench.backend.seeders.gmail import GmailSeedRunner
 from webagentbench.backend.state import SessionManager
 from webagentbench.app import build_manifest
@@ -18,8 +18,7 @@ from webagentbench.tasks._registry import env_tasks, get_task
 def _run_seed(task_id: str, seed: int = 42):
     task = get_task(task_id)
     rng = random.Random(seed)
-    fake = _FallbackFaker(seed)
-    fake.seed_instance(seed)
+    fake = FakeDataGenerator(seed)
     return GmailSeedRunner().run(task, seed, fake, rng)
 
 

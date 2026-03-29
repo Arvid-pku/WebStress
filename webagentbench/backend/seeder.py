@@ -1,9 +1,9 @@
-"""Seeding utilities — deterministic seed derivation and fake data generator.
+"""Seeding utilities — deterministic seed derivation and fake data generation.
 
-The per-task seed methods formerly in this file have been migrated to
-composable builders in ``webagentbench.tasks._seed_builders``.  The
-``GmailSeedRunner`` in ``webagentbench.backend.seeders.gmail`` executes
-those builders.  This module retains only the shared utilities.
+Provides :func:`derive_seed` / :func:`derive_anchor_time` for deterministic
+seed arithmetic, and :class:`FakeDataGenerator` for reproducible fake data
+(names, companies, emails, etc.).  Environment-specific seed runners live
+in ``webagentbench.backend.seeders``.
 """
 
 from __future__ import annotations
@@ -26,7 +26,7 @@ def derive_anchor_time(seed: int) -> datetime:
     return base + timedelta(minutes=minutes)
 
 
-class _FallbackFaker:
+class FakeDataGenerator:
     """Small deterministic fake-data generator used for seeded benchmarks."""
 
     _FIRST_NAMES = [
@@ -66,9 +66,6 @@ class _FallbackFaker:
     def __init__(self, seed: int):
         self.rng = random.Random(seed)
 
-    def seed_instance(self, seed: int) -> None:
-        self.rng.seed(seed)
-
     def name(self) -> str:
         return f"{self.rng.choice(self._FIRST_NAMES)} {self.rng.choice(self._LAST_NAMES)}"
 
@@ -90,3 +87,7 @@ class _FallbackFaker:
     def email(self, domain: str | None = None) -> str:
         local = f"{self.rng.choice(self._FIRST_NAMES)}.{self.rng.choice(self._LAST_NAMES)}".lower()
         return f"{local}@{domain or f'{self.domain_word()}.test'}"
+
+
+# Backwards-compatible alias for existing imports.
+_FallbackFaker = FakeDataGenerator

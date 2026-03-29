@@ -1,26 +1,19 @@
 from __future__ import annotations
 
-import hashlib
+import random
 from collections.abc import Callable
 from typing import Any
 from uuid import uuid4
 
-import random
-
 from .models.base import AuditEntry, BaseEnvState
 from .models.gmail import GmailState
-from .seeder import _FallbackFaker, derive_seed
-from .seeders.gmail import GmailSeedRunner
+from .seeder import FakeDataGenerator, derive_seed
+from .seeders import SEEDER_REGISTRY
 
 
 STATE_TYPES: dict[str, type[BaseEnvState]] = {
     "gmail": GmailState,
 }
-
-
-def _default_seed(env_id: str, task_id: str) -> int:
-    digest = hashlib.sha256(f"{env_id}:{task_id}".encode("utf-8")).hexdigest()
-    return int(digest[:12], 16)
 
 
 class SessionManager:
@@ -30,16 +23,17 @@ class SessionManager:
         self._sessions: dict[str, BaseEnvState] = {}
 
     def create_session(self, env_id: str, task_id: str, seed: int | None = None) -> tuple[str, dict[str, Any], int]:
-        if env_id not in STATE_TYPES:
+        runner = SEEDER_REGISTRY.get(env_id)
+        state_cls = STATE_TYPES.get(env_id)
+        if runner is None or state_cls is None:
             raise KeyError(f"Unknown environment: {env_id}")
-        actual_seed = seed if seed is not None else _default_seed(env_id, task_id)
+        actual_seed = seed if seed is not None else derive_seed(f"{env_id}:{task_id}")
         from webagentbench.tasks._registry import get_task
         task = get_task(task_id)
         rng = random.Random(actual_seed)
-        fake = _FallbackFaker(actual_seed)
-        fake.seed_instance(actual_seed)
-        seeded_data, resolved_targets = GmailSeedRunner().run(task, actual_seed, fake, rng)
-        state = STATE_TYPES[env_id].model_validate(seeded_data)
+        fake = FakeDataGenerator(actual_seed)
+        seeded_data, resolved_targets = runner.run(task, actual_seed, fake, rng)
+        state = state_cls.model_validate(seeded_data)
         state._resolved_targets = dict(resolved_targets)
         session_id = f"{env_id}_{task_id}_{uuid4().hex[:10]}"
         self._sessions[session_id] = state

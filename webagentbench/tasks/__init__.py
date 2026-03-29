@@ -1,7 +1,7 @@
 """Unified task definition framework for WebAgentBench.
 
-All tasks (legacy pages and environment tasks) are defined as YAML files,
-validated by Pydantic models, and loaded into a cached registry at startup.
+All active tasks are defined as YAML files, validated by Pydantic models,
+and loaded into a cached registry at startup.
 """
 
 from ._registry import env_tasks, get_task, load_all_tasks, tasks_by_env

@@ -1,8 +1,7 @@
 """
-WebAgentBench — FastAPI application for legacy pages and advanced environments.
+WebAgentBench — FastAPI application for advanced environments.
 
 Serves:
-- 15 frozen single-page HTML benchmarks under /pages/*
 - Advanced environment APIs under /api/env/*
 - Built React SPAs under /env/*
 - Public manifest at /manifest
@@ -16,70 +15,104 @@ import json
 from copy import deepcopy
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 from .backend.routes import mount_environment_routes
 from .backend.state import SessionManager
-from .backend.tasks import TASKS_BY_ENV
+from .tasks._registry import tasks_by_env
 
 BASE_DIR = Path(__file__).parent
-PAGES_DIR = BASE_DIR / "pages"
 STATIC_DIR = BASE_DIR / "static"
 
-
+# Load environment metadata from manifest.json (no longer contains task defs)
 with open(BASE_DIR / "manifest.json") as f:
     MANIFEST_TEMPLATE = json.load(f)
 
-PAGES_INDEX = {page["page_id"]: page for page in MANIFEST_TEMPLATE["pages"]}
+_ENV_TASK_GROUPS = tasks_by_env()
 
 
-def _public_task(task: dict) -> dict:
-    """Return the task metadata safe to expose through the public manifest."""
+def _env_index_path(env_id: str) -> Path:
+    return STATIC_DIR / "envs" / env_id / "index.html"
+
+
+def _env_is_available(env_id: str) -> bool:
+    return env_id in _ENV_TASK_GROUPS and _env_index_path(env_id).exists()
+
+
+def _env_unavailable_reason(env_id: str) -> str | None:
+    if env_id not in _ENV_TASK_GROUPS:
+        return "Environment is listed in the manifest but has no backend implementation in this build."
+    if not _env_index_path(env_id).exists():
+        return "Environment backend exists but the frontend bundle has not been built."
+    return None
+
+
+def _public_task_from_def(task) -> dict:
+    """Return task metadata safe to expose through the public manifest."""
     return {
-        "task_id": task["task_id"],
-        "env_id": task["env_id"],
-        "title": task["title"],
-        "instruction_template": task["instruction_template"],
-        "difficulty": task["difficulty"],
-        "primary_primitives": task.get("primary_primitives", []),
-        "time_limit_seconds": task.get("time_limit_seconds", 180),
-        "expected_steps": task.get("expected_steps"),
-        "start_path": task.get("start_path", "/"),
+        "task_id": task.task_id,
+        "env_id": task.env_id,
+        "title": task.title,
+        "instruction_template": task.instruction_template or task.instruction,
+        "difficulty": task.difficulty,
+        "primary_primitives": task.primary_primitives,
+        "time_limit_seconds": task.time_limit_seconds,
+        "expected_steps": task.expected_steps,
+        "start_path": task.start_path or "/",
     }
 
 
+def _build_env_manifest_entry(env_meta: dict, tasks: list) -> dict:
+    entry = deepcopy(env_meta)
+    entry.setdefault("env_id", env_meta.get("env_id"))
+    entry.setdefault("title", entry["env_id"])
+    entry.setdefault("base_url", f"/env/{entry['env_id']}")
+    entry["tasks"] = [_public_task_from_def(task) for task in tasks]
+    entry["available"] = _env_is_available(entry["env_id"])
+    entry["unavailable_reason"] = _env_unavailable_reason(entry["env_id"])
+    return entry
+
+
 def build_manifest() -> dict:
-    """Merge legacy manifest metadata with the advanced-environment task registry."""
-    manifest = deepcopy(MANIFEST_TEMPLATE)
+    """Build the public manifest from YAML registry + environment metadata."""
+    manifest = {
+        "version": MANIFEST_TEMPLATE.get("version", "2.0.0"),
+        "benchmark": MANIFEST_TEMPLATE.get("benchmark", "WebAgentBench"),
+        "description": MANIFEST_TEMPLATE.get("description", ""),
+        "primitives": MANIFEST_TEMPLATE.get("primitives", []),
+    }
+
     env_entries: list[dict] = []
-    configured_envs = {env["env_id"]: env for env in manifest.get("environments", [])}
+    seen_env_ids: set[str] = set()
 
-    for env_id, env_tasks in TASKS_BY_ENV.items():
-        base_env = deepcopy(configured_envs.get(env_id, {"env_id": env_id, "title": env_id, "base_url": f"/env/{env_id}"}))
-        base_env["tasks"] = [_public_task(task) for task in env_tasks]
-        env_entries.append(base_env)
+    for env in MANIFEST_TEMPLATE.get("environments", []):
+        env_id = env["env_id"]
+        env_entries.append(_build_env_manifest_entry(env, _ENV_TASK_GROUPS.get(env_id, [])))
+        seen_env_ids.add(env_id)
 
-    for env_id, env in configured_envs.items():
-        if env_id not in TASKS_BY_ENV:
-            env_entries.append(deepcopy(env))
+    for env_id, env_task_list in _ENV_TASK_GROUPS.items():
+        if env_id in seen_env_ids:
+            continue
+        env_entries.append(
+            _build_env_manifest_entry(
+                {"env_id": env_id, "title": env_id, "base_url": f"/env/{env_id}"},
+                env_task_list,
+            )
+        )
 
     manifest["environments"] = env_entries
     return manifest
 
 
 MANIFEST = build_manifest()
-PAGE_COUNT = len(MANIFEST["pages"])
 ENVIRONMENT_COUNT = len(MANIFEST.get("environments", []))
 ENV_TASK_COUNT = sum(len(env.get("tasks", [])) for env in MANIFEST.get("environments", []))
 MANIFEST_VERSION = MANIFEST.get("version", "1.0.0")
 KNOWN_ENV_IDS = {env["env_id"] for env in MANIFEST.get("environments", [])}
 
-description = (
-    f"{PAGE_COUNT} legacy pages plus {ENV_TASK_COUNT} advanced environment tasks "
-    f"across {ENVIRONMENT_COUNT} simulated applications"
-)
+description = f"{ENV_TASK_COUNT} advanced environment tasks across {ENVIRONMENT_COUNT} simulated applications"
 
 app = FastAPI(
     title="WebAgentBench",
@@ -99,28 +132,24 @@ for env_id in KNOWN_ENV_IDS:
 
 @app.get("/", response_class=HTMLResponse)
 async def index():
-    """Index page listing both legacy pages and advanced environments."""
-    page_rows = ""
-    for page in MANIFEST["pages"]:
-        prims = ", ".join(page["primary_primitives"])
-        page_rows += (
-            f"<tr>"
-            f'<td><a href="/pages/{page["page_id"]}">{page["title"]}</a></td>'
-            f'<td><code>{page["page_id"]}</code></td>'
-            f"<td>{page['difficulty']}</td>"
-            f"<td>{prims}</td>"
-            f"<td>{page['time_limit_seconds']}s</td>"
-            f"</tr>\n"
-        )
-
+    """Index page listing advanced environments."""
     env_rows = ""
     for env in MANIFEST.get("environments", []):
+        available = bool(env.get("available", False))
+        title_html = (
+            f'<a href="{env["base_url"]}">{env["title"]}</a>'
+            if available
+            else f'{env["title"]} <span style="color:#b35c00;font-weight:600;">(Unavailable)</span>'
+        )
+        status = "Available" if available else "Unavailable"
+        reason = env.get("unavailable_reason", "") if not available else env.get("description", "")
         env_rows += (
             f"<tr>"
-            f'<td><a href="{env["base_url"]}">{env["title"]}</a></td>'
+            f"<td>{title_html}</td>"
             f'<td><code>{env["env_id"]}</code></td>'
             f"<td>{len(env.get('tasks', []))}</td>"
-            f"<td>{env.get('description', '')}</td>"
+            f"<td>{status}</td>"
+            f"<td>{reason}</td>"
             f"</tr>\n"
         )
 
@@ -147,18 +176,10 @@ async def index():
     <h1>WebAgentBench</h1>
     <p class="subtitle">{description}</p>
 
-    <h2>Legacy Pages</h2>
-    <table>
-        <thead>
-            <tr><th>Page</th><th>ID</th><th>Difficulty</th><th>Primitives</th><th>Time Limit</th></tr>
-        </thead>
-        <tbody>{page_rows}</tbody>
-    </table>
-
     <h2>Advanced Environments</h2>
     <table>
         <thead>
-            <tr><th>Environment</th><th>ID</th><th>Tasks</th><th>Description</th></tr>
+            <tr><th>Environment</th><th>ID</th><th>Tasks</th><th>Status</th><th>Description</th></tr>
         </thead>
         <tbody>{env_rows}</tbody>
     </table>
@@ -166,8 +187,6 @@ async def index():
     <h3>API Endpoints</h3>
     <ul>
         <li><code>GET /manifest</code> — Full benchmark manifest</li>
-        <li><code>GET /manifest/{{page_id}}</code> — Single legacy page manifest</li>
-        <li><code>POST /benchmark/{{page_id}}/evaluate</code> — Evaluate legacy benchmarkState</li>
         <li><code>/api/env/gmail/*</code> — Advanced Gmail session, CRUD, and evaluation routes</li>
     </ul>
 </body>
@@ -175,44 +194,10 @@ async def index():
     return HTMLResponse(content=html)
 
 
-@app.get("/pages/{page_id}", response_class=HTMLResponse)
-async def serve_page(page_id: str):
-    """Serve a specific frozen benchmark page."""
-    if page_id not in PAGES_INDEX:
-        raise HTTPException(status_code=404, detail=f"Unknown page_id: {page_id}")
-    html_path = PAGES_DIR / f"{page_id}.html"
-    if not html_path.exists():
-        raise HTTPException(status_code=404, detail=f"Page file not found: {page_id}.html")
-    return FileResponse(html_path, media_type="text/html")
-
-
 @app.get("/manifest")
 async def get_manifest():
     """Return the merged benchmark manifest."""
     return MANIFEST
-
-
-@app.get("/manifest/{page_id}")
-async def get_page_manifest(page_id: str):
-    """Return a single legacy page manifest entry."""
-    if page_id not in PAGES_INDEX:
-        raise HTTPException(status_code=404, detail=f"Unknown page_id: {page_id}")
-    return PAGES_INDEX[page_id]
-
-
-@app.post("/benchmark/{page_id}/evaluate")
-async def evaluate_page(page_id: str, request: Request):
-    """Evaluate task completion for a legacy benchmark page."""
-    if page_id not in PAGES_INDEX:
-        raise HTTPException(status_code=404, detail=f"Unknown page_id: {page_id}")
-
-    body = await request.json()
-    benchmark_state = body.get("benchmarkState", body)
-
-    from .evaluator import evaluate
-
-    result = evaluate(page_id, benchmark_state, PAGES_INDEX[page_id])
-    return JSONResponse(content=result)
 
 
 @app.get("/env/{env_id}")
@@ -232,7 +217,6 @@ async def health():
     """Health check."""
     return {
         "status": "ok",
-        "pages": PAGE_COUNT,
         "environments": ENVIRONMENT_COUNT,
         "environment_tasks": ENV_TASK_COUNT,
     }

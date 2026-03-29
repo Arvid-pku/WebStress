@@ -35,7 +35,7 @@ def export_conversations(
     Convert a single episode/result to training conversations.
 
     Args:
-        data: Episode (LLMOS) or per-page result (WAB).
+        data: Episode (LLMOS) or per-task result (WAB).
         source: "llmos", "wab", or "auto" (detect from data).
         fmt: Output format — "messages" (OpenAI) or "sharegpt" (LLaMA-Factory).
 
@@ -43,12 +43,12 @@ def export_conversations(
         List with one conversation dict (or empty list if data is unusable).
     """
     if source == "auto":
-        if "page_id" in data or ("benchmark" in data and "results" in data):
+        if "task_id" in data or "page_id" in data or ("benchmark" in data and "results" in data):
             source = "wab"
         else:
             source = "llmos"
 
-    # Support top-level WebAgentBench run artifacts in addition to single-page
+    # Support top-level WebAgentBench run artifacts in addition to single-task
     # result objects so callers can pass either JSON shape directly.
     if source == "wab" and isinstance(data.get("results"), list):
         return batch_export(data["results"], source="wab", fmt=fmt)
@@ -155,9 +155,10 @@ def _extract_wab(result: dict) -> tuple[list[dict], dict]:
         messages = _reconstruct_from_trajectory(result)
 
     evaluation = result.get("evaluation", {})
+    task_id = _wab_task_id(result)
     metadata = {
         "source": "webagentbench",
-        "task_id": result.get("page_id"),
+        "task_id": task_id,
         "instruction": result.get("title"),
         "score": evaluation.get("score"),
         "success": evaluation.get("success"),
@@ -182,10 +183,8 @@ def _reconstruct_from_trajectory(result: dict) -> list[dict]:
     for i, step in enumerate(trajectory):
         # Reconstruct user message for first step
         if i == 0:
-            instruction = ""
-            page_id = result.get("page_id", "")
-            # Try to get instruction from page_meta if available
-            title = result.get("title", page_id)
+            task_id = _wab_task_id(result)
+            title = result.get("title", task_id)
             messages.append({
                 "role": "user",
                 "content": f"Task: {title}\n\n[observation not recorded]",
@@ -230,15 +229,20 @@ def _format_conversation(messages: list[dict], fmt: str) -> dict:
 # =============================================================================
 
 def _get_score(ep: dict, source: str) -> Optional[float]:
-    if source == "wab" or "page_id" in ep:
+    if source == "wab" or "task_id" in ep or "page_id" in ep:
         return ep.get("evaluation", {}).get("score")
     return ep.get("score")
 
 
 def _get_success(ep: dict, source: str) -> bool:
-    if source == "wab" or "page_id" in ep:
+    if source == "wab" or "task_id" in ep or "page_id" in ep:
         return ep.get("evaluation", {}).get("success", False)
     return ep.get("success", False)
+
+
+def _wab_task_id(result: dict) -> str:
+    """Return the canonical task id from a WAB result."""
+    return result.get("task_id") or result.get("page_id", "")
 
 
 # =============================================================================
