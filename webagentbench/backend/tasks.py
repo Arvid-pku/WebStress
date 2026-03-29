@@ -575,3 +575,8 @@ GMAIL_TASK_INDEX: dict[str, dict] = {t["task_id"]: t for t in GMAIL_TASKS}
 
 # Combined index for all environments
 TASK_INDEX: dict[str, dict] = {**GMAIL_TASK_INDEX}
+
+# Tasks grouped by environment id (used by app.py to build the manifest)
+TASKS_BY_ENV: dict[str, list[dict]] = {
+    "gmail": GMAIL_TASKS,
+}

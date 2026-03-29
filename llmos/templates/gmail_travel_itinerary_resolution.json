@@ -1,0 +1,2315 @@
+{
+  "meta": {
+    "tick": 0,
+    "status": "running",
+    "random_seed": 42,
+    "platform": "webagentbench",
+    "task_category": "gmail_travel_itinerary_resolution",
+    "target_primitives": [
+      "verification",
+      "memory",
+      "attention",
+      "adversarial_robustness"
+    ]
+  },
+  "hidden_state": {
+    "wab_page_id": "gmail_travel_itinerary_resolution",
+    "wab_instruction": "You have two flight confirmation emails and two hotel confirmation emails for your trip to the Denver conference on March 25. One flight was rebooked \u2014 find the current flight confirmation (the one with a rebooking reference starting with \"RBK-\"). You also have two hotel bookings: one in Denver with a non-refundable cancellation deadline that has passed, and one in Boulder that is freely cancellable. The Denver hotel is the correct one for the conference. Forward the current flight confirmation and the Denver hotel confirmation \u2014 exactly those two emails, as two separate forwards \u2014 to travel.assistant@ops.test. Do not forward the superseded flight or the Boulder hotel. After forwarding, create a Gmail filter for emails from {target.airline_sender} that automatically applies the label \"Travel.\"",
+    "task_completion_criteria": {
+      "airline_sender": "bookings@unitedair.test",
+      "flight_original_email_id": "email_1",
+      "flight_rebooked_email_id": "email_2",
+      "hotel_denver_email_id": "email_3",
+      "hotel_boulder_email_id": "email_4",
+      "conference_email_id": "email_5",
+      "decoy_summary_email_id": "email_6",
+      "jordan_name": "Elena Patel"
+    }
+  },
+  "ui": {
+    "bid": "root",
+    "tag": "browser",
+    "role": "application",
+    "text": "Gmail",
+    "visible": true,
+    "bounds": {
+      "x": 0,
+      "y": 0,
+      "width": 800,
+      "height": 30
+    },
+    "children": [
+      {
+        "bid": "toolbar",
+        "tag": "toolbar",
+        "role": "toolbar",
+        "text": "Browser Toolbar",
+        "visible": true,
+        "bounds": {
+          "x": 0,
+          "y": 0,
+          "width": 800,
+          "height": 30
+        },
+        "children": [
+          {
+            "bid": "url_bar",
+            "tag": "input",
+            "role": "textbox",
+            "text": "Address",
+            "visible": true,
+            "bounds": {
+              "x": 0,
+              "y": 0,
+              "width": 800,
+              "height": 30
+            },
+            "value": "https://webagentbench.local/env/gmail/inbox"
+          }
+        ]
+      },
+      {
+        "bid": "page_content",
+        "tag": "main",
+        "role": "main",
+        "text": "Gmail",
+        "visible": true,
+        "bounds": {
+          "x": 0,
+          "y": 0,
+          "width": 800,
+          "height": 30
+        },
+        "children": [
+          {
+            "bid": "banner_gmail_1",
+            "tag": "header",
+            "role": "banner",
+            "text": "Gmail",
+            "visible": true,
+            "bounds": {
+              "x": 0,
+              "y": 0,
+              "width": 800,
+              "height": 30
+            },
+            "children": [
+              {
+                "bid": "text_gmail_2",
+                "tag": "span",
+                "role": "text",
+                "text": "Gmail",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              },
+              {
+                "bid": "searchbox_search_mail_3",
+                "tag": "input",
+                "role": "searchbox",
+                "text": "Search mail",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              }
+            ]
+          },
+          {
+            "bid": "navigation_gmail_navigation_4",
+            "tag": "nav",
+            "role": "navigation",
+            "text": "Gmail navigation",
+            "visible": true,
+            "bounds": {
+              "x": 0,
+              "y": 0,
+              "width": 800,
+              "height": 30
+            },
+            "children": [
+              {
+                "bid": "button_compose_5",
+                "tag": "button",
+                "role": "button",
+                "text": "Compose",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              },
+              {
+                "bid": "link_inbox_6",
+                "tag": "a",
+                "role": "link",
+                "text": "Inbox (46)",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              },
+              {
+                "bid": "link_starred_7",
+                "tag": "a",
+                "role": "link",
+                "text": "Starred",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              },
+              {
+                "bid": "link_sent_8",
+                "tag": "a",
+                "role": "link",
+                "text": "Sent",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              },
+              {
+                "bid": "link_drafts_9",
+                "tag": "a",
+                "role": "link",
+                "text": "Drafts",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              },
+              {
+                "bid": "link_archive_10",
+                "tag": "a",
+                "role": "link",
+                "text": "Archive",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              },
+              {
+                "bid": "link_trash_11",
+                "tag": "a",
+                "role": "link",
+                "text": "Trash",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              },
+              {
+                "bid": "link_settings_12",
+                "tag": "a",
+                "role": "link",
+                "text": "Settings",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              },
+              {
+                "bid": "link_labels_13",
+                "tag": "a",
+                "role": "link",
+                "text": "Labels",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              }
+            ]
+          },
+          {
+            "bid": "main_inbox_165",
+            "tag": "main",
+            "role": "main",
+            "text": "Inbox",
+            "visible": true,
+            "bounds": {
+              "x": 0,
+              "y": 0,
+              "width": 800,
+              "height": 30
+            },
+            "children": [
+              {
+                "bid": "tab_primary_14",
+                "tag": "button",
+                "role": "tab",
+                "text": "Primary",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "selected": true
+              },
+              {
+                "bid": "tab_promotions_15",
+                "tag": "button",
+                "role": "tab",
+                "text": "Promotions",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              },
+              {
+                "bid": "tab_updates_16",
+                "tag": "button",
+                "role": "tab",
+                "text": "Updates",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              },
+              {
+                "bid": "tab_all_mail_17",
+                "tag": "button",
+                "role": "tab",
+                "text": "All Mail",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              },
+              {
+                "bid": "article_quarterly_metrics_recap_18",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_quarterly_metrics_recap_19",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star Quarterly metrics recap",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_nina_morris_20",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Nina Morris",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_quarterly_metrics_recap_21",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread Quarterly metrics recap",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_quarterly_metrics_recap_22",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Quarterly metrics recap",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_sending_a_quick_status_update_from_today_23",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Sending a quick status update from today's working session. Nothing looks blocked right now, but we still need one decision on timing. If yo",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_quarterly_metrics_recap_24",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive Quarterly metrics recap",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_quarterly_metrics_recap_25",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete Quarterly metrics recap",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jul_05_26",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jul 05",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_follow_up_on_venue_estimate_27",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_follow_up_on_venue_estimate_28",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star Follow-up on venue estimate",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_nina_patel_29",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Nina Patel",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_follow_up_on_venue_estimate_30",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread Follow-up on venue estimate",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_follow_up_on_venue_estimate_31",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Follow-up on venue estimate",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_passing_along_the_current_draft_so_you_h_32",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Passing along the current draft so you have it in one place. Most of the edits were minor, with one budget line still waiting on approval. N",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_follow_up_on_venue_estimate_33",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive Follow-up on venue estimate",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_follow_up_on_venue_estimate_34",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete Follow-up on venue estimate",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jul_05_35",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jul 05",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_reminder_on_document_review_timing_36",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_reminder_on_document_review_timing_37",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star Reminder on document review timing",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_miles_chen_38",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Miles Chen",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_reminder_on_document_review_39",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread Reminder on document review timing",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_reminder_on_document_review_timing_40",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Reminder on document review timing",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_passing_along_the_current_draft_so_you_h_41",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Passing along the current draft so you have it in one place. Nothing looks blocked right now, but we still need one decision on timing. Happ",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_reminder_on_document_review_timi_42",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive Reminder on document review timing",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_reminder_on_document_review_timin_43",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete Reminder on document review timing",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jul_03_44",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jul 03",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_quarterly_metrics_recap_45",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_quarterly_metrics_recap_46",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star Quarterly metrics recap",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_miles_patel_47",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Miles Patel",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_quarterly_metrics_recap_48",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread Quarterly metrics recap",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_quarterly_metrics_recap_49",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Quarterly metrics recap",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_sending_a_quick_status_update_from_today_50",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Sending a quick status update from today's working session. The open items are mostly ownership questions rather than scope changes. Happy t",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_quarterly_metrics_recap_51",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive Quarterly metrics recap",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_quarterly_metrics_recap_52",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete Quarterly metrics recap",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jul_03_53",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jul 03",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_your_travel_itinerary___looks_good_54",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_your_travel_itinerary___looks_good_55",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star Your travel itinerary \u2014 looks good!",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_elena_patel_56",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Elena Patel",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_your_travel_itinerary___look_57",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread Your travel itinerary \u2014 looks good!",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_your_travel_itinerary___looks_good_58",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Your travel itinerary \u2014 looks good!",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_hey__i_put_together_a_quick_summary_of_y_59",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Hey, I put together a quick summary of your Denver trip itinerary: Flight: FLT-7291, departing 6:00 AM on March 25 (SFO \u2192 DEN) Hotel: Hilton",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_your_travel_itinerary___looks_go_60",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive Your travel itinerary \u2014 looks good!",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_your_travel_itinerary___looks_goo_61",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete Your travel itinerary \u2014 looks good!",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jul_02_62",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jul 02",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_quarterly_metrics_recap_63",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_quarterly_metrics_recap_64",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star Quarterly metrics recap",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_priya_wright_65",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Priya Wright",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_quarterly_metrics_recap_66",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread Quarterly metrics recap",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_quarterly_metrics_recap_67",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Quarterly metrics recap",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_i_pulled_the_loose_ends_into_one_note_fo_68",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "I pulled the loose ends into one note for easier review. Nothing looks blocked right now, but we still need one decision on timing. Happy to",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_quarterly_metrics_recap_69",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive Quarterly metrics recap",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_quarterly_metrics_recap_70",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete Quarterly metrics recap",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jul_02_71",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jul 02",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_customer_feedback_from_pilot_cohort_72",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_customer_feedback_from_pilot_cohort_73",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star Customer feedback from pilot cohort",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_priya_nguyen_74",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Priya Nguyen",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_customer_feedback_from_pilot_75",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread Customer feedback from pilot cohort",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_customer_feedback_from_pilot_cohort_76",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Customer feedback from pilot cohort",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_sharing_the_latest_notes_before_tomorrow_77",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Sharing the latest notes before tomorrow's check-in. The open items are mostly ownership questions rather than scope changes. Happy to conso",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_customer_feedback_from_pilot_coh_78",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive Customer feedback from pilot cohort",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_customer_feedback_from_pilot_coho_79",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete Customer feedback from pilot cohort",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jul_01_80",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jul 01",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_agenda_draft_for_monday_check_in_81",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_agenda_draft_for_monday_check_in_82",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star Agenda draft for Monday check-in",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_theo_garcia_83",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Theo Garcia",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_agenda_draft_for_monday_chec_84",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread Agenda draft for Monday check-in",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_agenda_draft_for_monday_check_in_85",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Agenda draft for Monday check-in",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_sharing_the_latest_notes_before_tomorrow_86",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Sharing the latest notes before tomorrow's check-in. Nothing looks blocked right now, but we still need one decision on timing. If you want,",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_agenda_draft_for_monday_check_in_87",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive Agenda draft for Monday check-in",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_agenda_draft_for_monday_check_in_88",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete Agenda draft for Monday check-in",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jun_29_89",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jun 29",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_agenda_draft_for_monday_check_in_90",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_agenda_draft_for_monday_check_in_91",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star Agenda draft for Monday check-in",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_nina_patel_92",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Nina Patel",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_agenda_draft_for_monday_chec_93",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread Agenda draft for Monday check-in",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_agenda_draft_for_monday_check_in_94",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Agenda draft for Monday check-in",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_sharing_the_latest_notes_before_tomorrow_95",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Sharing the latest notes before tomorrow's check-in. The team is aligned on the main path and only needs confirmation on the follow-up items",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_agenda_draft_for_monday_check_in_96",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive Agenda draft for Monday check-in",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_agenda_draft_for_monday_check_in_97",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete Agenda draft for Monday check-in",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jun_29_98",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jun 29",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_notes_from_the_partner_sync_99",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_notes_from_the_partner_sync_100",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star Notes from the partner sync",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_sofia_brooks_101",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Sofia Brooks",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_notes_from_the_partner_sync_102",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread Notes from the partner sync",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_notes_from_the_partner_sync_103",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Notes from the partner sync",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_sending_a_quick_status_update_from_today_104",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Sending a quick status update from today's working session. The open items are mostly ownership questions rather than scope changes. No resp",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_notes_from_the_partner_sync_105",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive Notes from the partner sync",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_notes_from_the_partner_sync_106",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete Notes from the partner sync",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jun_28_107",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jun 28",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_denver_conference_schedule___march_25_108",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_denver_conference_schedule___march_109",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star Denver Conference Schedule \u2014 March 25",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_conference_team_110",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Conference Team",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_denver_conference_schedule_111",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread Denver Conference Schedule \u2014 March 25",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_denver_conference_schedule___march_25_112",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Denver Conference Schedule \u2014 March 25",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_here_is_the_schedule_for_the_denver_conf_113",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Here is the schedule for the Denver Conference on March 25. Venue: Colorado Convention Center, Denver, CO Registration opens at 8:00 AM. Key",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_denver_conference_schedule___mar_114",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive Denver Conference Schedule \u2014 March 25",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_denver_conference_schedule___marc_115",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete Denver Conference Schedule \u2014 March 25",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jun_27_116",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jun 27",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_notes_from_the_partner_sync_117",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_notes_from_the_partner_sync_118",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star Notes from the partner sync",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_elena_brooks_119",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Elena Brooks",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_notes_from_the_partner_sync_120",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread Notes from the partner sync",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_notes_from_the_partner_sync_121",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Notes from the partner sync",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_i_pulled_the_loose_ends_into_one_note_fo_122",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "I pulled the loose ends into one note for easier review. Nothing looks blocked right now, but we still need one decision on timing. If you w",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_notes_from_the_partner_sync_123",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive Notes from the partner sync",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_notes_from_the_partner_sync_124",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete Notes from the partner sync",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jun_27_125",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jun 27",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_customer_feedback_from_pilot_cohort_126",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_customer_feedback_from_pilot_cohort_127",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star Customer feedback from pilot cohort",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_marcus_patel_128",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Marcus Patel",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_customer_feedback_from_pilot_129",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread Customer feedback from pilot cohort",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_customer_feedback_from_pilot_cohort_130",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Customer feedback from pilot cohort",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_sending_a_quick_status_update_from_today_131",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Sending a quick status update from today's working session. The open items are mostly ownership questions rather than scope changes. If you ",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_customer_feedback_from_pilot_coh_132",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive Customer feedback from pilot cohort",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_customer_feedback_from_pilot_coho_133",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete Customer feedback from pilot cohort",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jun_27_134",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jun 27",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_quarterly_metrics_recap_135",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_quarterly_metrics_recap_136",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star Quarterly metrics recap",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_nina_chen_137",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Nina Chen",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_quarterly_metrics_recap_138",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread Quarterly metrics recap",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_quarterly_metrics_recap_139",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Quarterly metrics recap",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_sending_a_quick_status_update_from_today_140",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Sending a quick status update from today's working session. Most of the edits were minor, with one budget line still waiting on approval. If",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_quarterly_metrics_recap_141",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive Quarterly metrics recap",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_quarterly_metrics_recap_142",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete Quarterly metrics recap",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jun_26_143",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jun 26",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_updated_rollout_checklist_144",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_updated_rollout_checklist_145",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star Updated rollout checklist",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_theo_singh_146",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Theo Singh",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_updated_rollout_checklist_147",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread Updated rollout checklist",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_updated_rollout_checklist_148",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Updated rollout checklist",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_sending_a_quick_status_update_from_today_149",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Sending a quick status update from today's working session. The team is aligned on the main path and only needs confirmation on the follow-u",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_updated_rollout_checklist_150",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive Updated rollout checklist",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_updated_rollout_checklist_151",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete Updated rollout checklist",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jun_26_152",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jun 26",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "article_updated_flight_confirmation___flt_7291_r_153",
+                "tag": "article",
+                "role": "article",
+                "text": "",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "children": [
+                  {
+                    "bid": "button_star_updated_flight_confirmation___flt_7_154",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Star Updated Flight Confirmation \u2014 FLT-7291-R",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_united_air_bookings_155",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "United Air Bookings",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "link_open_thread_updated_flight_confirmation_156",
+                    "tag": "a",
+                    "role": "link",
+                    "text": "Open thread Updated Flight Confirmation \u2014 FLT-7291-R",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    },
+                    "children": [
+                      {
+                        "bid": "text_updated_flight_confirmation___flt_7291_r_157",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "Updated Flight Confirmation \u2014 FLT-7291-R",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      },
+                      {
+                        "bid": "text_this_replaces_your_previous_booking__reb_158",
+                        "tag": "span",
+                        "role": "text",
+                        "text": "This replaces your previous booking. Rebooking reference: RBK-4483. Confirmation code: FLT-7291-R Date: March 25 Departure: 9:30 AM Route: S",
+                        "visible": true,
+                        "bounds": {
+                          "x": 0,
+                          "y": 0,
+                          "width": 800,
+                          "height": 30
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "bid": "button_archive_updated_flight_confirmation___fl_159",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Archive Updated Flight Confirmation \u2014 FLT-7291-R",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "button_delete_updated_flight_confirmation___flt_160",
+                    "tag": "button",
+                    "role": "button",
+                    "text": "Delete Updated Flight Confirmation \u2014 FLT-7291-R",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  },
+                  {
+                    "bid": "text_jun_26_161",
+                    "tag": "span",
+                    "role": "text",
+                    "text": "Jun 26",
+                    "visible": true,
+                    "bounds": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 800,
+                      "height": 30
+                    }
+                  }
+                ]
+              },
+              {
+                "bid": "text_1_16_of_33_162",
+                "tag": "span",
+                "role": "text",
+                "text": "1\u201316 of 33",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              },
+              {
+                "bid": "button_previous_page_163",
+                "tag": "button",
+                "role": "button",
+                "text": "Previous page",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                },
+                "disabled": true
+              },
+              {
+                "bid": "button_next_page_164",
+                "tag": "button",
+                "role": "button",
+                "text": "Next page",
+                "visible": true,
+                "bounds": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 800,
+                  "height": 30
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "filesystem": {},
+  "tabs": [
+    {
+      "id": 0,
+      "url": "https://webagentbench.local/env/gmail/inbox",
+      "title": "Gmail",
+      "active": true
+    }
+  ],
+  "history": []
+}

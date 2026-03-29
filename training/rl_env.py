@@ -242,7 +242,7 @@ class LLMOSMessageEnv(MessageEnv):
         # Convert to LLMOS action
         try:
             llmos_action = unified_action_to_llmos(unified_action, self.ref_to_bid)
-        except (KeyError, ValueError) as e:
+        except (KeyError, ValueError, TypeError) as e:
             logger.warning(f"Invalid action ref: {e}")
             llmos_action = {"action_type": "noop"}
             # Run noop through simulator to keep state consistent
@@ -496,6 +496,7 @@ class LLMOSRLDatasetBuilder(RLDatasetBuilder):
     num_epochs: int = 3
     seed: int = 42
     use_primitive_weights: bool = False  # Weight primitives by trainability
+    hint_mode: str = "curriculum"  # "curriculum" (explicit→subtle→minimal) or "fixed_subtle" or "fixed_explicit"
 
     async def __call__(self) -> tuple[RLDataset, RLDataset | None]:
         # Resolve config path
@@ -572,14 +573,17 @@ class LLMOSRLDatasetBuilder(RLDatasetBuilder):
         rng = random.Random(self.seed)
         epoch_builders = []
         for epoch_idx in range(self.num_epochs):
-            # Determine hint level based on epoch position
-            epoch_fraction = epoch_idx / max(self.num_epochs - 1, 1)  # 0.0 → 1.0
-            if epoch_fraction < 0.33:
-                hint_level = "explicit"
-            elif epoch_fraction < 0.66:
-                hint_level = "subtle"
-            else:
-                hint_level = "minimal"
+            # Determine hint level
+            if self.hint_mode.startswith("fixed_"):
+                hint_level = self.hint_mode.replace("fixed_", "")
+            else:  # curriculum fading
+                epoch_fraction = epoch_idx / max(self.num_epochs - 1, 1)
+                if epoch_fraction < 0.33:
+                    hint_level = "explicit"
+                elif epoch_fraction < 0.66:
+                    hint_level = "subtle"
+                else:
+                    hint_level = "minimal"
             hint_suffix = HINT_SUFFIXES[hint_level]
 
             epoch = []

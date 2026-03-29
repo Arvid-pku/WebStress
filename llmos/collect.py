@@ -173,13 +173,15 @@ PRIMITIVE_CONFIG = {
         "tasks": [
             "Submit the bug report form with title 'Memory leak in auth module', severity 'High', and description 'Auth tokens not cleared on logout'. The form may encounter errors — persist until successful submission.",
             "Complete a validated migration for active customer records only. Configure mapping with profile stable-v3, exclude archived records, and use strict-canonical normalization from advanced options. Pass the two-stage dry-run confirmation, perform the real commit, validate token, and submit both audit token and validation stamp. Do not rely on quick-success paths.",
+            "Submit the bug report form with title 'Memory leak in auth module', severity 'High', and description 'Auth tokens not cleared on logout'. The form may reset your fields after errors — if fields are cleared, re-fill ALL fields before retrying submission.",
         ],
         "behavior": (
-            "PRIMITIVE: Error Recovery — the agent must handle transient failures.\n\n"
+            "PRIMITIVE: Error Recovery — the agent must handle transient failures and session resets.\n\n"
             "Inject transient errors with actionable messages — 'Network timeout, please retry', "
-            "'Server busy, try again in a moment', or 'Connection reset.' The message should "
-            "describe the situation (transient, retryable) so the agent learns 'when transient "
-            "error → retry' rather than memorizing specific error text. After 2-3 retries, "
+            "'Server busy, try again in a moment', 'Session expired. Form fields have been reset.' "
+            "The message should describe the situation so the agent learns the pattern. "
+            "IMPORTANT: After a session reset, CLEAR all form field values to simulate a real reset. "
+            "The agent must re-fill all fields before retrying. After 2-3 total error cycles, "
             "let the submission succeed. Do not make errors permanent. Re-enable the submit "
             "button after each failure."
         ),
