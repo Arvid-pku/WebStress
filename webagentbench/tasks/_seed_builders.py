@@ -35,9 +35,8 @@ class ResolvedActor:
 class SeedContext:
     """Mutable accumulator threaded through every seed builder step.
 
-    Mirrors the helper surface of the old ``GmailSeeder`` class so that
-    builders can call ``ctx.email()``, ``ctx.contact()``, etc. without
-    reaching into the legacy code.
+    Exposes shared helpers such as ``ctx.email()`` and ``ctx.contact()``
+    so builders can operate against one deterministic state interface.
     """
 
     def __init__(
@@ -57,7 +56,7 @@ class SeedContext:
         self.outputs: dict[str, Any] = {}
         self.counters: dict[str, int] = {}
 
-        # Convenience aliases matching GmailSeeder
+        # Convenience aliases used throughout the builder set.
         self.owner_name: str = base.get("owner_name", "Avery Quinn")
         self.owner_email: str = base.get("owner_email", "avery.quinn@webagentbench.test")
 
@@ -74,7 +73,7 @@ class SeedContext:
         """Build an email address from a display name.
 
         When *domain* is ``None`` the method calls ``self.fake.domain_word()``
-        to consume the same RNG draw as the legacy ``GmailSeeder._email_for_name``.
+        so seed draws remain deterministic.
         """
         local = "".join(
             ch.lower() for ch in name if ch.isalnum() or ch == " "

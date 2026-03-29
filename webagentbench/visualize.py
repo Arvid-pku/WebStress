@@ -32,6 +32,12 @@ import json
 import sys
 from pathlib import Path
 
+from .result_utils import (
+    build_manifest_task_meta,
+    load_embedded_task_meta,
+    summary_total_tasks,
+)
+
 # Maximum content length for observation messages embedded in the HTML.
 # The first user message (initial instruction) and all system/assistant
 # messages are kept in full; subsequent user messages (accessibility tree
@@ -63,7 +69,8 @@ def generate_html(data: dict, server_url: str) -> str:
     provider = data.get("agent", {}).get("provider", "unknown")
     summary = data.get("summary", {})
     results = data.get("results", [])
-    page_meta = data.get("page_meta", {})
+    task_meta = load_embedded_task_meta(data)
+    total_tasks = summary_total_tasks(summary) or len(results)
 
     # Build a lightweight copy of results with truncated messages for embedding.
     results_for_js = []
@@ -76,7 +83,7 @@ def generate_html(data: dict, server_url: str) -> str:
         results_for_js.append(r_copy)
 
     results_json = json.dumps(results_for_js)
-    page_meta_json = json.dumps(page_meta)
+    task_meta_json = json.dumps(task_meta)
 
     # NOTE: innerHTML usage below operates exclusively on trusted local data
     # (our own benchmark results) and all dynamic strings pass through
@@ -384,7 +391,7 @@ body {{
         <button id="modeView" class="active" onclick="setMode('view')">View</button>
         <button id="modeInteractive" onclick="setMode('interactive')">Interactive</button>
     </div>
-    <span class="summary">{summary.get('passed', 0)}/{summary.get('total_pages', 0)} passed &nbsp; avg: {summary.get('average_score', 0):+.3f}</span>
+    <span class="summary">{summary.get('passed', 0)}/{total_tasks} passed &nbsp; avg: {summary.get('average_score', 0):+.3f}</span>
 </div>
 
 <div class="main">
@@ -431,13 +438,17 @@ body {{
 <script>
 const SERVER_URL = {json.dumps(server_url)};
 const RESULTS = {results_json};
-const PAGE_META = {page_meta_json};
+const TASK_META = {task_meta_json};
 
 let currentPageIdx = -1;
 let currentStepIdx = -1;
 let lastExecutedIdx = -1;
 let playTimer = null;
 let mode = 'view';
+
+function getResultTaskId(result) {{
+    return result?.task_id || result?.page_id || '';
+}}
 
 // ═══════════════════════════════════════════════════════════════
 // Prompt drawer
@@ -732,7 +743,7 @@ function showReplayStatus(text) {{
 let activeReplaySession = null;
 
 function getStoredInstruction(result) {{
-    const meta = PAGE_META[result.page_id] || {{}};
+    const meta = TASK_META[getResultTaskId(result)] || {{}};
     return meta.instruction || result.instruction || '';
 }}
 
@@ -772,7 +783,7 @@ async function buildReplayUrl(result, resetSession = false) {{
     const replay = result?.replay || {{}};
     if (replay.kind !== 'env') {{
         if (resetSession) await destroyActiveReplaySession();
-        return SERVER_URL + (replay.url || ('/pages/' + result.page_id));
+        return null;
     }}
 
     if (
@@ -859,7 +870,7 @@ RESULTS.forEach((r, idx) => {{
 
     const titleEl = document.createElement('div');
     titleEl.className = 'page-title';
-    titleEl.textContent = r.title || r.page_id;
+    titleEl.textContent = r.title || getResultTaskId(r);
 
     const metaEl = document.createElement('div');
     metaEl.className = 'page-meta';
@@ -892,7 +903,7 @@ async function selectPage(idx) {{
 
     const r = RESULTS[idx];
     const success = r.evaluation && r.evaluation.success;
-    const title = r.title || r.page_id || 'Untitled';
+    const title = r.title || getResultTaskId(r) || 'Untitled';
     document.getElementById('instruction').textContent = getDisplayedInstruction(r) || title;
     const scoreEl = document.getElementById('score');
     const scoreVal = getResultScore(r);
@@ -1218,16 +1229,17 @@ def main():
         data = json.load(f)
 
     # Attach manifest metadata without discarding result-supplied env task metadata.
-    page_meta = data.get("page_meta", {})
+    task_meta = load_embedded_task_meta(data)
     try:
         manifest_path = Path(__file__).parent / "manifest.json"
         with open(manifest_path) as mf:
             manifest = json.load(mf)
-        for page in manifest.get("pages", []):
-            page_meta[page["page_id"]] = {**page, **page_meta.get(page["page_id"], {})}
-        data["page_meta"] = page_meta
+        data["task_meta"] = {
+            **build_manifest_task_meta(manifest),
+            **task_meta,
+        }
     except Exception:
-        data["page_meta"] = page_meta
+        data["task_meta"] = task_meta
 
     # Determine output path
     if args.output:

@@ -1,6 +1,6 @@
 # WebAgentBench
 
-WebAgentBench is a self-contained benchmark for evaluating web agents through interaction rather than through API shortcuts or pure text retrieval. The benchmark is organized as a set of web pages with task-specific latent state, explicit submission mechanics, and evaluator-side success checks. Its purpose is to measure whether an agent can complete realistic browser tasks that require composing cognitive primitives such as exploration, memory, backtracking, constraint satisfaction, patience, adversarial robustness, and verification.
+WebAgentBench is a self-contained benchmark for evaluating web agents through interaction rather than through API shortcuts or pure text retrieval. The active benchmark is organized around simulated application environments with task-specific state, explicit interaction surfaces, and evaluator-side success checks. Its purpose is to measure whether an agent can complete realistic browser tasks that require composing cognitive primitives such as exploration, memory, backtracking, constraint satisfaction, patience, adversarial robustness, and verification.
 
 The current benchmark line should be understood as a methodological shift away from shortcut-prone answer extraction and toward policy-constrained execution. Several earlier tasks were too easy for strong models because the answer could be lifted directly from the accessibility tree or inferred from shallow textual overlap. The later iterations therefore moved difficulty toward temporal consistency, distractor resistance, superseding evidence, hidden failure modes, and explicit post-action verification.
 
@@ -9,6 +9,8 @@ Equally important, the later iterations improved benchmark validity rather than 
 ## Task Authoring
 
 For the Gmail environment task authoring standard and batch-generation guide, see [docs/GMAIL_TASK_GENERATION_STANDARD.md](/Users/michael/Documents/GitHub/LLMOS/webagentbench/docs/GMAIL_TASK_GENERATION_STANDARD.md).
+
+For a record of the retired page-based runtime and other removed legacy systems, see [docs/PAST_IMPLEMENTATIONS.md](/Users/michael/Documents/GitHub/LLMOS/webagentbench/docs/PAST_IMPLEMENTATIONS.md).
 
 ## Version Registry
 

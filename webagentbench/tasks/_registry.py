@@ -44,8 +44,31 @@ def load_all_tasks() -> dict[str, TaskDefinition]:
             logger.exception("Failed to load task from %s", yaml_path)
             raise
 
+    _validate_builder_references(index, sources)
     logger.info("Loaded %d tasks from %s", len(index), TASKS_DIR)
     return index
+
+
+def _validate_builder_references(
+    index: dict[str, TaskDefinition],
+    sources: dict[str, Path],
+) -> None:
+    """Verify every seed step references a registered builder.
+
+    Importing BUILDER_REGISTRY here (not at module level) avoids circular
+    imports while still catching missing builders at startup.
+    """
+    from ._seed_builders import BUILDER_REGISTRY
+
+    for task in index.values():
+        if task.seed is None:
+            continue
+        for step in task.seed.steps:
+            if step.use not in BUILDER_REGISTRY:
+                raise ValueError(
+                    f"Task '{task.task_id}' ({sources[task.task_id]}) "
+                    f"references unknown builder '{step.use}'"
+                )
 
 
 def get_task(task_id: str) -> TaskDefinition:
@@ -65,8 +88,3 @@ def tasks_by_env() -> dict[str, list[TaskDefinition]]:
 def env_tasks(env_id: str) -> list[TaskDefinition]:
     """Return all tasks for a specific environment."""
     return tasks_by_env().get(env_id, [])
-
-
-def page_tasks() -> list[TaskDefinition]:
-    """Return all tasks for the legacy 'page' environment."""
-    return env_tasks("page")
