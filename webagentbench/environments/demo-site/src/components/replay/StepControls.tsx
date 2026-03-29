@@ -29,7 +29,7 @@ export function StepControls({ current, total, onStep, isBusy = false }: StepCon
   }, [current, total]);
 
   const btnClass =
-    "w-7 h-7 flex items-center justify-center rounded-[10px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg)] transition-all duration-150 disabled:opacity-25 disabled:pointer-events-none bg-transparent";
+    "w-7 h-7 flex items-center justify-center rounded-[10px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all duration-150 disabled:opacity-25 disabled:pointer-events-none bg-transparent";
 
   return (
     <div className="flex items-center bg-[var(--surface-raised)] rounded-xl p-1 gap-0.5">
