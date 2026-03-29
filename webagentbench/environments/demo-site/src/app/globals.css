@@ -3,21 +3,25 @@
 @tailwind utilities;
 
 :root {
-  --bg: oklch(10% 0.005 260);
-  --surface: oklch(15% 0.005 260);
-  --border: oklch(26% 0.008 260);
-  --text-primary: oklch(95% 0.005 260);
-  --text-secondary: oklch(78% 0.008 260);
-  --text-tertiary: oklch(62% 0.008 260);
-  --accent: oklch(78% 0.12 250);
-  --green: oklch(78% 0.12 155);
-  --red: oklch(72% 0.14 25);
+  --bg: oklch(10% 0.01 260);
+  --surface: oklch(16% 0.012 260);
+  --surface-raised: oklch(20% 0.015 260);
+  --border: oklch(28% 0.015 260);
+  --text-primary: oklch(95% 0.005 250);
+  --text-secondary: oklch(75% 0.01 255);
+  --text-tertiary: oklch(55% 0.012 260);
+  --accent: oklch(76% 0.14 250);
+  --green: oklch(78% 0.14 155);
+  --red: oklch(72% 0.15 25);
+  --amber: oklch(75% 0.13 85);
+  --shadow: oklch(0% 0 0 / 0.5);
 }
 
 @media (prefers-color-scheme: light) {
   :root:not([data-theme="dark"]) {
     --bg: oklch(98% 0.003 260);
     --surface: oklch(95% 0.003 260);
+    --surface-raised: oklch(100% 0 0);
     --border: oklch(85% 0.005 260);
     --text-primary: oklch(10% 0.005 260);
     --text-secondary: oklch(35% 0.01 260);
@@ -25,12 +29,15 @@
     --accent: oklch(45% 0.15 250);
     --green: oklch(45% 0.12 155);
     --red: oklch(50% 0.14 25);
+    --amber: oklch(52% 0.13 85);
+    --shadow: oklch(0% 0 0 / 0.08);
   }
 }
 
 :root[data-theme="light"] {
   --bg: oklch(98% 0.003 260);
   --surface: oklch(95% 0.003 260);
+  --surface-raised: oklch(100% 0 0);
   --border: oklch(85% 0.005 260);
   --text-primary: oklch(10% 0.005 260);
   --text-secondary: oklch(35% 0.01 260);
@@ -38,6 +45,8 @@
   --accent: oklch(45% 0.15 250);
   --green: oklch(45% 0.12 155);
   --red: oklch(50% 0.14 25);
+  --amber: oklch(52% 0.13 85);
+  --shadow: oklch(0% 0 0 / 0.08);
 }
 
 html {
@@ -61,6 +70,7 @@ body {
 
 html {
   color-scheme: dark light !important;
+  overscroll-behavior: none;
 }
 
 /* Hide scrollbars but keep scrolling */

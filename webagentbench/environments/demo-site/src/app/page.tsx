@@ -67,7 +67,7 @@ export default function LandingPage() {
             <span className="w-[7px] h-[7px] rounded-full bg-[var(--green)]" />
             accessibility tree · gmail_thread_detective
           </div>
-          <div className="p-6 bg-[var(--surface)] font-mono text-[13px] text-[var(--text-secondary)] leading-8">
+          <div className="p-6 bg-[var(--surface-raised)] font-mono text-[13px] text-[var(--text-secondary)] leading-8">
             <span className="text-[var(--text-tertiary)] mr-1">[1]</span>{" "}
             <span className="text-[var(--accent)]">button</span>{" "}
             <span className="text-[var(--text-primary)]">&quot;Compose&quot;</span>
