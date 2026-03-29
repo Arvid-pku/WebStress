@@ -180,8 +180,11 @@ export default function TrajectoryPage({ taskId }: { taskId: string }) {
   const activeAction = activeStep?.action;
   const replayFixture = replayState?.fixture ?? fixture?.state ?? null;
 
-  const criteria = data.evaluation?.criteria_results ?? [];
+  const allChecks = data.evaluation?.criteria_results ?? [];
+  const criteria = allChecks.filter((c) => c.kind !== "penalty");
+  const penalties = allChecks.filter((c) => c.kind === "penalty");
   const passCount = criteria.filter((c) => c.passed).length;
+  const penaltyTriggered = penalties.filter((c) => !c.passed).length;
   const scorePct = Math.max(0, Math.min(100, (score ?? 0) * 100));
   const scoreColor = success
     ? "var(--green)"
@@ -321,6 +324,9 @@ export default function TrajectoryPage({ taskId }: { taskId: string }) {
                     {criteria.length > 0 && (
                       <span className="ml-1.5 text-[10px]" style={{ color: scoreColor }}>
                         {passCount}/{criteria.length}
+                        {penaltyTriggered > 0 && (
+                          <span className="text-[var(--red)]"> −{penaltyTriggered}p</span>
+                        )}
                       </span>
                     )}
                   </button>
@@ -373,18 +379,17 @@ export default function TrajectoryPage({ taskId }: { taskId: string }) {
                       </p>
                     )}
 
-                    {/* Failed criteria (positive checks that didn't pass) */}
-                    {criteria.some((c) => c.passed === false && c.kind !== "penalty") && (
+                    {/* Failed criteria */}
+                    {criteria.some((c) => !c.passed) && (
                       <div className="mb-4">
                         <div className="flex items-center gap-2 mb-2 px-1">
                           <span className="w-1.5 h-1.5 rounded-full bg-[var(--red)]" />
                           <span className="text-[11px] font-medium text-[var(--red)]">
-                            Failed ({criteria.filter((c) => c.passed === false && c.kind !== "penalty").length})
+                            Failed ({criteria.filter((c) => !c.passed).length})
                           </span>
                         </div>
                         <div className="flex flex-col gap-0.5">
-                          {criteria.map((cr, i) => {
-                            if (cr.passed !== false || cr.kind === "penalty") return null;
+                          {criteria.filter((cr) => !cr.passed).map((cr, i) => {
                             const relevantSteps = findRelevantSteps(data.steps, cr.desc);
                             return (
                               <div key={i} className="px-3 py-2.5 rounded-xl bg-[var(--red)]/[0.05]">
@@ -411,61 +416,43 @@ export default function TrajectoryPage({ taskId }: { taskId: string }) {
                       </div>
                     )}
 
-                    {/* Triggered penalties (negative checks that failed) */}
-                    {criteria.some((c) => c.passed === false && c.kind === "penalty") && (
+                    {/* Triggered penalties (negative checks the agent violated) */}
+                    {penaltyTriggered > 0 && (
                       <div className="mb-4">
                         <div className="flex items-center gap-2 mb-2 px-1">
                           <span className="w-1.5 h-1.5 rounded-full bg-[var(--amber)]" />
                           <span className="text-[11px] font-medium text-[var(--amber)]">
-                            Penalties ({criteria.filter((c) => c.passed === false && c.kind === "penalty").length})
+                            Penalties triggered ({penaltyTriggered})
                           </span>
                         </div>
                         <div className="flex flex-col gap-0.5">
-                          {criteria.map((cr, i) => {
-                            if (cr.passed !== false || cr.kind !== "penalty") return null;
-                            const relevantSteps = findRelevantSteps(data.steps, cr.desc);
-                            return (
-                              <div key={i} className="px-3 py-2.5 rounded-xl bg-[var(--amber)]/[0.07]">
-                                <p className="text-[12px] leading-[1.5] text-[var(--text-primary)]">
-                                  {cr.desc}
-                                </p>
-                                {cr.penalty != null && cr.penalty > 0 && (
-                                  <span className="text-[10px] text-[var(--amber)] mt-0.5 inline-block">
-                                    -{cr.penalty} penalty
-                                  </span>
-                                )}
-                                {relevantSteps.length > 0 && (
-                                  <div className="flex flex-wrap gap-1 mt-1.5">
-                                    {relevantSteps.map((stepIdx) => (
-                                      <button
-                                        key={stepIdx}
-                                        onClick={() => handleStepChange(stepIdx)}
-                                        className="text-[10px] px-1.5 py-0.5 rounded-md text-[var(--accent)] bg-[var(--accent)]/[0.08] hover:bg-[var(--accent)]/[0.15] cursor-pointer transition-colors"
-                                      >
-                                        step {data.steps[stepIdx].step}
-                                      </button>
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
+                          {penalties.filter((cr) => !cr.passed).map((cr, i) => (
+                            <div key={i} className="px-3 py-2.5 rounded-xl bg-[var(--amber)]/[0.07]">
+                              <p className="text-[12px] leading-[1.5] text-[var(--text-primary)]">
+                                {cr.desc}
+                              </p>
+                              {cr.penalty != null && cr.penalty > 0 && (
+                                <span className="text-[10px] text-[var(--amber)] mt-0.5 inline-block">
+                                  −{cr.penalty} penalty
+                                </span>
+                              )}
+                            </div>
+                          ))}
                         </div>
                       </div>
                     )}
 
                     {/* Passed criteria */}
-                    {criteria.some((c) => c.passed === true) && (
-                      <div>
+                    {criteria.some((c) => c.passed) && (
+                      <div className="mb-4">
                         <div className="flex items-center gap-2 mb-2 px-1">
                           <span className="w-1.5 h-1.5 rounded-full bg-[var(--green)]" />
                           <span className="text-[11px] font-medium text-[var(--green)]">
-                            Passed ({criteria.filter((c) => c.passed === true).length})
+                            Passed ({passCount})
                           </span>
                         </div>
                         <div className="flex flex-col gap-0.5">
-                          {criteria.map((cr, i) => {
-                            if (cr.passed !== true) return null;
+                          {criteria.filter((cr) => cr.passed).map((cr, i) => {
                             const relevantSteps = findRelevantSteps(data.steps, cr.desc);
                             return (
                               <div key={i} className="px-3 py-2 rounded-xl hover:bg-[var(--bg)]/50 transition-colors">
@@ -488,6 +475,27 @@ export default function TrajectoryPage({ taskId }: { taskId: string }) {
                               </div>
                             );
                           })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Penalties avoided (negative checks the agent didn't trigger — good) */}
+                    {penalties.some((c) => c.passed) && (
+                      <div>
+                        <div className="flex items-center gap-2 mb-2 px-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[var(--text-tertiary)]" />
+                          <span className="text-[11px] font-medium text-[var(--text-tertiary)]">
+                            Penalties avoided ({penalties.filter((c) => c.passed).length})
+                          </span>
+                        </div>
+                        <div className="flex flex-col gap-0.5">
+                          {penalties.filter((cr) => cr.passed).map((cr, i) => (
+                            <div key={i} className="px-3 py-2 rounded-xl">
+                              <p className="text-[12px] leading-[1.5] text-[var(--text-tertiary)]">
+                                {cr.desc}
+                              </p>
+                            </div>
+                          ))}
                         </div>
                       </div>
                     )}
