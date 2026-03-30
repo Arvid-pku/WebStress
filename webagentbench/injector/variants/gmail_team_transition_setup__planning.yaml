@@ -1,0 +1,51 @@
+variant_id: gmail_team_transition_setup__planning_v1
+base_task_id: gmail_team_transition_setup
+target_primitive: planning
+description: Scrambled timestamps and stale data force planning around dependency
+  order and validation.
+injections:
+- layer: server
+  params:
+    action: scramble_timestamps
+    timestamp_shift_range:
+    - -7200
+    - 7200
+    affected_endpoints:
+    - emails
+    description: Email timestamps shifted randomly ±2 hours
+- layer: network
+  params:
+    action: stale_data
+    url_pattern: '**/api/env/gmail/emails'
+    stale_body:
+      emails: []
+      total: 0
+    stale_count: 1
+    behavior:
+      mode: once
+- layer: network
+  params:
+    action: delay
+    url_pattern: '**/api/env/gmail/labels'
+    delay_ms: 2500
+    behavior:
+      mode: progressive
+      stages:
+      - call_number: 1
+        delay_ms: 1000
+      - call_number: 2
+        delay_ms: 2000
+      - call_number: 3
+        delay_ms: 2500
+- layer: network
+  params:
+    action: delay
+    url_pattern: '**/api/env/gmail/filters'
+    delay_ms: 2000
+    behavior:
+      mode: progressive
+      stages:
+      - call_number: 1
+        delay_ms: 1000
+      - call_number: 2
+        delay_ms: 2000

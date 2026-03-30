@@ -1,0 +1,32 @@
+variant_id: gmail_incident_postmortem_assembly__exploration_v1
+base_task_id: gmail_incident_postmortem_assembly
+target_primitive: exploration
+description: Critical incident details hidden in stale search results and non-obvious
+  email threads
+injections:
+- layer: network
+  params:
+    action: stale_data
+    url_pattern: '**/api/env/gmail/search**'
+    stale_body:
+      emails: []
+      total: 0
+      message: No results found
+    stale_count: 2
+    behavior:
+      mode: once
+- layer: network
+  params:
+    action: delay
+    url_pattern: '**/api/env/gmail/emails'
+    delay_ms: 3000
+    behavior:
+      mode: progressive
+      stages:
+      - requests: 2
+        delay_ms: 3000
+      - requests: 3
+        delay_ms: 5000
+- layer: server
+  params:
+    action: hide_prerequisite

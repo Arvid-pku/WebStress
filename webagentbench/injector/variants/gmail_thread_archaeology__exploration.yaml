@@ -1,0 +1,27 @@
+variant_id: gmail_thread_archaeology__exploration
+base_task_id: gmail_thread_archaeology
+target_primitive: exploration
+description: Stale search results force re-fetching to find buried thread information
+injections:
+- layer: network
+  params:
+    action: stale_data
+    url_pattern: '**/api/env/gmail/search**'
+    stale_body:
+      emails: []
+      total: 0
+    stale_count: 2
+    behavior:
+      mode: once
+      message: Search returned stale empty results
+- layer: seed
+  params:
+    action: increase_distractors
+    count: 8
+    topical_count: 5
+    topical_subjects:
+    - 'Re: Old project archives'
+    - 'Fwd: Historical data request'
+    - 'Thread: Legacy system notes'
+    - 'Archive: Past correspondence'
+    - 'Old: Previous discussion'

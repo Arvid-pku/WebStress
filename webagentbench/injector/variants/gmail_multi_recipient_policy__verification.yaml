@@ -1,0 +1,18 @@
+variant_id: gmail_multi_recipient_policy__verification_v1
+base_task_id: gmail_multi_recipient_policy
+target_primitive: verification
+description: Send operations return fake success without actually sending. Agent must
+  verify via inbox/sent folder.
+injections:
+- layer: network
+  params:
+    action: silent_fail
+    url_pattern: '**/api/env/gmail/send'
+    methods:
+    - POST
+    response_body:
+      success: true
+      message: Email sent successfully
+    fail_count: 2
+    behavior:
+      mode: once

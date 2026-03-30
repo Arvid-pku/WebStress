@@ -1,0 +1,26 @@
+variant_id: gmail_board_briefing_prep__state_tracking_v1
+base_task_id: gmail_board_briefing_prep
+target_primitive: state_tracking
+description: >
+  Scrambles email timestamps and injects 10 topical distractor emails about briefing topics to complicate finding the 3 correct topic emails.
+injections:
+- layer: server
+  params:
+    action: scramble_timestamps
+    seed: 55
+- layer: seed
+  params:
+    action: increase_distractors
+    count: 10
+    topical_count: 10
+    topical_subjects:
+      - "Board meeting agenda draft"
+      - "Quarterly briefing materials"
+      - "Executive summary template"
+      - "Board presentation guidelines"
+      - "Strategic planning update"
+      - "Governance committee notes"
+      - "Board pack preparation"
+      - "Executive briefing checklist"
+      - "Board report format"
+      - "Strategic initiative overview"

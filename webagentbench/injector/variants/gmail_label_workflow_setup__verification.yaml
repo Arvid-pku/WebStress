@@ -1,0 +1,32 @@
+variant_id: gmail_label_workflow_setup__verification_v1
+base_task_id: gmail_label_workflow_setup
+target_primitive: verification
+description: Label and filter creation silently fails, requiring verification before
+  proceeding
+injections:
+- layer: network
+  params:
+    action: silent_fail
+    url_pattern: '**/api/env/gmail/labels'
+    methods:
+    - POST
+    response_body:
+      success: true
+      message: Label created successfully
+      label_id: fake-label-id
+    fail_count: 2
+    behavior:
+      mode: once
+- layer: network
+  params:
+    action: silent_fail
+    url_pattern: '**/api/env/gmail/filters'
+    methods:
+    - POST
+    response_body:
+      success: true
+      message: Filter created successfully
+      filter_id: fake-filter-id
+    fail_count: 1
+    behavior:
+      mode: once

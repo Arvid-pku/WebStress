@@ -1,0 +1,23 @@
+variant_id: gmail_thread_blame_trace__state_tracking
+base_task_id: gmail_thread_blame_trace
+target_primitive: state_tracking
+description: Scrambled timestamps and many distractors stress aggregation of who-said-what
+  across thread
+injections:
+- layer: server
+  params:
+    action: scramble_timestamps
+- layer: seed
+  params:
+    action: increase_distractors
+    count: 12
+    topical_count: 8
+    topical_subjects:
+    - 'Re: Attribution discussion'
+    - 'Fwd: Who was responsible?'
+    - 'Thread: Assignment tracking'
+    - 'Re: Ownership clarification'
+    - 'Fwd: Decision history'
+    - 'Re: Timeline review'
+    - 'Thread: Accountability audit'
+    - 'Re: Source verification'

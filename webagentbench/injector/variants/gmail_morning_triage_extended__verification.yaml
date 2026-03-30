@@ -1,0 +1,43 @@
+variant_id: gmail_morning_triage_extended__verification_v1
+base_task_id: gmail_morning_triage_extended
+target_primitive: verification
+description: Multiple action types silently fail requiring verification at each step
+injections:
+- layer: network
+  params:
+    action: silent_fail
+    url_pattern: '**/api/env/gmail/emails/*/star'
+    methods:
+    - POST
+    response_body:
+      success: true
+      message: Email starred successfully
+    fail_count: 1
+    behavior:
+      mode: once
+- layer: network
+  params:
+    action: silent_fail
+    url_pattern: '**/api/env/gmail/send'
+    methods:
+    - POST
+    response_body:
+      success: true
+      message: Email sent successfully
+      email_id: fake-send-id
+    fail_count: 2
+    behavior:
+      mode: once
+- layer: network
+  params:
+    action: silent_fail
+    url_pattern: '**/api/env/gmail/labels'
+    methods:
+    - POST
+    response_body:
+      success: true
+      message: Label created successfully
+      label_id: fake-label-id
+    fail_count: 1
+    behavior:
+      mode: once

@@ -1,0 +1,25 @@
+variant_id: gmail_interview_scheduling__verification_v1
+base_task_id: gmail_interview_scheduling
+target_primitive: verification
+description: Confirmation emails silently fail to send, requiring verification of
+  scheduling actions
+injections:
+- layer: network
+  params:
+    action: silent_fail
+    url_pattern: '**/api/env/gmail/send'
+    methods:
+    - POST
+    response_body:
+      success: true
+      message: Email sent successfully
+      email_id: fake-confirmation-id
+    fail_count: 2
+    behavior:
+      mode: once
+- layer: seed
+  params:
+    action: add_confusing_decoys
+    decoys:
+    - Confirmation for wrong time slot
+    - Outdated availability that conflicts

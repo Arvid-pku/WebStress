@@ -1,0 +1,17 @@
+variant_id: gmail_filter_architect__verification_v1
+base_task_id: gmail_filter_architect
+target_primitive: verification
+description: >
+  Silent fail on first 2 filter creation attempts. Server returns fake success
+  but filters not created. Agent must verify filter list to detect missing
+  filters and recreate them.
+injections:
+- layer: network
+  params:
+    action: silent_fail
+    url_pattern: "**/api/env/gmail/filters"
+    methods: ["POST"]
+    response_body: {"success": true, "filter": {"id": "fake_filter"}}
+    fail_count: 2
+    behavior:
+      mode: once

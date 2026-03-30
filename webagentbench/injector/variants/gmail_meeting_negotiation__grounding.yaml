@@ -1,0 +1,23 @@
+variant_id: gmail_meeting_negotiation__grounding_v1
+base_task_id: gmail_meeting_negotiation
+target_primitive: grounding
+description: Ambiguous availability signals and conflicting constraints make identifying
+  viable time slots difficult
+injections:
+- layer: seed
+  params:
+    action: add_confusing_decoys
+    decoys:
+    - Maybe available which means no
+    - Prefer morning but actually unavailable
+    - Afternoon works but later cancelled
+    - Flexible but has hard constraints
+    - Available except during proposed times
+- layer: seed
+  params:
+    action: alias_entities
+- layer: server
+  params:
+    action: inject_distractor_emails
+    count: 10
+    subject_prefix: 'Re: Meeting'

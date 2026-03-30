@@ -1,0 +1,17 @@
+variant_id: gmail_filter_overhaul__verification_v1
+base_task_id: gmail_filter_overhaul
+target_primitive: verification
+description: >
+  Silent fail on first filter creation. Agent must verify created filters
+  match policy requirements, detect missing filter, and recreate it to
+  complete overhaul.
+injections:
+- layer: network
+  params:
+    action: silent_fail
+    url_pattern: "**/api/env/gmail/filters"
+    methods: ["POST"]
+    response_body: {"success": true, "filter": {"id": "fake_filter"}}
+    fail_count: 1
+    behavior:
+      mode: once

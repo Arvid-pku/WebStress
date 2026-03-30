@@ -1,0 +1,18 @@
+variant_id: gmail_priority_escalation__verification_v1
+base_task_id: gmail_priority_escalation
+target_primitive: verification
+description: Send/forward operations silently fail. Agent must verify escalation emails
+  were actually sent.
+injections:
+- layer: network
+  params:
+    action: silent_fail
+    url_pattern: '**/api/env/gmail/send'
+    methods:
+    - POST
+    response_body:
+      success: true
+      message: Email sent successfully
+    fail_count: 3
+    behavior:
+      mode: once

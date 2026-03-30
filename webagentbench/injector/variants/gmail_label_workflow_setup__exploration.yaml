@@ -1,0 +1,28 @@
+variant_id: gmail_label_workflow_setup__exploration_v1
+base_task_id: gmail_label_workflow_setup
+target_primitive: exploration
+description: Requirements email has stale data and workflow prerequisites are hidden
+injections:
+- layer: network
+  params:
+    action: stale_data
+    url_pattern: '**/api/env/gmail/emails'
+    stale_body:
+      emails: []
+      total: 0
+    stale_count: 1
+    behavior:
+      mode: once
+- layer: network
+  params:
+    action: delay
+    url_pattern: '**/api/env/gmail/labels'
+    delay_ms: 2000
+    behavior:
+      mode: progressive
+      stages:
+      - requests: 1
+        delay_ms: 2000
+- layer: server
+  params:
+    action: hide_prerequisite
