@@ -124,6 +124,53 @@ function countUnread(state: GmailFixture, label: string): number {
   return listEmails(state, label).filter((e) => !e.is_read).length;
 }
 
+function mailboxCounts(state: GmailFixture): Record<string, number> {
+  const labelsByName = new Map(
+    state.labels.map((label) => [label.name.toLowerCase(), label]),
+  );
+  const counts: Record<string, number> = {
+    archived: listEmails(state, "archived").length,
+    unread_inbox: countUnread(state, "inbox"),
+  };
+
+  for (const label of state.labels) {
+    counts[label.name.toLowerCase()] = 0;
+    counts[label.id] = 0;
+  }
+
+  for (const email of state.emails) {
+    for (const labelName of email.labels) {
+      const normalized = labelName.toLowerCase();
+      counts[normalized] = (counts[normalized] ?? 0) + 1;
+      const label = labelsByName.get(normalized);
+      if (label) {
+        counts[label.id] = (counts[label.id] ?? 0) + 1;
+      }
+    }
+  }
+
+  const sentCount = state.sent.length;
+  const draftCount = state.drafts.length;
+  const trashCount = state.deleted.length;
+  const allMailCount = state.emails.length + sentCount;
+  const specialCounts = {
+    sent: sentCount,
+    drafts: draftCount,
+    trash: trashCount,
+    "all mail": allMailCount,
+  };
+
+  for (const [name, value] of Object.entries(specialCounts)) {
+    counts[name] = value;
+    const label = labelsByName.get(name);
+    if (label) {
+      counts[label.id] = value;
+    }
+  }
+
+  return counts;
+}
+
 function paginate<T>(
   items: T[],
   page: number,
@@ -220,13 +267,7 @@ route("GET", "emails", (state, _params, _body, query) => {
     state,
     response: {
       ...payload,
-      counts: {
-        inbox: listEmails(state, "inbox").length,
-        archived: listEmails(state, "archived").length,
-        sent: state.sent.length,
-        trash: state.deleted.length,
-        unread_inbox: countUnread(state, "inbox"),
-      },
+      counts: mailboxCounts(state),
     },
   };
 });

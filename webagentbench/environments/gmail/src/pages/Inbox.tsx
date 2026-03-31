@@ -26,10 +26,12 @@ function categoryOf(email: Email): string {
 
 async function fetchMailboxSnapshot(
   api: ReturnType<typeof useGmailLayout>["api"],
-  label: string,
+  options: { label: string; starred?: boolean },
 ): Promise<EmailListResponse> {
+  const { label, starred } = options;
   const firstPage = await api.listEmails({
     label,
+    starred,
     page: 1,
     page_size: API_PAGE_SIZE,
   });
@@ -41,6 +43,7 @@ async function fetchMailboxSnapshot(
     Array.from({ length: firstPage.pages - 1 }, (_, index) =>
       api.listEmails({
         label,
+        starred,
         page: index + 2,
         page_size: API_PAGE_SIZE,
       }),
@@ -60,15 +63,25 @@ export function InboxPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const label = searchParams.get("label") ?? "inbox";
+  const filter = searchParams.get("filter");
   const page = Number(searchParams.get("page") ?? 1);
   const category = searchParams.get("category") ?? "primary";
+  const isStarredView = label === "starred" || filter === "starred";
+  const showCategoryTabs = label === "inbox" && !isStarredView;
+  const mailboxQuery = useMemo(
+    () => ({
+      label,
+      starred: filter === "starred" ? true : undefined,
+    }),
+    [filter, label],
+  );
 
   useEffect(() => {
     let cancelled = false;
     setIsLoading(true);
     setError(null);
-    // Category tabs filter client-side, so fetch the full mailbox via pagination.
-    fetchMailboxSnapshot(api, label)
+    // Category tabs filter client-side, so fetch the full mailbox view via pagination.
+    fetchMailboxSnapshot(api, mailboxQuery)
       .then((response) => {
         if (!cancelled) setInbox(response);
       })
@@ -79,10 +92,10 @@ export function InboxPage() {
         if (!cancelled) setIsLoading(false);
       });
     return () => { cancelled = true; };
-  }, [api, label]);
+  }, [api, mailboxQuery]);
 
   const reload = async () => {
-    const response = await fetchMailboxSnapshot(api, label);
+    const response = await fetchMailboxSnapshot(api, mailboxQuery);
     setInbox(response);
     await refreshMailbox();
   };
@@ -96,9 +109,9 @@ export function InboxPage() {
   // Filter by category, then paginate client-side
   const filteredEmails = useMemo(() => {
     if (!inbox) return [];
-    if (category === "all") return inbox.items;
+    if (!showCategoryTabs || category === "all") return inbox.items;
     return inbox.items.filter((email) => categoryOf(email) === category);
-  }, [inbox, category]);
+  }, [category, inbox, showCategoryTabs]);
 
   const totalItems = filteredEmails.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
@@ -106,28 +119,31 @@ export function InboxPage() {
   const rangeEnd = Math.min(page * PAGE_SIZE, totalItems);
   const pageItems = filteredEmails.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  const labelTitle = label === "inbox" ? "Inbox" : label[0]?.toUpperCase() + label.slice(1);
+  const labelTitle = isStarredView
+    ? "Starred"
+    : (label === "inbox" ? "Inbox" : label[0]?.toUpperCase() + label.slice(1));
 
   return (
     <main className="gmail-page" aria-label={labelTitle}>
-      {/* Gmail-style category tabs */}
       <div className="gmail-toolbar">
         <div className="gmail-toolbar__left">
-          <Tabs
-            label="Inbox categories"
-            items={[
-              { label: "Primary", value: "primary" },
-              { label: "Promotions", value: "promotions" },
-              { label: "Updates", value: "updates" },
-              { label: "All Mail", value: "all" },
-            ]}
-            value={category}
-            onChange={(next) => setSearchParams((current) => {
-              current.set("category", next);
-              current.set("page", "1");
-              return current;
-            })}
-          />
+          {showCategoryTabs ? (
+            <Tabs
+              label="Inbox categories"
+              items={[
+                { label: "Primary", value: "primary" },
+                { label: "Promotions", value: "promotions" },
+                { label: "Updates", value: "updates" },
+                { label: "All Mail", value: "all" },
+              ]}
+              value={category}
+              onChange={(next) => setSearchParams((current) => {
+                current.set("category", next);
+                current.set("page", "1");
+                return current;
+              })}
+            />
+          ) : null}
         </div>
         <div className="gmail-toolbar__right">
           {totalItems > 0 ? (
@@ -173,7 +189,11 @@ export function InboxPage() {
       {!isLoading && inbox && pageItems.length === 0 ? (
         <EmptyState
           title="No messages match this view"
-          description="Try another category tab to find the emails you're looking for."
+          description={
+            showCategoryTabs
+              ? "Try another category tab to find the emails you're looking for."
+              : "Try another mailbox view to find the emails you're looking for."
+          }
         />
       ) : null}
 

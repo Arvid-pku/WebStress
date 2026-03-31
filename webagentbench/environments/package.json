@@ -13,6 +13,9 @@
   "scripts": {
     "build": "pnpm --filter @webagentbench/shared build && pnpm --filter @webagentbench/gmail build",
     "dev:gmail": "pnpm --filter @webagentbench/gmail dev",
-    "typecheck": "pnpm -r typecheck"
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm --filter @webagentbench/gmail test:run",
+    "test:gmail": "pnpm --filter @webagentbench/gmail test:run",
+    "start:gmail": "bash ../../scripts/dev-gmail.sh"
   }
 }

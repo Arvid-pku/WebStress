@@ -12,6 +12,9 @@ export default defineConfig({
     port: 4173,
     proxy: {
       "/api": "http://127.0.0.1:8080",
+      "/manifest": "http://127.0.0.1:8080",
+      "/static": "http://127.0.0.1:8080",
+      "/launch": "http://127.0.0.1:8080",
     },
   },
 });

@@ -37,8 +37,15 @@ function useIsActive(to: string): boolean {
 
   const toParams = new URLSearchParams(toSearch);
   const currentParams = new URLSearchParams(location.search);
+  // All params specified in `to` must exist in the current URL
   for (const [key, value] of toParams) {
     if (currentParams.get(key) !== value) return false;
+  }
+  // Current URL must not have routing-significant params that `to` omits,
+  // otherwise e.g. Inbox (?label=inbox) also matches Starred (?label=inbox&filter=starred)
+  const routingKeys = ["label", "filter"];
+  for (const key of routingKeys) {
+    if (currentParams.has(key) && !toParams.has(key)) return false;
   }
   return true;
 }

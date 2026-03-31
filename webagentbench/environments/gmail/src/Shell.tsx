@@ -12,6 +12,7 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { createGmailApi } from "./api";
 import { GmailLayoutContext } from "./context";
 import { GmailLogo, IconCompose } from "./icons";
+import { inferVisibleThreads, loadMailboxSummary } from "./mailboxSummary";
 import type { MailboxSummary } from "./types";
 
 export function GmailShell({ sessionId }: { sessionId: string }) {
@@ -51,25 +52,18 @@ export function GmailShell({ sessionId }: { sessionId: string }) {
   const refreshMailbox = useCallback(async () => {
     setIsRefreshing(true);
     try {
-      const [labels, emails] = await Promise.all([
-        api.getLabels(),
-        api.listEmails({ page: 1, page_size: 100 }),
-      ]);
-      const counts = emails.items.reduce<Record<string, number>>(
-        (acc, email) => {
-          email.labels.forEach((l) => { acc[l] = (acc[l] ?? 0) + 1; });
-          if (email.is_starred) acc.starred = (acc.starred ?? 0) + 1;
-          return acc;
-        },
-        { ...(emails.counts ?? {}) },
-      );
-      setSummary({ labels, counts });
+      const nextSummary = await loadMailboxSummary(api);
+      setSummary(nextSummary);
       const loc = locationRef.current;
+      const params = new URLSearchParams(loc.search);
+      const currentFilter = params.get("filter");
       update({
         sessionId,
         currentRoute: loc.pathname,
-        visibleThreads: emails.items.length,
-        currentLabel: new URLSearchParams(loc.search).get("label") ?? "inbox",
+        visibleThreads: inferVisibleThreads(loc.pathname, loc.search, nextSummary.counts),
+        currentLabel: currentFilter === "starred"
+          ? "starred"
+          : (params.get("label") ?? "inbox"),
       });
     } catch {
       // Silently continue — sidebar counts will be stale but the app remains usable
@@ -150,7 +144,29 @@ export function GmailShell({ sessionId }: { sessionId: string }) {
             >
               <IconCompose /> Compose
             </Button>
-            <Sidebar title="Gmail navigation" sections={navItems} />
+            <Sidebar
+              title="Gmail navigation"
+              sections={navItems}
+              footer={
+                <a
+                  href="/launch"
+                  style={{
+                    display: "block",
+                    padding: "0.5rem 0.75rem",
+                    fontSize: "0.85rem",
+                    color: "#656d76",
+                    textDecoration: "none",
+                    borderTop: "1px solid #d0d7de",
+                    marginTop: "0.5rem",
+                    paddingTop: "0.75rem",
+                  }}
+                  onMouseOver={(e) => (e.currentTarget.style.color = "#0969da")}
+                  onMouseOut={(e) => (e.currentTarget.style.color = "#656d76")}
+                >
+                  ← Back to Launcher
+                </a>
+              }
+            />
           </nav>
           <div className="gmail-main-column">
             <Outlet />

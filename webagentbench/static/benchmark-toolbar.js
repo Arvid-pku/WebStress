@@ -90,6 +90,7 @@
       #wab-record-btn.recording { background: #c62828; color: #fff; animation: wab-pulse 1.5s infinite; }
       @keyframes wab-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
       #wab-reset-btn { background: #333; color: #ccc; }
+      #wab-launcher-btn { background: #333; color: #ccc; width: 100%; margin-top: 2px; }
 
       #wab-results-panel {
         display: none; padding: 10px 14px; border-top: 1px solid #333;
@@ -115,6 +116,7 @@
         <button id="wab-record-btn">\u23FA Record</button>
         <button id="wab-evaluate-btn">Evaluate</button>
         <button id="wab-reset-btn">Reset</button>
+        <button id="wab-launcher-btn" onclick="window.location.href='/launch'">\u2190 Launcher</button>
       </div>
       <div id="wab-results-panel"></div>
     </div>
