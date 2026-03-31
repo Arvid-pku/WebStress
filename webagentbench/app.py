@@ -159,15 +159,33 @@ async def index():
             f'</div>\n'
         )
 
-    # Build task options grouped by difficulty
-    task_options = ""
+    # Build task options grouped by difficulty (easy → medium → hard)
+    _DIFF_ORDER = {"easy": 0, "medium": 1, "hard": 2, "expert": 3, "frontier": 4}
+    _DIFF_EMOJI = {"easy": "\u2714", "medium": "\u26a0", "hard": "\u2b50", "expert": "\U0001f525", "frontier": "\U0001f680"}  # ✔ ⚠ ⭐ 🔥 🚀
+    all_tasks: list[dict] = []
     for env in MANIFEST.get("environments", []):
         for task in env.get("tasks", []):
-            tid = task["task_id"]
-            title = task.get("title", tid)
-            diff = task.get("difficulty", "")
-            prims = ", ".join(task.get("primary_primitives", []))
-            task_options += f'<option value="{tid}" data-env="{env["env_id"]}">[{diff}] {title} — {prims}</option>\n'
+            all_tasks.append({**task, "_env_id": env["env_id"]})
+    all_tasks.sort(key=lambda t: (_DIFF_ORDER.get(t.get("difficulty", ""), 9), t.get("title", "")))
+
+    task_options = ""
+    current_group = None
+    for task in all_tasks:
+        diff = task.get("difficulty", "unknown")
+        if diff != current_group:
+            if current_group is not None:
+                task_options += "</optgroup>\n"
+            label = f"{_DIFF_EMOJI.get(diff, '')} {diff.upper()} ({sum(1 for t in all_tasks if t.get('difficulty') == diff)} tasks)"
+            task_options += f'<optgroup label="{label}">\n'
+            current_group = diff
+        tid = task["task_id"]
+        title = task.get("title", tid)
+        prims = ", ".join(task.get("primary_primitives", []))
+        steps = task.get("expected_steps", "")
+        step_hint = f" ({steps} steps)" if steps else ""
+        task_options += f'<option value="{tid}" data-env="{task["_env_id"]}">{title}{step_hint} — {prims}</option>\n'
+    if current_group is not None:
+        task_options += "</optgroup>\n"
 
     html = f"""<!DOCTYPE html>
 <html lang="en">

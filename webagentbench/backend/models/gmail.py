@@ -289,6 +289,50 @@ class GmailState(BaseEnvState):
     def count_unread(self, label: str = "inbox") -> int:
         return sum(1 for email in self.list_emails(label=label) if not email.is_read)
 
+    def mailbox_counts(self) -> dict[str, int]:
+        labels_by_name = {label.name.lower(): label for label in self.labels}
+        counts: dict[str, int] = {
+            "archived": len(self.list_emails(label="archived")),
+            "unread_inbox": self.count_unread("inbox"),
+        }
+
+        for label in self.labels:
+            counts.setdefault(label.name.lower(), 0)
+            counts.setdefault(label.id, 0)
+
+        starred_count = 0
+        for email in self.emails:
+            if email.deleted:
+                continue
+            if email.is_starred:
+                starred_count += 1
+            for label_name in email.labels:
+                normalized = label_name.lower()
+                counts[normalized] = counts.get(normalized, 0) + 1
+                label = labels_by_name.get(normalized)
+                if label is not None:
+                    counts[label.id] = counts.get(label.id, 0) + 1
+        counts["starred"] = starred_count
+
+        sent_count = len(self.sent)
+        draft_count = len(self.drafts)
+        trash_count = len(self.deleted)
+        all_mail_count = len(self.emails) + sent_count
+
+        special_counts = {
+            "sent": sent_count,
+            "drafts": draft_count,
+            "trash": trash_count,
+            "all mail": all_mail_count,
+        }
+        for name, value in special_counts.items():
+            counts[name] = value
+            label = labels_by_name.get(name)
+            if label is not None:
+                counts[label.id] = value
+
+        return counts
+
     def ensure_label(
         self,
         label_name: str,
@@ -394,6 +438,8 @@ class GmailState(BaseEnvState):
             self.ensure_label(label_name)
             if label_name not in email.labels:
                 email.labels.append(label_name)
+            if label_name.lower() == "inbox":
+                email.archived = False
         elif action == "remove":
             email.labels = [label for label in email.labels if label != label_name]
         else:

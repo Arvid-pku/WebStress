@@ -514,13 +514,15 @@ def create_session(body: SessionCreateRequest, session_manager: SessionManager =
 
     # Apply seed/server degradation injections post-seed, pre-response
     if degradation:
+        import random as _random
         from ...injector.seed import apply_seed_injection
         from ...injector.server import apply_server_injection
+        seed_rng = _random.Random(actual_seed)
         for injection in degradation.get("injections", []):
             layer = injection.get("layer")
             params = injection.get("params", {})
             if layer == "seed":
-                apply_seed_injection(state, params)
+                apply_seed_injection(state, params, rng=seed_rng)
             elif layer == "server":
                 apply_server_injection(state, params)
         state.touch()
@@ -609,13 +611,7 @@ def list_emails(
         emails = [email for email in emails if email.is_starred is starred]
     items = [_serialize_email(state, email) for email in emails]
     payload = _paginate(items, page, page_size)
-    payload["counts"] = {
-        "inbox": len(state.list_emails(label="inbox")),
-        "archived": len(state.list_emails(label="archived")),
-        "sent": len(state.sent),
-        "trash": len(state.deleted),
-        "unread_inbox": state.count_unread("inbox"),
-    }
+    payload["counts"] = state.mailbox_counts()
     return payload
 
 
