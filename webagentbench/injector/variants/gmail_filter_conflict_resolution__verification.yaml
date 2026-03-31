@@ -1,17 +1,27 @@
 variant_id: gmail_filter_conflict_resolution__verification_v1
 base_task_id: gmail_filter_conflict_resolution
 target_primitive: verification
-description: >
-  Silent fail on first filter delete attempt. Server returns success but
-  conflicting filter still exists. Agent must verify filter list after delete,
-  detect failure, and retry deletion before creating new filter.
+description: 'Silent fail on first filter delete attempt. Server returns success but
+  conflicting filter still exists. Agent must verify filter list after delete, detect
+  failure, and retry deletion before creating new filter.
+
+  '
 injections:
 - layer: network
   params:
     action: silent_fail
-    url_pattern: "**/api/env/gmail/filters/*"
-    methods: ["DELETE"]
-    response_body: {"success": true}
+    url_pattern: '**/api/env/gmail/filters/*'
+    methods:
+    - DELETE
+    response_body:
+      filter:
+        id: fake_filter
+        from_addresses: []
+        subject_keywords: []
+        add_labels: []
+        star: false
+        archive: false
+        mark_read: false
     fail_count: 1
     behavior:
       mode: once

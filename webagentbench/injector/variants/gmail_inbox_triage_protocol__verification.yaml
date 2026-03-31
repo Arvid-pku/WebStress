@@ -11,8 +11,9 @@ injections:
     methods:
     - POST
     response_body:
-      success: true
-      message: Email starred successfully
+      email:
+        id: fake
+        is_starred: true
     fail_count: 2
     behavior:
       mode: once
@@ -23,8 +24,10 @@ injections:
     methods:
     - POST
     response_body:
-      success: true
-      message: Email archived successfully
+      email:
+        id: fake
+        labels:
+        - archived
     fail_count: 1
     behavior:
       mode: once

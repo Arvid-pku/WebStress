@@ -11,8 +11,20 @@ injections:
     methods:
     - POST
     response_body:
-      success: true
-      message: Email sent successfully
+      email:
+        id: fake_sent
+        subject: sent
+        from: me@company.test
+        to: []
+        cc: []
+        bcc: []
+        body: ''
+        labels:
+        - sent
+        is_read: true
+        is_starred: false
+        thread_id: fake_thread
+        timestamp: '2026-03-30T00:00:00Z'
     fail_count: 2
     behavior:
       mode: once
