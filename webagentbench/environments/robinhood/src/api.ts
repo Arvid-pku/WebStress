@@ -115,7 +115,7 @@ export function createRobinhoodApi(request: RequestFn) {
     listTaxDocuments: (query?: Record<string, string>) =>
       request<{ items: TaxDocument[] }>("tax/documents", { query }).then((r) => r.items),
     getTaxDocument: (docId: string) =>
-      request<{ document: TaxDocument }>(`tax/documents/${docId}`).then((r) => r.document),
+      request<TaxDocument>(`tax/documents/${docId}`),
     listRealizedGains: (query?: Record<string, string>) =>
       request<{ items: RealizedGainLoss[] }>("tax/gains", { query }).then((r) => r.items),
 
@@ -141,15 +141,15 @@ export function createRobinhoodApi(request: RequestFn) {
 
     /* Settings */
     getSettings: () =>
-      request<{ settings: AccountSettings }>("settings").then((r) => r.settings),
+      request<AccountSettings>("settings"),
     updateSettings: (body: Partial<AccountSettings>) =>
-      request<{ settings: AccountSettings }>("settings", { method: "PUT", body }).then((r) => r.settings),
+      request<AccountSettings>("settings", { method: "PUT", body }),
 
     /* Security */
     getSecurityLog: () =>
       request<{ items: SecurityEntry[] }>("security/log").then((r) => r.items),
     update2FA: (method: "sms" | "authenticator" | "none") =>
-      request<{ settings: AccountSettings }>("security/2fa", { method: "PUT", body: { method } }).then((r) => r.settings),
+      request<AccountSettings>("security/2fa", { method: "PUT", body: { method } }),
 
     /* Referrals */
     listReferrals: () =>

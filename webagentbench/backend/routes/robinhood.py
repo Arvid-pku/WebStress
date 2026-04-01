@@ -1012,7 +1012,7 @@ def mark_all_notifications_read(
         {},
         lambda s: state.mark_all_notifications_read(),
     )
-    return {"marked_count": result}
+    return {"count": result}
 
 
 # ---------------------------------------------------------------------------
