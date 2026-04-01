@@ -1,0 +1,79 @@
+import { useEffect, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { preserveQueryParams } from "@webagentbench/shared";
+
+import { useRobinhoodLayout } from "../context";
+import type { Position, PortfolioData } from "../types";
+import { PositionRow } from "../components/PositionRow";
+import { StockChart } from "../components/StockChart";
+
+export function PortfolioPage() {
+  const { api, account } = useRobinhoodLayout();
+  const location = useLocation();
+  const [portfolio, setPortfolio] = useState<PortfolioData | null>(null);
+  const [positions, setPositions] = useState<Position[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const [p, pos] = await Promise.all([api.getPortfolio(), api.listPositions()]);
+        if (!cancelled) {
+          setPortfolio(p);
+          setPositions(pos);
+        }
+      } catch {
+        // handled
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [api]);
+
+  if (loading) return <div className="rh-loading">Loading...</div>;
+
+  const portfolioValue = portfolio ? parseFloat(portfolio.portfolio_value) : 0;
+  const dayChange = portfolio ? parseFloat(portfolio.day_change ?? "0") : 0;
+  const dayChangePct = portfolio ? parseFloat(portfolio.day_change_pct ?? "0") : 0;
+  const isPositive = dayChange >= 0;
+
+  // Create fake chart data for portfolio
+  const chartData = Array.from({ length: 30 }, (_, i) => ({
+    date: new Date(Date.now() - (29 - i) * 86400000).toISOString().slice(0, 10),
+    close: String(portfolioValue * (1 + Math.sin(i * 0.3) * 0.03)),
+  }));
+
+  return (
+    <div className="rh-portfolio" aria-label="Portfolio overview">
+      <div className="rh-portfolio__header">
+        <h1 className="rh-portfolio__value">${portfolioValue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h1>
+        <span className={`rh-portfolio__change ${isPositive ? "rh-gain" : "rh-loss"}`}>
+          {isPositive ? "+" : ""}${dayChange.toFixed(2)} ({isPositive ? "+" : ""}{dayChangePct.toFixed(2)}%) Today
+        </span>
+      </div>
+
+      <StockChart data={chartData} positive={isPositive} />
+
+      <div className="rh-portfolio__buying-power">
+        <span>Buying Power</span>
+        <span>${account ? parseFloat(account.buying_power).toLocaleString("en-US", { minimumFractionDigits: 2 }) : "0.00"}</span>
+      </div>
+
+      <section className="rh-portfolio__positions" aria-label="Positions">
+        <div className="rh-portfolio__positions-header">
+          <h2>Stocks</h2>
+          <Link to={preserveQueryParams("/orders", location.search)} className="rh-link">
+            Show More
+          </Link>
+        </div>
+        {positions.length === 0 ? (
+          <div className="rh-empty">No positions yet</div>
+        ) : (
+          positions.map((p) => <PositionRow key={p.id} position={p} />)
+        )}
+      </section>
+    </div>
+  );
+}
