@@ -33,7 +33,11 @@ export function useSession(envId: string) {
   }, [adapter]);
 
   const createSession = useCallback(
-    async <TResolved = Record<string, unknown>>(taskId: string, seed?: number) => {
+    async <TResolved = Record<string, unknown>>(
+      taskId: string,
+      seed?: number,
+      variantFilename?: string,
+    ) => {
       if (adapter?.mode === "static") {
         const staticResponse: SessionCreateResponse<TResolved> = {
           session_id: "static-session",
@@ -42,7 +46,10 @@ export function useSession(envId: string) {
         setSessionId("static-session");
         return staticResponse;
       }
-      const payload = { task_id: taskId, seed };
+      const payload: Record<string, unknown> = { task_id: taskId, seed };
+      if (variantFilename) {
+        payload.variant_filename = variantFilename;
+      }
       const response = await apiRequest<SessionCreateResponse<TResolved>>(envId, "session", {
         method: "POST",
         body: payload,

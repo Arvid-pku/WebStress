@@ -148,8 +148,10 @@ class TestFilterFieldsObservable:
 
 class TestNotificationArea:
     def test_app_has_notification_system(self):
-        content = _read("App.tsx")
-        assert "notify" in content, "App must have a notify function"
+        # The notify function lives in Shell.tsx (the layout wrapper),
+        # not App.tsx (the route definitions).
+        content = _read("Shell.tsx")
+        assert "notify" in content, "Shell must have a notify function"
 
     def test_notification_area_is_live_region(self):
         # The notification area must be an ARIA live region so the AXTree

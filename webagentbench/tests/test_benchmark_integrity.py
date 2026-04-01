@@ -144,7 +144,6 @@ def test_thread_detective_exploration_variant_hides_calendar_email() -> None:
     calendar_email = state.get_email(payload["resolved_targets"]["calendar_email_id"])
     assert calendar_email.labels == ["updates"]
 
-
 def test_incident_postmortem_exploration_variant_hides_corrected_email() -> None:
     session_manager = SessionManager()
 
@@ -185,11 +184,18 @@ def test_gmail_stale_email_and_search_variants_use_paginated_items_schema() -> N
                 continue
 
             url_pattern = str(params.get("url_pattern", ""))
+            stale_body = params.get("stale_body")
+            assert isinstance(stale_body, dict), f"{path.name} must define stale_body as a mapping"
+
+            if "/api/env/gmail/contacts" in url_pattern:
+                assert "contacts" not in stale_body, f"{path.name} must use items, not contacts"
+                assert "items" in stale_body, f"{path.name} contacts stale_body must include items"
+                assert isinstance(stale_body["items"], list), f"{path.name} items must be a list"
+                continue
+
             if "/api/env/gmail/emails" not in url_pattern and "/api/env/gmail/search" not in url_pattern:
                 continue
 
-            stale_body = params.get("stale_body")
-            assert isinstance(stale_body, dict), f"{path.name} must define stale_body as a mapping"
             assert "emails" not in stale_body, f"{path.name} must use items, not emails"
             assert required_page_keys.issubset(stale_body), (
                 f"{path.name} must include paginated keys {sorted(required_page_keys)}"
@@ -279,6 +285,44 @@ def test_evaluator_can_check_client_benchmark_state_events() -> None:
 
     assert result["success"] is True
     assert result["score"] == pytest.approx(1.0)
+
+
+def test_search_and_star_requires_search_event_for_success() -> None:
+    session_manager = SessionManager()
+    payload = create_session(
+        SessionCreateRequest(task_id="gmail_search_and_star", seed=42),
+        session_manager=session_manager,
+    )
+
+    state = session_manager.get(payload["session_id"])
+    state.toggle_star(payload["resolved_targets"]["target_email_id"], True)
+    task = get_task("gmail_search_and_star")
+
+    without_search = evaluate(
+        task,
+        server_state=state,
+        targets=payload["resolved_targets"],
+        trajectory=[],
+    )
+    assert without_search["success"] is False
+
+    state.set_benchmark_state(
+        {
+            "events": [
+                {
+                    "type": "search_submit",
+                    "detail": {"query": "Q4 Budget Summary"},
+                }
+            ]
+        }
+    )
+    with_search = evaluate(
+        task,
+        server_state=state,
+        targets=payload["resolved_targets"],
+        trajectory=[],
+    )
+    assert with_search["success"] is True
 
 
 def test_browsergym_task_rejects_stale_server_manifest(monkeypatch: pytest.MonkeyPatch) -> None:

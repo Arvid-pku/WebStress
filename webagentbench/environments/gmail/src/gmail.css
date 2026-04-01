@@ -147,6 +147,34 @@ body {
   padding-top: 0.25rem;
 }
 
+.gmail-launcher__mode-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  vertical-align: middle;
+  background: #dafbe1;
+  color: #1a7f37;
+}
+
+.gmail-launcher__mode-badge--stress {
+  background: #ffebe9;
+  color: #cf222e;
+}
+
+.gmail-launcher__variant-info {
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  background: #fff8c5;
+  border: 1px solid #ebd98b;
+  font-size: 0.8125rem;
+  color: #5f6368;
+}
+
 
 /* ── 4. Topbar — 64px, Full Width ───────────────────────────── */
 

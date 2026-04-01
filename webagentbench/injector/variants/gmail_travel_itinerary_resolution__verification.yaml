@@ -11,8 +11,25 @@ injections:
     methods:
     - POST
     response_body:
-      success: true
-      forwarded: true
+      email:
+        id: fake_forwarded_itinerary
+        subject: 'Fwd: Travel confirmations'
+        from_name: You
+        from_addr: me@company.test
+        to:
+        - travel@company.test
+        cc: []
+        bcc: []
+        body: Forwarded itinerary details
+        labels:
+        - sent
+        is_read: true
+        is_starred: false
+        thread_id: fake_thread_forward
+        in_reply_to: null
+        forwarded_from_id: fake_original_email
+        attachments: []
+        timestamp: '2026-03-30T00:00:00Z'
     fail_count: 1
     behavior:
       mode: once

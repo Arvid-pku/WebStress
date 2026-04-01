@@ -30,6 +30,3 @@ injections:
         delay_ms: 3000
       - after_call: 2
         delay_ms: 5000
-- layer: server
-  params:
-    action: hide_prerequisite

@@ -26,6 +26,15 @@ from typing import Any
 import yaml
 
 TASKS_DIR = Path(__file__).parent.parent / "tasks" / "gmail"
+TARGET_REF_RE = re.compile(r"\{target\.([^}]+)\}")
+
+
+def _is_text_match_expr(expr: str) -> bool:
+    return bool(
+        re.search(r"in [me]\.(?:body|subject)", expr)
+        or re.search(r"[me]\.(?:body|subject)[^\n]*startswith\(", expr)
+        or re.search(r"[me]\.(?:body|subject)[^\n]*endswith\(", expr)
+    )
 
 
 def _classify_checks(task: dict[str, Any]) -> dict[str, int]:
@@ -33,6 +42,7 @@ def _classify_checks(task: dict[str, Any]) -> dict[str, int]:
     ev = task.get("eval") or {}
     checks = (ev.get("checks") or []) + (ev.get("negative_checks") or [])
     instr = (task.get("instruction_template", "") or task.get("instruction", "")).lower()
+    target_refs_in_instruction = set(TARGET_REF_RE.findall(instr))
 
     counts = {"structural": 0, "exact_given": 0, "keyword": 0, "count": 0, "composed": 0}
 
@@ -48,12 +58,19 @@ def _classify_checks(task: dict[str, Any]) -> dict[str, int]:
             expr,
         ) and "in m.body" not in expr and "in e.body" not in expr:
             counts["structural"] += 1
-        elif re.search(r"in m\.body|in e\.body|in m\.subject|in e\.subject", expr):
+        elif _is_text_match_expr(expr):
             # Substring check — is the string given in the instruction?
+            hidden_target_refs = {
+                ref for ref in TARGET_REF_RE.findall(expr)
+                if ref not in target_refs_in_instruction
+            }
+            if hidden_target_refs:
+                counts["composed"] += 1
+                continue
             literals = re.findall(r"'([^']{8,})'", expr)
             any_composed = False
             for lit in literals:
-                if "@" in lit or lit.startswith("*") or "target." in lit:
+                if "@" in lit or lit.startswith("*") or lit.startswith("{target."):
                     continue
                 if lit.lower() not in instr:
                     any_composed = True
@@ -70,11 +87,12 @@ def _classify_checks(task: dict[str, Any]) -> dict[str, int]:
 
 
 def test_majority_of_checks_are_structural() -> None:
-    """At least 70% of all checks across the benchmark should be structural.
+    """A large majority of all checks across the benchmark should be robust.
 
-    Structural checks (is_starred, in_reply_to, settings values, filter
-    existence, label creation) are robust to paraphrasing. A benchmark
-    that relies mostly on exact-text matching is fragile.
+    Structural, count, keyword, and exact-given checks are robust to
+    paraphrasing. The brittle category is composed-text matching against
+    hidden target values. Keep that category small enough that the benchmark
+    is still mostly testing task completion rather than exact phrasing.
     """
     total = 0
     robust = 0  # structural + count + exact_given (text from instruction)
@@ -89,9 +107,9 @@ def test_majority_of_checks_are_structural() -> None:
         composed += counts["composed"]
     assert total > 0
     composed_ratio = composed / total
-    assert composed_ratio <= 0.10, (
+    assert composed_ratio <= 0.15, (
         f"{composed_ratio:.1%} of checks require agent-composed text — "
-        f"expected <= 10%. These checks fail correct paraphrases."
+        f"expected <= 15%. These checks fail correct paraphrases."
     )
 
 

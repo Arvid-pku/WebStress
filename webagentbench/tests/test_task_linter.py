@@ -211,28 +211,24 @@ def test_all_target_refs_in_eval_are_defined() -> None:
 
 # ── 6. Variant response_body schema validity ─────────────────────────────
 
-# Real API response top-level keys per endpoint pattern
-_API_RESPONSE_KEYS: dict[str, set[str]] = {
-    "send": {"email"},
-    "star": {"email"},
-    "delete": {"email"},
-    "label": {"label"},
-    "labels": {"label"},
-    "settings": {"settings"},
-    "contact": {"contact"},
-    "contacts": {"contact"},
-    "filter": {"filter"},
-    "filters": {"filter"},
-    "forward": {"email"},
-}
+def _expected_response_keys(url_pattern: str) -> set[str] | None:
+    """Infer the real top-level response key for a Gmail mutation endpoint."""
+    normalized = url_pattern.rstrip("*").rstrip("/")
 
-
-def _endpoint_noun(url_pattern: str) -> str | None:
-    """Extract the API noun from a url_pattern like '**/api/env/gmail/send'."""
-    parts = url_pattern.rstrip("*").rstrip("/").split("/")
-    for part in reversed(parts):
-        if part and part != "api" and part != "env" and part != "gmail":
-            return part
+    if normalized.endswith("/send"):
+        return {"email"}
+    if normalized.endswith("/settings"):
+        return {"settings"}
+    if "/emails/" in normalized and normalized.endswith(
+        ("/read", "/star", "/label", "/archive", "/delete", "/forward")
+    ):
+        return {"email"}
+    if normalized.endswith("/labels") or "/labels/" in normalized:
+        return {"label"}
+    if normalized.endswith("/filters") or "/filters/" in normalized:
+        return {"filter"}
+    if normalized.endswith("/contacts") or "/contacts/" in normalized:
+        return {"contact"}
     return None
 
 
@@ -257,9 +253,8 @@ def test_variant_silent_fail_response_has_correct_top_level_key() -> None:
             if not isinstance(resp, dict):
                 continue
 
-            noun = _endpoint_noun(url_pat)
-            if noun and noun in _API_RESPONSE_KEYS:
-                expected = _API_RESPONSE_KEYS[noun]
+            expected = _expected_response_keys(url_pat)
+            if expected:
                 actual = set(resp.keys())
                 if not expected.intersection(actual):
                     warnings.append(

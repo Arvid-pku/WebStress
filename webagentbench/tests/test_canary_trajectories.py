@@ -51,8 +51,11 @@ def _session(client, task_id, seed=SEED, **kw):
     assert r.status_code == 200, r.text
     return r.json()
 
-def _eval(client, sid, task_id):
-    r = client.post("/api/env/gmail/evaluate", json={"session_id": sid, "task_id": task_id})
+def _eval(client, sid, task_id, benchmark_state=None):
+    payload = {"session_id": sid, "task_id": task_id}
+    if benchmark_state is not None:
+        payload["benchmark_state"] = benchmark_state
+    r = client.post("/api/env/gmail/evaluate", json=payload)
     assert r.status_code == 200, r.text
     return r.json()
 
@@ -135,8 +138,25 @@ class TestStandardCanaries:
 
     def test_search_and_star(self, client):
         s = _session(client, "gmail_search_and_star")
-        _star(client, s["session_id"], s["resolved_targets"]["target_email_id"])
-        ev = _eval(client, s["session_id"], "gmail_search_and_star")
+        sid = s["session_id"]
+        target = s["resolved_targets"]["target_email_id"]
+
+        search = _search(client, sid, "Q4 Budget Summary")
+        assert search.status_code == 200
+        items = search.json()["items"]
+        assert any(item["id"] == target for item in items), "Target should be discoverable via search"
+
+        _star(client, sid, target)
+        ev = _eval(
+            client,
+            sid,
+            "gmail_search_and_star",
+            benchmark_state={
+                "events": [
+                    {"type": "search_submit", "detail": {"query": "Q4 Budget Summary"}}
+                ]
+            },
+        )
         assert ev["success"] is True
         assert ev["score"] == 1.0
 
@@ -361,6 +381,23 @@ class TestStressPlanning:
         sid = s["session_id"]
         target = s["resolved_targets"]["target_email_id"]
 
+        r1 = _search(client, sid, "Q4 Budget Summary")
+        assert r1.status_code == 200
+        assert r1.json()["total"] == 0
+
+        r2 = _search(client, sid, "Q4 Budget Summary")
+        assert r2.status_code == 200
+        assert any(item["id"] == target for item in r2.json()["items"])
+
         _star(client, sid, target)
-        ev = _eval(client, sid, "gmail_search_and_star")
+        ev = _eval(
+            client,
+            sid,
+            "gmail_search_and_star",
+            benchmark_state={
+                "events": [
+                    {"type": "search_submit", "detail": {"query": "Q4 Budget Summary"}}
+                ]
+            },
+        )
         assert ev["success"] is True

@@ -111,6 +111,93 @@ def _get_counter(session_id: str, key: str) -> int:
     return counters[key]
 
 
+def _coerce_non_negative_int(value: Any, default: int = 0) -> int:
+    try:
+        return max(int(value), 0)
+    except (TypeError, ValueError):
+        return default
+
+
+def _normalize_progressive_stages(
+    stages: list[dict[str, Any]],
+    default_delay_ms: int,
+) -> list[dict[str, int]]:
+    """Normalize legacy stage syntaxes into ``after_call`` thresholds.
+
+    ``after_call`` counts completed matching calls before a stage begins:
+    ``after_call: 0`` applies on call 1, ``after_call: 3`` applies on call 4.
+    """
+    if not stages:
+        return [{"after_call": 0, "delay_ms": _coerce_non_negative_int(default_delay_ms)}]
+
+    if any("requests" in stage for stage in stages):
+        normalized: list[dict[str, int]] = []
+        after_call = 0
+        for stage in stages:
+            normalized.append({
+                "after_call": after_call,
+                "delay_ms": _coerce_non_negative_int(
+                    stage.get("delay_ms"),
+                    _coerce_non_negative_int(default_delay_ms),
+                ),
+            })
+            after_call += _coerce_non_negative_int(stage.get("requests"), 0)
+        return normalized
+
+    if any("until_count" in stage for stage in stages):
+        normalized = []
+        after_call = 0
+        for stage in stages:
+            normalized.append({
+                "after_call": after_call,
+                "delay_ms": _coerce_non_negative_int(
+                    stage.get("delay_ms"),
+                    _coerce_non_negative_int(default_delay_ms),
+                ),
+            })
+            if "until_count" in stage:
+                after_call = _coerce_non_negative_int(stage.get("until_count"), after_call)
+        return normalized
+
+    if any("call_number" in stage for stage in stages):
+        normalized = []
+        for stage in stages:
+            call_number = max(_coerce_non_negative_int(stage.get("call_number"), 1), 1)
+            normalized.append({
+                "after_call": call_number - 1,
+                "delay_ms": _coerce_non_negative_int(
+                    stage.get("delay_ms"),
+                    _coerce_non_negative_int(default_delay_ms),
+                ),
+            })
+        return sorted(normalized, key=lambda s: s["after_call"])
+
+    normalized = [
+        {
+            "after_call": _coerce_non_negative_int(stage.get("after_call"), 0),
+            "delay_ms": _coerce_non_negative_int(
+                stage.get("delay_ms"),
+                _coerce_non_negative_int(default_delay_ms),
+            ),
+        }
+        for stage in stages
+    ]
+    return sorted(normalized, key=lambda s: s["after_call"])
+
+
+def _progressive_delay_ms(
+    call_num: int,
+    stages: list[dict[str, Any]],
+    default_delay_ms: int,
+) -> int:
+    """Return the active progressive delay for the current 1-indexed call."""
+    current_delay = 0
+    for stage in _normalize_progressive_stages(stages, default_delay_ms):
+        if call_num > stage.get("after_call", 0):
+            current_delay = stage.get("delay_ms", 0)
+    return current_delay
+
+
 def _extract_session_from_referer(referer: str) -> str | None:
     """Extract session ID from the Referer header.
 
@@ -208,22 +295,11 @@ class DegradationMiddleware(BaseHTTPMiddleware):
                 should_delay = False
 
                 if mode == "progressive":
-                    stages = behavior.get("stages", [{"after_call": 0, "delay_ms": delay_ms}])
-                    current_delay = 0
-                    for stage in stages:
-                        # Accept common key name variants from YAML files.
-                        # Use explicit None checks — 0 is a valid threshold.
-                        threshold = next(
-                            (v for v in (
-                                stage.get("after_call"),
-                                stage.get("call_number"),
-                                stage.get("requests"),
-                                stage.get("until_count"),
-                            ) if v is not None),
-                            0,
-                        )
-                        if call_num >= threshold:
-                            current_delay = stage.get("delay_ms", 0)
+                    current_delay = _progressive_delay_ms(
+                        call_num,
+                        behavior.get("stages", []),
+                        delay_ms,
+                    )
                     if current_delay > 0:
                         delay_ms = current_delay
                         should_delay = True

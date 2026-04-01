@@ -13,6 +13,7 @@ export default defineConfig({
   },
   server: {
     port: 4173,
+    host: "127.0.0.1",
     proxy: {
       "/api": "http://127.0.0.1:8080",
       "/manifest": "http://127.0.0.1:8080",

@@ -24,4 +24,8 @@ eval:
   checks:
   - expr: state.get_email('{target.target_email_id}').is_starred
     desc: Budget email is starred
+  - expr: any(event.get('type') == 'search_submit' and any(token in str(event.get('detail',
+      {}).get('query', '')).lower() for token in ('q4', 'budget', 'finance')) for
+      event in state.benchmark_state.get('events', []))
+    desc: Search submitted with a relevant query
   negative_checks: []

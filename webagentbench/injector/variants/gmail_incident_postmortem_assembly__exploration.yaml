@@ -30,6 +30,8 @@ injections:
         delay_ms: 3000
       - after_call: 3
         delay_ms: 5000
-- layer: server
+- layer: seed
   params:
-    action: hide_prerequisite
+    action: hide_in_non_obvious_location
+    email_id: '{target.corrected_email_id}'
+    move_to_label: updates

@@ -27,6 +27,15 @@ interface GmailManifestTask {
   start_path?: string;
 }
 
+interface VariantEntry {
+  filename: string;
+  variant_id: string;
+  base_task_id: string;
+  target_primitive: string;
+  description: string;
+  source: string;
+}
+
 function launcherUrl(startPath: string, sessionId: string) {
   const base = import.meta.env.BASE_URL;
   const normalizedBase = base.endsWith("/") ? base : `${base}/`;
@@ -38,7 +47,9 @@ function launcherUrl(startPath: string, sessionId: string) {
 function GmailWorkspace() {
   const { sessionId, createSession } = useSession("gmail");
   const [tasks, setTasks] = useState<GmailManifestTask[]>([]);
+  const [variants, setVariants] = useState<VariantEntry[]>([]);
   const [selectedTaskId, setSelectedTaskId] = useState("gmail_thread_detective");
+  const [selectedVariant, setSelectedVariant] = useState("");
   const [seedText, setSeedText] = useState("42");
   const [bootError, setBootError] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
@@ -63,6 +74,10 @@ function GmailWorkspace() {
           setBootError("Unable to load Gmail task definitions from the benchmark manifest.");
         }
       });
+    fetch("/api/env/gmail/variants")
+      .then((response) => response.json())
+      .then((data) => { if (!cancelled) setVariants(data as VariantEntry[]); })
+      .catch(() => {});
     return () => { cancelled = true; };
   }, []);
 
@@ -71,14 +86,24 @@ function GmailWorkspace() {
   }
 
   const selectedTask = tasks.find((task) => task.task_id === selectedTaskId);
+  const matchingVariants = variants.filter((v) => v.base_task_id === selectedTaskId);
+  const isStressMode = selectedVariant !== "";
+  const selectedVariantEntry = variants.find((v) => v.filename === selectedVariant);
 
   return (
     <section className="gmail-launcher" aria-label="No active Gmail session">
       <div className="gmail-launcher__card">
         <div className="gmail-launcher__header">
           <GmailLogo />
-          <h1 className="gmail-launcher__title">Gmail Benchmark</h1>
-          <p className="gmail-launcher__subtitle">Select a task and seed, then launch a fresh session.</p>
+          <h1 className="gmail-launcher__title">
+            Gmail Benchmark{" "}
+            <span
+              className={`gmail-launcher__mode-badge ${isStressMode ? "gmail-launcher__mode-badge--stress" : ""}`}
+            >
+              {isStressMode ? "Stress Test" : "Standard"}
+            </span>
+          </h1>
+          <p className="gmail-launcher__subtitle">Select a task, optionally add a stress-test variant, then launch.</p>
         </div>
         <div className="gmail-launcher__form">
           <FormField
@@ -87,7 +112,10 @@ function GmailWorkspace() {
             label="Task"
             inputProps={{
               value: selectedTaskId,
-              onChange: (event: React.ChangeEvent<HTMLSelectElement>) => setSelectedTaskId(event.target.value),
+              onChange: (event: React.ChangeEvent<HTMLSelectElement>) => {
+                setSelectedTaskId(event.target.value);
+                setSelectedVariant("");
+              },
             }}
           >
             {tasks.map((task) => (
@@ -96,6 +124,29 @@ function GmailWorkspace() {
               </option>
             ))}
           </FormField>
+          <FormField
+            as="select"
+            id="gmail-launcher-variant"
+            label="Degradation Variant"
+            hint="Stress a specific cognitive primitive. Variants are filtered to the selected task."
+            inputProps={{
+              value: selectedVariant,
+              onChange: (event: React.ChangeEvent<HTMLSelectElement>) =>
+                setSelectedVariant(event.target.value),
+            }}
+          >
+            <option value="">None — standard / healthy environment</option>
+            {matchingVariants.map((v) => (
+              <option key={v.filename} value={v.filename}>
+                [{v.target_primitive}] {v.description.slice(0, 80)}
+              </option>
+            ))}
+          </FormField>
+          {selectedVariantEntry ? (
+            <div className="gmail-launcher__variant-info">
+              Primitive: {selectedVariantEntry.target_primitive} — {selectedVariantEntry.description}
+            </div>
+          ) : null}
           <FormField
             id="gmail-launcher-seed"
             label="Seed"
@@ -117,7 +168,7 @@ function GmailWorkspace() {
             <Button
               variant="secondary"
               aria-label="Reset to default task and seed"
-              onClick={() => { setSelectedTaskId("gmail_thread_detective"); setSeedText("42"); }}
+              onClick={() => { setSelectedTaskId("gmail_thread_detective"); setSeedText("42"); setSelectedVariant(""); }}
             >
               Reset
             </Button>
@@ -134,6 +185,7 @@ function GmailWorkspace() {
                   const response = await createSession(
                     selectedTask.task_id,
                     parsedSeed === undefined || Number.isNaN(parsedSeed) ? undefined : parsedSeed,
+                    selectedVariant || undefined,
                   );
                   const nextPath = response.start_path ?? selectedTask.start_path ?? "/inbox";
                   window.location.assign(launcherUrl(nextPath, response.session_id));

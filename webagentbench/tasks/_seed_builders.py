@@ -3255,26 +3255,7 @@ def build_mark_all_read(ctx: SeedContext, params: dict[str, Any]) -> dict[str, A
     return {"unread_email_ids": email_ids, "unread_count": len(email_ids)}
 
 
-@_register("search_and_star")
-def build_search_and_star(ctx: SeedContext, params: dict[str, Any]) -> dict[str, Any]:
-    """Seed a budget summary email from Finance Team to be found and starred."""
-    thread_id = ctx.next_id("thread")
-    em = ctx.email(
-        from_name="Finance Team",
-        from_addr="finance@company.test",
-        subject="Q4 Budget Summary",
-        body=ctx.format_email_body(
-            "Hi team, attached is the Q4 budget summary for your review.",
-            "Total spend was within 3% of forecast. Please flag any line items that need adjustment before the board meeting.",
-            signoff_name="Finance Team",
-        ),
-        timestamp=ctx.now - timedelta(days=3),
-        thread_id=thread_id,
-        labels=["inbox"],
-        is_read=True,
-    )
-    ctx.base["emails"].append(em)
-    return {"target_email_id": em.id}
+# search_and_star builder is in _seed_builders_easy.py (with 20 padding emails)
 
 
 @_register("change_setting")
@@ -3310,3 +3291,4 @@ import webagentbench.tasks._seed_builders_batch07 as _batch07  # noqa: E402, F40
 import webagentbench.tasks._seed_builders_batch08 as _batch08  # noqa: E402, F401
 import webagentbench.tasks._seed_builders_batch09 as _batch09  # noqa: E402, F401
 import webagentbench.tasks._seed_builders_batch10 as _batch10  # noqa: E402, F401
+import webagentbench.tasks._seed_builders_easy as _easy  # noqa: E402, F401
