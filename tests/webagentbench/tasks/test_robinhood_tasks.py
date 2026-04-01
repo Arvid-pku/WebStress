@@ -147,3 +147,32 @@ def test_all_robinhood_tasks_seed(task_id: str):
     # Verify eval config exists
     assert task.eval is not None, f"{task_id} has no eval config"
     assert len(task.eval.checks) > 0, f"{task_id} has no eval checks"
+
+
+def test_all_live_task_trajectories_valid():
+    """Every task with price_trajectory must pass economic validation."""
+    from webagentbench.backend.price_validation import validate_trajectory
+    from webagentbench.backend.price_engine import TrajectoryConfig, StockTrajectory
+
+    all_tasks = load_all_tasks()
+    rh_tasks = {k: v for k, v in all_tasks.items() if k.startswith("rh_")}
+    live_count = 0
+
+    for task_id, task in rh_tasks.items():
+        if task.seed is None:
+            continue
+        pt = getattr(task.seed, "price_trajectory", None)
+        if pt is None:
+            continue
+        live_count += 1
+        config = TrajectoryConfig(
+            tick_interval_seconds=pt.tick_interval_seconds,
+            stocks={
+                sym: StockTrajectory(keyframes=ts.keyframes, noise_pct=ts.noise_pct)
+                for sym, ts in pt.stocks.items()
+            },
+        )
+        errors = validate_trajectory(config)
+        assert not errors, f"{task_id} trajectory validation failed: {errors}"
+
+    assert live_count == 15, f"Expected 15 live tasks, found {live_count}"
