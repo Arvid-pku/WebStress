@@ -36,6 +36,11 @@ EXPECTED_RH_MEDIUM_TASKS = [
     "rh_sell_loser_buy_winner",
     "rh_options_buy_call",
     "rh_security_audit",
+    "rh_live_buy_the_dip",
+    "rh_live_take_profit",
+    "rh_live_alert_and_buy",
+    "rh_live_alert_and_sell",
+    "rh_live_watch_and_buy",
 ]
 
 EXPECTED_RH_HARD_TASKS = [
@@ -49,6 +54,10 @@ EXPECTED_RH_HARD_TASKS = [
     "rh_notification_triage",
     "rh_sector_concentration",
     "rh_transfer_history_audit",
+    "rh_live_stop_loss_execution",
+    "rh_live_dual_alert_decision",
+    "rh_live_watch_portfolio",
+    "rh_live_watch_spread",
 ]
 
 EXPECTED_RH_EXPERT_TASKS = [
@@ -62,6 +71,9 @@ EXPECTED_RH_EXPERT_TASKS = [
     "rh_recurring_optimization",
     "rh_cross_reference_1099",
     "rh_options_roll_strategy",
+    "rh_live_bracket_order",
+    "rh_live_alert_chain",
+    "rh_live_intraday_reversal",
 ]
 
 EXPECTED_RH_FRONTIER_TASKS = [
@@ -75,6 +87,9 @@ EXPECTED_RH_FRONTIER_TASKS = [
     "rh_complete_account_audit",
     "rh_multi_strategy_execution",
     "rh_quarterly_performance_review",
+    "rh_live_multi_stock_limits",
+    "rh_live_cross_stock_alert",
+    "rh_live_comparative_watch",
 ]
 
 EXPECTED_RH_TASKS = (
