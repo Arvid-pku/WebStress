@@ -1,0 +1,37 @@
+task_id: rh_review_and_cancel_orders
+env_id: robinhood
+title: Review and Cancel Far-Below-Market Limit Orders
+instruction_template: "Find all pending limit buy orders with prices more than 10% below current market price and cancel them."
+difficulty: medium
+time_limit_seconds: 200
+expected_steps: 8
+primary_primitives:
+  - state_tracking
+  - grounding
+  - planning
+start_path: /
+
+seed:
+  distractors: 10
+  steps:
+    - use: stock_universe
+      params:
+        count: 25
+        must_include: ["AAPL", "MSFT", "GOOGL", "AMZN", "NVDA"]
+      outputs: []
+    - use: pending_orders
+      params:
+        count: 5
+        order_types: ["limit"]
+        symbols: ["AAPL", "MSFT", "GOOGL", "AMZN", "NVDA"]
+      outputs: [order_ids]
+  targets: {}
+
+eval:
+  source: server_state
+  checks:
+    - expr: "sum(1 for o in state.orders if o.status == 'cancelled') >= 1"
+      desc: At least one far-below-market limit order was cancelled
+    - expr: "sum(1 for o in state.orders if o.status == 'pending') >= 1"
+      desc: At least one close-to-market order remains pending
+  negative_checks: []

@@ -1,0 +1,36 @@
+task_id: rh_sell_loser_buy_winner
+env_id: robinhood
+title: Sell Worst Performer and Buy Best Performer
+instruction_template: "Find the worst-performing stock in your portfolio by total return %. Sell all of it, then buy more of your best-performing stock with the proceeds."
+difficulty: medium
+time_limit_seconds: 200
+expected_steps: 8
+primary_primitives:
+  - state_tracking
+  - planning
+  - grounding
+start_path: /
+
+seed:
+  distractors: 10
+  steps:
+    - use: stock_universe
+      params:
+        count: 25
+        must_include: ["AAPL", "MSFT", "GOOGL", "AMZN", "TSLA"]
+      outputs: []
+    - use: portfolio_diverse
+      params:
+        count: 5
+        include_losers: true
+      outputs: []
+  targets: {}
+
+eval:
+  source: server_state
+  checks:
+    - expr: "len([o for o in state.orders if o.side == 'sell']) >= 1"
+      desc: A sell order exists for the worst-performing stock
+    - expr: "len([o for o in state.orders if o.side == 'buy']) >= 1"
+      desc: A buy order exists for the best-performing stock
+  negative_checks: []

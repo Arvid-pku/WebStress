@@ -12,7 +12,7 @@ from webagentbench.backend.seeders.robinhood import RobinhoodSeedRunner
 from webagentbench.tasks._registry import load_all_tasks, get_task
 
 
-EXPECTED_RH_TASKS = [
+EXPECTED_RH_EASY_TASKS = [
     "rh_buy_market_order",
     "rh_sell_shares",
     "rh_add_to_watchlist",
@@ -25,16 +25,52 @@ EXPECTED_RH_TASKS = [
     "rh_deposit_funds",
 ]
 
+EXPECTED_RH_MEDIUM_TASKS = [
+    "rh_limit_order_with_check",
+    "rh_deposit_then_buy",
+    "rh_compare_dividend_yields",
+    "rh_setup_recurring_investment",
+    "rh_review_and_cancel_orders",
+    "rh_transfer_and_withdraw",
+    "rh_find_earnings_and_alert",
+    "rh_sell_loser_buy_winner",
+    "rh_options_buy_call",
+    "rh_security_audit",
+]
+
+EXPECTED_RH_HARD_TASKS = [
+    "rh_portfolio_rebalance",
+    "rh_covered_call_strategy",
+    "rh_dividend_income_report",
+    "rh_wash_sale_avoidance",
+    "rh_cost_basis_reconciliation",
+    "rh_options_chain_analysis",
+    "rh_consolidate_recurring",
+    "rh_notification_triage",
+    "rh_sector_concentration",
+    "rh_transfer_history_audit",
+]
+
+EXPECTED_RH_TASKS = EXPECTED_RH_EASY_TASKS + EXPECTED_RH_MEDIUM_TASKS + EXPECTED_RH_HARD_TASKS
+
 
 def test_all_robinhood_tasks_load():
     """All rh_ tasks load with correct env_id and difficulty."""
     all_tasks = load_all_tasks()
 
+    difficulty_map = {}
+    for t in EXPECTED_RH_EASY_TASKS:
+        difficulty_map[t] = "easy"
+    for t in EXPECTED_RH_MEDIUM_TASKS:
+        difficulty_map[t] = "medium"
+    for t in EXPECTED_RH_HARD_TASKS:
+        difficulty_map[t] = "hard"
+
     for task_id in EXPECTED_RH_TASKS:
         assert task_id in all_tasks, f"Task {task_id} not found in registry"
         task = all_tasks[task_id]
         assert task.env_id == "robinhood", f"{task_id} has wrong env_id: {task.env_id}"
-        assert task.difficulty == "easy", f"{task_id} has wrong difficulty: {task.difficulty}"
+        assert task.difficulty == difficulty_map[task_id], f"{task_id} has wrong difficulty: {task.difficulty}"
         assert task.task_id == task_id
         assert len(task.primary_primitives) > 0, f"{task_id} has no primary primitives"
 

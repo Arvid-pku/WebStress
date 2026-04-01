@@ -1,0 +1,40 @@
+task_id: rh_deposit_then_buy
+env_id: robinhood
+title: Deposit Funds Then Buy Stock
+instruction_template: "Deposit $2,000 from your Chase checking account, then buy $1,500 worth of VTI at market price."
+difficulty: medium
+time_limit_seconds: 180
+expected_steps: 7
+primary_primitives:
+  - planning
+  - state_tracking
+start_path: /
+
+seed:
+  distractors: 10
+  steps:
+    - use: stock_universe
+      params:
+        count: 25
+        must_include: ["VTI", "SPY", "QQQ"]
+      outputs: []
+    - use: linked_banks
+      params:
+        banks:
+          - name: "Chase Checking"
+            type: "checking"
+            last_four: "4521"
+          - name: "Wells Fargo Savings"
+            type: "savings"
+            last_four: "8832"
+      outputs: []
+  targets: {}
+
+eval:
+  source: server_state
+  checks:
+    - expr: "any(t.direction == 'deposit' and t.amount == 2000 for t in state.transfers)"
+      desc: A $2,000 deposit transfer exists
+    - expr: "any(o.symbol == 'VTI' and o.side == 'buy' and o.order_type == 'market' for o in state.orders)"
+      desc: A market buy order for VTI exists
+  negative_checks: []

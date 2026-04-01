@@ -1,0 +1,35 @@
+task_id: rh_options_chain_analysis
+env_id: robinhood
+title: Analyze TSLA Options Chain for Highest Open Interest Put
+instruction_template: "For TSLA, find the put option with the highest open interest expiring within 2 weeks. Report its strike price, premium, and implied volatility."
+difficulty: hard
+time_limit_seconds: 220
+expected_steps: 8
+primary_primitives:
+  - exploration
+  - state_tracking
+  - grounding
+start_path: /
+
+seed:
+  distractors: 10
+  steps:
+    - use: stock_universe
+      params:
+        count: 25
+        must_include: ["TSLA", "AAPL", "NVDA"]
+      outputs: []
+    - use: options_chain
+      params:
+        symbol: "TSLA"
+        expirations_count: 6
+        strikes_per_expiration: 12
+      outputs: []
+  targets: {}
+
+eval:
+  source: server_state
+  checks:
+    - expr: "len(state.orders) == 0"
+      desc: No unintended trades were placed (reporting task only)
+  negative_checks: []

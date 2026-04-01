@@ -1,0 +1,40 @@
+task_id: rh_wash_sale_avoidance
+env_id: robinhood
+title: Tax-Loss Harvest While Avoiding Wash Sales
+instruction_template: "Perform tax-loss harvesting: sell all positions that have unrealized losses. However, skip any position where you purchased the same stock within the last 30 days, as this would trigger a wash sale."
+difficulty: hard
+time_limit_seconds: 280
+expected_steps: 12
+primary_primitives:
+  - state_tracking
+  - planning
+  - backtracking
+  - verification
+start_path: /
+
+seed:
+  distractors: 10
+  steps:
+    - use: stock_universe
+      params:
+        count: 25
+        must_include: ["AAPL", "MSFT", "GOOGL", "AMZN", "TSLA", "META"]
+      outputs: []
+    - use: portfolio_diverse
+      params:
+        count: 6
+        include_losers: true
+      outputs: []
+    - use: transaction_ledger
+      params:
+        months: 2
+        symbols: ["AAPL", "MSFT", "GOOGL", "AMZN", "TSLA", "META"]
+      outputs: []
+  targets: {}
+
+eval:
+  source: server_state
+  checks:
+    - expr: "len([o for o in state.orders if o.side == 'sell']) >= 1"
+      desc: At least one loss position was sold for tax-loss harvesting
+  negative_checks: []

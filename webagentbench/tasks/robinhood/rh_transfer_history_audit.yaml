@@ -1,0 +1,43 @@
+task_id: rh_transfer_history_audit
+env_id: robinhood
+title: Audit Transfer History and Verify Cash Balance
+instruction_template: "Review all transfers from the past 6 months. Calculate the total deposited and the total withdrawn. Report both figures and whether your current cash balance is consistent."
+difficulty: hard
+time_limit_seconds: 220
+expected_steps: 8
+primary_primitives:
+  - state_tracking
+  - verification
+  - planning
+start_path: /
+
+seed:
+  distractors: 10
+  steps:
+    - use: linked_banks
+      params: {}
+      outputs: []
+    - use: transfers_history
+      params:
+        count: 10
+        age_range_days: [1, 180]
+      outputs: []
+    - use: portfolio_basic
+      params:
+        stocks: ["AAPL", "MSFT"]
+        quantities: ["10", "5"]
+        cost_bases: ["180.00", "390.00"]
+      outputs: []
+    - use: stock_universe
+      params:
+        count: 20
+        must_include: ["AAPL", "MSFT"]
+      outputs: []
+  targets: {}
+
+eval:
+  source: server_state
+  checks:
+    - expr: "len(state.orders) == 0"
+      desc: No unintended trades were placed (reporting task only)
+  negative_checks: []
