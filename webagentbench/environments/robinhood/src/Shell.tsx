@@ -111,6 +111,9 @@ export function RobinhoodShell({ sessionId }: { sessionId: string }) {
     return () => clearTimeout(debounceRef.current);
   }, [location.pathname, location.search, refreshAccount, loadWatchlists]);
 
+  // Track which order fills we've already notified about
+  const notifiedFillsRef = useRef<Set<string>>(new Set());
+
   // Live price polling (every 2 seconds)
   useEffect(() => {
     const interval = setInterval(async () => {
@@ -134,10 +137,13 @@ export function RobinhoodShell({ sessionId }: { sessionId: string }) {
           }
           return next;
         });
-        if (data.pending_orders_filled.length > 0) {
+        // Only notify for newly filled orders (not already seen)
+        const newFills = data.pending_orders_filled.filter((id) => !notifiedFillsRef.current.has(id));
+        if (newFills.length > 0) {
           void refreshAccount();
           void loadWatchlists();
-          for (const orderId of data.pending_orders_filled) {
+          for (const orderId of newFills) {
+            notifiedFillsRef.current.add(orderId);
             notify("Order Filled", `Order ${orderId} has been filled`);
           }
         }
