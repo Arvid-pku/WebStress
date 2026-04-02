@@ -7,13 +7,12 @@ Act (API):          place orders, set alerts, create watchlists, etc.
 Verify (API):       run eval checks, dump server state
 
 Usage:
-  python rh_debug.py start <task_id> [--seed N]   Create session, screenshot home
-  python rh_debug.py see [path]                    Screenshot + a11y tree (default: current page)
-  python rh_debug.py act <endpoint> <json>         POST to API endpoint
-  python rh_debug.py state                         Dump all server state
-  python rh_debug.py check                         Run eval checks
-  python rh_debug.py batch <task_id> [task_id...]   Quick-test: create session + check for each
-  python rh_debug.py batch --all                   Quick-test all 65 tasks
+  python rh_debug.py start <task_id> [--seed N]    Create session, screenshot home
+  python rh_debug.py see [path]                     Screenshot + a11y tree
+  python rh_debug.py act <endpoint> <json>          POST to API endpoint
+  python rh_debug.py state                          Dump all server state
+  python rh_debug.py check                          Run eval checks
+  python rh_debug.py batch [task_id ...] [-w N]     Parallel quick-test (default: all tasks, 8 workers)
 """
 
 import argparse
@@ -21,6 +20,7 @@ import json
 import os
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 import httpx
@@ -28,7 +28,7 @@ import httpx
 BASE = os.environ.get("WAB_URL", "http://127.0.0.1:8080")
 API = f"{BASE}/api/env/robinhood"
 DIR = Path("scripts/debug_screenshots")
-SF = Path("scripts/.rh_session.json")
+SF = Path(os.environ.get("RH_SESSION_FILE", "scripts/.rh_session.json"))
 
 
 # ── helpers ──────────────────────────────────────────────────────────────
@@ -46,18 +46,27 @@ def _sid():
         sys.exit("No session. Run: rh_debug.py start <task_id>")
     return s["session_id"]
 
-def _get(path, sid=None):
-    r = httpx.get(f"{API}/{path}", params={"session_id": sid or _sid()}, timeout=30)
+def _client():
+    """Shared httpx client with connection pooling."""
+    return httpx.Client(base_url=API, timeout=30)
+
+def _get(path, sid=None, client=None):
+    c = client or httpx.Client(base_url=API, timeout=30)
+    r = c.get(f"/{path}", params={"session_id": sid or _sid()})
     r.raise_for_status()
+    if not client:
+        c.close()
     return r.json()
 
-def _post(path, payload):
-    r = httpx.post(f"{API}/{path}", json=payload, timeout=30)
+def _post(path, payload, client=None):
+    c = client or httpx.Client(base_url=API, timeout=30)
+    r = c.post(f"/{path}", json=payload)
     r.raise_for_status()
+    if not client:
+        c.close()
     return r.json()
 
 def _unwrap(data):
-    """Unwrap {items: [...]} → [...]"""
     return data["items"] if isinstance(data, dict) and "items" in data else data
 
 
@@ -126,7 +135,7 @@ DISPLAY_KEYS = [
 ]
 
 def state():
-    """Compact dump of all server state."""
+    """Compact dump of all server state (parallel API calls)."""
     sid = _sid()
     sections = [
         ("Account",       "account"),
@@ -140,12 +149,31 @@ def state():
         ("Transfers",     "transfers"),
         ("Settings",      "settings"),
     ]
-    for label, ep in sections:
-        try:
-            data = _unwrap(_get(ep, sid))
-        except Exception:
-            continue
 
+    # Fetch all sections in parallel
+    fetched = {}
+    with httpx.Client(base_url=API, timeout=30) as client:
+        with ThreadPoolExecutor(max_workers=len(sections)) as pool:
+            futures = {}
+            for label, ep in sections:
+                def fetch(ep=ep):
+                    r = client.get(f"/{ep}", params={"session_id": sid})
+                    r.raise_for_status()
+                    return r.json()
+                futures[pool.submit(fetch)] = label
+            for fut in as_completed(futures):
+                label = futures[fut]
+                try:
+                    fetched[label] = fut.result()
+                except Exception:
+                    pass
+
+    # Print in original order
+    for label, _ in sections:
+        data = fetched.get(label)
+        if data is None:
+            continue
+        data = _unwrap(data)
         if isinstance(data, list):
             if not data:
                 continue
@@ -208,11 +236,42 @@ def start(task_id, seed=42):
 
 # ── batch ────────────────────────────────────────────────────────────────
 
-def batch(task_ids):
-    """Quick-test: create session + run checks for each task. Reports errors."""
+def _test_one_task(tid: str, seed: int = 42) -> dict:
+    """Test a single task: create session + evaluate. Thread-safe."""
+    with httpx.Client(base_url=API, timeout=30) as client:
+        try:
+            resp = client.post("/session", json={"task_id": tid, "seed": seed}).json()
+            if "session_id" not in resp:
+                return {"task_id": tid, "status": "crash", "error": str(resp)}
+            sid = resp["session_id"]
+
+            ev = client.post("/evaluate", json={"session_id": sid, "task_id": tid}).json()
+            checks = ev.get("check_results", ev.get("checks", []))
+            errored = [c for c in checks if c.get("error")]
+            score = ev.get("score", 0)
+
+            if errored:
+                status = "ERROR"
+            elif score >= 1.0:
+                status = "VACUOUS"
+            else:
+                status = "ok"
+
+            return {
+                "task_id": tid,
+                "status": status,
+                "score": score,
+                "errors": [c.get("error") for c in errored],
+            }
+        except Exception as e:
+            return {"task_id": tid, "status": "crash", "error": str(e)}
+
+
+def batch(task_ids, workers=8):
+    """Parallel quick-test: create session + run checks for each task."""
     import yaml
 
-    if not task_ids or task_ids == ["--all"]:
+    if not task_ids:
         task_dir = Path("webagentbench/tasks/robinhood")
         task_ids = []
         for f in sorted(task_dir.glob("*.yaml")):
@@ -221,42 +280,34 @@ def batch(task_ids):
             data = yaml.safe_load(f.read_text())
             task_ids.append(data["task_id"])
 
+    DIR.mkdir(parents=True, exist_ok=True)
     results = []
-    for i, tid in enumerate(task_ids):
-        label = f"[{i+1}/{len(task_ids)}] {tid}"
-        try:
-            resp = _post("session", {"task_id": tid, "seed": 42})
-            sid = resp["session_id"]
-            _save({"session_id": sid, "task_id": tid, "instruction": resp["instruction"],
-                    "start_path": resp.get("start_path", "/"), "current_path": "/", "seed": 42})
+    done = 0
 
-            ev = _post("evaluate", {"session_id": sid, "task_id": tid})
-            checks = ev.get("check_results", ev.get("checks", []))
-            errored = [c for c in checks if c.get("error")]
-            vacuous = [c for c in checks if c.get("passed") and "all(" in c.get("expr", "")]
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        futures = {pool.submit(_test_one_task, tid): tid for tid in task_ids}
+        for fut in as_completed(futures):
+            r = fut.result()
+            results.append(r)
+            done += 1
 
-            score = ev.get("score", 0)
-            status = "ERROR" if errored else ("VACUOUS" if score >= 1.0 else "ok")
-
-            if status != "ok":
-                print(f"  {label}: {status} score={score:.2f}")
-                for c in errored:
-                    print(f"    ERR: {c.get('desc')}: {c.get('error')}")
-                if score >= 1.0:
+            if r["status"] != "ok":
+                print(f"  [{done}/{len(task_ids)}] {r['task_id']}: {r['status']} score={r.get('score', '?')}")
+                for err in r.get("errors", []):
+                    if err:
+                        print(f"    ERR: {err}")
+                if r["status"] == "VACUOUS":
                     print(f"    VACUOUS PASS — task passes without any agent action")
 
-            results.append({"task_id": tid, "status": status, "score": score,
-                           "errors": [c.get("error") for c in errored]})
-        except Exception as e:
-            print(f"  {label}: CRASH {e}")
-            results.append({"task_id": tid, "status": "crash", "error": str(e)})
+    # Sort results to match input order
+    order = {tid: i for i, tid in enumerate(task_ids)}
+    results.sort(key=lambda r: order.get(r["task_id"], 999))
 
-    # Summary
     ok = sum(1 for r in results if r["status"] == "ok")
     err = sum(1 for r in results if r["status"] in ("ERROR", "crash"))
     vac = sum(1 for r in results if r["status"] == "VACUOUS")
     print(f"\n{'='*50}")
-    print(f"BATCH: {len(results)} tasks | {ok} ok | {err} errors | {vac} vacuous")
+    print(f"BATCH: {len(results)} tasks | {ok} ok | {err} errors | {vac} vacuous  [{workers} workers]")
     if err + vac > 0:
         print("\nIssues:")
         for r in results:
@@ -278,7 +329,7 @@ def main():
     s = sub.add_parser("act");    s.add_argument("endpoint"); s.add_argument("payload")
     sub.add_parser("state")
     sub.add_parser("check")
-    s = sub.add_parser("batch");  s.add_argument("task_ids", nargs="*")
+    s = sub.add_parser("batch");  s.add_argument("task_ids", nargs="*"); s.add_argument("-w", "--workers", type=int, default=8)
 
     args = p.parse_args()
     if args.cmd == "start":   start(args.task_id, args.seed)
@@ -286,7 +337,7 @@ def main():
     elif args.cmd == "act":   act(args.endpoint, args.payload)
     elif args.cmd == "state": state()
     elif args.cmd == "check": check()
-    elif args.cmd == "batch": batch(args.task_ids or ["--all"])
+    elif args.cmd == "batch": batch(args.task_ids, args.workers)
     else: p.print_help()
 
 if __name__ == "__main__":
