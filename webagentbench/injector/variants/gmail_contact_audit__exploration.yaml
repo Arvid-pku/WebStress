@@ -1,13 +1,11 @@
-variant_id: gmail_contact_audit__exploration_v1
+variant_id: gmail_contact_audit__exploration_v2
 base_task_id: gmail_contact_audit
 target_primitive: exploration
-description: The Labels & contacts entry is hidden, forcing exploration before contact
-  cleanup can start.
+description: The aria-labels for "Settings" and "Labels" in the sidebar manage section
+  are swapped. Clicking the link that reads "Labels" navigates to Settings, and vice
+  versa. The agent must notice the mismatch and adapt.
 injections:
 - layer: client
   params:
-    action: hide_affordance
-    selector: a[aria-label="Labels"]
-    trigger: contextmenu
-    behavior:
-      mode: persistent
+    action: scramble_aria
+    selector: section[aria-label="manage"] a[aria-label]

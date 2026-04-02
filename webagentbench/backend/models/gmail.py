@@ -455,6 +455,13 @@ class GmailState(BaseEnvState):
         return email
 
     def delete_email(self, email_id: str) -> Email:
+        # If already in trash, permanently remove it.
+        for index, email in enumerate(self.deleted):
+            if email.id == email_id:
+                removed = self.deleted.pop(index)
+                self.touch()
+                return removed
+        # Otherwise, move to trash from inbox/sent.
         for collection in (self.emails, self.sent):
             for index, email in enumerate(collection):
                 if email.id == email_id:
@@ -465,13 +472,7 @@ class GmailState(BaseEnvState):
                     self.deleted.append(removed)
                     self.touch()
                     return removed
-        email = self._require_email(email_id)
-        if email not in self.deleted:
-            email.deleted = True
-            email.labels = ["trash"]
-            self.deleted.append(email)
-        self.touch()
-        return email
+        raise KeyError(f"Unknown email id: {email_id}")
 
     def send_email(
         self,

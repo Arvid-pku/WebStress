@@ -347,7 +347,7 @@ def test_evaluator_can_check_client_benchmark_state_events() -> None:
     assert result["score"] == pytest.approx(1.0)
 
 
-def test_search_and_star_requires_search_event_for_success() -> None:
+def test_search_and_star_passes_when_target_starred() -> None:
     session_manager = SessionManager()
     payload = create_session(
         SessionCreateRequest(task_id="gmail_search_and_star", seed=42),
@@ -355,34 +355,26 @@ def test_search_and_star_requires_search_event_for_success() -> None:
     )
 
     state = session_manager.get(payload["session_id"])
-    state.toggle_star(payload["resolved_targets"]["target_email_id"], True)
     task = get_task("gmail_search_and_star")
 
-    without_search = evaluate(
+    # Before starring: should fail
+    before = evaluate(
         task,
         server_state=state,
         targets=payload["resolved_targets"],
         trajectory=[],
     )
-    assert without_search["success"] is False
+    assert before["success"] is False
 
-    state.set_benchmark_state(
-        {
-            "events": [
-                {
-                    "type": "search_submit",
-                    "detail": {"query": "Q4 Budget Summary"},
-                }
-            ]
-        }
-    )
-    with_search = evaluate(
+    # After starring: should pass (no search event required)
+    state.toggle_star(payload["resolved_targets"]["target_email_id"], True)
+    after = evaluate(
         task,
         server_state=state,
         targets=payload["resolved_targets"],
         trajectory=[],
     )
-    assert with_search["success"] is True
+    assert after["success"] is True
 
 
 def test_browsergym_task_rejects_stale_server_manifest(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -153,16 +153,7 @@ class TestStandardCanaries:
         assert any(item["id"] == target for item in items), "Target should be discoverable via search"
 
         _star(client, sid, target)
-        ev = _eval(
-            client,
-            sid,
-            "gmail_search_and_star",
-            benchmark_state={
-                "events": [
-                    {"type": "search_submit", "detail": {"query": "Q4 Budget Summary"}}
-                ]
-            },
-        )
+        ev = _eval(client, sid, "gmail_search_and_star")
         assert ev["success"] is True
         assert ev["score"] == 1.0
 
@@ -443,14 +434,5 @@ class TestStressPlanning:
         assert any(item["id"] == target for item in r2.json()["items"])
 
         _star(client, sid, target)
-        ev = _eval(
-            client,
-            sid,
-            "gmail_search_and_star",
-            benchmark_state={
-                "events": [
-                    {"type": "search_submit", "detail": {"query": "Q4 Budget Summary"}}
-                ]
-            },
-        )
+        ev = _eval(client, sid, "gmail_search_and_star")
         assert ev["success"] is True

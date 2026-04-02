@@ -189,6 +189,45 @@ function labelDisplayName(name: string): string {
    General Tab
    ════════════════════════════════════════════════════════════════ */
 
+function getFeatureFlag(flag: string): boolean {
+  const w = window as unknown as Record<string, unknown>;
+  const flags = (w.__wabFeatureFlags ?? {}) as Record<string, unknown>;
+  return Boolean(flags[flag]);
+}
+
+function UndoSendRow({
+  settings,
+  setSettings,
+}: {
+  settings: GmailSettings;
+  setSettings: React.Dispatch<React.SetStateAction<GmailSettings>>;
+}) {
+  return (
+    <div className="gmail-settings-row">
+      <div className="gmail-settings-row__label">Undo Send:</div>
+      <div className="gmail-settings-row__controls">
+        <div className="gmail-settings-row__line">
+          Send cancellation period:{" "}
+          <select
+            value={settings.undo_send_seconds ?? 5}
+            onChange={(e) =>
+              setSettings((s) => ({ ...s, undo_send_seconds: Number(e.target.value) }))
+            }
+            aria-label="Undo send seconds"
+            className="gmail-settings-select gmail-settings-select--sm"
+          >
+            <option value={5}>5</option>
+            <option value={10}>10</option>
+            <option value={20}>20</option>
+            <option value={30}>30</option>
+          </select>{" "}
+          seconds
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function GeneralTab({
   settings,
   setSettings,
@@ -301,29 +340,10 @@ function GeneralTab({
         </div>
       </div>
 
-      {/* Undo Send */}
-      <div className="gmail-settings-row">
-        <div className="gmail-settings-row__label">Undo Send:</div>
-        <div className="gmail-settings-row__controls">
-          <div className="gmail-settings-row__line">
-            Send cancellation period:{" "}
-            <select
-              value={settings.undo_send_seconds ?? 5}
-              onChange={(e) =>
-                setSettings((s) => ({ ...s, undo_send_seconds: Number(e.target.value) }))
-              }
-              aria-label="Undo send seconds"
-              className="gmail-settings-select gmail-settings-select--sm"
-            >
-              <option value={5}>5</option>
-              <option value={10}>10</option>
-              <option value={20}>20</option>
-              <option value={30}>30</option>
-            </select>{" "}
-            seconds
-          </div>
-        </div>
-      </div>
+      {/* Undo Send — hidden from General when relocated to Advanced via feature flag */}
+      {!getFeatureFlag("undo_send_advanced") && (
+        <UndoSendRow settings={settings} setSettings={setSettings} />
+      )}
 
       {/* Auto-advance */}
       <div className="gmail-settings-row">
@@ -1075,7 +1095,21 @@ export function SettingsPage() {
             onOpenCreateFilter={openCreateFilter}
           />
         )}
-        {!["General", "Labels", "Filters and Blocked Addresses"].includes(activeTab) && (
+        {activeTab === "Advanced" && getFeatureFlag("undo_send_advanced") && (
+          <div className="gmail-settings-table" role="table" aria-label="Advanced settings">
+            <UndoSendRow settings={settings} setSettings={setSettings} />
+            <div className="gmail-settings-row gmail-settings-row--actions">
+              <div className="gmail-settings-row__label" />
+              <div className="gmail-settings-row__controls">
+                <Button variant="primary" aria-label="Save Gmail settings" onClick={handleSaveSettings}>
+                  Save Changes
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+        {!["General", "Labels", "Filters and Blocked Addresses"].includes(activeTab) &&
+          !(activeTab === "Advanced" && getFeatureFlag("undo_send_advanced")) && (
           <div className="gmail-settings-placeholder">
             <p>
               {activeTab} settings are not available in this environment.

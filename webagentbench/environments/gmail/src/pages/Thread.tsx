@@ -146,11 +146,12 @@ export function ThreadPage() {
           <button
             type="button"
             className="gmail-toolbar__icon-btn"
-            aria-label="Delete this thread"
+            aria-label={thread?.email.labels.includes("trash") ? "Delete this thread permanently" : "Delete this thread"}
             onClick={async () => {
               if (thread) {
+                const isInTrash = thread.email.labels.includes("trash");
                 await api.deleteEmail(thread.email.id);
-                notify("Moved to trash", thread.email.subject);
+                notify(isInTrash ? "Permanently deleted" : "Moved to trash", thread.email.subject);
                 await refreshMailbox();
                 navigate(preserveQueryParams("/inbox?label=inbox", location.search));
               }

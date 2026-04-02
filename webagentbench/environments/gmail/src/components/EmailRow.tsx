@@ -11,9 +11,10 @@ interface EmailRowProps {
   onToggleStar: (email: Email) => void;
   onArchive: (email: Email) => void;
   onDelete: (email: Email) => void;
+  currentLabel?: string;
 }
 
-export function EmailRow({ email, labels, onToggleStar, onArchive, onDelete }: EmailRowProps) {
+export function EmailRow({ email, labels, onToggleStar, onArchive, onDelete, currentLabel }: EmailRowProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const normalizedEmailLabels = new Set(email.labels.map((label) => label.toLowerCase()));
@@ -80,7 +81,7 @@ export function EmailRow({ email, labels, onToggleStar, onArchive, onDelete }: E
         </Button>
         <Button
           variant="ghost"
-          aria-label={`Delete ${email.subject}`}
+          aria-label={currentLabel === "trash" ? `Delete permanently ${email.subject}` : `Delete ${email.subject}`}
           onClick={(e: { stopPropagation: () => void }) => { e.stopPropagation(); onDelete(email); }}
         >
           <IconDelete />

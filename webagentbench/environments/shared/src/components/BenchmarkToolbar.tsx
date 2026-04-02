@@ -139,6 +139,15 @@ function applyClientInjections(injections: Array<{ params?: Record<string, unkno
         decoy.setAttribute("data-decoy", "true");
         real.parentNode?.insertBefore(decoy, real);
       }
+    } else if (action === "set_feature_flag") {
+      const flag = typeof params.flag === "string" ? params.flag : "";
+      const value = params.value ?? true;
+      if (flag) {
+        const w = window as unknown as Record<string, unknown>;
+        const flags = (w.__wabFeatureFlags ?? {}) as Record<string, unknown>;
+        flags[flag] = value;
+        w.__wabFeatureFlags = flags;
+      }
     }
   }
 }

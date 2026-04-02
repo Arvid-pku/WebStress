@@ -203,6 +203,7 @@ export function InboxPage() {
             key={email.id}
             email={email}
             labels={summary?.labels ?? []}
+            currentLabel={label}
             onToggleStar={(entry) =>
               runMutation(entry, () => api.toggleStar(entry.id), entry.is_starred ? "Removed star" : "Starred thread")
             }
@@ -212,7 +213,7 @@ export function InboxPage() {
                 await reload();
               })
             }
-            onDelete={(entry) => runMutation(entry, () => api.deleteEmail(entry.id), "Moved thread to trash")}
+            onDelete={(entry) => runMutation(entry, () => api.deleteEmail(entry.id), label === "trash" ? "Permanently deleted" : "Moved thread to trash")}
           />
         ))}
       </section>

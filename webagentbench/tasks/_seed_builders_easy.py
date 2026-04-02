@@ -149,13 +149,37 @@ def build_search_and_star(ctx: SeedContext, params: dict[str, Any]) -> dict[str,
     """Target email starts off the first inbox page so search is the shortest path."""
     # Add enough primary-category emails that the target is not visible on the
     # initial 16-thread inbox page, even before generic distractors are added.
+    _filler_subjects = [
+        "Re: Updated project timeline",
+        "Team lunch this Friday?",
+        "Quick question on the PR",
+        "Feedback on the design mockup",
+        "Sync notes from this morning",
+        "Out of office next Monday",
+        "New onboarding doc — please review",
+        "Re: Client call follow-up",
+        "Parking lot changes starting next week",
+        "Sprint retro action items",
+        "Invitation: product roadmap review",
+        "Re: Office supply order",
+        "Candidate interview — your availability",
+        "Monthly security training reminder",
+        "Re: Shared drive access",
+        "Vendor contract renewal",
+        "Holiday schedule — final version",
+        "Conference room booking conflict",
+        "Performance review self-assessment due",
+        "Build pipeline fix deployed",
+    ]
+    _filler_domains = ["team.test", "ops.test", "eng.test", "hr.test", "infra.test"]
     for i in range(20):
         t = ctx.next_id("thread")
+        sender_name = ctx.fake.name()
         ctx.base["emails"].append(ctx.email(
-            from_name=f"Person {i}",
-            from_addr=f"person{i}@misc.test",
-            subject=f"Weekly update #{i}",
-            body=f"This is routine email {i}.",
+            from_name=sender_name,
+            from_addr=ctx.email_for_name(sender_name, domain=ctx.rng.choice(_filler_domains)),
+            subject=_filler_subjects[i % len(_filler_subjects)],
+            body=ctx.generic_email_body(sender_name),
             timestamp=ctx.now - timedelta(hours=i + 1),
             thread_id=t,
             labels=["inbox"],
