@@ -1,40 +1,66 @@
+---
 task_id: rh_cost_basis_reconciliation
 env_id: robinhood
-title: Reconcile AAPL Cost Basis Against Transactions
-instruction_template: "Compare the lot-level cost basis shown in your AAPL position against your AAPL purchase transactions. Report the total cost basis from each source and identify any discrepancy."
+title: Trim AAPL Position and Set Rebuy Alert
+instruction_template: Your AAPL position is oversized. Sell half of your AAPL shares
+  (round down to a whole number) using a limit order at the current ask price. Then
+  set a price alert on AAPL at 10% below the current price in case you want to rebuy
+  later.
 difficulty: hard
 time_limit_seconds: 250
-expected_steps: 10
+expected_steps: 8
 primary_primitives:
-  - state_tracking
-  - verification
-  - grounding
-start_path: /
-
+- state_tracking
+- verification
+- grounding
+start_path: "/"
 seed:
   distractors: 10
   steps:
-    - use: stock_universe
-      params:
-        count: 25
-        must_include: ["AAPL", "MSFT", "GOOGL"]
-      outputs: []
-    - use: portfolio_basic
-      params:
-        stocks: ["AAPL", "MSFT"]
-        quantities: ["75", "30"]
-        cost_bases: ["172.50", "385.00"]
-      outputs: []
-    - use: transaction_ledger
-      params:
-        months: 3
-        symbols: ["AAPL", "MSFT"]
-      outputs: []
-  targets: {}
-
+  - use: stock_universe
+    params:
+      count: 25
+      must_include:
+      - AAPL
+      - MSFT
+      - GOOGL
+    outputs: []
+  - use: portfolio_basic
+    params:
+      stocks:
+      - AAPL
+      - MSFT
+      quantities:
+      - '75'
+      - '30'
+      cost_bases:
+      - '172.50'
+      - '385.00'
+    outputs: []
+  targets:
+    symbol: AAPL
 eval:
   source: server_state
   checks:
-    - expr: "len(state.orders) == 0"
-      desc: No unintended trades were placed (reporting task only)
-  negative_checks: []
+  - expr: any(o.symbol == '{target.symbol}' and o.side == 'sell' and o.order_type ==
+      'limit' and o.status in ('filled', 'pending') for o in state.orders)
+    desc: A limit sell order was placed for AAPL
+  - expr: any(o.symbol == '{target.symbol}' and o.side == 'sell' and o.quantity == int(state.get_position('{target.symbol}').quantity
+      / 2) for o in state.orders)
+    desc: The sell quantity is half the current position rounded down
+  - expr: any(o.symbol == '{target.symbol}' and o.side == 'sell' and o.limit_price
+      == state.get_stock('{target.symbol}').ask for o in state.orders)
+    desc: The limit price is set at the current ask price
+  - expr: any(a.symbol == '{target.symbol}' and a.condition == 'below' and a.target_price
+      >= state.get_stock('{target.symbol}').price * Decimal('0.89') and a.target_price
+      <= state.get_stock('{target.symbol}').price * Decimal('0.91') for a in state.price_alerts)
+    desc: A price alert was set at approximately 10% below current price
+  negative_checks:
+  - expr: not any(o.symbol != '{target.symbol}' for o in state.orders)
+    desc: No orders were placed on stocks other than AAPL
+  - expr: len(state.transfers) == 0
+    desc: No transfers were initiated
+secondary_primitives: []
+primitive_thesis: Measures state_tracking, verification, grounding by requiring the
+  agent to calculate half of a position, place a correctly priced limit order, and
+  set a price alert.

@@ -1,48 +1,85 @@
+---
 task_id: rh_multi_leg_options
 env_id: robinhood
-title: Execute an Iron Condor on SPY
-instruction_template: "Execute an iron condor on SPY: sell a call and a put at strikes 5% above and below current price, and buy protective legs 2% further out, all expiring in approximately 45 days. Report the maximum profit and maximum loss."
+title: Execute an Iron Condor on {target.symbol}
+instruction_template: 'Execute an iron condor on {target.symbol}: sell a call and
+  a put at strikes 5% above and below current price, and buy protective legs 2% further
+  out, all expiring in approximately 45 days.'
 difficulty: expert
 time_limit_seconds: 400
 expected_steps: 22
 primary_primitives:
-  - planning
-  - state_tracking
-  - exploration
-  - grounding
-start_path: /
-
+- planning
+- state_tracking
+- exploration
+- grounding
+start_path: "/"
 seed:
   distractors: 20
   steps:
-    - use: stock_universe
-      params:
-        count: 30
-        must_include: ["SPY", "QQQ", "AAPL", "MSFT"]
-      outputs: []
-    - use: options_chain
-      params:
-        symbol: "SPY"
-        expirations_count: 3
-        strikes_per_expiration: 20
-      outputs: []
-    - use: portfolio_basic
-      params:
-        stocks: ["QQQ", "AAPL"]
-        quantities: ["50", "20"]
-        cost_bases: ["380.00", "175.00"]
-      outputs: []
-    - use: linked_banks
-      params: {}
-      outputs: []
+  - use: stock_universe
+    params:
+      count: 30
+      must_include:
+      - SPY
+      - QQQ
+      - AAPL
+      - MSFT
+    outputs: []
+  - use: options_chain
+    params:
+      symbol: SPY
+      expirations_count: 3
+      strikes_per_expiration: 20
+    outputs: []
+  - use: portfolio_basic
+    params:
+      stocks:
+      - QQQ
+      - AAPL
+      quantities:
+      - '50'
+      - '20'
+      cost_bases:
+      - '380.00'
+      - '175.00'
+    outputs: []
+  - use: linked_banks
+    params: {}
+    outputs: []
   targets:
-    symbol: "SPY"
-
+    symbol: SPY
 eval:
   source: server_state
   checks:
-    - expr: "any(o.symbol == 'SPY' and o.asset_type == 'option' and o.strategy == 'iron_condor' and o.status in ('filled', 'pending') for o in state.orders)"
-      desc: An iron condor options order for SPY exists
-    - expr: "sum(1 for o in state.orders if o.symbol == 'SPY' and o.asset_type == 'option') >= 4"
-      desc: At least 4 option legs were placed for SPY
-  negative_checks: []
+  - expr: state.latest_options_order(symbol='{target.symbol}') is not None and state.latest_options_order(symbol='{target.symbol}').strategy
+      == 'iron_condor' and len(state.latest_options_order(symbol='{target.symbol}').legs)
+      == 4
+    desc: A 4-leg iron condor order was placed on the target underlying
+  - expr: state.latest_options_order(symbol='{target.symbol}') is not None and len([leg
+      for leg in state.latest_options_order(symbol='{target.symbol}').legs if leg.side
+      == 'sell']) == 2 and len([leg for leg in state.latest_options_order(symbol='{target.symbol}').legs if leg.side
+      == 'buy']) == 2
+    desc: The iron condor has the correct two short legs and two protective long legs
+  - expr: state.latest_options_order(symbol='{target.symbol}') is not None and len([leg
+      for leg in state.latest_options_order(symbol='{target.symbol}').legs if leg.option_type
+      == 'call' and leg.side == 'buy']) == 1 and len([leg for leg in state.latest_options_order(symbol='{target.symbol}').legs
+      if leg.option_type == 'call' and leg.side == 'sell']) == 1 and len([leg for
+      leg in state.latest_options_order(symbol='{target.symbol}').legs if leg.option_type
+      == 'put' and leg.side == 'buy']) == 1 and len([leg for leg in state.latest_options_order(symbol='{target.symbol}').legs
+      if leg.option_type == 'put' and leg.side == 'sell']) == 1 and min([leg.strike
+      for leg in state.latest_options_order(symbol='{target.symbol}').legs if leg.option_type
+      == 'call' and leg.side == 'buy']) > max([leg.strike for leg in state.latest_options_order(symbol='{target.symbol}').legs
+      if leg.option_type == 'call' and leg.side == 'sell']) and max([leg.strike for
+      leg in state.latest_options_order(symbol='{target.symbol}').legs if leg.option_type
+      == 'put' and leg.side == 'buy']) < min([leg.strike for leg in state.latest_options_order(symbol='{target.symbol}').legs
+      if leg.option_type == 'put' and leg.side == 'sell'])
+    desc: The protective wings sit farther out than the short call and short put
+  negative_checks:
+  - expr: state.latest_options_order(symbol='{target.symbol}') is not None and not
+      any(leg.underlying_symbol != '{target.symbol}' for leg in state.latest_options_order(symbol='{target.symbol}').legs)
+    desc: The iron condor did not mix in legs from another underlying
+secondary_primitives: []
+primitive_thesis: Measures planning, state_tracking, exploration, grounding by requiring
+  exact completion of the requested Robinhood workflow while ignoring distractor account
+  state.
