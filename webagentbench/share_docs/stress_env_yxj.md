@@ -4,6 +4,8 @@
 **Date**: 2026-03-30
 **Status**: Implemented and validated. Gmail environment (80 tasks, 153 YAML degradation variants as of 2026-03-31). End-to-end tested with gpt-5.4 — all 7 primitives show signal. BrowserGym-native.
 
+**Current checkout scope**: the active mainline in this repository is the Gmail environment benchmark. Historical page-benchmark notes elsewhere in the repo are archival context, not the active evaluation target.
+
 ---
 
 ## 1. Motivation
@@ -445,12 +447,13 @@ A human interacts with the live environment (clicking, typing, navigating) to co
 - **Trajectory recorder** (`static/trajectory-recorder.js`): Records click, input, keypress, scroll, navigate events during human play
 - **Gold trajectory saving**: On successful evaluation with recording active, `POST /api/env/gmail/trajectory` saves the trajectory with task settings (seed, degradation, resolved targets) and server audit log
 - **Client degradation**: `BenchmarkToolbar` fetches `GET /api/env/gmail/degradation/{session_id}` and applies DOM mutations for stress mode
-- **Variants endpoint** (`GET /api/env/gmail/variants`): Lists YAML-backed variants, filtered by task in the launcher
+- **Variants endpoint** (`GET /api/env/gmail/variants`): Lists available variants for the environment, including YAML-backed variants and auto-generated defaults, filtered by task in the launcher
 
 **Usage**:
 ```bash
-# Start backend + live frontend and open the launcher:
-./scripts/webagentbench.sh dev
+# Build the Gmail frontend once, then start the backend launcher:
+pnpm -C webagentbench/environments build
+python -m webagentbench.app --host 127.0.0.1 --port 8080
 #
 # 1. Select a task
 # 2. Optionally select a degradation variant (stress-test mode)
@@ -513,20 +516,26 @@ set -a; source .env; set +a   # load API keys + OPENSSL_CONF="" fix
 ### 10.2 Start the launcher (recommended)
 
 ```bash
-./scripts/webagentbench.sh dev
-# Opens: http://localhost:8080/launch
-# Health: http://localhost:8080/health
+pnpm -C webagentbench/environments build
+python -m webagentbench.app --host 127.0.0.1 --port 8080
+# Launcher: http://127.0.0.1:8080/launch
+# Health:   http://127.0.0.1:8080/health
 ```
 
-`./scripts/webagentbench.sh` defaults to `dev` when run without a subcommand. Use `./scripts/webagentbench.sh dev --env gmail --no-open` if you want Gmail-only startup without opening a browser.
+This mode serves the built Gmail bundle from `webagentbench/static/envs/gmail/`.
 
-### 10.3 Refresh static frontend bundles
+### 10.3 Live Gmail frontend during development (optional)
 
 ```bash
-./scripts/webagentbench.sh build
+# Terminal A: backend + launcher with dev-frontend override
+WEBAGENTBENCH_DEV_FRONTENDS=gmail=http://127.0.0.1:4173/env/gmail \
+python -m webagentbench.app --host 127.0.0.1 --port 8080
+
+# Terminal B: Gmail Vite dev server
+pnpm -C webagentbench/environments dev:gmail
 ```
 
-Use `build` when you want FastAPI to serve the static bundle from `webagentbench/static/envs/`. The backend rejects stale bundles until they are rebuilt.
+In this mode the launcher at `http://127.0.0.1:8080/launch` redirects Gmail sessions into the live frontend dev server while the backend continues serving `/api`, `/manifest`, and `/launch`.
 
 ### 10.4 Run agent evaluation
 
@@ -567,8 +576,9 @@ python -m webagentbench.scripts.compute_delta \
 ### 10.6 Human play mode
 
 ```bash
-./scripts/webagentbench.sh dev
-# /launch opens automatically
+pnpm -C webagentbench/environments build
+python -m webagentbench.app --host 127.0.0.1 --port 8080
+# Then open /launch in a browser
 # 1. Pick task + optional degradation variant + seed
 # 2. Click Launch → opens Gmail SPA
 # 3. Complete the task manually

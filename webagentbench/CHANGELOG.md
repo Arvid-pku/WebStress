@@ -1,15 +1,36 @@
 # WebAgentBench Changelog
 
-Iterative optimization of 15 self-contained web pages for evaluating LLM agent cognitive primitives. Each version corresponds to benchmark runs and challenge redesign iterations.
+This changelog spans two benchmark eras:
 
-Benchmark overview and versioned result tables are maintained in `README.md`. This file is the change log for version-by-version benchmark modifications.
+- the current environment/task benchmark centered on simulated Gmail
+- the retired page-based benchmark (`v1`-`v10`) kept below as archival history
+
+Unless noted otherwise, older page-benchmark sections are historical notes rather than a description of the active benchmark in this checkout.
+
+## Unreleased — Documentation Realignment For Gmail Benchmark Mainline (2026-04-01)
+
+### What changed
+
+- rewrote `README.md` to describe the current Gmail environment benchmark instead of the retired 15-page benchmark line
+- replaced broken local-path document references with repo-local docs
+- added `share_docs/GMAIL_TASK_GENERATION_STANDARD.md` for current Gmail task authoring guidance
+- added `share_docs/PAST_IMPLEMENTATIONS.md` to separate active benchmark scope from historical page-benchmark notes
+- added `results/webagentbench/README.md` so result/artifact pointers resolve inside this checkout
+- clarified in docs that current Gmail evaluation is primarily outcome-validated via server state, with optional client `benchmark_state` checks where needed
+
+### Validation
+
+- `../.venv/bin/python -m pytest -q tests/test_task_linter.py tests/test_scoring_audit.py tests/test_gmail_seed_stability.py tests/test_frontend_build_guard.py tests/test_axtree_audit.py`
+- `../.venv/bin/python -m pytest -q tests/test_benchmark_integrity.py tests/test_evaluator_edge_cases.py`
+- `../.venv/bin/python -m pytest -q tests/test_e2e_integration.py`
+- `../.venv/bin/python -m pytest -q tests/test_canary_trajectories.py`
 
 ## Unreleased — Frontend Workflow And Toolbar Consolidation (2026-03-31)
 
 ### What changed
 
-- consolidated local frontend entrypoints into `./scripts/webagentbench.sh`, which now owns both `dev` and `build`
-- made `dev` mode open `http://localhost:8080/launch` directly while wiring the launcher to live frontend dev servers through manifest `base_url` overrides
+- consolidated local frontend entrypoints around the `environments/` workspace commands used by the Gmail build and dev flow
+- wired the launcher to support live frontend dev servers through manifest `base_url` overrides
 - enforced built-bundle freshness against frontend source mtimes so stale static assets are rejected until rebuilt
 - moved the benchmark toolbar into the shared React source as `environments/shared/src/components/BenchmarkToolbar.tsx`
 - removed runtime HTML mutation and the old standalone toolbar script path; both human play and agent mode now use the same in-app client degradation fetch path
@@ -18,8 +39,8 @@ Benchmark overview and versioned result tables are maintained in `README.md`. Th
 
 ### Validation
 
-- `bash -n scripts/webagentbench.sh`
-- `python -m pytest -q webagentbench/tests/test_frontend_build_guard.py`
+- `pnpm -C environments build`
+- `python -m pytest -q tests/test_frontend_build_guard.py`
 - `git diff --check`
 
 ## Unreleased — Stress Benchmark Integrity Fixes (2026-03-30)
