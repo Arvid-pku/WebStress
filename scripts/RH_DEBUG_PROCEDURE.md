@@ -17,15 +17,17 @@ cd webagentbench/environments/robinhood && npx vite build && cd -
 
 ## Phase 1: Batch Smoke Test
 
-Run all 65 tasks to catch crashes and vacuous checks:
+Run all 65 tasks in parallel to catch crashes and vacuous checks:
 
 ```bash
-python scripts/rh_debug.py batch --all
+python scripts/rh_debug.py batch                # all tasks, 8 workers (default)
+python scripts/rh_debug.py batch -w 16          # more workers for faster runs
+python scripts/rh_debug.py batch rh_foo rh_bar  # specific tasks only
 ```
 
 This creates a session for each task, runs eval checks, and flags:
 - **ERROR**: a check expression crashed (missing method, type error, etc.)
-- **VACUOUS**: task scored 1.0 with no agent action (all() over empty set)
+- **VACUOUS**: task scored 1.0 with no agent action (`all()` over empty set)
 - **CRASH**: session creation failed (bad seed config, missing builder, etc.)
 
 Fix all errors before proceeding to Phase 2.
@@ -67,7 +69,7 @@ Check for:
 python scripts/rh_debug.py state
 ```
 
-Verify the seeded state matches what the task expects:
+Fetches all 10 API endpoints in parallel. Verify the seeded state matches expectations:
 - Positions exist with correct quantities
 - Alerts/watchlists/recurring are seeded as expected
 - Options chains/positions exist if needed
@@ -99,7 +101,7 @@ python scripts/rh_debug.py act recurring '{"symbol":"VTI","amount":"200","freque
 python scripts/rh_debug.py act orders/ord_1/cancel '{}'
 
 # Delete a price alert
-# (use DELETE via curl if needed: curl -X DELETE ".../alerts/alert_1?session_id=...")
+# (use DELETE via curl: curl -X DELETE ".../alerts/alert_1?session_id=...")
 
 # Update settings (e.g. enable 2FA)
 # python scripts/rh_debug.py act settings '{"two_factor_method":"authenticator"}'
@@ -123,7 +125,25 @@ python scripts/rh_debug.py see /orders    # Should show the order you placed
 python scripts/rh_debug.py see /           # Should show updated portfolio
 ```
 
-## Phase 3: Common Issues Checklist
+## Parallel Agent Execution
+
+Multiple agents can test tasks simultaneously. Each agent needs its own session file:
+
+```bash
+# Agent 1
+RH_SESSION_FILE=/tmp/agent_1.json python scripts/rh_debug.py start rh_check_buying_power
+RH_SESSION_FILE=/tmp/agent_1.json python scripts/rh_debug.py act orders '{"symbol":"AAPL",...}'
+RH_SESSION_FILE=/tmp/agent_1.json python scripts/rh_debug.py check
+
+# Agent 2 (runs concurrently)
+RH_SESSION_FILE=/tmp/agent_2.json python scripts/rh_debug.py start rh_earnings_play_setup
+RH_SESSION_FILE=/tmp/agent_2.json python scripts/rh_debug.py act orders '{"symbol":"AAPL",...}'
+RH_SESSION_FILE=/tmp/agent_2.json python scripts/rh_debug.py check
+```
+
+Sessions are server-side isolated — each `start` creates an independent session with its own state. The `RH_SESSION_FILE` env var just controls where the *client* stores the session ID locally.
+
+## Common Issues Checklist
 
 | Symptom | Root Cause | Fix |
 |---------|-----------|-----|
@@ -135,7 +155,7 @@ python scripts/rh_debug.py see /           # Should show updated portfolio
 | Empty page in UI | Seed step missing or wrong params | Check seed builder accepts those params |
 | API returns 422 | Missing required field in payload | Check endpoint schema in routes/robinhood.py |
 
-## Phase 4: After Fixes
+## After Fixes
 
 ```bash
 # Always restart server after editing YAML
@@ -144,7 +164,7 @@ python -m webagentbench.app --host 127.0.0.1 --port 8080 &
 sleep 3
 
 # Re-run batch to confirm
-python scripts/rh_debug.py batch --all
+python scripts/rh_debug.py batch
 
 # Commit
 git add -A && git commit -m "fix(robinhood): ..."
