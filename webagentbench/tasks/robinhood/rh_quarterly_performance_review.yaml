@@ -36,7 +36,9 @@ seed:
   - use: portfolio_diverse
     params:
       position_count: 8
-    outputs: []
+    outputs:
+    - worst_symbol
+    - best_symbol
   - use: notifications
     params:
       count: 10
@@ -47,28 +49,26 @@ seed:
     params:
       quarters: 2
     outputs: []
-  targets: {}
+  targets:
+    worst_symbol: "{output.worst_symbol}"
+    best_symbol: "{output.best_symbol}"
 eval:
   source: server_state
   checks:
-  - expr: state.worst_position_symbol() is not None and any(o.symbol == state.worst_position_symbol()
-      and o.side == 'sell' and o.order_type == 'market' and o.status in ('filled',
-      'pending') for o in state.orders)
+  - expr: any(o.symbol == '{target.worst_symbol}' and o.side == 'sell' and o.order_type
+      == 'market' and o.status in ('filled', 'pending') for o in state.orders)
     desc: The worst-performing position was sold via market order
-  - expr: state.worst_position_symbol() is not None and any(o.symbol == state.worst_position_symbol()
-      and o.side == 'sell' and o.quantity == state.get_position(state.worst_position_symbol()).quantity
-      for o in state.orders)
+  - expr: sum(o.quantity for o in state.orders if o.symbol == '{target.worst_symbol}'
+      and o.side == 'sell') >= state.initial_quantity('{target.worst_symbol}')
     desc: The entire worst-performing position was sold, not just a partial amount
-  - expr: state.best_position_symbol() is not None and any(a.symbol == state.best_position_symbol()
-      and a.condition == 'above' and a.target_price >= state.get_stock(state.best_position_symbol()).price
-      * Decimal('1.09') and a.target_price <= state.get_stock(state.best_position_symbol()).price
-      * Decimal('1.11') for a in state.price_alerts)
+  - expr: any(a.symbol == '{target.best_symbol}' and a.condition == 'above' and a.target_price
+      >= state.get_stock('{target.best_symbol}').price * Decimal('1.09') and a.target_price
+      <= state.get_stock('{target.best_symbol}').price * Decimal('1.11') for a in state.price_alerts)
     desc: A price alert was set on the best position at approximately 10% above current
       price
-  - expr: state.best_position_symbol() is not None and any(a.symbol == state.best_position_symbol()
-      and a.condition == 'below' and a.target_price >= state.get_stock(state.best_position_symbol()).price
-      * Decimal('0.89') and a.target_price <= state.get_stock(state.best_position_symbol()).price
-      * Decimal('0.91') for a in state.price_alerts)
+  - expr: any(a.symbol == '{target.best_symbol}' and a.condition == 'below' and a.target_price
+      >= state.get_stock('{target.best_symbol}').price * Decimal('0.89') and a.target_price
+      <= state.get_stock('{target.best_symbol}').price * Decimal('0.91') for a in state.price_alerts)
     desc: A price alert was set on the best position at approximately 10% below current
       price
   - expr: all(n.is_read for n in state.notifications)
@@ -80,7 +80,7 @@ eval:
       if sym in state.owned_symbols())
     desc: All owned stocks with upcoming corporate actions were added to the watchlist
   negative_checks:
-  - expr: not any(o.side == 'sell' and o.symbol != state.worst_position_symbol() for
+  - expr: not any(o.side == 'sell' and o.symbol != '{target.worst_symbol}' for
       o in state.orders)
     desc: Only the worst-performing position was sold
   - expr: len(state.transfers) == 0

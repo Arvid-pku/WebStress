@@ -59,7 +59,7 @@ eval:
     desc: The covered call uses an expiration around 30 days out and a strike about
       10% above spot
   negative_checks:
-  - expr: state.latest_options_order(symbol='AAPL') is not None and not any(leg.option_type
+  - expr: state.latest_options_order(symbol='AAPL') is None or not any(leg.option_type
       == 'put' for leg in state.latest_options_order(symbol='AAPL').legs)
     desc: The order did not include an unnecessary put leg
 secondary_primitives: []

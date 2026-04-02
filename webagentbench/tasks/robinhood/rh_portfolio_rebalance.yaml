@@ -1,39 +1,74 @@
+---
 task_id: rh_portfolio_rebalance
 env_id: robinhood
 title: Rebalance Portfolio to Target Allocation
-instruction_template: "Rebalance your portfolio to the following target allocation: AAPL 40%, MSFT 30%, GOOGL 20%, AMZN 10%. Calculate the trades needed and execute them."
+instruction_template: 'Rebalance your portfolio to the following target allocation:
+  AAPL 40%, MSFT 30%, GOOGL 20%, AMZN 10%. Calculate the trades needed and execute
+  them.'
 difficulty: hard
 time_limit_seconds: 300
 expected_steps: 15
 primary_primitives:
-  - state_tracking
-  - planning
-  - grounding
-start_path: /
-
+- state_tracking
+- planning
+- grounding
+start_path: "/"
 seed:
   distractors: 10
   steps:
-    - use: stock_universe
-      params:
-        count: 25
-        must_include: ["AAPL", "MSFT", "GOOGL", "AMZN"]
-      outputs: []
-    - use: portfolio_basic
-      params:
-        stocks: ["AAPL", "MSFT", "GOOGL", "AMZN"]
-        quantities: ["20", "30", "8", "25"]
-        cost_bases: ["170.00", "380.00", "155.00", "165.00"]
-      outputs: []
-  targets: {}
-
+  - use: stock_universe
+    params:
+      count: 25
+      must_include:
+      - AAPL
+      - MSFT
+      - GOOGL
+      - AMZN
+    outputs: []
+  - use: portfolio_basic
+    params:
+      stocks:
+      - AAPL
+      - MSFT
+      - GOOGL
+      - AMZN
+      quantities:
+      - '20'
+      - '30'
+      - '8'
+      - '25'
+      cost_bases:
+      - '170.00'
+      - '380.00'
+      - '155.00'
+      - '165.00'
+    outputs: []
+  targets:
+    target_allocation:
+      AAPL: 40
+      MSFT: 30
+      GOOGL: 20
+      AMZN: 10
 eval:
   source: server_state
   checks:
-    - expr: "len([o for o in state.orders if o.side == 'sell']) >= 1"
-      desc: At least one sell order was placed to reduce overweight positions
-    - expr: "len([o for o in state.orders if o.side == 'buy']) >= 1"
-      desc: At least one buy order was placed to increase underweight positions
-    - expr: "len(state.orders) >= 2"
-      desc: Multiple trades were executed for rebalancing
-  negative_checks: []
+  - expr: len([o for o in state.orders if o.side == 'sell']) >= 1
+    desc: At least one sell order was placed to reduce overweight positions
+  - expr: len([o for o in state.orders if o.side == 'buy']) >= 1
+    desc: At least one buy order was placed to increase underweight positions
+  - expr: all(state.projected_quantity_after_orders(symbol) > Decimal('0') for symbol
+      in {target.target_allocation})
+    desc: All target symbols retain non-zero projected allocations after rebalancing
+  - expr: state.allocation_error_vs_targets({target.target_allocation})
+      < state.allocation_error_vs_targets_initial({target.target_allocation})
+    desc: The portfolio moved closer to the requested target allocation
+  - expr: state.allocation_error_vs_targets({target.target_allocation}) <= Decimal('15')
+    desc: The allocation is within a tight total-error band of the requested mix
+  negative_checks:
+  - expr: not any(o.symbol not in ['AAPL', 'MSFT', 'GOOGL', 'AMZN'] for o in state.orders)
+    desc: Did not trade symbols outside the target allocation set
+    penalty: 0.25
+secondary_primitives: []
+primitive_thesis: Measures state_tracking, planning, grounding by requiring exact
+  completion of the requested Robinhood workflow while ignoring distractor account
+  state.

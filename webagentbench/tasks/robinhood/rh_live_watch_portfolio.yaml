@@ -26,7 +26,7 @@ seed:
     outputs: []
   - use: portfolio_diverse
     params:
-      total_value_target: 14200
+      total_value_target: 14800
     outputs:
     - best_symbol
     - portfolio_value
@@ -40,9 +40,9 @@ seed:
         - - 0
           - 189.0
         - - 18
-          - 210.0
+          - 225.0
         - - 30
-          - 208.0
+          - 222.0
         noise_pct: 0.3
 eval:
   source: server_state

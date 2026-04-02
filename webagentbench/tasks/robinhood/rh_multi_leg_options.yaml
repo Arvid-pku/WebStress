@@ -76,7 +76,7 @@ eval:
       if leg.option_type == 'put' and leg.side == 'sell'])
     desc: The protective wings sit farther out than the short call and short put
   negative_checks:
-  - expr: state.latest_options_order(symbol='{target.symbol}') is not None and not
+  - expr: state.latest_options_order(symbol='{target.symbol}') is None or not
       any(leg.underlying_symbol != '{target.symbol}' for leg in state.latest_options_order(symbol='{target.symbol}').legs)
     desc: The iron condor did not mix in legs from another underlying
 secondary_primitives: []

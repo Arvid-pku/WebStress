@@ -1,49 +1,78 @@
+---
 task_id: rh_tax_optimization
 env_id: robinhood
 title: Tax-Loss Harvesting to Offset Gains
-instruction_template: "You have short-term capital gains this year. Find positions with unrealized losses that you have held for more than 30 days (to avoid wash sale conflicts with recent purchases). Sell enough losing positions to offset your gains. Report the expected tax impact."
+instruction_template: You have short-term capital gains this year. Find positions
+  with unrealized losses that you have held for more than 30 days (to avoid wash sale
+  conflicts with recent purchases). Sell enough losing positions to offset your gains.
 difficulty: expert
 time_limit_seconds: 400
 expected_steps: 20
 primary_primitives:
-  - state_tracking
-  - planning
-  - backtracking
-  - verification
-start_path: /
-
+- state_tracking
+- planning
+- backtracking
+- verification
+start_path: "/"
 seed:
   distractors: 20
   steps:
-    - use: stock_universe
-      params:
-        count: 30
-        must_include: ["AAPL", "TSLA", "NFLX", "META", "AMZN", "INTC", "BA"]
-      outputs: []
-    - use: portfolio_diverse
-      params:
-        position_count: 8
-        include_losers: true
-        loser_count: 3
-      outputs: []
-    - use: tax_documents
-      params:
-        include_gains: true
-        short_term_gains: 5000
-      outputs: []
-    - use: transaction_ledger
-      params:
-        months: 3
-        include_recent_buys: true
-      outputs: []
-    - use: linked_banks
-      params: {}
-      outputs: []
-  targets: {}
-
+  - use: stock_universe
+    params:
+      count: 30
+      must_include:
+      - AAPL
+      - TSLA
+      - NFLX
+      - META
+      - AMZN
+      - INTC
+      - BA
+    outputs: []
+  - use: portfolio_diverse
+    params:
+      position_count: 8
+      include_losers: true
+      loser_count: 3
+    outputs:
+    - loss_symbols
+  - use: tax_documents
+    params:
+      include_gains: true
+      short_term_gains: 4000
+      gains_count: 1
+    outputs: []
+  - use: transaction_ledger
+    params:
+      months: 3
+      include_recent_buys: true
+      recent_buy_symbols: "{output.loss_symbols}"
+      recent_buy_count: 1
+    outputs:
+    - recent_buy_symbols
+  - use: linked_banks
+    params: {}
+    outputs: []
+  targets:
+    loss_symbols: "{output.loss_symbols}"
+    recent_buy_symbols: "{output.recent_buy_symbols}"
 eval:
   source: server_state
   checks:
-    - expr: "any(o.side == 'sell' and o.status in ('filled', 'pending') for o in state.orders)"
-      desc: At least one sell order exists for a losing position
-  negative_checks: []
+  - expr: any(o.side == 'sell' and o.status in ('filled', 'pending') for o in state.orders)
+    desc: At least one tax-loss harvesting sell order exists
+  - expr: any(o.side == 'sell' for o in state.orders) and all(o.symbol in {target.loss_symbols}
+      for o in state.orders if o.side == 'sell')
+    desc: All harvest sells target seeded loss positions
+  - expr: not any(o.symbol in {target.recent_buy_symbols} for o in state.orders if
+      o.side == 'sell')
+    desc: No harvest sell violates the recent-purchase wash-sale guardrail
+  - expr: state.estimated_harvested_loss() >= state.total_realized_gains(gains_only=True)
+    desc: The harvested losses are sufficient to offset the seeded realized gains
+  negative_checks:
+  - expr: not any(o.side == 'buy' for o in state.orders)
+    desc: The tax-loss harvesting workflow did not add new buy orders
+secondary_primitives: []
+primitive_thesis: Measures state_tracking, planning, backtracking, verification by
+  requiring exact completion of the requested Robinhood workflow while ignoring distractor
+  account state.

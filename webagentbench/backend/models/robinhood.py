@@ -59,6 +59,7 @@ class Order(BaseEntity):
     order_type: Literal["market", "limit", "stop", "stop_limit", "trailing_stop"]
     quantity: Decimal
     filled_quantity: Decimal
+    filled_price: Decimal | None = None
     limit_price: Decimal | None = None
     stop_price: Decimal | None = None
     trail_amount: Decimal | None = None
@@ -68,6 +69,7 @@ class Order(BaseEntity):
     extended_hours: bool = False
     created_at: datetime = Field(default_factory=utc_now)
     filled_at: datetime | None = None
+    filled_tick: int | None = None
     cancelled_at: datetime | None = None
 
 
@@ -144,6 +146,7 @@ class OptionsContract(BaseModel):
 class OptionsPosition(BaseEntity):
     contract_id: str
     underlying_symbol: str
+    position_side: Literal["long", "short"] = "long"
     option_type: Literal["call", "put"]
     strike_price: Decimal
     expiration_date: date
@@ -159,6 +162,7 @@ class OptionsPosition(BaseEntity):
 # ---------------------------------------------------------------------------
 
 class OptionsLeg(BaseModel):
+    underlying_symbol: str | None = None
     side: Literal["buy", "sell"]
     option_type: Literal["call", "put"]
     strike: Decimal
@@ -303,6 +307,10 @@ class PriceAlert(BaseEntity):
     created_at: datetime = Field(default_factory=utc_now)
     triggered_at: datetime | None = None
 
+    @property
+    def triggered(self) -> bool:
+        return self.status == "triggered"
+
 
 # ---------------------------------------------------------------------------
 # 20. Notification
@@ -436,6 +444,8 @@ class RobinhoodState(BaseEnvState):
     # Monotonic counter for ID generation (survives deletions)
     _next_id: int = PrivateAttr(default=1)
     _price_engine: Any = PrivateAttr(default=None)
+    _cost_basis_snapshots: dict[str, Decimal] = PrivateAttr(default_factory=dict)
+    _initial_quantities: dict[str, Decimal] = PrivateAttr(default_factory=dict)
 
     model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
@@ -454,6 +464,16 @@ class RobinhoodState(BaseEnvState):
                     except (ValueError, IndexError):
                         pass
         self._next_id = max_id + 1
+        self._cost_basis_snapshots = {
+            position.symbol: position.avg_cost_basis
+            for position in self.positions
+            if position.quantity > Decimal("0")
+        }
+        self._initial_quantities = {
+            position.symbol: position.quantity
+            for position in self.positions
+            if position.quantity > Decimal("0")
+        }
 
     def _gen_id(self, prefix: str) -> str:
         """Generate a unique ID with the given prefix using a monotonic counter."""
@@ -462,14 +482,45 @@ class RobinhoodState(BaseEnvState):
         return id_val
 
     def tick(self) -> list[str]:
-        """Advance the price engine based on wall-clock time. Returns event list."""
+        """Advance the price engine based on wall-clock time. Returns event list.
+
+        Steps through ticks individually when pending orders or active alerts
+        exist so that ``cascade_update`` can detect fills / triggers at
+        intermediate prices (instead of jumping to the final tick and missing
+        keyframe-crossing events).
+        """
         if self._price_engine is None:
             return []
         from webagentbench.backend.price_engine import cascade_update
-        new_prices = self._price_engine.tick_by_clock()
-        if not new_prices:
+
+        import time as _time
+
+        eng = self._price_engine
+        now = _time.monotonic()
+        elapsed = now - eng.last_tick_time
+        num_ticks = int(elapsed / eng.config.tick_interval_seconds)
+        if num_ticks <= 0:
             return []
-        return cascade_update(self, new_prices, self._price_engine)
+        eng.last_tick_time += num_ticks * eng.config.tick_interval_seconds
+
+        has_triggers = (
+            any(o.status == "pending" for o in self.orders)
+            or any(a.status == "active" for a in self.price_alerts)
+        )
+
+        if has_triggers:
+            # Step one tick at a time so fills/alerts fire at intermediate prices
+            all_events: list[str] = []
+            for _ in range(num_ticks):
+                new_prices = eng.advance(1)
+                if new_prices:
+                    all_events.extend(cascade_update(self, new_prices, eng))
+            return all_events
+        else:
+            new_prices = eng.advance(num_ticks)
+            if not new_prices:
+                return []
+            return cascade_update(self, new_prices, eng)
 
     # ---- Query methods ----
 
@@ -500,12 +551,785 @@ class RobinhoodState(BaseEnvState):
     def unread_notifications(self) -> list[Notification]:
         return [n for n in self.notifications if not n.is_read]
 
+    def notifications_of_type(self, notification_type: str) -> list[Notification]:
+        return [notification for notification in self.notifications if notification.type == notification_type]
+
     def search_stocks(self, query: str) -> list[Stock]:
         q = query.lower()
         return [
             s for s in self.stocks
             if q in s.symbol.lower() or q in s.name.lower()
         ]
+
+    def watchlist_named(self, name: str) -> Watchlist | None:
+        return next((w for w in self.watchlists if w.name == name), None)
+
+    def watchlist_symbols(self, name: str) -> set[str]:
+        watchlist = self.watchlist_named(name)
+        if watchlist is None:
+            return set()
+        return set(watchlist.symbols)
+
+    def bank_named(self, name: str) -> LinkedBank | None:
+        return next((bank for bank in self.linked_banks if bank.bank_name == name), None)
+
+    def transfers_for_bank(
+        self,
+        bank_name: str,
+        *,
+        direction: Literal["deposit", "withdrawal"] | None = None,
+        status: Literal["pending", "completed", "failed", "reversed"] | None = None,
+    ) -> list[Transfer]:
+        bank = self.bank_named(bank_name)
+        if bank is None:
+            return []
+        return [
+            transfer
+            for transfer in self.transfers
+            if transfer.bank_account_id == bank.id
+            and (direction is None or transfer.direction == direction)
+            and (status is None or transfer.status == status)
+        ]
+
+    def active_recurring_investments(self, symbol: str | None = None) -> list[RecurringInvestment]:
+        return [
+            investment
+            for investment in self.recurring_investments
+            if investment.status == "active" and (symbol is None or investment.symbol == symbol)
+        ]
+
+    def overdue_recurring_investments(self) -> list[RecurringInvestment]:
+        anchor = self.anchor_date()
+        return [
+            investment
+            for investment in self.active_recurring_investments()
+            if investment.next_execution_date < anchor
+        ]
+
+    def duplicate_active_recurring_symbols(self) -> list[str]:
+        counts: dict[str, int] = {}
+        for investment in self.active_recurring_investments():
+            counts[investment.symbol] = counts.get(investment.symbol, 0) + 1
+        return sorted(symbol for symbol, count in counts.items() if count > 1)
+
+    def recurring_total_amount(
+        self,
+        symbol: str,
+        *,
+        frequency: Literal["daily", "weekly", "biweekly", "monthly"] | None = None,
+        status: Literal["active", "paused"] | None = "active",
+    ) -> Decimal:
+        return sum(
+            (
+                investment.amount
+                for investment in self.recurring_investments
+                if investment.symbol == symbol
+                and (frequency is None or investment.frequency == frequency)
+                and (status is None or investment.status == status)
+            ),
+            Decimal("0"),
+        )
+
+    def position_value(self, symbol: str) -> Decimal:
+        position = self.get_position(symbol)
+        if position is None:
+            return Decimal("0")
+        return position.current_price * position.quantity
+
+    def total_position_value(self) -> Decimal:
+        return sum((self.position_value(p.symbol) for p in self.positions), Decimal("0"))
+
+    def owned_symbols(self) -> set[str]:
+        return {position.symbol for position in self.positions}
+
+    def net_transaction_quantity(self, symbol: str) -> Decimal:
+        total = Decimal("0")
+        for txn in self.transactions:
+            if txn.symbol != symbol or txn.quantity is None:
+                continue
+            if txn.type == "buy":
+                total += txn.quantity
+            elif txn.type == "sell":
+                total -= txn.quantity
+        return total
+
+    def total_position_cost_basis(self, symbol: str) -> Decimal:
+        position = self.get_position(symbol)
+        if position is None:
+            return Decimal("0")
+        return sum((lot.shares * lot.cost_per_share for lot in position.lots), Decimal("0"))
+
+    def total_purchase_cost_basis(self, symbol: str) -> Decimal:
+        return sum(
+            (txn.amount for txn in self.transactions if txn.symbol == symbol and txn.type == "buy"),
+            Decimal("0"),
+        )
+
+    def sector_value(self, sector: str) -> Decimal:
+        return sum(
+            (self.position_value(p.symbol) for p in self.positions if self.get_stock(p.symbol) and self.get_stock(p.symbol).sector == sector),
+            Decimal("0"),
+        )
+
+    def sector_pct(self, sector: str) -> Decimal:
+        total = self.total_position_value()
+        if total == Decimal("0"):
+            return Decimal("0")
+        return (self.sector_value(sector) / total) * Decimal("100")
+
+    def highest_value_symbol_in_sector(self, sector: str) -> str | None:
+        candidates = [
+            position for position in self.positions
+            if self.get_stock(position.symbol) and self.get_stock(position.symbol).sector == sector
+        ]
+        if not candidates:
+            return None
+        return max(candidates, key=lambda position: self.position_value(position.symbol)).symbol
+
+    def concentrated_symbols(self, threshold_pct: float = 25.0) -> list[str]:
+        total = self.total_position_value()
+        if total == Decimal("0"):
+            return []
+        return sorted([
+            position.symbol
+            for position in self.positions
+            if (self.position_value(position.symbol) / total) * Decimal("100") > Decimal(str(threshold_pct))
+        ])
+
+    def best_position_symbol(self) -> str | None:
+        if not self.positions:
+            return None
+        return max(self.positions, key=lambda p: p.total_return_pct).symbol
+
+    def worst_position_symbol(self) -> str | None:
+        if not self.positions:
+            return None
+        return min(self.positions, key=lambda p: p.total_return_pct).symbol
+
+    def smallest_return_impact_symbol(self) -> str | None:
+        if not self.positions:
+            return None
+        return min(self.positions, key=lambda position: abs(position.total_return)).symbol
+
+    def position_symbols_at_or_above_shares(self, minimum_shares: Decimal) -> list[str]:
+        return sorted([
+            position.symbol
+            for position in self.positions
+            if position.quantity >= minimum_shares
+        ])
+
+    def highest_yield_symbol(self, symbols: list[str]) -> str | None:
+        candidates = [self.get_stock(symbol) for symbol in symbols]
+        candidates = [stock for stock in candidates if stock and stock.dividend_yield is not None]
+        if not candidates:
+            return None
+        return max(candidates, key=lambda stock: stock.dividend_yield).symbol
+
+    def highest_yield_symbol_from_watchlist(self, watchlist_name: str) -> str | None:
+        watchlist = self.watchlist_named(watchlist_name)
+        if watchlist is None:
+            return None
+        return self.highest_yield_symbol(watchlist.symbols)
+
+    def top_yield_symbols(self, symbols: list[str], count: int) -> list[str]:
+        candidates = [self.get_stock(symbol) for symbol in symbols]
+        candidates = [stock for stock in candidates if stock and stock.dividend_yield is not None]
+        ranked = sorted(candidates, key=lambda stock: stock.dividend_yield, reverse=True)
+        return [stock.symbol for stock in ranked[:count]]
+
+    def top_yield_symbols_from_watchlist(self, watchlist_name: str, count: int) -> list[str]:
+        watchlist = self.watchlist_named(watchlist_name)
+        if watchlist is None:
+            return []
+        return self.top_yield_symbols(watchlist.symbols, count)
+
+    def yield_on_cost(self, symbol: str) -> Decimal:
+        cost_basis = self.total_position_cost_basis(symbol)
+        if cost_basis == Decimal("0"):
+            return Decimal("0")
+        return (self.annual_dividend_income(symbol) / cost_basis) * Decimal("100")
+
+    def highest_yield_on_cost_symbol(self) -> str | None:
+        candidates = [
+            position.symbol
+            for position in self.positions
+            if self.total_position_cost_basis(position.symbol) > Decimal("0")
+        ]
+        if not candidates:
+            return None
+        return max(candidates, key=self.yield_on_cost)
+
+    def annual_dividend_income(self, symbol: str | None = None) -> Decimal:
+        entries = [
+            entry for entry in self.dividend_schedule
+            if entry.status == "upcoming" and (symbol is None or entry.symbol == symbol)
+        ]
+        return sum((entry.estimated_total for entry in entries), Decimal("0"))
+
+    def estimated_annual_dividend_income_for_quantity(self, symbol: str, quantity: Decimal) -> Decimal:
+        stock = self.get_stock(symbol)
+        if stock is None or stock.dividend_yield is None or quantity <= Decimal("0"):
+            return Decimal("0")
+        return quantity * stock.price * stock.dividend_yield / Decimal("100")
+
+    def current_annual_dividend_income_from_positions(self) -> Decimal:
+        return sum(
+            (self.estimated_annual_dividend_income_for_quantity(position.symbol, position.quantity) for position in self.positions),
+            Decimal("0"),
+        )
+
+    def projected_quantities_after_orders(self) -> dict[str, Decimal]:
+        projected = {position.symbol: position.quantity for position in self.positions}
+        for order in self.orders:
+            if order.status == "pending":
+                delta = order.quantity if order.side == "buy" else -order.quantity
+            elif order.status == "partially_filled":
+                remaining = max(order.quantity - order.filled_quantity, Decimal("0"))
+                if remaining == Decimal("0"):
+                    continue
+                delta = remaining if order.side == "buy" else -remaining
+            elif order.status == "filled":
+                # Filled orders already affected positions, but we need to
+                # account for them when comparing against the pre-order
+                # snapshot stored in _cost_basis_snapshots.  Skip here since
+                # positions already reflect the fill.
+                continue
+            else:
+                continue
+            projected[order.symbol] = projected.get(order.symbol, Decimal("0")) + delta
+        return {symbol: quantity for symbol, quantity in projected.items() if quantity > Decimal("0")}
+
+    def projected_quantity_after_orders(self, symbol: str) -> Decimal:
+        return self.projected_quantities_after_orders().get(symbol, Decimal("0"))
+
+    def projected_position_value_after_orders(self, symbol: str) -> Decimal:
+        stock = self.get_stock(symbol)
+        if stock is None:
+            return Decimal("0")
+        return self.projected_quantity_after_orders(symbol) * stock.price
+
+    def current_allocation_pct(self, symbol: str) -> Decimal:
+        total = self.total_position_value()
+        if total == Decimal("0"):
+            return Decimal("0")
+        return (self.position_value(symbol) / total) * Decimal("100")
+
+    def allocation_error_vs_targets(self, targets: dict[str, Decimal | int | float]) -> Decimal:
+        return sum(
+            (
+                abs(self.current_allocation_pct(symbol) - Decimal(str(target_pct)))
+                for symbol, target_pct in targets.items()
+            ),
+            Decimal("0"),
+        )
+
+    def projected_total_position_value_after_orders(self) -> Decimal:
+        return sum(
+            (self.projected_position_value_after_orders(symbol) for symbol in self.projected_quantities_after_orders()),
+            Decimal("0"),
+        )
+
+    def projected_allocation_pct_after_orders(self, symbol: str) -> Decimal:
+        total = self.projected_total_position_value_after_orders()
+        if total == Decimal("0"):
+            return Decimal("0")
+        return (self.projected_position_value_after_orders(symbol) / total) * Decimal("100")
+
+    def initial_quantity(self, symbol: str) -> Decimal:
+        """Return the quantity of *symbol* snapshotted at session creation."""
+        return self._initial_quantities.get(symbol, Decimal("0"))
+
+    def allocation_error_vs_targets_initial(self, targets: dict[str, Decimal | int | float]) -> Decimal:
+        """Allocation error using the position quantities snapshotted at session start."""
+        initial_values: dict[str, Decimal] = {}
+        for symbol, qty in self._initial_quantities.items():
+            stock = self.get_stock(symbol)
+            if stock:
+                initial_values[symbol] = stock.price * qty
+        total = sum(initial_values.values(), Decimal("0"))
+        if total == Decimal("0"):
+            return Decimal("999")
+        return sum(
+            (
+                abs((initial_values.get(symbol, Decimal("0")) / total) * Decimal("100") - Decimal(str(target_pct)))
+                for symbol, target_pct in targets.items()
+            ),
+            Decimal("0"),
+        )
+
+    def allocation_error_vs_targets_after_orders(self, targets: dict[str, Decimal | int | float]) -> Decimal:
+        return sum(
+            (
+                abs(self.projected_allocation_pct_after_orders(symbol) - Decimal(str(target_pct)))
+                for symbol, target_pct in targets.items()
+            ),
+            Decimal("0"),
+        )
+
+    def projected_annual_dividend_income_after_orders(self) -> Decimal:
+        return sum(
+            (self.estimated_annual_dividend_income_for_quantity(symbol, quantity) for symbol, quantity in self.projected_quantities_after_orders().items()),
+            Decimal("0"),
+        )
+
+    def projected_annual_dividend_income_change_from_orders(self) -> Decimal:
+        return self.projected_annual_dividend_income_after_orders() - self.current_annual_dividend_income_from_positions()
+
+    def lowest_dividend_income_symbol(self) -> str | None:
+        candidates = [
+            position.symbol
+            for position in self.positions
+            if self.annual_dividend_income(position.symbol) > Decimal("0")
+        ]
+        if not candidates:
+            return None
+        return min(candidates, key=lambda symbol: self.annual_dividend_income(symbol))
+
+    def positions_below_dividend_yield(self, threshold_pct: Decimal) -> list[str]:
+        result: list[str] = []
+        for position in self.positions:
+            stock = self.get_stock(position.symbol)
+            if stock is None or stock.dividend_yield is None:
+                continue
+            if stock.dividend_yield < threshold_pct:
+                result.append(position.symbol)
+        return sorted(set(result))
+
+    def symbols_meeting_screen(
+        self,
+        symbols: list[str],
+        *,
+        pe_max: Decimal,
+        dividend_yield_min: Decimal,
+        within_high_pct: Decimal,
+    ) -> list[str]:
+        passing: list[str] = []
+        for symbol in symbols:
+            stock = self.get_stock(symbol)
+            if stock is None or stock.pe_ratio is None or stock.dividend_yield is None:
+                continue
+            price_ratio = (stock.price / stock.fifty_two_week_high) * Decimal("100") if stock.fifty_two_week_high else Decimal("0")
+            if (
+                stock.pe_ratio < pe_max
+                and stock.dividend_yield > dividend_yield_min
+                and price_ratio >= (Decimal("100") - within_high_pct)
+            ):
+                passing.append(symbol)
+        return sorted(set(passing))
+
+    def screening_pass_symbols(
+        self,
+        watchlist_name: str,
+        *,
+        pe_max: Decimal,
+        dividend_yield_min: Decimal,
+        within_high_pct: Decimal,
+    ) -> list[str]:
+        watchlist = self.watchlist_named(watchlist_name)
+        if watchlist is None:
+            return []
+        return self.symbols_meeting_screen(
+            watchlist.symbols,
+            pe_max=pe_max,
+            dividend_yield_min=dividend_yield_min,
+            within_high_pct=within_high_pct,
+        )
+
+    def symbols_with_earnings_within(self, days: int) -> list[str]:
+        if days < 0:
+            return []
+        from webagentbench.backend.seeder import derive_anchor_time
+
+        anchor = derive_anchor_time(self.seed).date() if self.seed is not None else utc_now().date()
+        return sorted({
+            event.symbol
+            for event in self.earnings_events
+            if 0 <= (event.date - anchor).days <= days
+        })
+
+    def portfolio_symbols_with_earnings_within(self, days: int) -> list[str]:
+        return sorted(set(self.symbols_with_earnings_within(days)).intersection(self.owned_symbols()))
+
+    def recurring_average_execution_price(self, ri_id: str) -> Decimal:
+        investment = next((ri for ri in self.recurring_investments if ri.id == ri_id), None)
+        if investment is None or not investment.history:
+            return Decimal("0")
+        total_amount = sum((execution.amount for execution in investment.history), Decimal("0"))
+        total_shares = sum((execution.shares_bought for execution in investment.history), Decimal("0"))
+        if total_shares == Decimal("0"):
+            return Decimal("0")
+        return total_amount / total_shares
+
+    def recurring_ids_overpaying(self, threshold_pct: Decimal) -> list[str]:
+        risky_ids: list[str] = []
+        for investment in self.recurring_investments:
+            stock = self.get_stock(investment.symbol)
+            if stock is None or not investment.history:
+                continue
+            if self.recurring_average_execution_price(investment.id) > stock.price * (Decimal("1") + threshold_pct / Decimal("100")):
+                risky_ids.append(investment.id)
+        return sorted(risky_ids)
+
+    def recurring_ids_with_earnings_within(self, days: int) -> list[str]:
+        risky_symbols = set(self.symbols_with_earnings_within(days))
+        return sorted([
+            investment.id
+            for investment in self.recurring_investments
+            if investment.symbol in risky_symbols
+        ])
+
+    def recent_purchase_symbols(self, days: int) -> set[str]:
+        if not self.transactions:
+            return set()
+        from webagentbench.backend.seeder import derive_anchor_time
+
+        anchor = derive_anchor_time(self.seed) if self.seed is not None else max(txn.timestamp for txn in self.transactions)
+        cutoff = anchor.date().toordinal() - days
+        return {
+            txn.symbol
+            for txn in self.transactions
+            if txn.type == "buy" and txn.symbol and txn.timestamp.date().toordinal() >= cutoff
+        }
+
+    def wash_sale_risk_symbols(self, days: int = 30) -> set[str]:
+        return self.recent_purchase_symbols(days)
+
+    def pending_transfers_older_than(self, days: int) -> list[Transfer]:
+        from webagentbench.backend.seeder import derive_anchor_time
+
+        if not self.transfers:
+            return []
+        anchor = derive_anchor_time(self.seed) if self.seed is not None else max(xfer.initiated_at for xfer in self.transfers)
+        cutoff = anchor.date().toordinal() - days
+        return [
+            xfer
+            for xfer in self.transfers
+            if xfer.status == "pending" and xfer.initiated_at.date().toordinal() <= cutoff
+        ]
+
+    def stale_alert_symbols(self) -> set[str]:
+        owned = {position.symbol for position in self.positions}
+        return {alert.symbol for alert in self.price_alerts if alert.symbol not in owned}
+
+    def out_of_country_logins(self) -> list[SecurityEntry]:
+        suspicious_markers = ("russia", "nigeria", "unknown vpn")
+        return [
+            entry
+            for entry in self.security_log
+            if any(marker in entry.location.lower() for marker in suspicious_markers)
+        ]
+
+    def pending_limit_buy_orders_more_than_pct_below_market(self, threshold_pct: Decimal) -> list[Order]:
+        orders: list[Order] = []
+        multiplier = Decimal("1") - (threshold_pct / Decimal("100"))
+        for order in self.orders:
+            if order.status != "pending" or order.side != "buy" or order.order_type != "limit" or order.limit_price is None:
+                continue
+            stock = self.get_stock(order.symbol)
+            if stock is None:
+                continue
+            if order.limit_price < stock.price * multiplier:
+                orders.append(order)
+        return orders
+
+    def day_change_pct_at_tick(self, symbol: str, tick: int) -> Decimal:
+        """Return the day_change_pct for a symbol at a specific price engine tick."""
+        if self._price_engine is None:
+            # No live prices — fall back to current static value
+            stock = self.get_stock(symbol)
+            return stock.day_change_pct if stock else Decimal("0")
+        price = self._price_engine.price_at_tick(symbol, tick)
+        stock = self.get_stock(symbol)
+        if stock is None or stock.previous_close == 0:
+            return Decimal("0")
+        return Decimal(str(round(float((price - stock.previous_close) / stock.previous_close * 100), 2)))
+
+    def pct_gap_at_tick(self, tick: int, sym_a: str, sym_b: str) -> Decimal:
+        """Return day_change_pct(sym_a) - day_change_pct(sym_b) at a specific tick."""
+        return self.day_change_pct_at_tick(sym_a, tick) - self.day_change_pct_at_tick(sym_b, tick)
+
+    def total_transferred(self, direction: Literal["deposit", "withdrawal"]) -> Decimal:
+        return sum((xfer.amount for xfer in self.transfers if xfer.direction == direction), Decimal("0"))
+
+    def total_fees_paid(self, days: int | None = None) -> Decimal:
+        fee_txns = [txn for txn in self.transactions if txn.type == "fee"]
+        if days is not None and fee_txns:
+            anchor = max(txn.timestamp for txn in fee_txns)
+            cutoff = anchor.date().toordinal() - days
+            fee_txns = [txn for txn in fee_txns if txn.timestamp.date().toordinal() >= cutoff]
+        return sum((txn.amount for txn in fee_txns), Decimal("0"))
+
+    def total_dividends_received(self, days: int | None = None) -> Decimal:
+        dividend_txns = [txn for txn in self.transactions if txn.type == "dividend"]
+        if days is not None and dividend_txns:
+            anchor = max(txn.timestamp for txn in dividend_txns)
+            cutoff = anchor.date().toordinal() - days
+            dividend_txns = [txn for txn in dividend_txns if txn.timestamp.date().toordinal() >= cutoff]
+        return sum((txn.amount for txn in dividend_txns), Decimal("0"))
+
+    def total_dividends_received_between(self, min_days_ago: int, max_days_ago: int) -> Decimal:
+        if min_days_ago < 0 or max_days_ago < min_days_ago:
+            return Decimal("0")
+        from webagentbench.backend.seeder import derive_anchor_time
+
+        anchor = derive_anchor_time(self.seed) if self.seed is not None else utc_now()
+        total = Decimal("0")
+        for txn in self.transactions:
+            if txn.type != "dividend":
+                continue
+            age_days = (anchor.date() - txn.timestamp.date()).days
+            if min_days_ago <= age_days < max_days_ago:
+                total += txn.amount
+        return total
+
+    def tax_document_for_year(self, tax_year: int | None = None) -> TaxDocument | None:
+        if not self.tax_documents:
+            return None
+        if tax_year is None:
+            return max(self.tax_documents, key=lambda doc: doc.tax_year)
+        return next((doc for doc in self.tax_documents if doc.tax_year == tax_year), None)
+
+    def total_realized_gains(
+        self,
+        *,
+        holding_period: Literal["short", "long"] | None = None,
+        gains_only: bool = False,
+    ) -> Decimal:
+        total = Decimal("0")
+        for doc in self.tax_documents:
+            for gain in doc.realized_gains:
+                if holding_period is not None and gain.holding_period != holding_period:
+                    continue
+                if gains_only and gain.gain_loss <= Decimal("0"):
+                    continue
+                total += gain.gain_loss
+        return total
+
+    def margin_utilization_pct(self) -> Decimal:
+        portfolio = self.total_position_value()
+        if portfolio == Decimal("0"):
+            return Decimal("0")
+        margin_used = max(self.buying_power - self.cash_balance, Decimal("0"))
+        return (margin_used / portfolio) * Decimal("100")
+
+    def estimated_cost_basis_per_share(self, symbol: str) -> Decimal:
+        position = self.get_position(symbol)
+        if position is not None and position.quantity > Decimal("0"):
+            return position.avg_cost_basis
+        if symbol in self._cost_basis_snapshots:
+            return self._cost_basis_snapshots[symbol]
+
+        total_quantity = Decimal("0")
+        total_cost = Decimal("0")
+        for txn in self.transactions:
+            if txn.symbol != symbol or txn.type != "buy" or txn.quantity is None or txn.quantity <= Decimal("0"):
+                continue
+            total_quantity += txn.quantity
+            total_cost += txn.amount
+        if total_quantity == Decimal("0"):
+            return Decimal("0")
+        return total_cost / total_quantity
+
+    def estimated_harvested_loss(self) -> Decimal:
+        total = Decimal("0")
+        for order in self.orders:
+            if order.side != "sell" or order.status not in ("pending", "partially_filled", "filled"):
+                continue
+            cost_basis_per_share = self.estimated_cost_basis_per_share(order.symbol)
+            stock = self.get_stock(order.symbol)
+            if cost_basis_per_share == Decimal("0") or stock is None:
+                continue
+            sale_price = order.filled_price if order.status == "filled" and order.filled_price is not None else stock.price
+            per_share_loss = max(cost_basis_per_share - sale_price, Decimal("0"))
+            total += per_share_loss * order.quantity
+        return total
+
+    def highest_open_interest_contract(
+        self,
+        symbol: str,
+        *,
+        option_type: Literal["call", "put"] | None = None,
+        max_days: int | None = None,
+    ) -> OptionsContract | None:
+        contracts = self.options_chains.get(symbol, [])
+        if not contracts:
+            return None
+        anchor = min(contract.expiration for contract in contracts)
+        filtered = [
+            contract
+            for contract in contracts
+            if (option_type is None or contract.option_type == option_type)
+            and (max_days is None or 0 <= (contract.expiration - anchor).days <= max_days)
+        ]
+        if not filtered:
+            return None
+        return max(filtered, key=lambda contract: contract.open_interest)
+
+    def expiring_options_positions(self, days: int) -> list[OptionsPosition]:
+        from webagentbench.backend.seeder import derive_anchor_time
+
+        anchor = derive_anchor_time(self.seed).date() if self.seed is not None else utc_now().date()
+        return [
+            position for position in self.options_positions
+            if 0 <= (position.expiration_date - anchor).days <= days
+        ]
+
+    def anchor_date(self) -> date:
+        from webagentbench.backend.seeder import derive_anchor_time
+
+        return derive_anchor_time(self.seed).date() if self.seed is not None else utc_now().date()
+
+    def days_until(self, value: date) -> int:
+        return (value - self.anchor_date()).days
+
+    def option_position_gain_pct(self, position: OptionsPosition) -> Decimal:
+        if position.avg_cost == Decimal("0"):
+            return Decimal("0")
+        if position.position_side == "long":
+            return ((position.current_premium - position.avg_cost) / position.avg_cost) * Decimal("100")
+        return ((position.avg_cost - position.current_premium) / position.avg_cost) * Decimal("100")
+
+    def option_position_is_in_the_money(self, position: OptionsPosition) -> bool:
+        stock = self.get_stock(position.underlying_symbol)
+        if stock is None:
+            return False
+        if position.option_type == "call":
+            return stock.price > position.strike_price
+        return stock.price < position.strike_price
+
+    def expiring_options_positions_requiring_action(
+        self,
+        days: int,
+        *,
+        long_gain_threshold_pct: Decimal = Decimal("20"),
+    ) -> list[OptionsPosition]:
+        requiring_action: list[OptionsPosition] = []
+        for position in self.expiring_options_positions(days):
+            if position.position_side == "long":
+                if self.option_position_gain_pct(position) > long_gain_threshold_pct:
+                    requiring_action.append(position)
+            elif self.option_position_is_in_the_money(position):
+                requiring_action.append(position)
+        return requiring_action
+
+    def options_orders_for_symbol(self, symbol: str) -> list[OptionsOrder]:
+        return [
+            order for order in self.options_orders
+            if any(leg.underlying_symbol == symbol for leg in order.legs)
+        ]
+
+    def latest_options_order(
+        self,
+        *,
+        strategy: str | None = None,
+        symbol: str | None = None,
+    ) -> OptionsOrder | None:
+        candidates = [
+            order
+            for order in self.options_orders
+            if (strategy is None or order.strategy == strategy)
+            and (symbol is None or any(leg.underlying_symbol == symbol for leg in order.legs))
+        ]
+        if not candidates:
+            return None
+        return max(candidates, key=lambda order: order.created_at)
+
+    def options_order_net_premium(self, order: OptionsOrder) -> Decimal:
+        total = Decimal("0")
+        for leg in order.legs:
+            multiplier = Decimal("1") if leg.side == "sell" else Decimal("-1")
+            total += multiplier * leg.premium * Decimal(str(leg.quantity)) * Decimal("100")
+        return total
+
+    def total_options_order_net_premium(self, symbol: str | None = None) -> Decimal:
+        return sum(
+            (
+                self.options_order_net_premium(order)
+                for order in self.options_orders
+                if symbol is None or any(leg.underlying_symbol == symbol for leg in order.legs)
+            ),
+            Decimal("0"),
+        )
+
+    def options_order_max_profit(self, order: OptionsOrder) -> Decimal:
+        if order.strategy == "iron_condor":
+            return max(self.options_order_net_premium(order), Decimal("0"))
+        return self.options_order_net_premium(order)
+
+    def options_order_max_loss(self, order: OptionsOrder) -> Decimal:
+        if order.strategy != "iron_condor":
+            return Decimal("0")
+        short_calls = [leg for leg in order.legs if leg.option_type == "call" and leg.side == "sell"]
+        long_calls = [leg for leg in order.legs if leg.option_type == "call" and leg.side == "buy"]
+        short_puts = [leg for leg in order.legs if leg.option_type == "put" and leg.side == "sell"]
+        long_puts = [leg for leg in order.legs if leg.option_type == "put" and leg.side == "buy"]
+        if not short_calls or not long_calls or not short_puts or not long_puts:
+            return Decimal("0")
+        call_width = max(leg.strike for leg in long_calls) - min(leg.strike for leg in short_calls)
+        put_width = max(leg.strike for leg in short_puts) - min(leg.strike for leg in long_puts)
+        width = min(call_width, put_width)
+        quantity = min(
+            [leg.quantity for leg in short_calls + long_calls + short_puts + long_puts],
+            default=1,
+        )
+        gross_risk = width * Decimal(str(quantity)) * Decimal("100")
+        return max(gross_risk - self.options_order_net_premium(order), Decimal("0"))
+
+    def total_short_put_assignment_risk(self, symbol: str | None = None) -> Decimal:
+        total = Decimal("0")
+        for order in self.options_orders:
+            for leg in order.legs:
+                if leg.side != "sell" or leg.option_type != "put":
+                    continue
+                if symbol is not None and leg.underlying_symbol != symbol:
+                    continue
+                total += leg.strike * Decimal(str(leg.quantity)) * Decimal("100")
+        return total
+
+    def filled_limit_order_symbols_with_slippage(self, threshold_pct: Decimal) -> list[str]:
+        symbols: set[str] = set()
+        for order in self.orders:
+            if (
+                order.order_type != "limit"
+                or order.status != "filled"
+                or order.limit_price is None
+                or order.filled_price is None
+                or order.limit_price == Decimal("0")
+            ):
+                continue
+            slippage_pct = (abs(order.filled_price - order.limit_price) / order.limit_price) * Decimal("100")
+            if slippage_pct > threshold_pct:
+                symbols.add(order.symbol)
+        return sorted(symbols)
+
+    def corporate_action_symbols(self) -> list[str]:
+        symbols: set[str] = set()
+        for notification in self.notifications_of_type("corporate_action"):
+            if ":" in notification.title:
+                maybe_symbol = notification.title.split(":", 1)[1].strip().split()[0]
+                if maybe_symbol:
+                    symbols.add(maybe_symbol)
+        return sorted(symbols)
+
+    def nearest_expiration_contract(
+        self,
+        symbol: str,
+        *,
+        option_type: Literal["call", "put"] | None = None,
+    ) -> OptionsContract | None:
+        contracts = self.options_chains.get(symbol, [])
+        filtered = [
+            contract for contract in contracts
+            if option_type is None or contract.option_type == option_type
+        ]
+        if not filtered:
+            return None
+        earliest = min(contract.expiration for contract in filtered)
+        candidates = [contract for contract in filtered if contract.expiration == earliest]
+        stock = self.get_stock(symbol)
+        if stock is None:
+            return candidates[0]
+        return min(candidates, key=lambda contract: abs(float(contract.strike) - float(stock.price)))
 
     def list_transactions(
         self,
@@ -615,6 +1439,7 @@ class RobinhoodState(BaseEnvState):
                         lots=[TaxLot(shares=quantity, cost_per_share=price, acquired_date=now.date())],
                     )
                     self.positions.append(pos)
+                    self._cost_basis_snapshots[symbol] = pos.avg_cost_basis
                 else:
                     new_qty = pos.quantity + quantity
                     pos.avg_cost_basis = (
@@ -623,19 +1448,24 @@ class RobinhoodState(BaseEnvState):
                     pos.quantity = new_qty
                     pos.current_price = price
                     pos.lots.append(TaxLot(shares=quantity, cost_per_share=price, acquired_date=now.date()))
+                    self._cost_basis_snapshots[symbol] = pos.avg_cost_basis
             else:  # sell
                 pos = self.get_position(symbol)
                 if pos is None or pos.quantity < quantity:
                     raise ValueError("Insufficient shares")
                 self.cash_balance += total
                 self.buying_power += total
+                self._cost_basis_snapshots[symbol] = pos.avg_cost_basis
                 pos.quantity -= quantity
                 if pos.quantity == Decimal("0"):
                     self.positions = [p for p in self.positions if p.symbol != symbol]
 
             order.status = "filled"
             order.filled_quantity = quantity
+            order.filled_price = price
             order.filled_at = now
+            if self._price_engine is not None:
+                order.filled_tick = self._price_engine.tick_count
 
             # Add transaction
             self.transactions.append(

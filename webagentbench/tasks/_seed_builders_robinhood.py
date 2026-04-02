@@ -325,6 +325,35 @@ _STOCK_SEED_DATA: list[dict[str, Any]] = [
     {"symbol": "TGT", "name": "Target Corporation", "sector": "Consumer Defensive", "industry": "Discount Stores",
      "about": "Target operates as a general merchandise retailer in the United States.",
      "base_price": 145.0, "pe": 16.0, "eps": 9.06, "div_yield": 3.00, "market_cap": 67e9},
+
+    # ── Additional (referenced by task YAMLs) ─────────────────────────
+    {"symbol": "NFLX", "name": "Netflix, Inc.", "sector": "Technology", "industry": "Entertainment",
+     "about": "Netflix provides entertainment services and is one of the world's leading streaming platforms.",
+     "base_price": 620.0, "pe": 45.0, "eps": 13.78, "div_yield": 0.0, "market_cap": 270e9},
+    {"symbol": "T", "name": "AT&T Inc.", "sector": "Technology", "industry": "Telecom Services",
+     "about": "AT&T provides telecommunications, media, and technology services worldwide.",
+     "base_price": 17.50, "pe": 8.0, "eps": 2.19, "div_yield": 6.30, "market_cap": 125e9},
+    {"symbol": "VZ", "name": "Verizon Communications Inc.", "sector": "Technology", "industry": "Telecom Services",
+     "about": "Verizon provides communications, technology, and entertainment products and services.",
+     "base_price": 40.0, "pe": 9.5, "eps": 4.21, "div_yield": 6.50, "market_cap": 168e9},
+    {"symbol": "MO", "name": "Altria Group, Inc.", "sector": "Consumer Defensive", "industry": "Tobacco",
+     "about": "Altria produces and sells smokeable and oral tobacco products in the United States.",
+     "base_price": 45.0, "pe": 9.0, "eps": 5.00, "div_yield": 8.50, "market_cap": 80e9},
+    {"symbol": "PM", "name": "Philip Morris International Inc.", "sector": "Consumer Defensive", "industry": "Tobacco",
+     "about": "Philip Morris manufactures and sells cigarettes and smoke-free products internationally.",
+     "base_price": 95.0, "pe": 17.0, "eps": 5.59, "div_yield": 5.40, "market_cap": 148e9},
+    {"symbol": "SQ", "name": "Block, Inc.", "sector": "Financial", "industry": "Software",
+     "about": "Block provides financial services and digital payments through its Square and Cash App ecosystems.",
+     "base_price": 68.0, "pe": 55.0, "eps": 1.24, "div_yield": 0.0, "market_cap": 41e9},
+    {"symbol": "PLTR", "name": "Palantir Technologies Inc.", "sector": "Technology", "industry": "Software",
+     "about": "Palantir builds and deploys software platforms for the intelligence community and commercial enterprises.",
+     "base_price": 22.0, "pe": 200.0, "eps": 0.11, "div_yield": 0.0, "market_cap": 48e9},
+    {"symbol": "GME", "name": "GameStop Corp.", "sector": "Consumer Cyclical", "industry": "Specialty Retail",
+     "about": "GameStop operates as a specialty retailer of games, entertainment products, and technology.",
+     "base_price": 15.0, "pe": 0.0, "eps": -0.35, "div_yield": 0.0, "market_cap": 4.5e9},
+    {"symbol": "AMC", "name": "AMC Entertainment Holdings, Inc.", "sector": "Consumer Cyclical", "industry": "Entertainment",
+     "about": "AMC is the world's largest movie theater chain, operating theatres across the US and internationally.",
+     "base_price": 5.50, "pe": 0.0, "eps": -1.20, "div_yield": 0.0, "market_cap": 2.5e9},
 ]
 
 
@@ -510,9 +539,9 @@ def build_stock_universe(ctx: RobinhoodSeedContext, params: dict[str, Any]) -> d
             volume=ctx.rng.randint(1_000_000, 80_000_000),
             avg_volume=ctx.rng.randint(5_000_000, 60_000_000),
             market_cap=Decimal(str(int(sd["market_cap"]))),
-            pe_ratio=Decimal(str(sd["pe"])) if sd["pe"] else None,
-            eps=Decimal(str(sd["eps"])) if sd["eps"] else None,
-            dividend_yield=Decimal(str(sd["div_yield"])) if sd["div_yield"] else None,
+            pe_ratio=Decimal(str(sd["pe"])) if sd["pe"] is not None and sd["pe"] != 0 else None,
+            eps=Decimal(str(sd["eps"])) if sd["eps"] is not None else None,
+            dividend_yield=Decimal(str(sd["div_yield"])) if sd["div_yield"] is not None else None,
             fifty_two_week_high=high_52,
             fifty_two_week_low=low_52,
             sector=sd["sector"],
@@ -547,6 +576,7 @@ def build_portfolio_basic(ctx: RobinhoodSeedContext, params: dict[str, Any]) -> 
         ctx.base["positions"] = []
 
     position_ids: list[str] = []
+    created_positions: list[Position] = []
     total_value = Decimal("0")
 
     for sym, qty_s, cost_s in zip(symbols, quantities, cost_bases):
@@ -576,11 +606,37 @@ def build_portfolio_basic(ctx: RobinhoodSeedContext, params: dict[str, Any]) -> 
             lots=[TaxLot(shares=qty, cost_per_share=cost, acquired_date=acquired)],
         )
         ctx.base["positions"].append(pos)
+        created_positions.append(pos)
         position_ids.append(pos_id)
         total_value += total
 
     ctx.base["portfolio_value"] = ctx.base.get("portfolio_value", Decimal("0")) + total_value
-    return {"position_ids": position_ids}
+    best_symbol = max(created_positions, key=lambda position: position.total_return_pct).symbol if created_positions else None
+    worst_symbol = min(created_positions, key=lambda position: position.total_return_pct).symbol if created_positions else None
+    largest_position_symbol = max(created_positions, key=lambda position: position.current_price * position.quantity).symbol if created_positions else None
+    tech_candidates = [
+        position for position in created_positions
+        if ctx.get_stock_from_base(position.symbol) and ctx.get_stock_from_base(position.symbol).sector == "Technology"
+    ]
+    largest_tech_symbol = max(tech_candidates, key=lambda position: position.current_price * position.quantity).symbol if tech_candidates else None
+    lowest_dividend_income_symbol = None
+    dividend_candidates = [
+        position for position in created_positions
+        if ctx.get_stock_from_base(position.symbol) and ctx.get_stock_from_base(position.symbol).dividend_yield
+    ]
+    if dividend_candidates:
+        lowest_dividend_income_symbol = min(
+            dividend_candidates,
+            key=lambda position: (ctx.get_stock_from_base(position.symbol).dividend_yield or Decimal("0")) * position.current_price * position.quantity,
+        ).symbol
+    return {
+        "position_ids": position_ids,
+        "best_symbol": best_symbol,
+        "worst_symbol": worst_symbol,
+        "largest_position_symbol": largest_position_symbol,
+        "largest_tech_symbol": largest_tech_symbol,
+        "lowest_dividend_income_symbol": lowest_dividend_income_symbol,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -598,10 +654,16 @@ def build_portfolio_diverse(ctx: RobinhoodSeedContext, params: dict[str, Any]) -
     include_etfs : bool     -- include ETF positions (default True)
     include_losers : bool   -- ensure some positions are at a loss (default True)
     """
-    count = params.get("count", 10)
+    count = params.get("position_count", params.get("count", 10))
     sectors = params.get("sectors", None)
     include_etfs = params.get("include_etfs", True)
     include_losers = params.get("include_losers", True)
+    growth_focused = params.get("growth_focused", False)
+    loser_count = params.get("loser_count")
+    large_position_stock = params.get("large_position_stock", params.get("concentrated_stock"))
+    multi_lot = params.get("multi_lot", True)
+    mixed_quantities = params.get("mixed_quantities", False)
+    total_value_target = params.get("total_value_target")
 
     stocks = list(ctx.base.get("stocks", []))
     if sectors:
@@ -610,26 +672,49 @@ def build_portfolio_diverse(ctx: RobinhoodSeedContext, params: dict[str, Any]) -
     if not include_etfs:
         stocks = [s for s in stocks if s.asset_type != "etf"]
 
-    ctx.rng.shuffle(stocks)
-    picked = stocks[: min(count, len(stocks))]
+    if growth_focused:
+        stocks.sort(key=lambda stock: (float(stock.dividend_yield or Decimal("0")), stock.symbol))
+    else:
+        ctx.rng.shuffle(stocks)
+
+    picked: list[Stock] = []
+    if large_position_stock:
+        large_stock = next((stock for stock in stocks if stock.symbol == large_position_stock), None)
+        if large_stock is not None:
+            picked.append(large_stock)
+            stocks = [stock for stock in stocks if stock.symbol != large_position_stock]
+    picked.extend(stocks[: max(0, min(count, len(stocks)) - len(picked))])
 
     if "positions" not in ctx.base:
         ctx.base["positions"] = []
 
+    if loser_count is None:
+        loss_indexes = {idx for idx in range(len(picked)) if include_losers and idx % 3 == 0}
+    else:
+        loss_indexes = set(range(min(int(loser_count), len(picked)))) if include_losers else set()
+
     position_ids: list[str] = []
+    created_positions: list[Position] = []
     total_value = Decimal("0")
 
     for idx, stock in enumerate(picked):
         # 2-4 lots per position
-        num_lots = ctx.rng.randint(2, 4)
+        num_lots = ctx.rng.randint(2, 4) if multi_lot else 1
         lots: list[TaxLot] = []
         total_shares = Decimal("0")
         total_cost = Decimal("0")
 
         for lot_i in range(num_lots):
-            shares = Decimal(str(ctx.rng.randint(5, 100)))
+            if mixed_quantities:
+                if idx % 2 == 0:
+                    share_lo, share_hi = 35, 80
+                else:
+                    share_lo, share_hi = 5, 20
+            else:
+                share_lo, share_hi = 5, (180 if stock.symbol == large_position_stock else 100)
+            shares = Decimal(str(ctx.rng.randint(share_lo, share_hi)))
             # Vary cost basis; make some losers
-            if include_losers and idx % 3 == 0:
+            if idx in loss_indexes:
                 cost_mult = ctx.rng.uniform(1.05, 1.30)  # above current = loss
             else:
                 cost_mult = ctx.rng.uniform(0.60, 0.98)  # below current = gain
@@ -663,11 +748,67 @@ def build_portfolio_diverse(ctx: RobinhoodSeedContext, params: dict[str, Any]) -
             lots=lots,
         )
         ctx.base["positions"].append(pos)
+        created_positions.append(pos)
         position_ids.append(pos_id)
         total_value += market_val
 
+    if total_value_target and total_value > Decimal("0"):
+        target_value = Decimal(str(total_value_target))
+        scale = target_value / total_value
+        total_value = Decimal("0")
+        for position in created_positions:
+            scaled_quantity = (position.quantity * scale).quantize(Decimal("0.000001"))
+            if scaled_quantity <= Decimal("0"):
+                scaled_quantity = Decimal("0.000001")
+            lot_scale = scaled_quantity / position.quantity if position.quantity else Decimal("0")
+            for lot in position.lots:
+                lot.shares = (lot.shares * lot_scale).quantize(Decimal("0.000001"))
+            position.quantity = sum((lot.shares for lot in position.lots), Decimal("0"))
+            total_cost = sum((lot.shares * lot.cost_per_share for lot in position.lots), Decimal("0"))
+            position.avg_cost_basis = Decimal(str(round(float(total_cost / position.quantity), 2))) if position.quantity else Decimal("0")
+            market_val = position.current_price * position.quantity
+            position.total_return = market_val - total_cost
+            position.total_return_pct = Decimal(str(round(float(position.total_return / total_cost * 100), 2))) if total_cost else Decimal("0")
+            total_value += market_val
+
     ctx.base["portfolio_value"] = ctx.base.get("portfolio_value", Decimal("0")) + total_value
-    return {"position_ids": position_ids}
+    loss_symbols = sorted(position.symbol for position in created_positions if position.total_return < 0)
+    gain_symbols = sorted(position.symbol for position in created_positions if position.total_return >= 0)
+    largest_position_symbol = max(created_positions, key=lambda position: position.current_price * position.quantity).symbol if created_positions else None
+    tech_candidates = [
+        position for position in created_positions
+        if ctx.get_stock_from_base(position.symbol) and ctx.get_stock_from_base(position.symbol).sector == "Technology"
+    ]
+    largest_tech_symbol = max(tech_candidates, key=lambda position: position.current_price * position.quantity).symbol if tech_candidates else None
+    best_symbol = max(created_positions, key=lambda position: position.total_return_pct).symbol if created_positions else None
+    worst_symbol = min(created_positions, key=lambda position: position.total_return_pct).symbol if created_positions else None
+    smallest_return_impact_symbol = min(created_positions, key=lambda position: abs(position.total_return)).symbol if created_positions else None
+    hundred_share_symbols = sorted(position.symbol for position in created_positions if position.quantity >= Decimal("100"))
+    sub_hundred_share_symbols = sorted(position.symbol for position in created_positions if position.quantity < Decimal("100"))
+    dividend_candidates = [
+        position for position in created_positions
+        if ctx.get_stock_from_base(position.symbol) and ctx.get_stock_from_base(position.symbol).dividend_yield
+    ]
+    lowest_dividend_income_symbol = None
+    if dividend_candidates:
+        lowest_dividend_income_symbol = min(
+            dividend_candidates,
+            key=lambda position: (ctx.get_stock_from_base(position.symbol).dividend_yield or Decimal("0")) * position.current_price * position.quantity,
+        ).symbol
+    return {
+        "position_ids": position_ids,
+        "loss_symbols": loss_symbols,
+        "gain_symbols": gain_symbols,
+        "best_symbol": best_symbol,
+        "worst_symbol": worst_symbol,
+        "largest_position_symbol": largest_position_symbol,
+        "largest_tech_symbol": largest_tech_symbol,
+        "smallest_return_impact_symbol": smallest_return_impact_symbol,
+        "lowest_dividend_income_symbol": lowest_dividend_income_symbol,
+        "hundred_share_symbols": hundred_share_symbols,
+        "sub_hundred_share_symbols": sub_hundred_share_symbols,
+        "portfolio_value": str(total_value),
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -687,11 +828,17 @@ def build_pending_orders(ctx: RobinhoodSeedContext, params: dict[str, Any]) -> d
     count = params.get("count", 3)
     order_types = params.get("order_types", ["limit", "stop"])
     symbols = params.get("symbols", None) or ctx.pick_symbols(count)
+    include_suspicious_window = params.get("include_suspicious_window", False)
+    suspicious_timestamp = params.get("suspicious_timestamp")
+    suspicious_order_count = int(params.get("suspicious_order_count", 1))
+    far_below_count = int(params.get("far_below_count", 0))
 
     if "orders" not in ctx.base:
         ctx.base["orders"] = []
 
     order_ids: list[str] = []
+    suspicious_order_ids: list[str] = []
+    suspicious_symbols: list[str] = []
     for i in range(count):
         sym = symbols[i % len(symbols)]
         stock = ctx.get_stock_from_base(sym)
@@ -700,11 +847,19 @@ def build_pending_orders(ctx: RobinhoodSeedContext, params: dict[str, Any]) -> d
         qty = Decimal(str(ctx.rng.randint(1, 50)))
         price = float(stock.price) if stock else 100.0
 
+        # Force first far_below_count orders to be limit buys far below market
+        if i < far_below_count:
+            otype = "limit"
+            side = "buy"
+
         limit_price = None
         stop_price = None
         if otype == "limit":
             if side == "buy":
-                limit_price = Decimal(str(round(price * ctx.rng.uniform(0.92, 0.99), 2)))
+                if i < far_below_count:
+                    limit_price = Decimal(str(round(price * ctx.rng.uniform(0.80, 0.88), 2)))
+                else:
+                    limit_price = Decimal(str(round(price * ctx.rng.uniform(0.92, 0.99), 2)))
             else:
                 limit_price = Decimal(str(round(price * ctx.rng.uniform(1.01, 1.08), 2)))
         elif otype == "stop":
@@ -717,7 +872,10 @@ def build_pending_orders(ctx: RobinhoodSeedContext, params: dict[str, Any]) -> d
             limit_price = Decimal(str(round(float(stop_price) * 0.99, 2)))
 
         order_id = ctx.next_id("ord")
-        created = ctx.now - timedelta(hours=ctx.rng.randint(1, 48))
+        if include_suspicious_window and suspicious_timestamp is not None and i < suspicious_order_count:
+            created = suspicious_timestamp + timedelta(minutes=ctx.rng.randint(-20, 20))
+        else:
+            created = ctx.now - timedelta(hours=ctx.rng.randint(1, 48))
         order = Order(
             id=order_id,
             symbol=sym,
@@ -733,8 +891,15 @@ def build_pending_orders(ctx: RobinhoodSeedContext, params: dict[str, Any]) -> d
         )
         ctx.base["orders"].append(order)
         order_ids.append(order_id)
+        if include_suspicious_window and suspicious_timestamp is not None and i < suspicious_order_count:
+            suspicious_order_ids.append(order_id)
+            suspicious_symbols.append(sym)
 
-    return {"order_ids": order_ids}
+    return {
+        "order_ids": order_ids,
+        "suspicious_order_ids": suspicious_order_ids,
+        "suspicious_symbols": sorted(set(suspicious_symbols)),
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -754,30 +919,47 @@ def build_filled_orders(ctx: RobinhoodSeedContext, params: dict[str, Any]) -> di
     count = params.get("count", 5)
     lo, hi = params.get("age_range_days", [1, 30])
     symbols = params.get("symbols", None) or ctx.pick_symbols(count)
+    order_types = params.get("order_types", ["market"])
+    high_slippage_count = int(params.get("high_slippage_count", 0))
 
     if "orders" not in ctx.base:
         ctx.base["orders"] = []
 
     order_ids: list[str] = []
+    high_slippage_symbols: list[str] = []
     for i in range(count):
         sym = symbols[i % len(symbols)]
         stock = ctx.get_stock_from_base(sym)
         side = ctx.rng.choice(["buy", "sell"])
+        order_type = ctx.rng.choice(order_types)
         qty = Decimal(str(ctx.rng.randint(1, 100)))
         price = float(stock.price) if stock else 100.0
-        fill_price = Decimal(str(round(price * ctx.rng.uniform(0.97, 1.03), 2)))
         days_ago = ctx.rng.randint(lo, hi)
         created = ctx.now - timedelta(days=days_ago, hours=ctx.rng.randint(0, 8))
         filled = created + timedelta(seconds=ctx.rng.randint(1, 120))
+
+        limit_price = None
+        if order_type == "limit":
+            limit_price = Decimal(str(round(price * ctx.rng.uniform(0.99, 1.01), 2)))
+            if i < high_slippage_count:
+                fill_multiplier = 1.04 if side == "buy" else 0.96
+                fill_price = Decimal(str(round(float(limit_price) * fill_multiplier, 2)))
+                high_slippage_symbols.append(sym)
+            else:
+                fill_price = Decimal(str(round(price * ctx.rng.uniform(0.985, 1.015), 2)))
+        else:
+            fill_price = Decimal(str(round(price * ctx.rng.uniform(0.97, 1.03), 2)))
 
         order_id = ctx.next_id("ord")
         order = Order(
             id=order_id,
             symbol=sym,
             side=side,
-            order_type="market",
+            order_type=order_type,
             quantity=qty,
             filled_quantity=qty,
+            filled_price=fill_price,
+            limit_price=limit_price,
             status="filled",
             created_at=created,
             filled_at=filled,
@@ -785,7 +967,7 @@ def build_filled_orders(ctx: RobinhoodSeedContext, params: dict[str, Any]) -> di
         ctx.base["orders"].append(order)
         order_ids.append(order_id)
 
-    return {"order_ids": order_ids}
+    return {"order_ids": order_ids, "high_slippage_symbols": sorted(set(high_slippage_symbols))}
 
 
 # ---------------------------------------------------------------------------
@@ -888,7 +1070,7 @@ def build_options_chain(ctx: RobinhoodSeedContext, params: dict[str, Any]) -> di
         # Generate strikes centered around current price
         strike_step = max(1.0, round(base_price * 0.025, 0))
         center_strike = round(base_price / strike_step) * strike_step
-        half = strikes_per // 2
+        half = (strikes_per - 1) // 2
 
         for s_i in range(-half, half + 1):
             strike = Decimal(str(round(center_strike + s_i * strike_step, 2)))
@@ -953,7 +1135,13 @@ def build_options_positions(ctx: RobinhoodSeedContext, params: dict[str, Any]) -
     """
     count = params.get("count", 3)
     strategies = params.get("strategies", ["single"])
-    symbols = params.get("symbols", None) or ctx.pick_symbols(count)
+    symbols = [params["symbol"]] if params.get("symbol") else (params.get("symbols", None) or ctx.pick_symbols(count))
+    near_expiry_count = params.get("near_expiry_count", count if "near_expiry_days" in params else 0)
+    near_expiry_days = params.get("near_expiry_days", 5)
+    forced_option_type = params.get("option_type")
+    forced_position_side = params.get("position_side")
+    forced_in_the_money = params.get("in_the_money")
+    position_type = params.get("position_type")
 
     if "options_positions" not in ctx.base:
         ctx.base["options_positions"] = []
@@ -963,19 +1151,42 @@ def build_options_positions(ctx: RobinhoodSeedContext, params: dict[str, Any]) -
         sym = symbols[i % len(symbols)]
         stock = ctx.get_stock_from_base(sym)
         base_price = float(stock.price) if stock else 100.0
-        opt_type = ctx.rng.choice(["call", "put"])
-        strike_mult = ctx.rng.uniform(0.90, 1.10)
+        if forced_option_type:
+            opt_type = forced_option_type
+        elif position_type == "covered_call":
+            opt_type = "call"
+        else:
+            opt_type = ctx.rng.choice(["call", "put"])
+
+        if forced_position_side:
+            position_side = forced_position_side
+        elif position_type == "covered_call":
+            position_side = "short"
+        else:
+            position_side = ctx.rng.choice(["long", "short"])
+
+        if forced_in_the_money is True:
+            strike_mult = ctx.rng.uniform(0.92, 0.98) if opt_type == "call" else ctx.rng.uniform(1.02, 1.08)
+        elif forced_in_the_money is False:
+            strike_mult = ctx.rng.uniform(1.02, 1.08) if opt_type == "call" else ctx.rng.uniform(0.92, 0.98)
+        else:
+            strike_mult = ctx.rng.uniform(0.90, 1.10)
         strike = Decimal(str(round(base_price * strike_mult, 2)))
-        exp_date = (ctx.now + timedelta(days=ctx.rng.randint(7, 60))).date()
-        qty = ctx.rng.randint(1, 10)
+        exp_date = (ctx.now + timedelta(days=near_expiry_days if i < near_expiry_count else ctx.rng.randint(7, 60))).date()
+        qty = 1 if position_type == "covered_call" else ctx.rng.randint(1, 10)
         avg_cost = Decimal(str(round(base_price * 0.03 * ctx.rng.uniform(0.5, 2.0), 2)))
-        current_premium = Decimal(str(round(float(avg_cost) * ctx.rng.uniform(0.5, 1.5), 2)))
+        if position_side == "long":
+            current_mult = ctx.rng.uniform(0.6, 1.5)
+        else:
+            current_mult = ctx.rng.uniform(0.5, 1.2)
+        current_premium = Decimal(str(round(float(avg_cost) * current_mult, 2)))
 
         pos_id = ctx.next_id("opos")
         opos = OptionsPosition(
             id=pos_id,
             contract_id=ctx.next_id("opt"),
             underlying_symbol=sym,
+            position_side=position_side,
             option_type=opt_type,
             strike_price=strike,
             expiration_date=exp_date,
@@ -1014,69 +1225,112 @@ def build_complex_options_book(ctx: RobinhoodSeedContext, params: dict[str, Any]
 
     if "options_orders" not in ctx.base:
         ctx.base["options_orders"] = []
+    if "options_positions" not in ctx.base:
+        ctx.base["options_positions"] = []
 
     order_ids: list[str] = []
+    position_ids: list[str] = []
+    action_symbols: list[str] = []
+    no_action_symbols: list[str] = []
+    profitable_long_symbols: list[str] = []
+    short_itm_symbols: list[str] = []
     exp_date = (ctx.now + timedelta(days=days_to_expiry)).date()
 
-    strategies = ["vertical", "iron_condor", "straddle", "strangle"]
+    symbols = params.get("symbols", None) or ctx.pick_symbols(positions_count)
+    categories = ["profitable_long", "losing_long", "short_itm", "short_otm"]
 
-    for _ in range(positions_count):
-        syms = ctx.pick_symbols(1)
-        sym = syms[0] if syms else "AAPL"
+    for idx in range(positions_count):
+        sym = symbols[idx % len(symbols)] if symbols else "AAPL"
         stock = ctx.get_stock_from_base(sym)
         base_price = float(stock.price) if stock else 100.0
-        strategy = ctx.rng.choice(strategies)
+        category = categories[idx % len(categories)]
+        if category == "profitable_long":
+            option_type = "call"
+            position_side = "long"
+            strike = Decimal(str(round(base_price * 0.96, 2)))
+            avg_cost = Decimal(str(round(base_price * 0.025, 2)))
+            current_premium = Decimal(str(round(float(avg_cost) * 1.35, 2)))
+            action_symbols.append(sym)
+            profitable_long_symbols.append(sym)
+        elif category == "losing_long":
+            option_type = "put"
+            position_side = "long"
+            strike = Decimal(str(round(base_price * 0.90, 2)))
+            avg_cost = Decimal(str(round(base_price * 0.03, 2)))
+            current_premium = Decimal(str(round(float(avg_cost) * 0.65, 2)))
+            no_action_symbols.append(sym)
+        elif category == "short_itm":
+            option_type = "call"
+            position_side = "short"
+            strike = Decimal(str(round(base_price * 0.95, 2)))
+            avg_cost = Decimal(str(round(base_price * 0.03, 2)))
+            current_premium = Decimal(str(round(float(avg_cost) * 1.25, 2)))
+            action_symbols.append(sym)
+            short_itm_symbols.append(sym)
+        else:
+            option_type = "put"
+            position_side = "short"
+            strike = Decimal(str(round(base_price * 0.85, 2)))
+            avg_cost = Decimal(str(round(base_price * 0.03, 2)))
+            current_premium = Decimal(str(round(float(avg_cost) * 0.55, 2)))
+            no_action_symbols.append(sym)
 
-        legs: list[OptionsLeg] = []
-        if strategy == "vertical":
-            strike_lo = Decimal(str(round(base_price * 0.95, 2)))
-            strike_hi = Decimal(str(round(base_price * 1.05, 2)))
-            legs = [
-                OptionsLeg(side="buy", option_type="call", strike=strike_lo, expiration=exp_date,
-                           quantity=1, premium=Decimal(str(round(base_price * 0.04, 2)))),
-                OptionsLeg(side="sell", option_type="call", strike=strike_hi, expiration=exp_date,
-                           quantity=1, premium=Decimal(str(round(base_price * 0.02, 2)))),
-            ]
-        elif strategy == "iron_condor":
-            legs = [
-                OptionsLeg(side="sell", option_type="put", strike=Decimal(str(round(base_price * 0.92, 2))),
-                           expiration=exp_date, quantity=1, premium=Decimal(str(round(base_price * 0.015, 2)))),
-                OptionsLeg(side="buy", option_type="put", strike=Decimal(str(round(base_price * 0.88, 2))),
-                           expiration=exp_date, quantity=1, premium=Decimal(str(round(base_price * 0.008, 2)))),
-                OptionsLeg(side="sell", option_type="call", strike=Decimal(str(round(base_price * 1.08, 2))),
-                           expiration=exp_date, quantity=1, premium=Decimal(str(round(base_price * 0.015, 2)))),
-                OptionsLeg(side="buy", option_type="call", strike=Decimal(str(round(base_price * 1.12, 2))),
-                           expiration=exp_date, quantity=1, premium=Decimal(str(round(base_price * 0.008, 2)))),
-            ]
-        elif strategy == "straddle":
-            atm = Decimal(str(round(base_price, 2)))
-            legs = [
-                OptionsLeg(side="buy", option_type="call", strike=atm, expiration=exp_date,
-                           quantity=1, premium=Decimal(str(round(base_price * 0.035, 2)))),
-                OptionsLeg(side="buy", option_type="put", strike=atm, expiration=exp_date,
-                           quantity=1, premium=Decimal(str(round(base_price * 0.035, 2)))),
-            ]
-        else:  # strangle
-            legs = [
-                OptionsLeg(side="buy", option_type="call", strike=Decimal(str(round(base_price * 1.05, 2))),
-                           expiration=exp_date, quantity=1, premium=Decimal(str(round(base_price * 0.02, 2)))),
-                OptionsLeg(side="buy", option_type="put", strike=Decimal(str(round(base_price * 0.95, 2))),
-                           expiration=exp_date, quantity=1, premium=Decimal(str(round(base_price * 0.02, 2)))),
-            ]
+        pos_id = ctx.next_id("opos")
+        position = OptionsPosition(
+            id=pos_id,
+            contract_id=ctx.next_id("opt"),
+            underlying_symbol=sym,
+            position_side=position_side,
+            option_type=option_type,
+            strike_price=strike,
+            expiration_date=exp_date,
+            quantity=1,
+            avg_cost=avg_cost,
+            current_premium=current_premium,
+            greeks=Greeks(
+                delta=Decimal(str(round(ctx.rng.uniform(-0.8, 0.8), 4))),
+                gamma=Decimal(str(round(ctx.rng.uniform(0.001, 0.05), 4))),
+                theta=Decimal(str(round(-ctx.rng.uniform(0.01, 0.15), 4))),
+                vega=Decimal(str(round(ctx.rng.uniform(0.05, 0.30), 4))),
+            ),
+            status="open",
+        )
+        ctx.base["options_positions"].append(position)
+        position_ids.append(pos_id)
+
+        legs = [
+            OptionsLeg(
+                underlying_symbol=sym,
+                side="buy" if position_side == "long" else "sell",
+                option_type=option_type,
+                strike=strike,
+                expiration=exp_date,
+                quantity=1,
+                premium=avg_cost,
+            )
+        ]
 
         order_id = ctx.next_id("oord")
+        created_at = ctx.now - timedelta(days=ctx.rng.randint(1, 10))
         oord = OptionsOrder(
             id=order_id,
-            strategy=strategy,
+            strategy="single",
             legs=legs,
             status="filled",
-            created_at=ctx.now - timedelta(days=ctx.rng.randint(1, 10)),
-            filled_at=ctx.now - timedelta(days=ctx.rng.randint(1, 10)),
+            created_at=created_at,
+            filled_at=created_at + timedelta(seconds=ctx.rng.randint(30, 300)),
         )
         ctx.base["options_orders"].append(oord)
         order_ids.append(order_id)
 
-    return {"options_order_ids": order_ids}
+    return {
+        "options_order_ids": order_ids,
+        "options_position_ids": position_ids,
+        "action_symbols": sorted(set(action_symbols)),
+        "no_action_symbols": sorted(set(no_action_symbols)),
+        "profitable_long_symbols": sorted(set(profitable_long_symbols)),
+        "short_itm_symbols": sorted(set(short_itm_symbols)),
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -1096,11 +1350,16 @@ def build_recurring_investments(ctx: RobinhoodSeedContext, params: dict[str, Any
     count = params.get("count", 3)
     symbols = params.get("symbols", None) or ctx.pick_symbols(count)
     frequencies = params.get("frequencies", ["weekly", "monthly"])
+    include_history = params.get("include_history", True)
+    overpaying_count = int(params.get("overpaying_count", 0))
+    overdue_count = int(params.get("overdue_count", 0))
 
     if "recurring_investments" not in ctx.base:
         ctx.base["recurring_investments"] = []
 
     ri_ids: list[str] = []
+    overpaying_symbols: list[str] = []
+    overdue_symbols: list[str] = []
     for i in range(count):
         sym = symbols[i % len(symbols)]
         freq = ctx.rng.choice(frequencies)
@@ -1112,7 +1371,10 @@ def build_recurring_investments(ctx: RobinhoodSeedContext, params: dict[str, Any
         stock = ctx.get_stock_from_base(sym)
         for ex_i in range(num_executions):
             days_ago = (num_executions - ex_i) * (7 if freq == "weekly" else 30)
-            exec_price = float(stock.price) * ctx.rng.uniform(0.85, 1.15) if stock else 100.0
+            if stock and i < overpaying_count:
+                exec_price = float(stock.price) * ctx.rng.uniform(1.08, 1.25)
+            else:
+                exec_price = float(stock.price) * ctx.rng.uniform(0.85, 1.02) if stock else 100.0
             exec_price_d = Decimal(str(round(exec_price, 2)))
             shares = Decimal(str(round(float(amount) / exec_price, 6)))
             history.append(RecurringExecution(
@@ -1123,7 +1385,16 @@ def build_recurring_investments(ctx: RobinhoodSeedContext, params: dict[str, Any
             ))
 
         # Next execution
-        if freq == "weekly":
+        if i < overdue_count:
+            if freq == "weekly":
+                next_date = (ctx.now - timedelta(days=ctx.rng.randint(1, 7))).date()
+            elif freq == "biweekly":
+                next_date = (ctx.now - timedelta(days=ctx.rng.randint(1, 14))).date()
+            elif freq == "daily":
+                next_date = (ctx.now - timedelta(days=1)).date()
+            else:  # monthly
+                next_date = (ctx.now - timedelta(days=ctx.rng.randint(1, 30))).date()
+        elif freq == "weekly":
             next_date = (ctx.now + timedelta(days=ctx.rng.randint(1, 7))).date()
         elif freq == "biweekly":
             next_date = (ctx.now + timedelta(days=ctx.rng.randint(1, 14))).date()
@@ -1140,12 +1411,34 @@ def build_recurring_investments(ctx: RobinhoodSeedContext, params: dict[str, Any
             frequency=freq,
             next_execution_date=next_date,
             status="active",
-            history=history,
+            history=history if include_history else [],
         )
         ctx.base["recurring_investments"].append(ri)
         ri_ids.append(ri_id)
+        if stock and i < overpaying_count:
+            overpaying_symbols.append(sym)
+        if i < overdue_count:
+            overdue_symbols.append(sym)
 
-    return {"recurring_investment_ids": ri_ids}
+    active_symbols = [investment.symbol for investment in ctx.base["recurring_investments"]]
+    duplicate_symbols = sorted({
+        symbol for symbol in active_symbols
+        if active_symbols.count(symbol) > 1
+    })
+    combined_amounts = {
+        symbol: str(sum(
+            (investment.amount for investment in ctx.base["recurring_investments"] if investment.symbol == symbol),
+            Decimal("0"),
+        ))
+        for symbol in duplicate_symbols
+    }
+    return {
+        "recurring_investment_ids": ri_ids,
+        "overpaying_symbols": sorted(set(overpaying_symbols)),
+        "overdue_symbols": sorted(set(overdue_symbols)),
+        "duplicate_symbols": duplicate_symbols,
+        "combined_amounts": combined_amounts,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -1163,8 +1456,8 @@ def build_transfers_history(ctx: RobinhoodSeedContext, params: dict[str, Any]) -
     include_pending : bool       -- include pending transfers (default False)
     """
     count = params.get("count", 5)
-    lo, hi = params.get("age_range_days", [1, 90])
-    include_pending = params.get("include_pending", False)
+    lo, hi = params.get("age_range_days", [1, max(30, int(params.get("months", 3)) * 30)])
+    include_pending = params.get("include_old_pending", params.get("include_pending", False))
 
     if "transfers" not in ctx.base:
         ctx.base["transfers"] = []
@@ -1185,6 +1478,7 @@ def build_transfers_history(ctx: RobinhoodSeedContext, params: dict[str, Any]) -
         if include_pending and i == 0:
             status = "pending"
             completed_at = None
+            initiated = ctx.now - timedelta(days=max(days_ago, 8))
         else:
             status = "completed"
             completed_at = initiated + timedelta(days=ctx.rng.randint(1, 3))
@@ -1223,6 +1517,12 @@ def build_transaction_ledger(ctx: RobinhoodSeedContext, params: dict[str, Any]) 
     months = params.get("months", 3)
     symbols = params.get("symbols", None) or ctx.pick_symbols(5)
     include_dividends = params.get("include_dividends", True)
+    include_recent_buys = params.get("include_recent_buys", False)
+    recent_buy_symbols = params.get("recent_buy_symbols")
+    recent_buy_count = params.get("recent_buy_count")
+    quantity_mismatch_stock = params.get("quantity_mismatch_stock")
+    if quantity_mismatch_stock is None and params.get("include_discrepancy"):
+        quantity_mismatch_stock = next((position.symbol for position in ctx.base.get("positions", [])), None)
 
     if "transactions" not in ctx.base:
         ctx.base["transactions"] = []
@@ -1272,7 +1572,56 @@ def build_transaction_ledger(ctx: RobinhoodSeedContext, params: dict[str, Any]) 
                 ))
                 txn_ids.append(txn_id)
 
-    return {"transaction_ids": txn_ids}
+    recent_buy_symbols_used: list[str] = []
+    if include_recent_buys:
+        candidate_symbols = recent_buy_symbols or list({
+            position.symbol for position in ctx.base.get("positions", [])
+        })[:3] or list(symbols[:3])
+        if recent_buy_count is not None:
+            candidate_symbols = list(candidate_symbols)[: int(recent_buy_count)]
+        for idx, sym in enumerate(candidate_symbols):
+            stock = ctx.get_stock_from_base(sym)
+            base_price = float(stock.price) if stock else 100.0
+            qty = Decimal(str(3 + idx))
+            price = Decimal(str(round(base_price * 1.01, 2)))
+            txn_id = ctx.next_id("txn")
+            ctx.base["transactions"].append(Transaction(
+                id=txn_id,
+                type="buy",
+                symbol=sym,
+                quantity=qty,
+                amount=qty * price,
+                description=f"Recent buy {qty} shares of {sym} @ ${price}",
+                timestamp=ctx.now - timedelta(days=idx + 3),
+            ))
+            txn_ids.append(txn_id)
+            recent_buy_symbols_used.append(sym)
+
+    mismatch_symbol = quantity_mismatch_stock
+    if mismatch_symbol is None and ctx.base.get("positions"):
+        mismatch_symbol = ctx.base["positions"][0].symbol
+    if mismatch_symbol:
+        stock = ctx.get_stock_from_base(mismatch_symbol)
+        base_price = float(stock.price) if stock else 100.0
+        qty = Decimal("7")
+        price = Decimal(str(round(base_price * 1.02, 2)))
+        txn_id = ctx.next_id("txn")
+        ctx.base["transactions"].append(Transaction(
+            id=txn_id,
+            type="buy",
+            symbol=mismatch_symbol,
+            quantity=qty,
+            amount=qty * price,
+            description=f"Ledger mismatch buy {qty} shares of {mismatch_symbol} @ ${price}",
+            timestamp=ctx.now - timedelta(days=14),
+        ))
+        txn_ids.append(txn_id)
+
+    return {
+        "transaction_ids": txn_ids,
+        "mismatch_symbol": mismatch_symbol,
+        "recent_buy_symbols": sorted(set(recent_buy_symbols_used)),
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -1292,21 +1641,68 @@ def build_tax_documents(ctx: RobinhoodSeedContext, params: dict[str, Any]) -> di
     year = params.get("year", ctx.now.year - 1)
     include_wash_sales = params.get("include_wash_sales", False)
     gains_count = params.get("gains_count", 8)
+    include_gains = params.get("include_gains", False)
+    short_term_gains = params.get("short_term_gains")
+    long_term_gains = params.get("long_term_gains")
+    discrepancy_count = int(params.get("discrepancy_count", 0))
 
     if "tax_documents" not in ctx.base:
         ctx.base["tax_documents"] = []
 
-    symbols = ctx.pick_symbols(gains_count)
+    sell_symbols = [txn.symbol for txn in ctx.base.get("transactions", []) if txn.type == "sell" and txn.symbol]
+    requested_symbols = list(params.get("symbols", []) or [])
+    symbol_pool = list(dict.fromkeys(requested_symbols + sell_symbols))
+    if len(symbol_pool) < gains_count:
+        symbol_pool.extend(sym for sym in ctx.pick_symbols(gains_count) if sym not in symbol_pool)
+    symbols = symbol_pool[:gains_count]
+
+    transaction_cost_bases: dict[str, Decimal] = {}
+    for symbol in symbols:
+        purchase_total = sum(
+            (
+                txn.amount
+                for txn in ctx.base.get("transactions", [])
+                if txn.type == "buy" and txn.symbol == symbol
+            ),
+            Decimal("0"),
+        )
+        if purchase_total == Decimal("0"):
+            purchase_total = Decimal(str(round(ctx.rng.uniform(500, 10000), 2)))
+        transaction_cost_bases[symbol] = purchase_total
+
     gains: list[RealizedGainLoss] = []
+    discrepancy_symbols: list[str] = []
+    reported_cost_bases: dict[str, str] = {}
+    transaction_cost_basis_map: dict[str, str] = {}
     for i in range(gains_count):
         sym = symbols[i % len(symbols)]
         buy_date = date(year, ctx.rng.randint(1, 6), ctx.rng.randint(1, 28))
         sell_date = date(year, ctx.rng.randint(7, 12), ctx.rng.randint(1, 28))
-        cost_basis = Decimal(str(round(ctx.rng.uniform(500, 10000), 2)))
+        cost_basis = transaction_cost_bases[sym]
+        if i < discrepancy_count:
+            discrepancy_symbols.append(sym)
+            cost_basis += Decimal(str((i + 1) * 125))
         gain_pct = ctx.rng.uniform(-0.30, 0.50)
-        proceeds = Decimal(str(round(float(cost_basis) * (1 + gain_pct), 2)))
-        gain_loss = proceeds - cost_basis
         holding_days = (sell_date - buy_date).days
+        if include_gains:
+            gain_pct = abs(gain_pct) + 0.05
+        holding_period = "long" if holding_days > 365 else "short"
+        if short_term_gains is not None and i == 0:
+            holding_period = "short"
+            sell_date = min(date(year, 12, 28), buy_date + timedelta(days=120))
+            target_gain = Decimal(str(short_term_gains))
+            proceeds = cost_basis + target_gain
+        elif long_term_gains is not None and i == 1:
+            holding_period = "long"
+            sell_date = max(sell_date, buy_date + timedelta(days=370))
+            if sell_date.year != year:
+                sell_date = date(year, 12, 28)
+                buy_date = min(buy_date, date(year - 1, 1, 5))
+            target_gain = Decimal(str(long_term_gains))
+            proceeds = cost_basis + target_gain
+        else:
+            proceeds = Decimal(str(round(float(cost_basis) * (1 + gain_pct), 2)))
+        gain_loss = proceeds - cost_basis
         is_wash = include_wash_sales and i % 4 == 0
 
         gains.append(RealizedGainLoss(
@@ -1317,19 +1713,26 @@ def build_tax_documents(ctx: RobinhoodSeedContext, params: dict[str, Any]) -> di
             cost_basis=cost_basis,
             gain_loss=gain_loss,
             wash_sale=is_wash,
-            holding_period="long" if holding_days > 365 else "short",
+            holding_period=holding_period,
         ))
+        reported_cost_bases[sym] = f"{cost_basis:.2f}"
+        transaction_cost_basis_map[sym] = f"{transaction_cost_bases[sym]:.2f}"
 
     doc_id = ctx.next_id("taxdoc")
     doc = TaxDocument(
         id=doc_id,
-        type="1099_CONSOLIDATED",
+        type="1099_B" if params.get("include_1099b") else "1099_CONSOLIDATED",
         tax_year=year,
         available_date=date(year + 1, 2, 15),
         realized_gains=gains,
     )
     ctx.base["tax_documents"].append(doc)
-    return {"tax_document_id": doc_id}
+    return {
+        "tax_document_id": doc_id,
+        "discrepancy_symbols": sorted(set(discrepancy_symbols)),
+        "reported_cost_bases": reported_cost_bases,
+        "transaction_cost_bases": transaction_cost_basis_map,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -1347,6 +1750,8 @@ def build_price_alerts(ctx: RobinhoodSeedContext, params: dict[str, Any]) -> dic
     """
     count = params.get("count", 5)
     include_triggered = params.get("include_triggered", False)
+    include_stale = params.get("include_stale", False)
+    stale_symbol = params.get("stale_symbol")
 
     if "price_alerts" not in ctx.base:
         ctx.base["price_alerts"] = []
@@ -1355,7 +1760,7 @@ def build_price_alerts(ctx: RobinhoodSeedContext, params: dict[str, Any]) -> dic
     alert_ids: list[str] = []
 
     for i in range(count):
-        sym = symbols[i % len(symbols)]
+        sym = stale_symbol if include_stale and i == 0 and stale_symbol else symbols[i % len(symbols)]
         stock = ctx.get_stock_from_base(sym)
         base_price = float(stock.price) if stock else 100.0
         condition = ctx.rng.choice(["above", "below"])
@@ -1405,6 +1810,9 @@ _NOTIFICATION_TEMPLATES: dict[str, list[dict[str, str]]] = {
     "security_alert": [
         {"title": "New Login Detected", "message": "A new login was detected from {detail}. If this wasn't you, secure your account."},
     ],
+    "corporate_action": [
+        {"title": "Corporate Action: {sym}", "message": "{sym} has an upcoming corporate action. Review the notice before market open."},
+    ],
 }
 
 
@@ -1421,11 +1829,14 @@ def build_notifications(ctx: RobinhoodSeedContext, params: dict[str, Any]) -> di
     count = params.get("count", 10)
     types = params.get("types", list(_NOTIFICATION_TEMPLATES.keys()))
     unread_ratio = params.get("unread_ratio", 0.4)
+    include_corporate_actions = params.get("include_corporate_actions", False)
 
     if "notifications" not in ctx.base:
         ctx.base["notifications"] = []
 
     symbols = ctx.pick_symbols(count)
+    if include_corporate_actions and "corporate_action" not in types:
+        types = list(types) + ["corporate_action"]
     notif_ids: list[str] = []
     unread_count = round(count * unread_ratio)
 
@@ -1514,6 +1925,7 @@ def build_dividend_schedule(ctx: RobinhoodSeedContext, params: dict[str, Any]) -
     """
     symbols = params.get("symbols", None)
     include_history = params.get("include_history", True)
+    quarters = params.get("quarters", 1)
 
     if "dividend_schedule" not in ctx.base:
         ctx.base["dividend_schedule"] = []
@@ -1547,16 +1959,17 @@ def build_dividend_schedule(ctx: RobinhoodSeedContext, params: dict[str, Any]) -
 
         # Historical dividend
         if include_history:
-            past_ex = (ctx.now - timedelta(days=ctx.rng.randint(60, 120))).date()
-            past_pay = past_ex + timedelta(days=20)
-            ctx.base["dividend_schedule"].append(DividendEntry(
-                symbol=sym,
-                ex_date=past_ex,
-                pay_date=past_pay,
-                amount_per_share=amount_per_share,
-                estimated_total=estimated_total,
-                status="paid",
-            ))
+            for quarter_idx in range(max(1, quarters)):
+                past_ex = (ctx.now - timedelta(days=90 * (quarter_idx + 1) + ctx.rng.randint(0, 20))).date()
+                past_pay = past_ex + timedelta(days=20)
+                ctx.base["dividend_schedule"].append(DividendEntry(
+                    symbol=sym,
+                    ex_date=past_ex,
+                    pay_date=past_pay,
+                    amount_per_share=amount_per_share,
+                    estimated_total=estimated_total,
+                    status="paid",
+                ))
 
     return {}
 
@@ -1583,6 +1996,9 @@ def build_security_log(ctx: RobinhoodSeedContext, params: dict[str, Any]) -> dic
     devices = ["Chrome on macOS", "Safari on iPhone", "Chrome on Windows", "Firefox on Linux"]
     locations = ["New York, NY", "San Francisco, CA", "Chicago, IL", "Austin, TX", "Seattle, WA"]
     suspicious_locations = ["Moscow, Russia", "Lagos, Nigeria", "Unknown VPN"]
+    suspicious_timestamp = None
+    suspicious_location = None
+    suspicious_device = None
 
     for i in range(count):
         ts = ctx.now - timedelta(days=ctx.rng.randint(0, 60), hours=ctx.rng.randint(0, 23))
@@ -1592,6 +2008,9 @@ def build_security_log(ctx: RobinhoodSeedContext, params: dict[str, Any]) -> dic
             device = ctx.rng.choice(["Tor Browser on Unknown", "Chrome on Windows"])
             ip = f"{ctx.rng.randint(1,255)}.{ctx.rng.randint(0,255)}.{ctx.rng.randint(0,255)}.{ctx.rng.randint(0,255)}"
             location = ctx.rng.choice(suspicious_locations)
+            suspicious_timestamp = ts
+            suspicious_location = location
+            suspicious_device = device
         else:
             device = ctx.rng.choice(devices)
             ip = f"192.168.{ctx.rng.randint(0,255)}.{ctx.rng.randint(1,254)}"
@@ -1605,7 +2024,11 @@ def build_security_log(ctx: RobinhoodSeedContext, params: dict[str, Any]) -> dic
             timestamp=ts,
         ))
 
-    return {}
+    return {
+        "suspicious_timestamp": suspicious_timestamp,
+        "suspicious_location": suspicious_location,
+        "suspicious_device": suspicious_device,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -1621,7 +2044,14 @@ def build_margin_account(ctx: RobinhoodSeedContext, params: dict[str, Any]) -> d
     margin_used : str          -- amount of margin currently used (Decimal string, default "0")
     maintenance_pct : float    -- maintenance margin percentage (default 0.25)
     """
-    margin_used = Decimal(str(params.get("margin_used", "0")))
+    utilization_pct = params.get("utilization_pct")
+    if params.get("near_maintenance") and utilization_pct is None and "margin_used" not in params:
+        utilization_pct = 45
+    if utilization_pct is not None and "margin_used" not in params:
+        portfolio_value = ctx.base.get("portfolio_value", Decimal("0"))
+        margin_used = Decimal(str(round(float(portfolio_value) * float(utilization_pct) / 100, 2)))
+    else:
+        margin_used = Decimal(str(params.get("margin_used", "0")))
     maintenance_pct = params.get("maintenance_pct", 0.25)
 
     ctx.base["account_type"] = "margin"

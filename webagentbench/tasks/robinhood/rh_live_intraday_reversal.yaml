@@ -3,7 +3,7 @@ task_id: rh_live_intraday_reversal
 env_id: robinhood
 title: Intraday Reversal Buy
 instruction_template: Watch NVDA's price. It will experience a decline followed by
-  a recovery. Buy 10 shares once you believe the reversal has begun — after the price
+  a recovery. Buy 5 shares once you believe the reversal has begun — after the price
   starts going back up.
 difficulty: expert
 time_limit_seconds: 350
@@ -48,7 +48,7 @@ eval:
   source: server_state
   checks:
   - expr: any(o.symbol == 'NVDA' and o.side == 'buy' and o.order_type == 'market'
-      and o.status == 'filled' and o.quantity == 10 for o in state.orders)
+      and o.status == 'filled' and o.quantity == 5 for o in state.orders)
     desc: A filled market buy order for 10 shares of NVDA exists
   - expr: len(state.orders) == 1
     desc: Only the intended reversal buy order was placed
