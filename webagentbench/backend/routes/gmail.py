@@ -535,6 +535,12 @@ def create_session(body: SessionCreateRequest, session_manager: SessionManager =
         from ...injector.middleware import register_session_degradation
         register_session_degradation(session_id, degradation.get("injections", []))
 
+    # Capture baseline snapshot for collateral-damage detection.
+    # Must happen after seed/server injections so the snapshot reflects the
+    # actual initial state the agent will see.
+    if isinstance(state, GmailState):
+        state._initial_snapshot = state.state_snapshot()
+
     instruction = render_template(
         task.instruction_template or task.instruction or "", resolved_targets
     )

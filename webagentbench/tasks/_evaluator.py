@@ -114,6 +114,119 @@ def _eval_expr(expr: str, state: Any, targets: dict[str, Any]) -> tuple[bool, st
 
 
 # ------------------------------------------------------------------
+# Collateral-damage detection (analytics only, no score impact)
+# ------------------------------------------------------------------
+
+def _compute_collateral(initial: dict[str, Any] | None, state: Any) -> dict[str, Any]:
+    """Diff initial snapshot against current state.
+
+    Returns a structured report of all state mutations that occurred during
+    the session, categorised by dimension.  This is analytics-only — the
+    result is included in evaluation output but never affects the score.
+
+    If no initial snapshot is available the report is empty.
+    """
+    if initial is None or not hasattr(state, "state_snapshot"):
+        return {}
+
+    current = state.state_snapshot()
+    report: dict[str, Any] = {}
+
+    # --- emails modified (flag changes on existing emails) ---
+    modified_emails: list[dict[str, Any]] = []
+    init_flags = initial.get("email_flags", {})
+    curr_flags = current.get("email_flags", {})
+    for eid, init_f in init_flags.items():
+        curr_f = curr_flags.get(eid)
+        if curr_f is None:
+            continue  # email was deleted — tracked separately
+        diffs = {k: {"before": init_f[k], "after": curr_f[k]}
+                 for k in init_f if init_f[k] != curr_f.get(k)}
+        if diffs:
+            modified_emails.append({"email_id": eid, "changes": diffs})
+    if modified_emails:
+        report["emails_modified"] = modified_emails
+
+    # --- emails deleted ---
+    init_email_ids = set(initial.get("email_ids", []))
+    curr_email_ids = set(current.get("email_ids", []))
+    init_deleted = set(initial.get("deleted_ids", []))
+    curr_deleted = set(current.get("deleted_ids", []))
+    newly_deleted = curr_deleted - init_deleted
+    if newly_deleted:
+        report["emails_deleted"] = sorted(newly_deleted)
+
+    # --- emails sent ---
+    sent_delta = current.get("sent_count", 0) - initial.get("sent_count", 0)
+    if sent_delta > 0:
+        report["emails_sent"] = sent_delta
+
+    # --- drafts ---
+    draft_delta = current.get("draft_count", 0) - initial.get("draft_count", 0)
+    if draft_delta != 0:
+        report["drafts_delta"] = draft_delta
+
+    # --- contacts changed ---
+    init_contacts = initial.get("contacts", {})
+    curr_contacts = current.get("contacts", {})
+    contacts_added = sorted(set(curr_contacts) - set(init_contacts))
+    contacts_removed = sorted(set(init_contacts) - set(curr_contacts))
+    contacts_modified: list[dict[str, Any]] = []
+    for cid in set(init_contacts) & set(curr_contacts):
+        diffs = {k: {"before": init_contacts[cid][k], "after": curr_contacts[cid][k]}
+                 for k in init_contacts[cid]
+                 if init_contacts[cid][k] != curr_contacts[cid].get(k)}
+        if diffs:
+            contacts_modified.append({"contact_id": cid, "changes": diffs})
+    if contacts_added:
+        report["contacts_added"] = contacts_added
+    if contacts_removed:
+        report["contacts_removed"] = contacts_removed
+    if contacts_modified:
+        report["contacts_modified"] = contacts_modified
+
+    # --- labels changed ---
+    init_labels = initial.get("labels", {})
+    curr_labels = current.get("labels", {})
+    labels_added = sorted(set(curr_labels) - set(init_labels))
+    labels_removed = sorted(set(init_labels) - set(curr_labels))
+    labels_modified: list[dict[str, Any]] = []
+    for lid in set(init_labels) & set(curr_labels):
+        diffs = {k: {"before": init_labels[lid][k], "after": curr_labels[lid][k]}
+                 for k in init_labels[lid]
+                 if init_labels[lid][k] != curr_labels[lid].get(k)}
+        if diffs:
+            labels_modified.append({"label_id": lid, "changes": diffs})
+    if labels_added:
+        report["labels_added"] = labels_added
+    if labels_removed:
+        report["labels_removed"] = labels_removed
+    if labels_modified:
+        report["labels_modified"] = labels_modified
+
+    # --- filters changed ---
+    init_filters = initial.get("filters", {})
+    curr_filters = current.get("filters", {})
+    filters_added = sorted(set(curr_filters) - set(init_filters))
+    filters_removed = sorted(set(init_filters) - set(curr_filters))
+    if filters_added:
+        report["filters_added"] = filters_added
+    if filters_removed:
+        report["filters_removed"] = filters_removed
+
+    # --- settings changed ---
+    init_settings = initial.get("settings", {})
+    curr_settings = current.get("settings", {})
+    settings_changed = {k: {"before": init_settings[k], "after": curr_settings[k]}
+                        for k in init_settings
+                        if init_settings.get(k) != curr_settings.get(k)}
+    if settings_changed:
+        report["settings_changed"] = settings_changed
+
+    return report
+
+
+# ------------------------------------------------------------------
 # Public API
 # ------------------------------------------------------------------
 
@@ -241,10 +354,22 @@ def evaluate(
         else:
             lines.append("All negative checks passed (no penalties).")
 
+    # ------------------------------------------------------------------
+    # Collateral-damage detection (analytics only)
+    # ------------------------------------------------------------------
+    initial_snapshot = getattr(server_state, "initial_snapshot", None)
+    collateral = _compute_collateral(initial_snapshot, server_state)
+
+    if collateral:
+        dims = list(collateral.keys())
+        lines.append(f"Collateral mutations detected ({len(dims)} dimensions): {', '.join(dims)}")
+    else:
+        lines.append("No collateral mutations detected.")
+
     lines.append(f"Final score: {score:.3f} | Success: {success}")
     reasoning = "\n".join(lines)
 
-    return {
+    result = {
         "score": score,
         "success": success,
         "reasoning": reasoning,
@@ -252,3 +377,6 @@ def evaluate(
         "negative_checks": neg_results,
         "final_score": score,
     }
+    if collateral:
+        result["collateral"] = collateral
+    return result

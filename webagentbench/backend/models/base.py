@@ -36,6 +36,7 @@ class BaseEnvState(BaseModel):
     _resolved_targets: dict[str, Any] = PrivateAttr(default_factory=dict)
     _seed: int | None = PrivateAttr(default=None)
     _degradation: dict[str, Any] = PrivateAttr(default_factory=dict)
+    _initial_snapshot: dict[str, Any] | None = PrivateAttr(default=None)
 
     model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
@@ -57,3 +58,7 @@ class BaseEnvState(BaseModel):
     @property
     def degradation(self) -> dict[str, Any]:
         return dict(self._degradation)
+
+    @property
+    def initial_snapshot(self) -> dict[str, Any] | None:
+        return self._initial_snapshot

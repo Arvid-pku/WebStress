@@ -7,8 +7,14 @@ from types import SimpleNamespace
 
 import pytest
 
-from webagentbench.backend.models.gmail import GmailSettings, GmailState
-from webagentbench.tasks._evaluator import evaluate
+from webagentbench.backend.models.gmail import (
+    Contact,
+    Email,
+    GmailSettings,
+    GmailState,
+    Label,
+)
+from webagentbench.tasks._evaluator import _compute_collateral, evaluate
 from webagentbench.tasks._schema import Check, EvalConfig, NegativeCheck
 
 
@@ -166,3 +172,147 @@ def test_negative_check_error_does_not_penalize() -> None:
     assert result["score"] == pytest.approx(1.0)
     assert result["success"] is True
     assert result["negative_checks"][0]["error"] is not None
+
+
+# ------------------------------------------------------------------
+# Collateral-damage detection tests
+# ------------------------------------------------------------------
+
+def _seeded_state() -> GmailState:
+    """Build a state with one email, one contact, one label, and take a snapshot."""
+    state = GmailState(
+        env_id="gmail",
+        task_id="test_task",
+        owner_name="Test User",
+        owner_email="test@example.com",
+        emails=[
+            Email(
+                id="e001",
+                from_addr="alice@example.com",
+                from_name="Alice",
+                to=["test@example.com"],
+                subject="Hello",
+                body="Hi there",
+                timestamp=datetime(2026, 1, 1, tzinfo=timezone.utc),
+                thread_id="t001",
+            ),
+        ],
+        contacts=[
+            Contact(id="c001", name="Alice", email="alice@example.com"),
+        ],
+        labels=[
+            Label(id="label_inbox", name="inbox", system=True),
+        ],
+        settings=GmailSettings(id="settings_1", signature="--Test"),
+    )
+    state._initial_snapshot = state.state_snapshot()
+    return state
+
+
+def test_collateral_no_changes_returns_empty() -> None:
+    """When nothing changes, collateral report should be empty."""
+    state = _seeded_state()
+    report = _compute_collateral(state.initial_snapshot, state)
+    assert report == {}
+
+
+def test_collateral_detects_unintended_star() -> None:
+    """Starring an email that wasn't required should show in collateral."""
+    state = _seeded_state()
+    state.toggle_star("e001", is_starred=True)
+
+    report = _compute_collateral(state.initial_snapshot, state)
+    assert "emails_modified" in report
+    assert len(report["emails_modified"]) == 1
+    mod = report["emails_modified"][0]
+    assert mod["email_id"] == "e001"
+    assert "is_starred" in mod["changes"]
+    assert mod["changes"]["is_starred"] == {"before": False, "after": True}
+
+
+def test_collateral_detects_settings_change() -> None:
+    """Changing a setting should appear in collateral.settings_changed."""
+    state = _seeded_state()
+    state.settings.signature = "--New Signature"
+
+    report = _compute_collateral(state.initial_snapshot, state)
+    assert "settings_changed" in report
+    assert "signature" in report["settings_changed"]
+    assert report["settings_changed"]["signature"]["before"] == "--Test"
+    assert report["settings_changed"]["signature"]["after"] == "--New Signature"
+
+
+def test_collateral_detects_email_deletion() -> None:
+    """Deleting an email should appear in collateral.emails_deleted."""
+    state = _seeded_state()
+    state.delete_email("e001")
+
+    report = _compute_collateral(state.initial_snapshot, state)
+    assert "emails_deleted" in report
+    assert "e001" in report["emails_deleted"]
+
+
+def test_collateral_detects_sent_email() -> None:
+    """Sending an email should appear in collateral.emails_sent."""
+    state = _seeded_state()
+    state.send_email(to=["bob@example.com"], subject="Test", body="Body")
+
+    report = _compute_collateral(state.initial_snapshot, state)
+    assert "emails_sent" in report
+    assert report["emails_sent"] == 1
+
+
+def test_collateral_detects_label_creation() -> None:
+    """Creating a new label should appear in collateral.labels_added."""
+    state = _seeded_state()
+    state.ensure_label("Work")
+
+    report = _compute_collateral(state.initial_snapshot, state)
+    assert "labels_added" in report
+
+
+def test_collateral_detects_contact_modification() -> None:
+    """Modifying a contact should appear in collateral.contacts_modified."""
+    state = _seeded_state()
+    state.update_contact("c001", note="Updated note")
+
+    report = _compute_collateral(state.initial_snapshot, state)
+    assert "contacts_modified" in report
+    mod = report["contacts_modified"][0]
+    assert mod["contact_id"] == "c001"
+    assert mod["changes"]["note"] == {"before": None, "after": "Updated note"}
+
+
+def test_collateral_does_not_affect_score() -> None:
+    """Collateral mutations must NOT change the score — analytics only."""
+    state = _seeded_state()
+    state._initial_snapshot = state.state_snapshot()
+
+    # Perform collateral damage: star an email + change a setting
+    state.toggle_star("e001", is_starred=True)
+    state.settings.display_density = "compact"
+
+    task = _task_with_checks(
+        checks=[Check(expr="True", desc="Always passes")],
+    )
+    result = evaluate(task, server_state=state, targets={}, trajectory=[])
+
+    # Score should be perfect despite collateral
+    assert result["score"] == pytest.approx(1.0)
+    assert result["success"] is True
+    # But collateral should be reported
+    assert "collateral" in result
+    assert "emails_modified" in result["collateral"]
+    assert "settings_changed" in result["collateral"]
+
+
+def test_collateral_absent_when_no_snapshot() -> None:
+    """When no initial snapshot exists, collateral key should be absent."""
+    state = _empty_state()
+    task = _task_with_checks(
+        checks=[Check(expr="True", desc="Passes")],
+    )
+    result = evaluate(task, server_state=state, targets={}, trajectory=[])
+
+    assert result["score"] == pytest.approx(1.0)
+    assert "collateral" not in result

@@ -158,4 +158,6 @@ def materialize_task_state(
     state = state_cls.model_validate(seeded_data)
     state._resolved_targets = dict(resolved_targets)
     state._seed = actual_seed
+    if hasattr(state, "state_snapshot"):
+        state._initial_snapshot = state.state_snapshot()
     return task, state, resolved_targets, actual_seed

@@ -614,6 +614,71 @@ class GmailState(BaseEnvState):
                 return removed
         raise KeyError(f"Unknown contact id: {contact_id}")
 
+    def state_snapshot(self) -> dict[str, Any]:
+        """Capture all mutable state dimensions for collateral-damage detection.
+
+        Called once after seeding to record the baseline.  At evaluation time
+        the evaluator diffs the current state against this snapshot and reports
+        any unintended mutations as analytics-only collateral metrics.
+        """
+        email_flags: dict[str, dict[str, Any]] = {}
+        for email in self.emails:
+            email_flags[email.id] = {
+                "is_read": email.is_read,
+                "is_starred": email.is_starred,
+                "labels": sorted(email.labels),
+                "archived": email.archived,
+            }
+
+        contact_snap: dict[str, dict[str, Any]] = {}
+        for contact in self.contacts:
+            contact_snap[contact.id] = {
+                "name": contact.name,
+                "email": contact.email,
+                "company": contact.company,
+                "note": contact.note,
+                "is_vip": contact.is_vip,
+                "is_starred": contact.is_starred,
+            }
+
+        label_snap: dict[str, dict[str, Any]] = {}
+        for label in self.labels:
+            label_snap[label.id] = {
+                "name": label.name,
+                "color": label.color,
+                "show_in_label_list": label.show_in_label_list,
+                "show_in_message_list": label.show_in_message_list,
+                "show_in_imap": label.show_in_imap,
+            }
+
+        filter_snap: dict[str, dict[str, Any]] = {}
+        for rule in self.filters:
+            filter_snap[rule.id] = {
+                "name": rule.name,
+                "from_addresses": sorted(rule.from_addresses),
+                "subject_keywords": sorted(rule.subject_keywords),
+                "add_labels": sorted(rule.add_labels),
+                "archive": rule.archive,
+                "mark_read": rule.mark_read,
+                "forward_to": rule.forward_to,
+                "star": rule.star,
+            }
+
+        settings = self.settings.model_dump(mode="json")
+        settings.pop("id", None)
+
+        return {
+            "email_ids": sorted(email_flags.keys()),
+            "email_flags": email_flags,
+            "sent_count": len(self.sent),
+            "deleted_ids": sorted(e.id for e in self.deleted),
+            "draft_count": len(self.drafts),
+            "contacts": contact_snap,
+            "labels": label_snap,
+            "filters": filter_snap,
+            "settings": settings,
+        }
+
     def session_summary(self) -> dict[str, Any]:
         return {
             "env_id": self.env_id,
