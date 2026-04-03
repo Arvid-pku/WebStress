@@ -1,6 +1,6 @@
-variant_id: gmail_vendor_renewal_decision__planning_v1
+variant_id: gmail_vendor_renewal_decision__backtracking_v1
 base_task_id: gmail_vendor_renewal_decision
-target_primitive: planning
+target_primitive: backtracking
 description: An obsolete policy email adds conflicting instructions, so the agent
   must plan around the authoritative task requirements.
 injections:

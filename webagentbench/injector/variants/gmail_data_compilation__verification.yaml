@@ -1,6 +1,6 @@
-variant_id: gmail_data_compilation__exploration_v1
+variant_id: gmail_data_compilation__verification_v1
 base_task_id: gmail_data_compilation
-target_primitive: exploration
+target_primitive: verification
 description: >
   First 2 search attempts return stale/incomplete results. Agent must explore
   beyond search, try email list filtering, read thread contents to find all

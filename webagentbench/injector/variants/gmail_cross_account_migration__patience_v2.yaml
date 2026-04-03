@@ -1,6 +1,6 @@
-variant_id: gmail_cross_account_migration__planning_v1
+variant_id: gmail_cross_account_migration__patience_v1
 base_task_id: gmail_cross_account_migration
-target_primitive: planning
+target_primitive: patience
 description: >
   Stale data on first contacts list fetch shows outdated contacts. Error on
   first filter creation attempt. Agent must replan sequence: refresh contacts,

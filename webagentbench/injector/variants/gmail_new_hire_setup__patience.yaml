@@ -1,6 +1,6 @@
-variant_id: gmail_new_hire_setup__planning_v1
+variant_id: gmail_new_hire_setup__patience_v1
 base_task_id: gmail_new_hire_setup
-target_primitive: planning
+target_primitive: patience
 description: Progressive delays force planning around which operations to batch vs
   sequence.
 injections:

@@ -1,6 +1,6 @@
-variant_id: gmail_vacation_preparation__planning
+variant_id: gmail_vacation_preparation__state_tracking
 base_task_id: gmail_vacation_preparation
-target_primitive: planning
+target_primitive: state_tracking
 description: Multiple action failures stress sequencing of vacation setup (filters,
   labels, settings, delegation)
 injections:

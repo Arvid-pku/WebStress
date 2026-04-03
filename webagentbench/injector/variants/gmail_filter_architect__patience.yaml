@@ -1,6 +1,6 @@
-variant_id: gmail_filter_architect__planning_v1
+variant_id: gmail_filter_architect__patience_v1
 base_task_id: gmail_filter_architect
-target_primitive: planning
+target_primitive: patience
 description: >
   Error on first label creation and first filter creation. Agent must replan:
   create labels first (with retry), then create filters that depend on those

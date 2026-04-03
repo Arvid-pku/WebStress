@@ -1,6 +1,6 @@
-variant_id: gmail_team_roster_sync__exploration_v1
+variant_id: gmail_team_roster_sync__patience_v1
 base_task_id: gmail_team_roster_sync
-target_primitive: exploration
+target_primitive: patience
 description: Contacts API returns stale data initially. Agent must explore alternative
   sources or retry to find current roster.
 injections:

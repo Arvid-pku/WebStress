@@ -1,6 +1,6 @@
-variant_id: gmail_mark_all_read__exploration_v1
+variant_id: gmail_mark_all_read__patience_v1
 base_task_id: gmail_mark_all_read
-target_primitive: exploration
+target_primitive: patience
 description: Email list returns stale data requiring multiple fetches to see all unread
   emails
 injections:

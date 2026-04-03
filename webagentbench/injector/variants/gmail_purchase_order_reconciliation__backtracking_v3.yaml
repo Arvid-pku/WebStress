@@ -1,6 +1,6 @@
-variant_id: gmail_purchase_order_reconciliation__state_tracking_v3
+variant_id: gmail_purchase_order_reconciliation__backtracking_v3
 base_task_id: gmail_purchase_order_reconciliation
-target_primitive: state_tracking
+target_primitive: backtracking
 description: Mid-task PO number correction forcing memory update
 injections:
 - layer: seed

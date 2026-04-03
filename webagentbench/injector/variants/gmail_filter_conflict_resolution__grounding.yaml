@@ -1,6 +1,6 @@
-variant_id: gmail_filter_conflict_resolution__state_tracking_v1
+variant_id: gmail_filter_conflict_resolution__grounding_v1
 base_task_id: gmail_filter_conflict_resolution
-target_primitive: state_tracking
+target_primitive: grounding
 description: >
   Inject 6 additional filters with confusing criteria. Agent must track which
   filters conflict, which are valid, and maintain state of filter rules across
