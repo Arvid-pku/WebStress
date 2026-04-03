@@ -6,7 +6,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 
-from .base import BaseEntity, BaseEnvState, utc_now
+from .base import BaseEntity, BaseEnvState, diff_dict_of_dicts, utc_now
 
 
 # ---------------------------------------------------------------------------
@@ -938,7 +938,7 @@ class RobinhoodState(BaseEnvState):
     def symbols_with_earnings_within(self, days: int) -> list[str]:
         if days < 0:
             return []
-        from webagentbench.backend.seeder import derive_anchor_time
+        from webagentbench.backend.seeders.robinhood import derive_anchor_time
 
         anchor = derive_anchor_time(self.seed).date() if self.seed is not None else utc_now().date()
         return sorted({
@@ -981,7 +981,7 @@ class RobinhoodState(BaseEnvState):
     def recent_purchase_symbols(self, days: int) -> set[str]:
         if not self.transactions:
             return set()
-        from webagentbench.backend.seeder import derive_anchor_time
+        from webagentbench.backend.seeders.robinhood import derive_anchor_time
 
         anchor = derive_anchor_time(self.seed) if self.seed is not None else max(txn.timestamp for txn in self.transactions)
         cutoff = anchor.date().toordinal() - days
@@ -995,7 +995,7 @@ class RobinhoodState(BaseEnvState):
         return self.recent_purchase_symbols(days)
 
     def pending_transfers_older_than(self, days: int) -> list[Transfer]:
-        from webagentbench.backend.seeder import derive_anchor_time
+        from webagentbench.backend.seeders.robinhood import derive_anchor_time
 
         if not self.transfers:
             return []
@@ -1070,7 +1070,7 @@ class RobinhoodState(BaseEnvState):
     def total_dividends_received_between(self, min_days_ago: int, max_days_ago: int) -> Decimal:
         if min_days_ago < 0 or max_days_ago < min_days_ago:
             return Decimal("0")
-        from webagentbench.backend.seeder import derive_anchor_time
+        from webagentbench.backend.seeders.robinhood import derive_anchor_time
 
         anchor = derive_anchor_time(self.seed) if self.seed is not None else utc_now()
         total = Decimal("0")
@@ -1166,7 +1166,7 @@ class RobinhoodState(BaseEnvState):
         return max(filtered, key=lambda contract: contract.open_interest)
 
     def expiring_options_positions(self, days: int) -> list[OptionsPosition]:
-        from webagentbench.backend.seeder import derive_anchor_time
+        from webagentbench.backend.seeders.robinhood import derive_anchor_time
 
         anchor = derive_anchor_time(self.seed).date() if self.seed is not None else utc_now().date()
         return [
@@ -1175,7 +1175,7 @@ class RobinhoodState(BaseEnvState):
         ]
 
     def anchor_date(self) -> date:
-        from webagentbench.backend.seeder import derive_anchor_time
+        from webagentbench.backend.seeders.robinhood import derive_anchor_time
 
         return derive_anchor_time(self.seed).date() if self.seed is not None else utc_now().date()
 
@@ -1349,6 +1349,179 @@ class RobinhoodState(BaseEnvState):
         if to_date is not None:
             result = [t for t in result if t.timestamp <= to_date]
         return result
+
+    def state_snapshot(self) -> dict[str, Any]:
+        """Capture all mutable state dimensions for collateral-damage detection.
+
+        Called once after seeding to record the baseline.  At evaluation time
+        the evaluator diffs the current state against this snapshot and reports
+        any unintended mutations as analytics-only collateral metrics.
+        """
+        position_snap: dict[str, dict[str, Any]] = {}
+        for p in self.positions:
+            position_snap[p.symbol] = {
+                "quantity": str(p.quantity),
+                "avg_cost_basis": str(p.avg_cost_basis),
+            }
+
+        order_ids = sorted(o.id for o in self.orders)
+        order_statuses: dict[str, str] = {o.id: o.status for o in self.orders}
+
+        options_position_snap: dict[str, dict[str, Any]] = {}
+        for op in self.options_positions:
+            options_position_snap[op.contract_id] = {
+                "quantity": op.quantity,
+                "status": op.status,
+                "position_side": op.position_side,
+            }
+
+        options_order_ids = sorted(o.id for o in self.options_orders)
+        options_order_statuses: dict[str, str] = {o.id: o.status for o in self.options_orders}
+
+        watchlist_snap: dict[str, dict[str, Any]] = {}
+        for w in self.watchlists:
+            watchlist_snap[w.id] = {
+                "name": w.name,
+                "symbols": sorted(w.symbols),
+            }
+
+        transfer_snap: dict[str, dict[str, Any]] = {}
+        for t in self.transfers:
+            transfer_snap[t.id] = {
+                "direction": t.direction,
+                "amount": str(t.amount),
+                "status": t.status,
+            }
+
+        recurring_snap: dict[str, dict[str, Any]] = {}
+        for ri in self.recurring_investments:
+            recurring_snap[ri.id] = {
+                "symbol": ri.symbol,
+                "amount": str(ri.amount),
+                "frequency": ri.frequency,
+                "status": ri.status,
+            }
+
+        alert_snap: dict[str, dict[str, Any]] = {}
+        for a in self.price_alerts:
+            alert_snap[a.id] = {
+                "symbol": a.symbol,
+                "condition": a.condition,
+                "target_price": str(a.target_price),
+                "status": a.status,
+            }
+
+        notification_read: dict[str, bool] = {
+            n.id: n.is_read for n in self.notifications
+        }
+
+        settings = self.settings.model_dump(mode="json")
+        settings.pop("id", None)
+
+        return {
+            "cash_balance": str(self.cash_balance),
+            "buying_power": str(self.buying_power),
+            "portfolio_value": str(self.portfolio_value),
+            "positions": position_snap,
+            "order_ids": order_ids,
+            "order_statuses": order_statuses,
+            "options_positions": options_position_snap,
+            "options_order_ids": options_order_ids,
+            "options_order_statuses": options_order_statuses,
+            "watchlists": watchlist_snap,
+            "transfers": transfer_snap,
+            "transfer_count": len(self.transfers),
+            "recurring_investments": recurring_snap,
+            "price_alerts": alert_snap,
+            "notification_ids": sorted(notification_read.keys()),
+            "notification_read": notification_read,
+            "transaction_count": len(self.transactions),
+            "settings": settings,
+        }
+
+    def compute_collateral(self, initial: dict[str, Any]) -> dict[str, Any]:
+        """Diff current state against the initial snapshot.
+
+        Returns a structured report of unintended mutations, categorised by
+        dimension.  Analytics-only — never affects the score.
+        """
+        current = self.state_snapshot()
+        report: dict[str, Any] = {}
+
+        # Account-level scalars
+        for key in ("cash_balance", "buying_power", "portfolio_value"):
+            if initial.get(key) != current.get(key):
+                report.setdefault("account_changes", {})[key] = {
+                    "before": initial.get(key),
+                    "after": current.get(key),
+                }
+
+        # Dict-of-dicts dimensions
+        for snapshot_key, prefix, id_label in (
+            ("positions", "positions", "symbol"),
+            ("options_positions", "options_positions", "contract_id"),
+            ("watchlists", "watchlists", "watchlist_id"),
+            ("transfers", "transfers", "transfer_id"),
+            ("recurring_investments", "recurring_investments", "recurring_id"),
+            ("price_alerts", "price_alerts", "alert_id"),
+        ):
+            added, removed, modified = diff_dict_of_dicts(
+                initial.get(snapshot_key, {}),
+                current.get(snapshot_key, {}),
+                id_label,
+            )
+            if added:
+                report[f"{prefix}_added"] = added
+            if removed:
+                report[f"{prefix}_removed"] = removed
+            if modified:
+                report[f"{prefix}_modified"] = modified
+
+        # Orders (ID-set + status map, not dict-of-dicts)
+        init_order_ids = set(initial.get("order_ids", []))
+        curr_order_ids = set(current.get("order_ids", []))
+        orders_created = sorted(curr_order_ids - init_order_ids)
+        if orders_created:
+            report["orders_created"] = orders_created
+        init_ostatus = initial.get("order_statuses", {})
+        curr_ostatus = current.get("order_statuses", {})
+        order_status_changes = [
+            {"order_id": oid, "before": init_ostatus[oid], "after": curr_ostatus[oid]}
+            for oid in sorted(init_order_ids & curr_order_ids)
+            if init_ostatus.get(oid) != curr_ostatus.get(oid)
+        ]
+        if order_status_changes:
+            report["order_status_changes"] = order_status_changes
+
+        # Options orders (ID-set only)
+        init_oo_ids = set(initial.get("options_order_ids", []))
+        curr_oo_ids = set(current.get("options_order_ids", []))
+        oo_created = sorted(curr_oo_ids - init_oo_ids)
+        if oo_created:
+            report["options_orders_created"] = oo_created
+
+        # Notifications read
+        init_read = initial.get("notification_read", {})
+        curr_read = current.get("notification_read", {})
+        newly_read = [nid for nid in init_read if not init_read[nid] and curr_read.get(nid, False)]
+        if newly_read:
+            report["notifications_read"] = sorted(newly_read)
+
+        # Transactions delta
+        txn_delta = current.get("transaction_count", 0) - initial.get("transaction_count", 0)
+        if txn_delta > 0:
+            report["transactions_added"] = txn_delta
+
+        # Settings
+        init_settings = initial.get("settings", {})
+        curr_settings = current.get("settings", {})
+        settings_changed = {k: {"before": init_settings[k], "after": curr_settings[k]}
+                            for k in init_settings
+                            if init_settings.get(k) != curr_settings.get(k)}
+        if settings_changed:
+            report["settings_changed"] = settings_changed
+
+        return report
 
     def session_summary(self) -> dict[str, Any]:
         return {

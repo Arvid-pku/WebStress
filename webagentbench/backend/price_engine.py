@@ -205,6 +205,8 @@ def cascade_update(
         # Fill the order
         order.status = "filled"
         order.filled_quantity = order.quantity
+        order.filled_price = fill_price
+        order.filled_tick = engine.tick_count
         order.filled_at = now
         total = fill_price * order.quantity
 

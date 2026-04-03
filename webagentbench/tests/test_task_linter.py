@@ -21,7 +21,7 @@ from typing import Any
 import pytest
 import yaml
 
-TASKS_DIR = Path(__file__).parent.parent / "tasks" / "gmail"
+TASKS_DIR = Path(__file__).parent.parent / "tasks"
 VARIANTS_DIR = Path(__file__).parent.parent / "injector" / "variants"
 TARGET_RE = re.compile(r"\{target\.([^}]+)\}")
 ACTOR_REF_RE = re.compile(r"\{actor\.(\w+)")
@@ -31,7 +31,9 @@ ACTOR_REF_RE = re.compile(r"\{actor\.(\w+)")
 
 def _load_all_tasks() -> dict[str, dict[str, Any]]:
     tasks: dict[str, dict[str, Any]] = {}
-    for path in sorted(TASKS_DIR.glob("*.yaml")):
+    for path in sorted(TASKS_DIR.rglob("*.yaml")):
+        if path.name.startswith("_"):
+            continue
         raw = yaml.safe_load(path.read_text())
         if raw and "task_id" in raw:
             tasks[raw["task_id"]] = raw
@@ -215,6 +217,8 @@ def _expected_response_keys(url_pattern: str) -> set[str] | None:
     """Infer the real top-level response key for a Gmail mutation endpoint."""
     normalized = url_pattern.rstrip("*").rstrip("/")
 
+    if "/api/env/robinhood/settings" in normalized or "/api/env/robinhood/security/2fa" in normalized:
+        return None
     if normalized.endswith("/send"):
         return {"email"}
     if normalized.endswith("/settings"):
@@ -352,6 +356,9 @@ _VALID_SETTINGS_ATTRS = {
     "auto_advance", "language", "input_tools_enabled", "right_to_left",
     "max_page_size", "undo_send_seconds", "default_reply_behavior",
     "hover_actions_enabled", "send_and_archive", "default_text_style",
+    "display_theme", "default_order_type", "reinvest_dividends",
+    "extended_hours_enabled", "biometric_login", "two_factor_method",
+    "notification_prefs",
 }
 
 

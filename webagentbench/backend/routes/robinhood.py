@@ -71,6 +71,7 @@ class OptionsLegInput(BaseModel):
     expiration: date
     quantity: int
     premium: str
+    symbol: str | None = None
 
 
 class PlaceOptionsOrderRequest(SessionScopedRequest):
@@ -301,6 +302,8 @@ def create_session(
     if degradation:
         from ...injector.middleware import register_session_degradation
         register_session_degradation(session_id, degradation.get("injections", []))
+        if hasattr(state, "state_snapshot"):
+            state._initial_snapshot = state.state_snapshot()
 
     instruction = render_template(
         task.instruction_template or task.instruction or "", resolved_targets
@@ -341,6 +344,9 @@ def delete_session(
     session_manager: SessionManager = Depends(get_session_manager),
 ) -> dict[str, Any]:
     try:
+        from ...injector.middleware import unregister_session_degradation
+
+        unregister_session_degradation(session_id)
         session_manager.destroy(session_id)
         return {"deleted": True}
     except KeyError as exc:
@@ -651,6 +657,7 @@ def place_options_order(
     state = _robinhood_state(session_manager, body.session_id)
     legs = [
         OptionsLeg(
+            underlying_symbol=leg.symbol,
             side=leg.side,
             option_type=leg.option_type,
             strike=Decimal(leg.strike),
@@ -1043,7 +1050,7 @@ def mark_all_notifications_read(
         {},
         lambda s: s.mark_all_notifications_read(),
     )
-    return {"count": result}
+    return {"marked_count": result, "count": result}
 
 
 # ---------------------------------------------------------------------------

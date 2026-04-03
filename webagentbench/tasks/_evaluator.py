@@ -6,6 +6,7 @@ the actual :class:`GmailState` at the end of an agent session.
 
 from __future__ import annotations
 
+from decimal import Decimal
 import re
 from typing import Any
 
@@ -91,6 +92,7 @@ _SAFE_BUILTINS: dict[str, Any] = {
     "max": max,
     "sum": sum,
     "abs": abs,
+    "Decimal": Decimal,
 }
 
 

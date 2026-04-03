@@ -10,6 +10,39 @@ def utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+def diff_dict_of_dicts(
+    before: dict[str, dict[str, Any]],
+    after: dict[str, dict[str, Any]],
+    id_label: str,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
+    """Return added, removed, and modified records for two dict-of-dicts snapshots."""
+    before = before or {}
+    after = after or {}
+
+    added = [
+        {id_label: key, **after[key]}
+        for key in sorted(set(after) - set(before))
+    ]
+    removed = [
+        {id_label: key, **before[key]}
+        for key in sorted(set(before) - set(after))
+    ]
+
+    modified: list[dict[str, Any]] = []
+    for key in sorted(set(before) & set(after)):
+        before_item = before[key]
+        after_item = after[key]
+        changes = {
+            field: {"before": before_item.get(field), "after": after_item.get(field)}
+            for field in sorted(set(before_item) | set(after_item))
+            if before_item.get(field) != after_item.get(field)
+        }
+        if changes:
+            modified.append({id_label: key, "changes": changes})
+
+    return added, removed, modified
+
+
 class BaseEntity(BaseModel):
     id: str
 
