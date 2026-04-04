@@ -119,6 +119,13 @@ export function InboxPage() {
   const rangeEnd = Math.min(page * PAGE_SIZE, totalItems);
   const pageItems = filteredEmails.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
+  const hasUnread = filteredEmails.some((email) => !email.is_read);
+
+  const handleMarkAllRead = async () => {
+    await api.markAllRead();
+    await reload();
+  };
+
   const labelTitle = isStarredView
     ? "Starred"
     : (label === "inbox" ? "Inbox" : label[0]?.toUpperCase() + label.slice(1));
@@ -143,6 +150,16 @@ export function InboxPage() {
                 return current;
               })}
             />
+          ) : null}
+          {hasUnread ? (
+            <button
+              type="button"
+              className="gmail-toolbar__action-btn"
+              aria-label="Mark all as read"
+              onClick={handleMarkAllRead}
+            >
+              Mark all read
+            </button>
           ) : null}
         </div>
         <div className="gmail-toolbar__right">

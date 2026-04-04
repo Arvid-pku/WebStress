@@ -1,0 +1,572 @@
+{
+  "task_id": "gmail_invoice_dispute_reversal",
+  "title": "Retract Incorrect Invoice Rejection After Discovering CFO Exception",
+  "instruction": "Read the finance policy email from finance-policy@company.com titled \"Q1 Invoice Processing Rules\" which states: reject any vendor invoice exceeding $10,000 by replying \"This invoice exceeds our processing limit and is rejected.\" Three vendor invoices are in your inbox: Sterling Manufacturing (Invoice #SM-4410, $8,200), Hawthorne Supply Co (Invoice #HS-7782, $14,500), and Ridgeline Logistics (Invoice #RL-3301, $12,800). Apply the $10,000 policy to the two over-limit invoices by replying with the rejection message. Do NOT reply to Sterling (under limit). After processing all invoices, check the Updates tab for exceptions. Find the email from CFO Marcus Webb (cfo@company.com) \u2014 its subject may not look like an exception approval. Read it carefully. The CFO has approved a one-time exception for one specific vendor's invoice. Send a follow-up reply to that vendor retracting the rejection with: \"Please disregard our previous rejection. Invoice #{target.approved_invoice_number} has been approved under a one-time exception.\" Reply to the CFO confirming: \"Exception applied for {target.approved_vendor_name} invoice #{target.approved_invoice_number}.\" Star the CFO's approval email. The other over-limit vendor has no exception and must remain rejected.",
+  "difficulty": "hard",
+  "model": "gpt-5.4",
+  "total_steps": 27,
+  "elapsed_seconds": 204.3,
+  "completed": true,
+  "start_path": "/inbox",
+  "evaluation": {
+    "score": 0.6,
+    "success": false,
+    "reasoning": "Passed 3/5 checks.\n  [FAIL] Initial rejection sent to Hawthorne\n  [FAIL] Correction sent to Hawthorne retracting rejection\n  [PASS] Rejection sent to Ridgeline\n  [PASS] Confirmation reply sent to CFO\n  [PASS] CFO approval email starred\nAll negative checks passed (no penalties).\nCollateral mutations detected (2 dimensions): emails_modified, emails_sent\nFinal score: 0.600 | Success: False",
+    "checks": [
+      {
+        "expr": "any(m.in_reply_to == '{target.hawthorne_email_id}' and 'exceeds our processing limit and is rejected' in m.body for m in state.sent)",
+        "desc": "Initial rejection sent to Hawthorne",
+        "passed": false,
+        "error": null
+      },
+      {
+        "expr": "any(m.in_reply_to == '{target.hawthorne_email_id}' and 'disregard our previous rejection' in m.body and 'HS-7782' in m.body and 'approved under a one-time exception' in m.body for m in state.sent)",
+        "desc": "Correction sent to Hawthorne retracting rejection",
+        "passed": false,
+        "error": null
+      },
+      {
+        "expr": "any(m.in_reply_to == '{target.ridgeline_email_id}' and 'exceeds our processing limit and is rejected' in m.body for m in state.sent)",
+        "desc": "Rejection sent to Ridgeline",
+        "passed": true,
+        "error": null
+      },
+      {
+        "expr": "any(m.in_reply_to == '{target.cfo_approval_email_id}' and 'Exception applied' in m.body and 'Hawthorne Supply Co' in m.body and 'HS-7782' in m.body for m in state.sent)",
+        "desc": "Confirmation reply sent to CFO",
+        "passed": true,
+        "error": null
+      },
+      {
+        "expr": "state.get_email('{target.cfo_approval_email_id}').is_starred",
+        "desc": "CFO approval email starred",
+        "passed": true,
+        "error": null
+      }
+    ],
+    "negative_checks": [
+      {
+        "expr": "not any(m.in_reply_to == '{target.sterling_email_id}' for m in state.sent)",
+        "desc": "No reply to Sterling (under limit)",
+        "passed": true,
+        "error": null,
+        "penalty": 0.2
+      },
+      {
+        "expr": "not any(m.in_reply_to == '{target.ridgeline_email_id}' and 'disregard' in m.body for m in state.sent)",
+        "desc": "No correction sent to Ridgeline (no CFO exception for them)",
+        "passed": true,
+        "error": null,
+        "penalty": 0.3
+      },
+      {
+        "expr": "not any(m.in_reply_to == '{target.cfo_approval_email_id}' and 'rejected' in m.body for m in state.sent)",
+        "desc": "CFO approval email must not receive a rejection reply",
+        "passed": true,
+        "error": null,
+        "penalty": 0.2
+      }
+    ],
+    "final_score": 0.6,
+    "collateral": {
+      "emails_modified": [
+        {
+          "email_id": "email_6",
+          "changes": {
+            "is_read": {
+              "before": false,
+              "after": true
+            }
+          }
+        },
+        {
+          "email_id": "email_5",
+          "changes": {
+            "is_read": {
+              "before": false,
+              "after": true
+            },
+            "is_starred": {
+              "before": false,
+              "after": true
+            },
+            "labels": {
+              "before": [
+                "inbox",
+                "updates"
+              ],
+              "after": [
+                "inbox",
+                "starred",
+                "updates"
+              ]
+            }
+          }
+        },
+        {
+          "email_id": "email_4",
+          "changes": {
+            "is_read": {
+              "before": false,
+              "after": true
+            }
+          }
+        },
+        {
+          "email_id": "email_3",
+          "changes": {
+            "is_read": {
+              "before": false,
+              "after": true
+            }
+          }
+        },
+        {
+          "email_id": "email_1",
+          "changes": {
+            "is_read": {
+              "before": false,
+              "after": true
+            }
+          }
+        }
+      ],
+      "emails_sent": 4
+    }
+  },
+  "steps": [
+    {
+      "step": 1,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "262"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open unread thread Q1 Invoice Processing Rules"
+      },
+      "status": "",
+      "elapsed_seconds": 5.1,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 2,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "366"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 7.3,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 3,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "502"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open unread thread Invoice #RL-3301 - Ridgeline Logistics"
+      },
+      "status": "",
+      "elapsed_seconds": 11.5,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 4,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "740"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Reply to Invoice #RL-3301 - Ridgeline Logistics"
+      },
+      "status": "",
+      "elapsed_seconds": 13.0,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 5,
+      "thought": "",
+      "action": {
+        "action": "fill",
+        "ref": "770",
+        "value": "This invoice exceeds our processing limit and is rejected."
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Email body"
+      },
+      "status": "",
+      "elapsed_seconds": 18.0,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 6,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "777"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Send reply"
+      },
+      "status": "",
+      "elapsed_seconds": 29.5,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 7,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "713"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 31.4,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 8,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "919"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open unread thread Invoice #HS-7782 - Hawthorne Supply Co"
+      },
+      "status": "",
+      "elapsed_seconds": 44.5,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 9,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "1128"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Reply to Re: Invoice #HS-7782 - Hawthorne Supply Co"
+      },
+      "status": "",
+      "elapsed_seconds": 54.8,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 10,
+      "thought": "",
+      "action": {
+        "action": "fill",
+        "ref": "1154",
+        "value": "This invoice exceeds our processing limit and is rejected."
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Email body"
+      },
+      "status": "",
+      "elapsed_seconds": 62.5,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 11,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "1161"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Send reply"
+      },
+      "status": "",
+      "elapsed_seconds": 73.8,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 12,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "1094"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 82.1,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 13,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "1178"
+      },
+      "targets": {
+        "role": "tab",
+        "name": "Updates"
+      },
+      "status": "",
+      "elapsed_seconds": 93.5,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 14,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "1480"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open unread thread Q1 Expense Report Adjustments"
+      },
+      "status": "",
+      "elapsed_seconds": 99.0,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 15,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "1711"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Star this thread"
+      },
+      "status": "",
+      "elapsed_seconds": 104.7,
+      "replay_path": "/thread/email_5",
+      "result_path": "/thread/email_5"
+    },
+    {
+      "step": 16,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "1732"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Reply to Q1 Expense Report Adjustments"
+      },
+      "status": "",
+      "elapsed_seconds": 111.0,
+      "replay_path": "/thread/email_5",
+      "result_path": "/thread/email_5"
+    },
+    {
+      "step": 17,
+      "thought": "",
+      "action": {
+        "action": "fill",
+        "ref": "1763",
+        "value": "Exception applied for Hawthorne Supply Co invoice #HS-7782."
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Email body"
+      },
+      "status": "",
+      "elapsed_seconds": 119.3,
+      "replay_path": "/thread/email_5",
+      "result_path": "/thread/email_5"
+    },
+    {
+      "step": 18,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "1770"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Send reply"
+      },
+      "status": "",
+      "elapsed_seconds": 127.0,
+      "replay_path": "/thread/email_5",
+      "result_path": "/thread/email_5"
+    },
+    {
+      "step": 19,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "1705"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 133.2,
+      "replay_path": "/thread/email_5",
+      "result_path": "/thread/email_5"
+    },
+    {
+      "step": 20,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "1786"
+      },
+      "targets": {
+        "role": "tab",
+        "name": "Primary"
+      },
+      "status": "",
+      "elapsed_seconds": 140.0,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 21,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "2071"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open unread thread Re: Invoice #HS-7782 - Hawthorne Supply Co"
+      },
+      "status": "",
+      "elapsed_seconds": 154.9,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 22,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "2356"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Reply to Re: Invoice #HS-7782 - Hawthorne Supply Co"
+      },
+      "status": "",
+      "elapsed_seconds": 161.6,
+      "replay_path": "/thread/email_6",
+      "result_path": "/thread/email_6"
+    },
+    {
+      "step": 23,
+      "thought": "",
+      "action": {
+        "action": "fill",
+        "ref": "2382",
+        "value": "Please disregard our previous rejection. Invoice #HS-7782 has been approved under a one-time exception."
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Email body"
+      },
+      "status": "",
+      "elapsed_seconds": 169.7,
+      "replay_path": "/thread/email_6",
+      "result_path": "/thread/email_6"
+    },
+    {
+      "step": 24,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "2389"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Send reply"
+      },
+      "status": "",
+      "elapsed_seconds": 174.9,
+      "replay_path": "/thread/email_6",
+      "result_path": "/thread/email_6"
+    },
+    {
+      "step": 25,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "32"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Starred"
+      },
+      "status": "",
+      "elapsed_seconds": 185.0,
+      "replay_path": "/thread/email_6",
+      "result_path": "/thread/email_6"
+    },
+    {
+      "step": 26,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "2417"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Q1 Expense Report Adjustments"
+      },
+      "status": "",
+      "elapsed_seconds": 195.6,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 27,
+      "thought": "",
+      "action": {
+        "action": "finish",
+        "answer": "done"
+      },
+      "targets": {},
+      "status": "FINISH",
+      "elapsed_seconds": 204.3,
+      "replay_path": "/thread/email_5",
+      "result_path": "/thread/email_5"
+    }
+  ]
+}

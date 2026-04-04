@@ -46,6 +46,9 @@ raw_instructions/
 # Debug files
 scripts/*.txt
 scripts/_*/
+scripts/.rh_session*.json
+scripts/.debug_session*.json
+scripts/debug_screenshots/
 
 # Superpowers plugin
 .superpowers/

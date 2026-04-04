@@ -1,0 +1,5330 @@
+{
+  "task_id": "gmail_action_item_extraction",
+  "title": "Action Item Extraction",
+  "instruction": "Four attendees \u2014 {target.attendee_a}, {target.attendee_b}, {target.attendee_c}, and {target.attendee_d} \u2014 each sent a follow-up email after the leadership offsite with action items. Find all four emails (search for \"leadership offsite follow-up\" in the subject). Read each one and extract only the action items assigned to you ({target.user_name}). Ignore action items assigned to other people. Compose a new email to {target.manager_email} with subject \"Offsite Action Items \u2014 {target.user_name}\" listing each action item assigned to you on its own line. Note: one action item was reassigned \u2014 if a later message in any thread reassigns an item away from you, do not include it.",
+  "difficulty": "hard",
+  "model": "gpt-5.4",
+  "total_steps": 332,
+  "elapsed_seconds": 3610.1,
+  "completed": false,
+  "start_path": "/inbox",
+  "evaluation": {
+    "score": 0.0,
+    "success": false,
+    "reasoning": "Agent did not finish"
+  },
+  "steps": [
+    {
+      "step": 1,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "83"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open unread thread Re: Leadership Offsite Follow-up \u2014 Action Items from Day 1"
+      },
+      "status": "",
+      "elapsed_seconds": 6.3,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 2,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "381"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Expand message from Elena Patel"
+      },
+      "status": "",
+      "elapsed_seconds": 9.6,
+      "replay_path": "/thread/email_2",
+      "result_path": "/thread/email_2"
+    },
+    {
+      "step": 3,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "364"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 12.8,
+      "replay_path": "/thread/email_2",
+      "result_path": "/thread/email_2"
+    },
+    {
+      "step": 4,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "516"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open unread thread Leadership Offsite Follow-up \u2014 Strategy Session Items"
+      },
+      "status": "",
+      "elapsed_seconds": 16.1,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 5,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "743"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 17.7,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 6,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "915"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open unread thread Leadership Offsite Follow-up \u2014 Operations Track"
+      },
+      "status": "",
+      "elapsed_seconds": 21.1,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 7,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "1087"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 24.1,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 8,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "1155"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Re: Leadership Offsite Follow-up \u2014 Action Items from Day 1"
+      },
+      "status": "",
+      "elapsed_seconds": 30.3,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 9,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "1450"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Expand message from Elena Patel"
+      },
+      "status": "",
+      "elapsed_seconds": 35.6,
+      "replay_path": "/thread/email_2",
+      "result_path": "/thread/email_2"
+    },
+    {
+      "step": 10,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "1433"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 42.0,
+      "replay_path": "/thread/email_2",
+      "result_path": "/thread/email_2"
+    },
+    {
+      "step": 11,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "1584"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Strategy Session Items"
+      },
+      "status": "",
+      "elapsed_seconds": 48.0,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 12,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "1810"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 54.0,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 13,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "1981"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Operations Track"
+      },
+      "status": "",
+      "elapsed_seconds": 59.2,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 14,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "2153"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 65.9,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 15,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "2292"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open unread thread Leadership Offsite Follow-up \u2014 Action Items from Day 1"
+      },
+      "status": "",
+      "elapsed_seconds": 72.3,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 16,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "2516"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Expand message from Elena Patel"
+      },
+      "status": "",
+      "elapsed_seconds": 77.2,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 17,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "2499"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 84.3,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 18,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "2650"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Strategy Session Items"
+      },
+      "status": "",
+      "elapsed_seconds": 89.5,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 19,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "2875"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 95.6,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 20,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "3045"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Operations Track"
+      },
+      "status": "",
+      "elapsed_seconds": 104.8,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 21,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "3217"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 114.2,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 22,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "3355"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Action Items from Day 1"
+      },
+      "status": "",
+      "elapsed_seconds": 126.3,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 23,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "3579"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Expand message from Elena Patel"
+      },
+      "status": "",
+      "elapsed_seconds": 136.7,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 24,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "3562"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 145.4,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 25,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "3713"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Strategy Session Items"
+      },
+      "status": "",
+      "elapsed_seconds": 151.4,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 26,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "3938"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 156.6,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 27,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "4108"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Operations Track"
+      },
+      "status": "",
+      "elapsed_seconds": 162.5,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 28,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "4280"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 173.5,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 29,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "4348"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Re: Leadership Offsite Follow-up \u2014 Action Items from Day 1"
+      },
+      "status": "",
+      "elapsed_seconds": 181.8,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 30,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "4642"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Expand message from Elena Patel"
+      },
+      "status": "",
+      "elapsed_seconds": 188.0,
+      "replay_path": "/thread/email_2",
+      "result_path": "/thread/email_2"
+    },
+    {
+      "step": 31,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "4625"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 196.9,
+      "replay_path": "/thread/email_2",
+      "result_path": "/thread/email_2"
+    },
+    {
+      "step": 32,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "4776"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Strategy Session Items"
+      },
+      "status": "",
+      "elapsed_seconds": 204.8,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 33,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "5001"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 211.7,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 34,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "5171"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Operations Track"
+      },
+      "status": "",
+      "elapsed_seconds": 217.1,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 35,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "5343"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 224.7,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 36,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "5481"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Action Items from Day 1"
+      },
+      "status": "",
+      "elapsed_seconds": 232.1,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 37,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "5705"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Expand message from Elena Patel"
+      },
+      "status": "",
+      "elapsed_seconds": 237.4,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 38,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "5688"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 242.8,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 39,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "5839"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Strategy Session Items"
+      },
+      "status": "",
+      "elapsed_seconds": 256.9,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 40,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "6064"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 262.8,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 41,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "6234"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Operations Track"
+      },
+      "status": "",
+      "elapsed_seconds": 268.8,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 42,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "6147"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open unread thread Leadership Offsite Follow-up \u2014 Cross-Functional Sync"
+      },
+      "status": "ERROR: ValueError: Could not find element with bid \"6147\"",
+      "elapsed_seconds": 274.2,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 43,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "6406"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 281.4,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 44,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "6544"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Action Items from Day 1"
+      },
+      "status": "",
+      "elapsed_seconds": 287.2,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 45,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "6768"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Expand message from Elena Patel"
+      },
+      "status": "",
+      "elapsed_seconds": 294.3,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 46,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "6751"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 301.1,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 47,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "6902"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Strategy Session Items"
+      },
+      "status": "",
+      "elapsed_seconds": 307.4,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 48,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "7127"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 313.7,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 49,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "7297"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Operations Track"
+      },
+      "status": "",
+      "elapsed_seconds": 323.0,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 50,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "7469"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 329.6,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 51,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "7555"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open unread thread Leadership Offsite Follow-up \u2014 Cross-Functional Sync"
+      },
+      "status": "",
+      "elapsed_seconds": 338.8,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 52,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "7814"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 350.5,
+      "replay_path": "/thread/email_5",
+      "result_path": "/thread/email_5"
+    },
+    {
+      "step": 53,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "7929"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Strategy Session Items"
+      },
+      "status": "",
+      "elapsed_seconds": 356.4,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 54,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "8154"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 368.8,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 55,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "8288"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Action Items from Day 1"
+      },
+      "status": "",
+      "elapsed_seconds": 377.5,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 56,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "8511"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Expand all 2 messages"
+      },
+      "status": "",
+      "elapsed_seconds": 384.4,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 57,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "8495"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 400.0,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 58,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "8698"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Operations Track"
+      },
+      "status": "",
+      "elapsed_seconds": 441.0,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 59,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "8870"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 456.0,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 60,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "8989"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Strategy Session Items"
+      },
+      "status": "",
+      "elapsed_seconds": 461.8,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 61,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "9214"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 469.5,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 62,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "9348"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Action Items from Day 1"
+      },
+      "status": "",
+      "elapsed_seconds": 478.9,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 63,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "9572"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Expand message from Elena Patel"
+      },
+      "status": "",
+      "elapsed_seconds": 487.7,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 64,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "9555"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 494.8,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 65,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "9758"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Operations Track"
+      },
+      "status": "",
+      "elapsed_seconds": 511.8,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 66,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "9930"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 518.2,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 67,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "10049"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Strategy Session Items"
+      },
+      "status": "",
+      "elapsed_seconds": 529.3,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 68,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "10274"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 542.0,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 69,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "10408"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Action Items from Day 1"
+      },
+      "status": "",
+      "elapsed_seconds": 554.6,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 70,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "10632"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Expand message from Elena Patel"
+      },
+      "status": "",
+      "elapsed_seconds": 570.7,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 71,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "10615"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 577.4,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 72,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "10818"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Operations Track"
+      },
+      "status": "",
+      "elapsed_seconds": 586.7,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 73,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "10990"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 599.2,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 74,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "11109"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Strategy Session Items"
+      },
+      "status": "",
+      "elapsed_seconds": 615.3,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 75,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "11334"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 621.9,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 76,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "11468"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Action Items from Day 1"
+      },
+      "status": "",
+      "elapsed_seconds": 630.6,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 77,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "11692"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Expand message from Elena Patel"
+      },
+      "status": "",
+      "elapsed_seconds": 642.4,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 78,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "11675"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 651.0,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 79,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "11878"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Operations Track"
+      },
+      "status": "",
+      "elapsed_seconds": 661.0,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 80,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "12050"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 666.8,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 81,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "12169"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Strategy Session Items"
+      },
+      "status": "",
+      "elapsed_seconds": 676.8,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 82,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "12394"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 683.9,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 83,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "12528"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Action Items from Day 1"
+      },
+      "status": "",
+      "elapsed_seconds": 699.2,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 84,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "12752"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Expand message from Elena Patel"
+      },
+      "status": "",
+      "elapsed_seconds": 707.9,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 85,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "12735"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 719.8,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 86,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "12938"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Operations Track"
+      },
+      "status": "",
+      "elapsed_seconds": 737.8,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 87,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "13110"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 745.6,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 88,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "13229"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Strategy Session Items"
+      },
+      "status": "",
+      "elapsed_seconds": 750.3,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 89,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "13454"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 760.1,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 90,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "13588"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Action Items from Day 1"
+      },
+      "status": "",
+      "elapsed_seconds": 773.2,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 91,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "13812"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Expand message from Elena Patel"
+      },
+      "status": "",
+      "elapsed_seconds": 780.2,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 92,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "13795"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 786.4,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 93,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "13998"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Operations Track"
+      },
+      "status": "",
+      "elapsed_seconds": 796.7,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 94,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "14170"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 809.6,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 95,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "14289"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Strategy Session Items"
+      },
+      "status": "",
+      "elapsed_seconds": 820.7,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 96,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "14514"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 834.5,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 97,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "14648"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Action Items from Day 1"
+      },
+      "status": "",
+      "elapsed_seconds": 845.1,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 98,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "14872"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Expand message from Elena Patel"
+      },
+      "status": "",
+      "elapsed_seconds": 857.1,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 99,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "14855"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 867.2,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 100,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "15058"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Operations Track"
+      },
+      "status": "",
+      "elapsed_seconds": 873.9,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 101,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "15230"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 881.3,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 102,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "15349"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Strategy Session Items"
+      },
+      "status": "",
+      "elapsed_seconds": 896.8,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 103,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "15574"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 907.8,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 104,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "15708"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Action Items from Day 1"
+      },
+      "status": "",
+      "elapsed_seconds": 917.9,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 105,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "15932"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Expand message from Elena Patel"
+      },
+      "status": "",
+      "elapsed_seconds": 929.7,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 106,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "15915"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 937.8,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 107,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "16118"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Operations Track"
+      },
+      "status": "",
+      "elapsed_seconds": 948.2,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 108,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "16290"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 960.8,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 109,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "16409"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Strategy Session Items"
+      },
+      "status": "",
+      "elapsed_seconds": 968.7,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 110,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "16634"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 985.2,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 111,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "16768"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Action Items from Day 1"
+      },
+      "status": "",
+      "elapsed_seconds": 992.4,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 112,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "16992"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Expand message from Elena Patel"
+      },
+      "status": "",
+      "elapsed_seconds": 1006.2,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 113,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "16975"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 1015.7,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 114,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "17178"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Operations Track"
+      },
+      "status": "",
+      "elapsed_seconds": 1025.9,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 115,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "17350"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 1033.7,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 116,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "17469"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Strategy Session Items"
+      },
+      "status": "",
+      "elapsed_seconds": 1046.1,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 117,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "17694"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 1054.9,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 118,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "17828"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Action Items from Day 1"
+      },
+      "status": "",
+      "elapsed_seconds": 1062.0,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 119,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "18052"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Expand message from Elena Patel"
+      },
+      "status": "",
+      "elapsed_seconds": 1071.1,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 120,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "18035"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 1080.2,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 121,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "18238"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Operations Track"
+      },
+      "status": "",
+      "elapsed_seconds": 1090.2,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 122,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "18410"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 1098.9,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 123,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "18529"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Strategy Session Items"
+      },
+      "status": "",
+      "elapsed_seconds": 1125.4,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 124,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "18754"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 1137.1,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 125,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "18888"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Action Items from Day 1"
+      },
+      "status": "",
+      "elapsed_seconds": 1144.9,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 126,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "19112"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Expand message from Elena Patel"
+      },
+      "status": "",
+      "elapsed_seconds": 1162.4,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 127,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "19095"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 1170.1,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 128,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "19298"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Operations Track"
+      },
+      "status": "",
+      "elapsed_seconds": 1181.9,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 129,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "19470"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 1194.6,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 130,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "19589"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Strategy Session Items"
+      },
+      "status": "",
+      "elapsed_seconds": 1201.7,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 131,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "19814"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 1213.8,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 132,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "19948"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Action Items from Day 1"
+      },
+      "status": "",
+      "elapsed_seconds": 1221.1,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 133,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "20172"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Expand message from Elena Patel"
+      },
+      "status": "",
+      "elapsed_seconds": 1227.5,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 134,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "20155"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 1234.6,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 135,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "20358"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Operations Track"
+      },
+      "status": "",
+      "elapsed_seconds": 1244.9,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 136,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "20530"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 1263.0,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 137,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "20649"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Strategy Session Items"
+      },
+      "status": "",
+      "elapsed_seconds": 1270.8,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 138,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "20874"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 1310.5,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 139,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "21008"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Action Items from Day 1"
+      },
+      "status": "",
+      "elapsed_seconds": 1318.3,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 140,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "21232"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Expand message from Elena Patel"
+      },
+      "status": "",
+      "elapsed_seconds": 1326.6,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 141,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "21215"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 1334.4,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 142,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "21418"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Operations Track"
+      },
+      "status": "",
+      "elapsed_seconds": 1342.8,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 143,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "21590"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 1349.5,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 144,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "21709"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Strategy Session Items"
+      },
+      "status": "",
+      "elapsed_seconds": 1359.1,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 145,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "21934"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 1370.3,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 146,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "21999"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Re: Leadership Offsite Follow-up \u2014 Action Items from Day 1"
+      },
+      "status": "",
+      "elapsed_seconds": 1381.6,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 147,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "22292"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Expand message from Elena Patel"
+      },
+      "status": "",
+      "elapsed_seconds": 1393.4,
+      "replay_path": "/thread/email_2",
+      "result_path": "/thread/email_2"
+    },
+    {
+      "step": 148,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "22275"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 1412.3,
+      "replay_path": "/thread/email_2",
+      "result_path": "/thread/email_2"
+    },
+    {
+      "step": 149,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "22478"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Operations Track"
+      },
+      "status": "",
+      "elapsed_seconds": 1420.0,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 150,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "22650"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 1438.5,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 151,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "22769"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Strategy Session Items"
+      },
+      "status": "",
+      "elapsed_seconds": 1448.8,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 152,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "22994"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 1458.6,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 153,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "23128"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Action Items from Day 1"
+      },
+      "status": "",
+      "elapsed_seconds": 1485.0,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 154,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "23351"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Expand all 2 messages"
+      },
+      "status": "",
+      "elapsed_seconds": 1491.1,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 155,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "23335"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 1507.6,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 156,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "23538"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Operations Track"
+      },
+      "status": "",
+      "elapsed_seconds": 1520.4,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 157,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "23710"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 1528.7,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 158,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "23829"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Strategy Session Items"
+      },
+      "status": "",
+      "elapsed_seconds": 1558.7,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 159,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "24054"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 1566.9,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 160,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "24188"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Action Items from Day 1"
+      },
+      "status": "",
+      "elapsed_seconds": 1575.1,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 161,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "24412"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Expand message from Elena Patel"
+      },
+      "status": "",
+      "elapsed_seconds": 1581.1,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 162,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "24395"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 1590.2,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 163,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "24598"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Operations Track"
+      },
+      "status": "",
+      "elapsed_seconds": 1600.3,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 164,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "24770"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 1608.6,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 165,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "24889"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Strategy Session Items"
+      },
+      "status": "",
+      "elapsed_seconds": 1625.4,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 166,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "25114"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 1632.3,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 167,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "25248"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Action Items from Day 1"
+      },
+      "status": "",
+      "elapsed_seconds": 1646.1,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 168,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "25472"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Expand message from Elena Patel"
+      },
+      "status": "",
+      "elapsed_seconds": 1652.8,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 169,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "25455"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 1660.9,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 170,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "25658"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Operations Track"
+      },
+      "status": "",
+      "elapsed_seconds": 1668.9,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 171,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "25830"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 1678.2,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 172,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "25949"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Strategy Session Items"
+      },
+      "status": "",
+      "elapsed_seconds": 1684.8,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 173,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "26174"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 1692.3,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 174,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "26308"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Action Items from Day 1"
+      },
+      "status": "",
+      "elapsed_seconds": 1698.8,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 175,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "26532"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Expand message from Elena Patel"
+      },
+      "status": "",
+      "elapsed_seconds": 1704.9,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 176,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "26515"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 1711.7,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 177,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "26718"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Operations Track"
+      },
+      "status": "",
+      "elapsed_seconds": 1719.8,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 178,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "26890"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 1731.5,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 179,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "27009"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Strategy Session Items"
+      },
+      "status": "",
+      "elapsed_seconds": 1739.2,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 180,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "27234"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 1751.1,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 181,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "27316"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Cross-Functional Sync"
+      },
+      "status": "",
+      "elapsed_seconds": 1762.8,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 182,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "27575"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 1781.6,
+      "replay_path": "/thread/email_5",
+      "result_path": "/thread/email_5"
+    },
+    {
+      "step": 183,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "27743"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Operations Track"
+      },
+      "status": "",
+      "elapsed_seconds": 1789.1,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 184,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "27915"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 1798.7,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 185,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "28052"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Action Items from Day 1"
+      },
+      "status": "",
+      "elapsed_seconds": 1804.7,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 186,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "28276"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Expand message from Elena Patel"
+      },
+      "status": "",
+      "elapsed_seconds": 1813.6,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 187,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "28259"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 1830.7,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 188,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "28409"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Strategy Session Items"
+      },
+      "status": "",
+      "elapsed_seconds": 1846.2,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 189,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "28634"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 1857.8,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 190,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "28803"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Operations Track"
+      },
+      "status": "",
+      "elapsed_seconds": 1866.8,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 191,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "28975"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 1881.7,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 192,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "29112"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Action Items from Day 1"
+      },
+      "status": "",
+      "elapsed_seconds": 1892.6,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 193,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "29336"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Expand message from Elena Patel"
+      },
+      "status": "",
+      "elapsed_seconds": 1898.7,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 194,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "29319"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 1910.1,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 195,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "29469"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Strategy Session Items"
+      },
+      "status": "",
+      "elapsed_seconds": 1918.0,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 196,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "29694"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 1929.5,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 197,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "29863"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Operations Track"
+      },
+      "status": "",
+      "elapsed_seconds": 1939.2,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 198,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "30035"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 1945.6,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 199,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "30172"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Action Items from Day 1"
+      },
+      "status": "",
+      "elapsed_seconds": 1953.9,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 200,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "30395"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Expand all 2 messages"
+      },
+      "status": "",
+      "elapsed_seconds": 1960.9,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 201,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "30379"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 1973.3,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 202,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "30529"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Strategy Session Items"
+      },
+      "status": "",
+      "elapsed_seconds": 1986.0,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 203,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "30754"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 1998.6,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 204,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "30923"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Operations Track"
+      },
+      "status": "",
+      "elapsed_seconds": 2010.1,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 205,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "31095"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 2022.2,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 206,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "31232"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Action Items from Day 1"
+      },
+      "status": "",
+      "elapsed_seconds": 2031.6,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 207,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "31456"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Expand message from Elena Patel"
+      },
+      "status": "",
+      "elapsed_seconds": 2037.4,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 208,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "31439"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 2044.8,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 209,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "31589"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Strategy Session Items"
+      },
+      "status": "",
+      "elapsed_seconds": 2054.7,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 210,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "31814"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 2064.5,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 211,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "31983"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Operations Track"
+      },
+      "status": "",
+      "elapsed_seconds": 2072.4,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 212,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "32155"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 2077.7,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 213,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "32292"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Action Items from Day 1"
+      },
+      "status": "",
+      "elapsed_seconds": 2085.2,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 214,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "32516"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Expand message from Elena Patel"
+      },
+      "status": "",
+      "elapsed_seconds": 2092.3,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 215,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "32499"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 2110.2,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 216,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "32649"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Strategy Session Items"
+      },
+      "status": "",
+      "elapsed_seconds": 2126.7,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 217,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "32874"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 2136.4,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 218,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "33043"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Operations Track"
+      },
+      "status": "",
+      "elapsed_seconds": 2142.1,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 219,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "33215"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 2152.7,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 220,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "33352"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Action Items from Day 1"
+      },
+      "status": "",
+      "elapsed_seconds": 2159.5,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 221,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "33575"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Expand all 2 messages"
+      },
+      "status": "",
+      "elapsed_seconds": 2170.9,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 222,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "33559"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 2181.0,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 223,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "33709"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Strategy Session Items"
+      },
+      "status": "",
+      "elapsed_seconds": 2199.7,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 224,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "33934"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 2207.7,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 225,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "34103"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Operations Track"
+      },
+      "status": "",
+      "elapsed_seconds": 2215.6,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 226,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "34275"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 2241.9,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 227,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "34412"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Action Items from Day 1"
+      },
+      "status": "",
+      "elapsed_seconds": 2250.5,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 228,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "34635"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Expand all 2 messages"
+      },
+      "status": "",
+      "elapsed_seconds": 2275.3,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 229,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "34619"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 2280.8,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 230,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "34769"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Strategy Session Items"
+      },
+      "status": "",
+      "elapsed_seconds": 2291.6,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 231,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "34994"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 2311.5,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 232,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "35163"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Operations Track"
+      },
+      "status": "",
+      "elapsed_seconds": 2323.2,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 233,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "35335"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 2331.1,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 234,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "35472"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Action Items from Day 1"
+      },
+      "status": "",
+      "elapsed_seconds": 2346.2,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 235,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "35696"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Expand message from Elena Patel"
+      },
+      "status": "",
+      "elapsed_seconds": 2355.1,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 236,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "35679"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 2366.6,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 237,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "35829"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Strategy Session Items"
+      },
+      "status": "",
+      "elapsed_seconds": 2382.6,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 238,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "36054"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 2393.5,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 239,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "36223"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Operations Track"
+      },
+      "status": "",
+      "elapsed_seconds": 2401.9,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 240,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "36395"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 2414.6,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 241,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "36532"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Action Items from Day 1"
+      },
+      "status": "",
+      "elapsed_seconds": 2423.9,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 242,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "36756"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Expand message from Elena Patel"
+      },
+      "status": "",
+      "elapsed_seconds": 2438.6,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 243,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "36739"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 2450.4,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 244,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "36889"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Strategy Session Items"
+      },
+      "status": "",
+      "elapsed_seconds": 2465.6,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 245,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "37114"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 2483.2,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 246,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "37283"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Operations Track"
+      },
+      "status": "",
+      "elapsed_seconds": 2495.8,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 247,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "37455"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 2512.3,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 248,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "37523"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Re: Leadership Offsite Follow-up \u2014 Action Items from Day 1"
+      },
+      "status": "",
+      "elapsed_seconds": 2523.3,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 249,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "37816"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Expand message from Elena Patel"
+      },
+      "status": "",
+      "elapsed_seconds": 2533.0,
+      "replay_path": "/thread/email_2",
+      "result_path": "/thread/email_2"
+    },
+    {
+      "step": 250,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "37799"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 2546.6,
+      "replay_path": "/thread/email_2",
+      "result_path": "/thread/email_2"
+    },
+    {
+      "step": 251,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "37949"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Strategy Session Items"
+      },
+      "status": "",
+      "elapsed_seconds": 2574.7,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 252,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "38174"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 2581.7,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 253,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "38343"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Operations Track"
+      },
+      "status": "",
+      "elapsed_seconds": 2594.4,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 254,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "38515"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 2606.7,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 255,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "38652"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Action Items from Day 1"
+      },
+      "status": "",
+      "elapsed_seconds": 2617.9,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 256,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "38876"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Expand message from Elena Patel"
+      },
+      "status": "",
+      "elapsed_seconds": 2623.4,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 257,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "38859"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 2636.6,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 258,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "39009"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Strategy Session Items"
+      },
+      "status": "",
+      "elapsed_seconds": 2644.4,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 259,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "39234"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 2655.7,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 260,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "39403"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Operations Track"
+      },
+      "status": "",
+      "elapsed_seconds": 2673.0,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 261,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "39575"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 2682.5,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 262,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "39643"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Re: Leadership Offsite Follow-up \u2014 Action Items from Day 1"
+      },
+      "status": "",
+      "elapsed_seconds": 2691.5,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 263,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "39936"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Expand message from Elena Patel"
+      },
+      "status": "",
+      "elapsed_seconds": 2698.9,
+      "replay_path": "/thread/email_2",
+      "result_path": "/thread/email_2"
+    },
+    {
+      "step": 264,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "39919"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 2714.7,
+      "replay_path": "/thread/email_2",
+      "result_path": "/thread/email_2"
+    },
+    {
+      "step": 265,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "40069"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Strategy Session Items"
+      },
+      "status": "",
+      "elapsed_seconds": 2724.6,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 266,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "40294"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 2734.2,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 267,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "40463"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Operations Track"
+      },
+      "status": "",
+      "elapsed_seconds": 2748.3,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 268,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "40635"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 2754.9,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 269,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "40772"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Action Items from Day 1"
+      },
+      "status": "",
+      "elapsed_seconds": 2764.9,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 270,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "40996"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Expand message from Elena Patel"
+      },
+      "status": "",
+      "elapsed_seconds": 2771.8,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 271,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "40979"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 2784.3,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 272,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "41129"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Strategy Session Items"
+      },
+      "status": "",
+      "elapsed_seconds": 2796.7,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 273,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "41354"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 2807.9,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 274,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "41523"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Operations Track"
+      },
+      "status": "",
+      "elapsed_seconds": 2817.9,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 275,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "41695"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 2823.7,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 276,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "41832"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Action Items from Day 1"
+      },
+      "status": "",
+      "elapsed_seconds": 2831.4,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 277,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "42056"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Expand message from Elena Patel"
+      },
+      "status": "",
+      "elapsed_seconds": 2844.2,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 278,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "42039"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 2850.0,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 279,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "42189"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Strategy Session Items"
+      },
+      "status": "",
+      "elapsed_seconds": 2858.6,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 280,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "42414"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 2869.5,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 281,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "42583"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Operations Track"
+      },
+      "status": "",
+      "elapsed_seconds": 2877.8,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 282,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "42755"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 2901.2,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 283,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "42892"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Action Items from Day 1"
+      },
+      "status": "",
+      "elapsed_seconds": 2916.1,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 284,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "43116"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Expand message from Elena Patel"
+      },
+      "status": "",
+      "elapsed_seconds": 2939.3,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 285,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "43099"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 2949.7,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 286,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "43249"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Strategy Session Items"
+      },
+      "status": "",
+      "elapsed_seconds": 2967.0,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 287,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "43474"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 2986.5,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 288,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "43643"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Operations Track"
+      },
+      "status": "",
+      "elapsed_seconds": 2995.5,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 289,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "43815"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 3009.6,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 290,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "43952"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Action Items from Day 1"
+      },
+      "status": "",
+      "elapsed_seconds": 3019.0,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 291,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "44176"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Expand message from Elena Patel"
+      },
+      "status": "",
+      "elapsed_seconds": 3028.6,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 292,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "44159"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 3050.2,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 293,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "44309"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Strategy Session Items"
+      },
+      "status": "",
+      "elapsed_seconds": 3060.3,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 294,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "44534"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 3080.4,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 295,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "44703"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Operations Track"
+      },
+      "status": "",
+      "elapsed_seconds": 3086.1,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 296,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "44875"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 3104.3,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 297,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "45012"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Action Items from Day 1"
+      },
+      "status": "",
+      "elapsed_seconds": 3119.9,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 298,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "45235"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Expand all 2 messages"
+      },
+      "status": "",
+      "elapsed_seconds": 3141.5,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 299,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "45219"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 3151.9,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 300,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "45369"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Strategy Session Items"
+      },
+      "status": "",
+      "elapsed_seconds": 3163.9,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 301,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "45594"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 3178.7,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 302,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "45763"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Operations Track"
+      },
+      "status": "",
+      "elapsed_seconds": 3189.8,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 303,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "45935"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 3200.1,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 304,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "46072"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Action Items from Day 1"
+      },
+      "status": "",
+      "elapsed_seconds": 3216.9,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 305,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "46295"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Expand all 2 messages"
+      },
+      "status": "",
+      "elapsed_seconds": 3223.4,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 306,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "46279"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 3234.8,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 307,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "46429"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Strategy Session Items"
+      },
+      "status": "",
+      "elapsed_seconds": 3247.3,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 308,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "46654"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 3261.8,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 309,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "46823"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Operations Track"
+      },
+      "status": "",
+      "elapsed_seconds": 3277.4,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 310,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "46995"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 3305.3,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 311,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "47132"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Action Items from Day 1"
+      },
+      "status": "",
+      "elapsed_seconds": 3323.3,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 312,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "47355"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Expand all 2 messages"
+      },
+      "status": "",
+      "elapsed_seconds": 3334.1,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 313,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "47339"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 3345.1,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 314,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "47489"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Strategy Session Items"
+      },
+      "status": "",
+      "elapsed_seconds": 3359.4,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 315,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "47714"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 3369.8,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 316,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "47883"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Operations Track"
+      },
+      "status": "",
+      "elapsed_seconds": 3382.6,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 317,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "48055"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 3394.1,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 318,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "48192"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Action Items from Day 1"
+      },
+      "status": "",
+      "elapsed_seconds": 3408.2,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 319,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "48416"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Expand message from Elena Patel"
+      },
+      "status": "",
+      "elapsed_seconds": 3421.9,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 320,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "48399"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 3432.1,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 321,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "48549"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Strategy Session Items"
+      },
+      "status": "",
+      "elapsed_seconds": 3442.1,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 322,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "48774"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 3456.2,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 323,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "48943"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Operations Track"
+      },
+      "status": "",
+      "elapsed_seconds": 3466.9,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 324,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "49115"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 3480.3,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 325,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "49252"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Action Items from Day 1"
+      },
+      "status": "",
+      "elapsed_seconds": 3494.1,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 326,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "49476"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Expand message from Elena Patel"
+      },
+      "status": "",
+      "elapsed_seconds": 3512.3,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 327,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "49459"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 3533.6,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 328,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "49609"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Strategy Session Items"
+      },
+      "status": "",
+      "elapsed_seconds": 3550.3,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 329,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "49834"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 3566.9,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 330,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "50003"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Operations Track"
+      },
+      "status": "",
+      "elapsed_seconds": 3574.2,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 331,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "50175"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 3595.8,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 332,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "50312"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Leadership Offsite Follow-up \u2014 Action Items from Day 1"
+      },
+      "status": "",
+      "elapsed_seconds": 3610.1,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    }
+  ]
+}

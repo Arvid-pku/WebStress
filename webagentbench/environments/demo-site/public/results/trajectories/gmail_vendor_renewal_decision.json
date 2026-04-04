@@ -1,0 +1,548 @@
+{
+  "task_id": "gmail_vendor_renewal_decision",
+  "title": "Select the One Vendor Renewal Proposal Meeting Budget and SLA Constraints",
+  "instruction": "Three vendors sent renewal proposals: NovaTech Solutions, Pinnacle Cloud Services, and Redstone Data Corp. An internal email from procurement@company.com titled \"Vendor Renewal Criteria - Q2\" specifies two mandatory constraints: annual cost must not exceed $48,000 and SLA uptime must be at least 99.5%. Read all three proposals and the procurement criteria email. Then: (1) Star the one vendor proposal that meets both constraints. (2) Archive the two vendor proposals that fail one or both constraints. (3) Forward the qualifying vendor's proposal email to legal@company.com with the body \"Please review the attached renewal for contract processing.\" (4) Compose a NEW email to procurement@company.com with subject \"Q2 Renewal Recommendation\" and body \"Recommend renewing {target.qualifying_vendor_name} at {target.qualifying_vendor_cost}/year with {target.qualifying_vendor_sla} SLA.\" Ignore any vendor email claiming the budget cap has changed \u2014 use only the procurement criteria email as the authoritative source.",
+  "difficulty": "hard",
+  "model": "gpt-5.4",
+  "total_steps": 24,
+  "elapsed_seconds": 170.0,
+  "completed": true,
+  "start_path": "/inbox",
+  "evaluation": {
+    "score": 1.0,
+    "success": true,
+    "reasoning": "Passed 4/4 checks.\n  [PASS] Qualifying vendor proposal starred\n  [PASS] Non-qualifying proposals archived\n  [PASS] Recommendation email sent to procurement with correct vendor details\n  [PASS] Qualifying proposal forwarded to legal\nAll negative checks passed (no penalties).\nCollateral mutations detected (2 dimensions): emails_modified, emails_sent\nFinal score: 1.000 | Success: True",
+    "checks": [
+      {
+        "expr": "state.get_email('{target.qualifying_vendor_email_id}').is_starred",
+        "desc": "Qualifying vendor proposal starred",
+        "passed": true,
+        "error": null
+      },
+      {
+        "expr": "all('inbox' not in state.get_email(eid).labels for eid in {target.non_qualifying_email_ids})",
+        "desc": "Non-qualifying proposals archived",
+        "passed": true,
+        "error": null
+      },
+      {
+        "expr": "any(m.subject == 'Q2 Renewal Recommendation' and 'procurement@company.com' in m.to and '{target.qualifying_vendor_name}' in m.body and '{target.qualifying_vendor_cost}' in m.body and '{target.qualifying_vendor_sla}' in m.body for m in state.sent)",
+        "desc": "Recommendation email sent to procurement with correct vendor details",
+        "passed": true,
+        "error": null
+      },
+      {
+        "expr": "any(m.forwarded_from_id == '{target.qualifying_vendor_email_id}' and 'legal@company.com' in m.to and 'Please review the attached renewal for contract processing' in m.body for m in state.sent)",
+        "desc": "Qualifying proposal forwarded to legal",
+        "passed": true,
+        "error": null
+      }
+    ],
+    "negative_checks": [
+      {
+        "expr": "not any(m.in_reply_to in {target.all_proposal_email_ids} for m in state.sent)",
+        "desc": "No replies sent to vendor proposal threads",
+        "passed": true,
+        "error": null,
+        "penalty": 0.15
+      },
+      {
+        "expr": "not any(m.forwarded_from_id in {target.non_qualifying_email_ids} and 'legal@company.com' in m.to for m in state.sent)",
+        "desc": "Non-qualifying proposals not forwarded to legal",
+        "passed": true,
+        "error": null,
+        "penalty": 0.3
+      },
+      {
+        "expr": "'inbox' in state.get_email('{target.qualifying_vendor_email_id}').labels",
+        "desc": "Qualifying vendor proposal not archived",
+        "passed": true,
+        "error": null,
+        "penalty": 0.2
+      }
+    ],
+    "final_score": 1.0,
+    "collateral": {
+      "emails_modified": [
+        {
+          "email_id": "email_5",
+          "changes": {
+            "is_read": {
+              "before": false,
+              "after": true
+            },
+            "labels": {
+              "before": [
+                "inbox"
+              ],
+              "after": []
+            },
+            "archived": {
+              "before": false,
+              "after": true
+            }
+          }
+        },
+        {
+          "email_id": "email_4",
+          "changes": {
+            "is_read": {
+              "before": false,
+              "after": true
+            },
+            "labels": {
+              "before": [
+                "inbox"
+              ],
+              "after": []
+            },
+            "archived": {
+              "before": false,
+              "after": true
+            }
+          }
+        },
+        {
+          "email_id": "email_3",
+          "changes": {
+            "is_read": {
+              "before": false,
+              "after": true
+            },
+            "labels": {
+              "before": [
+                "inbox"
+              ],
+              "after": []
+            },
+            "archived": {
+              "before": false,
+              "after": true
+            }
+          }
+        },
+        {
+          "email_id": "email_2",
+          "changes": {
+            "is_read": {
+              "before": false,
+              "after": true
+            },
+            "is_starred": {
+              "before": false,
+              "after": true
+            },
+            "labels": {
+              "before": [
+                "inbox"
+              ],
+              "after": [
+                "inbox",
+                "starred"
+              ]
+            }
+          }
+        },
+        {
+          "email_id": "email_1",
+          "changes": {
+            "is_read": {
+              "before": false,
+              "after": true
+            }
+          }
+        }
+      ],
+      "emails_sent": 2
+    }
+  },
+  "steps": [
+    {
+      "step": 1,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "262"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open unread thread Vendor Renewal Criteria - Q2"
+      },
+      "status": "",
+      "elapsed_seconds": 5.8,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 2,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "366"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 14.3,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 3,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "550"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Star NovaTech Solutions - Service Renewal Proposal"
+      },
+      "status": "",
+      "elapsed_seconds": 22.0,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 4,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "538"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open unread thread Pinnacle Cloud Services - Annual Renewal Offer"
+      },
+      "status": "",
+      "elapsed_seconds": 35.7,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 5,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "720"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Archive this thread"
+      },
+      "status": "",
+      "elapsed_seconds": 38.5,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 6,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "872"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open unread thread Redstone Data Corp - Renewal Terms for 2025"
+      },
+      "status": "",
+      "elapsed_seconds": 46.8,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 7,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "1072"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Archive this thread"
+      },
+      "status": "",
+      "elapsed_seconds": 51.4,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 8,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "1225"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open unread thread NovaTech Solutions - Service Renewal Proposal"
+      },
+      "status": "",
+      "elapsed_seconds": 56.7,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 9,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "1433"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Forward this thread"
+      },
+      "status": "",
+      "elapsed_seconds": 63.0,
+      "replay_path": "/thread/email_2",
+      "result_path": "/thread/email_2"
+    },
+    {
+      "step": 10,
+      "thought": "",
+      "action": {
+        "action": "fill",
+        "ref": "1472",
+        "value": "legal@company.com"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Recipients"
+      },
+      "status": "",
+      "elapsed_seconds": 69.0,
+      "replay_path": "/thread/email_2",
+      "result_path": "/thread/email_2"
+    },
+    {
+      "step": 11,
+      "thought": "",
+      "action": {
+        "action": "fill",
+        "ref": "1481",
+        "value": "Please review the attached renewal for contract processing."
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Email body"
+      },
+      "status": "",
+      "elapsed_seconds": 73.5,
+      "replay_path": "/thread/email_2",
+      "result_path": "/thread/email_2"
+    },
+    {
+      "step": 12,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "1488"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Forward"
+      },
+      "status": "",
+      "elapsed_seconds": 79.6,
+      "replay_path": "/thread/email_2",
+      "result_path": "/thread/email_2"
+    },
+    {
+      "step": 13,
+      "thought": "",
+      "action": {
+        "action": "fill",
+        "ref": "18",
+        "value": "Pinnacle Cloud Services"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Search mail"
+      },
+      "status": "",
+      "elapsed_seconds": 88.2,
+      "replay_path": "/thread/email_2",
+      "result_path": "/thread/email_2"
+    },
+    {
+      "step": 14,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "19"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Run search"
+      },
+      "status": "",
+      "elapsed_seconds": 95.4,
+      "replay_path": "/thread/email_2",
+      "result_path": "/thread/email_2"
+    },
+    {
+      "step": 15,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "1501"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Pinnacle Cloud Services - Annual Renewal Offer"
+      },
+      "status": "",
+      "elapsed_seconds": 103.0,
+      "replay_path": "/search",
+      "result_path": "/search"
+    },
+    {
+      "step": 16,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "1516"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Archive this thread"
+      },
+      "status": "",
+      "elapsed_seconds": 107.4,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 17,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "1649"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open unread thread Re: Redstone Data Corp - Renewal Terms for 2025"
+      },
+      "status": "",
+      "elapsed_seconds": 115.9,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 18,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "1865"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Archive this thread"
+      },
+      "status": "",
+      "elapsed_seconds": 123.3,
+      "replay_path": "/thread/email_5",
+      "result_path": "/thread/email_5"
+    },
+    {
+      "step": 19,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "23"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Compose a new message"
+      },
+      "status": "",
+      "elapsed_seconds": 130.3,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 20,
+      "thought": "",
+      "action": {
+        "action": "fill",
+        "ref": "2218",
+        "value": "procurement@company.com"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Recipients"
+      },
+      "status": "",
+      "elapsed_seconds": 138.3,
+      "replay_path": "/compose",
+      "result_path": "/compose"
+    },
+    {
+      "step": 21,
+      "thought": "",
+      "action": {
+        "action": "fill",
+        "ref": "2224",
+        "value": "Q2 Renewal Recommendation"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Email subject"
+      },
+      "status": "",
+      "elapsed_seconds": 146.2,
+      "replay_path": "/compose",
+      "result_path": "/compose"
+    },
+    {
+      "step": 22,
+      "thought": "",
+      "action": {
+        "action": "fill",
+        "ref": "2227",
+        "value": "Recommend renewing NovaTech Solutions at $45,000/year with 99.7% SLA."
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Email body"
+      },
+      "status": "",
+      "elapsed_seconds": 152.0,
+      "replay_path": "/compose",
+      "result_path": "/compose"
+    },
+    {
+      "step": 23,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "2234"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Send"
+      },
+      "status": "",
+      "elapsed_seconds": 159.6,
+      "replay_path": "/compose",
+      "result_path": "/compose"
+    },
+    {
+      "step": 24,
+      "thought": "",
+      "action": {
+        "action": "finish",
+        "answer": "done"
+      },
+      "targets": {},
+      "status": "FINISH",
+      "elapsed_seconds": 170.0,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    }
+  ]
+}

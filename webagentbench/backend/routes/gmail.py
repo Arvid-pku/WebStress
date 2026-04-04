@@ -386,15 +386,13 @@ def list_variants() -> list[dict[str, Any]]:
     """
     from pathlib import Path
     import yaml
-    from ...injector.config import _DEFAULT_TEMPLATES
 
     variants_dir = Path(__file__).parent.parent.parent / "injector" / "variants"
     result = []
-    covered: set[tuple[str, str]] = set()  # (base_task_id, primitive)
 
-    # 1. Hand-written YAML variants
+    # Hand-written YAML variants (Gmail only)
     if variants_dir.exists():
-        for f in sorted(variants_dir.glob("*.yaml")):
+        for f in sorted(variants_dir.glob("gmail_*.yaml")):
             try:
                 data = yaml.safe_load(f.read_text())
                 btid = data.get("base_task_id", "")
@@ -407,25 +405,8 @@ def list_variants() -> list[dict[str, Any]]:
                     "description": data.get("description", ""),
                     "source": "yaml",
                 })
-                covered.add((btid, prim))
             except Exception:
                 pass
-
-    # 2. Auto-generated defaults for uncovered tasks
-    from ...tasks._registry import tasks_by_env
-    gmail_tasks = tasks_by_env().get("gmail", [])
-    for task in gmail_tasks:
-        primary = task.primary_primitives[0] if task.primary_primitives else None
-        if primary and (task.task_id, primary) not in covered and primary in _DEFAULT_TEMPLATES:
-            tmpl = _DEFAULT_TEMPLATES[primary]
-            result.append({
-                "filename": f"__auto__{task.task_id}__{primary}",
-                "variant_id": f"{task.task_id}__{primary}_auto",
-                "base_task_id": task.task_id,
-                "target_primitive": primary,
-                "description": tmpl["description"],
-                "source": "auto",
-            })
 
     return result
 
@@ -654,6 +635,23 @@ def mark_read(
         lambda s: state.mark_read(email_id, body.is_read),
     )
     return {"email": _serialize_email(state, result)}
+
+
+@router.post("/emails/mark-all-read")
+def mark_all_read(
+    body: SessionScopedRequest,
+    session_manager: SessionManager = Depends(get_session_manager),
+) -> dict[str, Any]:
+    state = _gmail_state(session_manager, body.session_id)
+    count = 0
+    for email in state.emails:
+        if not email.is_read:
+            email.is_read = True
+            count += 1
+    if count:
+        state.touch()
+        _audit(session_manager, body.session_id, "gmail.email.mark_all_read", {"count": count})
+    return {"marked": count}
 
 
 @router.post("/emails/{email_id}/star")

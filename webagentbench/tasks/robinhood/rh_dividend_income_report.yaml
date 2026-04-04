@@ -1,0 +1,44 @@
+task_id: rh_dividend_income_report
+env_id: robinhood
+title: Optimize Dividend Income by Swapping Positions
+instruction_template: "Calculate your total expected annual dividend income across all positions. Find the stock contributing the least dividend income and sell all of it. Then buy shares of the highest-yielding stock from your \"Income Ideas\" watchlist with the proceeds."
+difficulty: hard
+time_limit_seconds: 280
+expected_steps: 12
+primary_primitives:
+  - state_tracking
+  - planning
+  - exploration
+start_path: /
+
+seed:
+  distractors: 10
+  steps:
+    - use: stock_universe
+      params:
+        count: 30
+        must_include: ["AAPL", "MSFT", "KO", "PEP", "PG", "JNJ", "SCHD", "VTI"]
+      outputs: []
+    - use: portfolio_diverse
+      params:
+        count: 6
+      outputs: []
+    - use: watchlist
+      params:
+        name: "Income Ideas"
+        symbols: ["SCHD", "VTI", "KO"]
+      outputs: []
+    - use: dividend_schedule
+      params:
+        include_history: true
+      outputs: []
+  targets: {}
+
+eval:
+  source: server_state
+  checks:
+    - expr: "len([o for o in state.orders if o.side == 'sell']) >= 1"
+      desc: A sell order exists for the lowest-dividend-income stock
+    - expr: "len([o for o in state.orders if o.side == 'buy']) >= 1"
+      desc: A buy order exists for the highest-yielding watchlist stock
+  negative_checks: []

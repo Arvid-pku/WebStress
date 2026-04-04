@@ -1,0 +1,35 @@
+task_id: rh_consolidate_recurring
+env_id: robinhood
+title: Consolidate Duplicate Recurring Investments
+instruction_template: "Review your recurring investments. Find any stocks that have multiple recurring investments set up. For each, consolidate them into a single monthly investment with the combined amount."
+difficulty: hard
+time_limit_seconds: 280
+expected_steps: 12
+primary_primitives:
+  - state_tracking
+  - planning
+  - exploration
+start_path: /
+
+seed:
+  distractors: 10
+  steps:
+    - use: stock_universe
+      params:
+        count: 25
+        must_include: ["AAPL", "MSFT", "VOO", "SCHD"]
+      outputs: []
+    - use: recurring_investments
+      params:
+        count: 6
+        symbols: ["AAPL", "AAPL", "MSFT", "MSFT", "VOO", "SCHD"]
+        frequencies: ["weekly", "monthly"]
+      outputs: []
+  targets: {}
+
+eval:
+  source: server_state
+  checks:
+    - expr: "len(set(ri.symbol for ri in state.recurring_investments if ri.status == 'active')) == len([ri for ri in state.recurring_investments if ri.status == 'active'])"
+      desc: No duplicate symbols exist among active recurring investments
+  negative_checks: []

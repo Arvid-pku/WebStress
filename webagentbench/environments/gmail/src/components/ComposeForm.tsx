@@ -35,18 +35,29 @@ export function ComposeForm({
       formRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   }, [autoScrollIntoView]);
-  const initialCc = (initialValue?.cc ?? []).join(", ");
-  const initialBcc = (initialValue?.bcc ?? []).join(", ");
+  const initialCc = typeof initialValue?.cc === "string" ? initialValue.cc : (initialValue?.cc ?? []).join(", ");
+  const initialBcc = typeof initialValue?.bcc === "string" ? initialValue.bcc : (initialValue?.bcc ?? []).join(", ");
 
-  const [to, setTo] = useState((initialValue?.to ?? []).join(", "));
+  const toInit = typeof initialValue?.to === "string" ? initialValue.to : (initialValue?.to ?? []).join(", ");
+  const [to, setTo] = useState(toInit);
   const [cc, setCc] = useState(initialCc);
   const [bcc, setBcc] = useState(initialBcc);
   const [subject, setSubject] = useState(initialValue?.subject ?? "");
   const [body, setBody] = useState(initialValue?.body ?? "");
-  const [attachmentNames, setAttachmentNames] = useState((initialValue?.attachments ?? []).join(", "));
+  const [attachmentNames, setAttachmentNames] = useState(typeof initialValue?.attachments === "string" ? initialValue.attachments : (initialValue?.attachments ?? []).join(", "));
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCc, setShowCc] = useState(initialCc.length > 0);
   const [showBcc, setShowBcc] = useState(initialBcc.length > 0);
+
+  // Sync from replay params when initialValue changes (replay stepping)
+  useEffect(() => {
+    const newTo = typeof initialValue?.to === "string" ? initialValue.to : (initialValue?.to ?? []).join(", ");
+    if (newTo) setTo(newTo);
+    if (initialValue?.subject) setSubject(initialValue.subject);
+    if (initialValue?.body) setBody(initialValue.body);
+    const newCc = typeof initialValue?.cc === "string" ? initialValue.cc : (initialValue?.cc ?? []).join(", ");
+    if (newCc) { setCc(newCc); setShowCc(true); }
+  }, [initialValue?.to, initialValue?.cc, initialValue?.subject, initialValue?.body]);
 
   const parsedAttachments = useMemo(
     () => splitAddresses(attachmentNames),

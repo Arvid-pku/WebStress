@@ -1,0 +1,263 @@
+{
+  "task_id": "gmail_interview_scheduling",
+  "title": "Interview Scheduling",
+  "instruction": "HR coordinator {target.lisa_name} sent an email with subject \"Interview Slots \u2014 Backend Engineer\" listing 5 available times. Three interviewers each sent emails stating which slots they cannot attend: {target.marco_singh_name} (subject \"My availability \u2014 Backend interviews\"), {target.priya_name} (in a thread with subject \"Re: Panel schedule update\"), and {target.avery_name} (subject \"Scheduling conflicts this week\"). Find the one slot where all three interviewers are available. Reply to {target.lisa_name}'s email with the selected slot written as \"Confirmed: Wednesday, 2:00 PM\" and CC {target.marco_singh_email}, {target.priya_email}, and {target.avery_email}.",
+  "difficulty": "hard",
+  "model": "gpt-5.4",
+  "total_steps": 9,
+  "elapsed_seconds": 33.6,
+  "completed": true,
+  "start_path": "/inbox",
+  "evaluation": {
+    "score": 1.0,
+    "success": true,
+    "reasoning": "Passed 7/7 checks.\n  [PASS] At least one email sent\n  [PASS] Reply contains confirmed slot\n  [PASS] Reply is in Lisa's thread\n  [PASS] CC includes Marco Singh\n  [PASS] CC includes Priya Chen\n  [PASS] CC includes Avery Brooks\n  [PASS] Exactly 3 CC recipients\nAll negative checks passed (no penalties).\nCollateral mutations detected (2 dimensions): emails_modified, emails_sent\nFinal score: 1.000 | Success: True",
+    "checks": [
+      {
+        "expr": "len(state.sent) >= 1",
+        "desc": "At least one email sent",
+        "passed": true,
+        "error": null
+      },
+      {
+        "expr": "any('Confirmed: Wednesday, 2:00 PM' in m.body for m in state.sent)",
+        "desc": "Reply contains confirmed slot",
+        "passed": true,
+        "error": null
+      },
+      {
+        "expr": "any(m.in_reply_to == '{target.hr_slots_email_id}' for m in state.sent)",
+        "desc": "Reply is in Lisa's thread",
+        "passed": true,
+        "error": null
+      },
+      {
+        "expr": "any('{target.marco_singh_email}' in m.cc for m in state.sent)",
+        "desc": "CC includes Marco Singh",
+        "passed": true,
+        "error": null
+      },
+      {
+        "expr": "any('{target.priya_email}' in m.cc for m in state.sent)",
+        "desc": "CC includes Priya Chen",
+        "passed": true,
+        "error": null
+      },
+      {
+        "expr": "any('{target.avery_email}' in m.cc for m in state.sent)",
+        "desc": "CC includes Avery Brooks",
+        "passed": true,
+        "error": null
+      },
+      {
+        "expr": "any(len(m.cc) == 3 for m in state.sent if 'Confirmed' in m.body)",
+        "desc": "Exactly 3 CC recipients",
+        "passed": true,
+        "error": null
+      }
+    ],
+    "negative_checks": [
+      {
+        "expr": "not any(m.in_reply_to == '{target.hr_frontend_decoy_email_id}' for m in state.sent)",
+        "desc": "Did not reply to Frontend Designer thread",
+        "passed": true,
+        "error": null,
+        "penalty": 0.21
+      },
+      {
+        "expr": "not any('Monday' in m.body and 'Confirmed' in m.body for m in state.sent)",
+        "desc": "Did not confirm Monday",
+        "passed": true,
+        "error": null,
+        "penalty": 0.14
+      },
+      {
+        "expr": "not any('Tuesday' in m.body and 'Confirmed' in m.body for m in state.sent)",
+        "desc": "Did not confirm Tuesday",
+        "passed": true,
+        "error": null,
+        "penalty": 0.14
+      },
+      {
+        "expr": "not any('Thursday' in m.body and 'Confirmed' in m.body for m in state.sent)",
+        "desc": "Did not confirm Thursday",
+        "passed": true,
+        "error": null,
+        "penalty": 0.14
+      },
+      {
+        "expr": "not any('Friday' in m.body and 'Confirmed' in m.body for m in state.sent)",
+        "desc": "Did not confirm Friday",
+        "passed": true,
+        "error": null,
+        "penalty": 0.14
+      },
+      {
+        "expr": "not any('{target.marco_santos_email}' in m.cc for m in state.sent)",
+        "desc": "Did not CC Marco Santos",
+        "passed": true,
+        "error": null,
+        "penalty": 0.18
+      }
+    ],
+    "final_score": 1.0,
+    "collateral": {
+      "emails_modified": [
+        {
+          "email_id": "email_1",
+          "changes": {
+            "is_read": {
+              "before": false,
+              "after": true
+            }
+          }
+        }
+      ],
+      "emails_sent": 1
+    }
+  },
+  "steps": [
+    {
+      "step": 1,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "226"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open unread thread Interview Slots \u2014 Backend Engineer"
+      },
+      "status": "",
+      "elapsed_seconds": 7.1,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 2,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "391"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Reply to Interview Slots \u2014 Backend Engineer"
+      },
+      "status": "",
+      "elapsed_seconds": 10.0,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 3,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "424"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Show CC field"
+      },
+      "status": "",
+      "elapsed_seconds": 12.1,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 4,
+      "thought": "",
+      "action": {
+        "action": "fill",
+        "ref": "442",
+        "value": "marco.singh@ops.test, priya.chen@ops.test, avery.brooks@ops.test"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Carbon copy recipients"
+      },
+      "status": "",
+      "elapsed_seconds": 15.4,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 5,
+      "thought": "",
+      "action": {
+        "action": "fill",
+        "ref": "431",
+        "value": "Confirmed: Wednesday, 2:00 PM"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Email body"
+      },
+      "status": "",
+      "elapsed_seconds": 18.4,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 6,
+      "thought": "",
+      "action": {
+        "action": "scroll",
+        "delta_x": 0,
+        "delta_y": 300,
+        "direction": "down"
+      },
+      "targets": {},
+      "status": "",
+      "elapsed_seconds": 22.0,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 7,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "438"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Send reply"
+      },
+      "status": "",
+      "elapsed_seconds": 25.5,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 8,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "444"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Expand message from Avery Quinn"
+      },
+      "status": "",
+      "elapsed_seconds": 30.4,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 9,
+      "thought": "",
+      "action": {
+        "action": "finish",
+        "answer": "done"
+      },
+      "targets": {},
+      "status": "FINISH",
+      "elapsed_seconds": 33.6,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    }
+  ]
+}

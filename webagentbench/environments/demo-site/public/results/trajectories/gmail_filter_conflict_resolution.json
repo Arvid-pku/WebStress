@@ -1,0 +1,17 @@
+{
+  "task_id": "gmail_filter_conflict_resolution",
+  "title": "Resolve Overlapping Filter Criteria per Admin Directive",
+  "instruction": "Read the email from admin Tara Okonkwo (tara.okonkwo@dataviz.io) with subject \"Fix the report filter conflict\". Two existing filters both match emails from reports@dataviz.io \u2014 one stars and labels them \"Analytics\", the other archives them. This causes reports to be simultaneously starred, labeled, and archived. Follow Tara's directive: delete both existing filters for reports@dataviz.io, then create two new non-overlapping filters:\n(1) From: reports@dataviz.io, Subject contains: \"dashboard\" \u2014 Action: star, add label \"Analytics/Dashboard\"\n(2) From: reports@dataviz.io, Subject contains: \"export\" \u2014 Action: skip inbox (archive)\nDo NOT modify any other filters. The label \"Analytics\" should not be deleted. Create the label \"Analytics/Dashboard\" if it does not already exist.",
+  "difficulty": "hard",
+  "model": "gpt-5.4",
+  "total_steps": 0,
+  "elapsed_seconds": 0,
+  "completed": false,
+  "start_path": "/inbox",
+  "evaluation": {
+    "score": 0.0,
+    "success": false,
+    "reasoning": "Error: Error code: 429 - {'error': {'message': 'Rate limit reached for gpt-5.4 in organization org-1TUfqnEdWE1FmJLjbLSza6VJ on tokens per min (TPM): Limit 500000, Used 488518, Requested 15513. Please try again in 483ms. Visit https://platform.openai.com/account/rate-limits to learn more.', 'type': 'tokens', 'param': None, 'code': 'rate_limit_exceeded'}}"
+  },
+  "steps": []
+}

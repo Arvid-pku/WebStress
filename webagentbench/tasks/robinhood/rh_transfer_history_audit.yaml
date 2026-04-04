@@ -1,0 +1,68 @@
+---
+task_id: rh_transfer_history_audit
+env_id: robinhood
+title: Deposit and Set Up Auto-Invest
+instruction_template: Review your transfer history from the past 6 months. Calculate
+  your total deposits and total withdrawals. If total deposits exceed total withdrawals,
+  set up a recurring weekly investment of $200 in VTI to put your surplus to work. If
+  withdrawals exceed or equal deposits, first deposit $3,000 from your default linked
+  bank, then set up the recurring weekly $200 VTI investment.
+difficulty: hard
+time_limit_seconds: 220
+expected_steps: 8
+primary_primitives:
+- state_tracking
+- verification
+- planning
+start_path: "/"
+seed:
+  distractors: 10
+  steps:
+  - use: stock_universe
+    params:
+      count: 20
+      must_include:
+      - AAPL
+      - MSFT
+      - VTI
+    outputs: []
+  - use: linked_banks
+    params: {}
+    outputs: []
+  - use: transfers_history
+    params:
+      count: 10
+      age_range_days:
+      - 1
+      - 180
+    outputs: []
+  - use: portfolio_basic
+    params:
+      stocks:
+      - AAPL
+      - MSFT
+      quantities:
+      - '10'
+      - '5'
+      cost_bases:
+      - '180.00'
+      - '390.00'
+    outputs: []
+  targets: {}
+eval:
+  source: server_state
+  checks:
+  - expr: any(ri.symbol == 'VTI' and ri.frequency == 'weekly' and ri.amount == Decimal('200')
+      and ri.status == 'active' for ri in state.recurring_investments)
+    desc: A recurring weekly $200 VTI investment was set up
+  - expr: state.total_transferred('deposit') > state.total_transferred('withdrawal')
+      or (len(state.transfers) > 10 and any(t.direction == 'deposit' and t.amount ==
+      Decimal('3000') for t in state.transfers))
+    desc: If withdrawals exceeded deposits, a $3,000 deposit was made; otherwise no
+      deposit was needed
+  negative_checks:
+  - expr: all(o.id.startswith('ord_decoy_') for o in state.orders)
+    desc: No unintended trades were placed during the transfer audit
+secondary_primitives: []
+primitive_thesis: Measures state_tracking, verification, planning by requiring the
+  agent to analyze transfer history and take conditional action based on the findings.

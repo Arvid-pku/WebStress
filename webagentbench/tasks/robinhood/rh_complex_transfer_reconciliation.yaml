@@ -1,0 +1,82 @@
+---
+task_id: rh_complex_transfer_reconciliation
+env_id: robinhood
+title: Account Cleanup and Fresh Deposit
+instruction_template: 'Perform a thorough account cleanup: (1) delete any price alerts
+  for stocks you no longer own, (2) remove any empty watchlists, (3) remove any recurring
+  investment that has missed its scheduled execution, and (4) deposit $2,500 from your
+  default linked bank account.'
+difficulty: frontier
+time_limit_seconds: 550
+expected_steps: 30
+primary_primitives:
+- state_tracking
+- verification
+- grounding
+- patience
+- exploration
+start_path: "/"
+seed:
+  distractors: 20
+  steps:
+  - use: stock_universe
+    params:
+      count: 25
+      must_include:
+      - AAPL
+      - TSLA
+      - MSFT
+      - AMZN
+    outputs: []
+  - use: portfolio_diverse
+    params:
+      position_count: 5
+    outputs: []
+  - use: price_alerts
+    params:
+      count: 5
+      include_stale: true
+      stale_symbol: NFLX
+    outputs: []
+  - use: watchlist
+    params:
+      name: Empty List
+      symbols: []
+    outputs: []
+  - use: watchlist
+    params:
+      name: My Picks
+      symbols:
+      - AAPL
+      - TSLA
+    outputs: []
+  - use: recurring_investments
+    params:
+      count: 3
+      include_history: true
+      overdue_count: 1
+    outputs:
+    - overdue_symbols
+  - use: linked_banks
+    params: {}
+    outputs: []
+  targets:
+    overdue_symbols: "{output.overdue_symbols}"
+eval:
+  source: server_state
+  checks:
+  - expr: len(state.stale_alert_symbols()) == 0
+    desc: All price alerts for unowned stocks were removed
+  - expr: not any(len(wl.symbols) == 0 for wl in state.watchlists)
+    desc: All empty watchlists were removed
+  - expr: len(state.overdue_recurring_investments()) == 0
+    desc: All overdue recurring investments were removed
+  - expr: any(t.direction == 'deposit' and t.amount == Decimal('2500') for t in state.transfers)
+    desc: A $2,500 deposit was initiated from the default bank
+  negative_checks:
+  - expr: state.watchlist_named('My Picks') is not None
+    desc: Non-empty watchlists were preserved
+secondary_primitives: []
+primitive_thesis: Measures state_tracking, verification, grounding, patience, exploration
+  by requiring the agent to audit multiple account areas and take corrective action
+  across alerts, watchlists, recurring investments, and transfers.

@@ -30,6 +30,7 @@ import json
 import logging
 import os
 import re
+import time
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -120,7 +121,8 @@ def llm_complete(
     client, model: str, messages: list[dict],
     temperature: float | None = None, provider: str = "openai",
     reasoning_effort: str | None = None,
-) -> str:
+) -> tuple[str, str]:
+    """Return (content, reasoning) from the LLM."""
     if provider == "gemini":
         return _complete_gemini(client, model, messages, temperature)
     return _complete_openai(client, model, messages, temperature, reasoning_effort)
@@ -140,8 +142,17 @@ def _complete_openai(client, model, messages, temperature, reasoning_effort):
         kwargs["reasoning_effort"] = reasoning_effort
     if model.lower().startswith("qwen3"):
         kwargs["extra_body"] = {"enable_thinking": False}
-    response = client.chat.completions.create(**kwargs)
-    return response.choices[0].message.content or ""
+    for attempt in range(5):
+        try:
+            response = client.chat.completions.create(**kwargs)
+            msg = response.choices[0].message
+            reasoning = getattr(msg, "reasoning_content", None) or ""
+            return msg.content or "", reasoning
+        except Exception as e:
+            if "429" in str(e) and attempt < 4:
+                time.sleep(2 ** attempt + 1)
+                continue
+            raise
 
 
 def _complete_gemini(client, model, messages, temperature):
@@ -165,7 +176,7 @@ def _complete_gemini(client, model, messages, temperature):
         model=model, contents=contents,
         config=types.GenerateContentConfig(**config_kwargs),
     )
-    return response.text or ""
+    return response.text or "", ""
 
 
 # =============================================================================
@@ -208,6 +219,8 @@ def format_obs_for_llm(obs: dict) -> str:
             filter_with_bid_only=True,
         )
         if axtree_txt:
+            # Strip control characters that can corrupt JSON serialization
+            axtree_txt = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f]', '', axtree_txt)
             parts.append(f"\nAccessibility tree:\n{axtree_txt}")
 
     return "\n".join(parts)
@@ -316,7 +329,7 @@ def trim_messages(
                 line = msg["content"].split("\n")[0][:200]
                 turns.append(f"Obs: {line}")
         try:
-            summary = llm_complete(
+            summary, _ = llm_complete(
                 client, model,
                 [{"role": "user", "content":
                     "Summarize this agent history into brief bullet points. "
@@ -367,6 +380,8 @@ class LLMAgent:
         self.client = create_client(provider, base_url, api_key)
         self.messages: list[dict] = []
         self._has_initial_obs = False
+        self._last_raw_response = ""
+        self._last_thought = ""
 
     def reset(self, obs: dict | None = None) -> None:
         """Clear history for a new episode. Optionally process first obs."""
@@ -402,7 +417,7 @@ class LLMAgent:
         )
 
         try:
-            response = llm_complete(
+            response, reasoning = llm_complete(
                 self.client, self.model, trimmed,
                 temperature=self.temperature,
                 provider=self.provider,
@@ -418,7 +433,7 @@ class LLMAgent:
                     model=self.model,
                     provider=self.provider,
                 )
-                response = llm_complete(
+                response, reasoning = llm_complete(
                     self.client, self.model, trimmed,
                     temperature=self.temperature,
                     provider=self.provider,
@@ -429,6 +444,15 @@ class LLMAgent:
 
         # Clean response — extract the action call
         action = _extract_action(response)
+        self._last_raw_response = response
+        self._last_thought = reasoning
+        if not self._last_thought and response != action:
+            # For non-reasoning models, extract thought from text before the action
+            # Use the raw response for find() since _extract_action may normalize quotes
+            action_start = re.search(re.escape(action[:20]), response)
+            if action_start and action_start.start() > 0:
+                self._last_thought = response[:action_start.start()].strip()
+            self._last_thought = re.sub(r"<think>.*?</think>", "", self._last_thought, flags=re.DOTALL).strip()
 
         self.messages.append({"role": "assistant", "content": action})
         return action
@@ -457,17 +481,37 @@ def _extract_action(raw: str) -> str:
             lines = lines[:-1]
         cleaned = "\n".join(lines).strip()
 
-    # Try to find a function call pattern: name(args)
-    match = re.search(
+    # Try to find a function call pattern: name(args) with balanced parens
+    name_match = re.search(
         r'(click|fill|select_option|hover|press|scroll|dblclick|drag_and_drop|'
         r'clear|focus|send_msg_to_user|report_infeasible|noop|'
         r'go_back|go_forward|goto|new_tab|tab_close|tab_focus|upload_file)'
-        r'\s*\(.*?\)',
+        r'\s*\(',
         cleaned,
-        re.DOTALL,
     )
-    if match:
-        return _normalize_action_call(match.group(0))
+    if name_match:
+        start = name_match.start()
+        paren_start = name_match.end() - 1  # position of '('
+        depth = 1
+        i = paren_start + 1
+        in_string = None
+        while i < len(cleaned) and depth > 0:
+            ch = cleaned[i]
+            if in_string:
+                if ch == '\\':
+                    i += 1  # skip escaped char
+                elif ch == in_string:
+                    in_string = None
+            else:
+                if ch in ('"', "'"):
+                    in_string = ch
+                elif ch == '(':
+                    depth += 1
+                elif ch == ')':
+                    depth -= 1
+            i += 1
+        if depth == 0:
+            return _normalize_action_call(cleaned[start:i])
 
     # Fallback: return the cleaned text (BrowserGym will try to parse it)
     return cleaned.strip() or 'noop()'

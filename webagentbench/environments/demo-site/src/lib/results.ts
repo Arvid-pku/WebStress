@@ -153,9 +153,31 @@ export function normalizeTrajectoryData(
   };
 }
 
-export async function fetchSummary(): Promise<ResultSummary | null> {
+export interface ModelIndex {
+  models: { id: string; label: string; provider: string; tasks: number }[];
+  default: string;
+}
+
+export async function fetchModelIndex(): Promise<ModelIndex | null> {
   try {
-    const res = await fetch("/results/summary.json");
+    const res = await fetch("/results/index.json");
+    if (!res.ok) return null;
+    return (await res.json()) as ModelIndex;
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchSummary(modelId?: string): Promise<ResultSummary | null> {
+  try {
+    const prefix = modelId ? `/results/${modelId}` : "/results";
+    const res = await fetch(`${prefix}/summary.json`);
+    if (!res.ok && modelId) {
+      // Fallback to root
+      const fallback = await fetch("/results/summary.json");
+      if (!fallback.ok) return null;
+      return (await fallback.json()) as ResultSummary;
+    }
     if (!res.ok) return null;
     return (await res.json()) as ResultSummary;
   } catch {
@@ -165,9 +187,16 @@ export async function fetchSummary(): Promise<ResultSummary | null> {
 
 export async function fetchTrajectory(
   taskId: string,
+  modelId?: string,
 ): Promise<TrajectoryData | null> {
   try {
-    const res = await fetch(`/results/trajectories/${taskId}.json`);
+    const prefix = modelId ? `/results/${modelId}` : "/results";
+    const res = await fetch(`${prefix}/trajectories/${taskId}.json`);
+    if (!res.ok && modelId) {
+      const fallback = await fetch(`/results/trajectories/${taskId}.json`);
+      if (!fallback.ok) return null;
+      return normalizeTrajectoryData(taskId, (await fallback.json()) as RawTrajectoryPayload);
+    }
     if (!res.ok) return null;
     return normalizeTrajectoryData(taskId, (await res.json()) as RawTrajectoryPayload);
   } catch {

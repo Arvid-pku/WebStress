@@ -1,0 +1,71 @@
+---
+task_id: rh_portfolio_risk_assessment
+env_id: robinhood
+title: Mitigate Portfolio Concentration Risk
+instruction_template: 'Analyze your portfolio risk and take corrective action: (1)
+  sell enough shares of any single stock that represents more than 25% of your total
+  portfolio value to bring it below 25%, (2) close any options positions expiring within
+  5 days by selling to close long positions and buying to close short positions, and
+  (3) if your margin utilization is above 50%, deposit $5,000 from your default linked
+  bank to reduce it.'
+difficulty: expert
+time_limit_seconds: 350
+expected_steps: 18
+primary_primitives:
+- state_tracking
+- exploration
+- verification
+- planning
+start_path: "/"
+seed:
+  distractors: 20
+  steps:
+  - use: stock_universe
+    params:
+      count: 30
+      must_include:
+      - AAPL
+      - TSLA
+      - MSFT
+      - AMZN
+      - GOOGL
+    outputs: []
+  - use: portfolio_diverse
+    params:
+      position_count: 6
+      concentrated_stock: AAPL
+    outputs: []
+  - use: options_positions
+    params:
+      count: 3
+      near_expiry_count: 1
+      near_expiry_days: 3
+    outputs: []
+  - use: margin_account
+    params:
+      utilization_pct: 55
+    outputs: []
+  - use: linked_banks
+    params: {}
+    outputs: []
+  targets: {}
+eval:
+  source: server_state
+  checks:
+  - expr: all(any(o.symbol == sym and o.side == 'sell' and o.status in ('filled', 'pending')
+      for o in state.orders) for sym in state.concentrated_symbols(25.0))
+    desc: Sell orders were placed for every stock exceeding 25% concentration
+  - expr: all(any(any(leg.underlying_symbol == pos.underlying_symbol for leg in oo.legs)
+      for oo in state.options_orders) for pos in state.expiring_options_positions(5))
+    desc: Close orders were placed for all options positions expiring within 5 days
+  - expr: any(t.direction == 'deposit' and t.amount == Decimal('5000') for t in state.transfers)
+    desc: A $5,000 deposit was initiated to reduce margin utilization
+  negative_checks:
+  - expr: not any(o.side == 'buy' and o.symbol not in [pos.underlying_symbol for pos
+      in state.expiring_options_positions(5)] and not o.id.startswith('ord_decoy_')
+      for o in state.orders)
+    desc: No unnecessary equity buy orders were placed
+secondary_primitives: []
+primitive_thesis: Measures state_tracking, exploration, verification, planning by
+  requiring the agent to identify multiple risk factors and take specific corrective
+  actions for each.

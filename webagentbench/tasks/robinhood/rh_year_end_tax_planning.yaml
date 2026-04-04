@@ -1,0 +1,90 @@
+---
+task_id: rh_year_end_tax_planning
+env_id: robinhood
+title: Year-End Tax-Loss Harvesting and Re-Entry Plan
+instruction_template: It is year-end. Calculate your total realized gains from the
+  1099 preview (both short-term and long-term). Find unrealized losses you can harvest
+  without triggering wash sales. Execute the harvesting sells. Set up recurring investments
+  to re-enter those positions after 31 days.
+difficulty: frontier
+time_limit_seconds: 550
+expected_steps: 35
+primary_primitives:
+- state_tracking
+- planning
+- backtracking
+- verification
+- patience
+start_path: "/"
+seed:
+  distractors: 20
+  steps:
+  - use: stock_universe
+    params:
+      count: 30
+      must_include:
+      - AAPL
+      - TSLA
+      - INTC
+      - BA
+      - NFLX
+      - META
+      - AMZN
+    outputs: []
+  - use: portfolio_diverse
+    params:
+      position_count: 7
+      include_losers: true
+      loser_count: 3
+    outputs:
+    - loss_symbols
+  - use: tax_documents
+    params:
+      include_gains: true
+      short_term_gains: 2500
+      long_term_gains: 1500
+      gains_count: 2
+    outputs: []
+  - use: transaction_ledger
+    params:
+      months: 6
+      include_recent_buys: true
+      recent_buy_symbols: "{output.loss_symbols}"
+      recent_buy_count: 1
+    outputs:
+    - recent_buy_symbols
+  - use: linked_banks
+    params: {}
+    outputs: []
+  targets:
+    loss_symbols: "{output.loss_symbols}"
+    recent_buy_symbols: "{output.recent_buy_symbols}"
+eval:
+  source: server_state
+  checks:
+  - expr: any(o.side == 'sell' and o.status in ('filled', 'pending') and not o.id.startswith('ord_decoy_')
+      for o in state.orders)
+    desc: Sell orders exist for year-end harvesting
+  - expr: any(o.side == 'sell' and not o.id.startswith('ord_decoy_') for o in state.orders)
+      and all(o.symbol in {target.loss_symbols} for o in state.orders if o.side ==
+      'sell' and not o.id.startswith('ord_decoy_'))
+    desc: All harvest sells target seeded loss positions
+  - expr: not any(o.symbol in {target.recent_buy_symbols} for o in state.orders if
+      o.side == 'sell' and not o.id.startswith('ord_decoy_'))
+    desc: No harvest sell violates the wash-sale guardrail
+  - expr: all(any(ri.symbol == sym and ri.status == 'active' for ri in state.recurring_investments)
+      for sym in set(o.symbol for o in state.orders if o.side == 'sell' and not o.id.startswith('ord_decoy_')))
+    desc: Recurring re-entry investments were created for harvested symbols
+  - expr: state.estimated_harvested_loss() >= state.total_realized_gains(gains_only=True)
+    desc: The harvested losses are sufficient to offset the seeded realized gains
+  negative_checks:
+  - expr: not any(ri.symbol not in set(o.symbol for o in state.orders if o.side ==
+      'sell' and not o.id.startswith('ord_decoy_')) for ri in state.recurring_investments)
+    desc: Re-entry recurring investments were only created for harvested symbols
+  - expr: not any(o.side == 'buy' and not o.id.startswith('ord_decoy_') for o in
+      state.orders)
+    desc: Year-end harvesting did not immediately buy back the sold positions
+secondary_primitives: []
+primitive_thesis: Measures state_tracking, planning, backtracking, verification, patience
+  by requiring exact completion of the requested Robinhood workflow while ignoring
+  distractor account state.

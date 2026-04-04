@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { fetchSummary, type ResultSummary, type TaskResult } from "@/lib/results";
+import { fetchSummary, fetchModelIndex, type ResultSummary, type TaskResult, type ModelIndex } from "@/lib/results";
 import { DifficultyBar } from "@/components/ui/DifficultyBar";
 
 type SortKey = "title" | "difficulty" | "score" | "steps" | "success";
@@ -38,16 +38,32 @@ function sorted(tasks: TaskResult[], key: SortKey, dir: SortDir) {
 
 export default function ResultsPage() {
   const [data, setData] = useState<ResultSummary | null>(null);
+  const [models, setModels] = useState<ModelIndex | null>(null);
+  const [activeModel, setActiveModel] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [sortKey, setSortKey] = useState<SortKey>("title");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
 
   useEffect(() => {
-    fetchSummary().then((d) => {
+    fetchModelIndex().then((idx) => {
+      setModels(idx);
+      const defaultModel = idx?.default ?? "";
+      setActiveModel(defaultModel);
+      fetchSummary(defaultModel || undefined).then((d) => {
+        setData(d);
+        setLoading(false);
+      });
+    });
+  }, []);
+
+  function switchModel(modelId: string) {
+    setActiveModel(modelId);
+    setLoading(true);
+    fetchSummary(modelId).then((d) => {
       setData(d);
       setLoading(false);
     });
-  }, []);
+  }
 
   function toggleSort(key: SortKey) {
     if (sortKey === key) {
@@ -96,9 +112,27 @@ export default function ResultsPage() {
 
   return (
     <div className="max-w-[720px] mx-auto px-12 pt-[120px] pb-24">
-      <p className="text-[12px] font-medium text-[var(--text-tertiary)] mb-8">
+      <p className="text-[12px] font-medium text-[var(--text-tertiary)] mb-4">
         Results
       </p>
+
+      {models && models.models.length > 1 && (
+        <div className="flex gap-2 mb-8">
+          {models.models.map((m) => (
+            <button
+              key={m.id}
+              onClick={() => switchModel(m.id)}
+              className={`px-3 py-1.5 text-[12px] font-medium rounded-md border transition-colors ${
+                activeModel === m.id
+                  ? "bg-black text-white border-black dark:bg-white dark:text-black dark:border-white"
+                  : "text-gray-500 border-gray-300 hover:border-gray-400 dark:text-gray-400 dark:border-gray-600"
+              }`}
+            >
+              {m.label} ({m.tasks})
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* model + metadata */}
       <h1 className="text-2xl font-medium tracking-tight mb-1">
