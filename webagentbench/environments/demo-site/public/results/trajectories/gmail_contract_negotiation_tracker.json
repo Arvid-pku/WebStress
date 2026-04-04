@@ -1,0 +1,3138 @@
+{
+  "task_id": "gmail_contract_negotiation_tracker",
+  "title": "Contract Negotiation Tracker",
+  "instruction": "Over the past 2 weeks, Legal, Finance, and Product teams negotiated contract terms with vendor Lattice Works across 6 email threads. Read all 6 threads to determine the status of each contract term. A term is \"agreed\" only if the last message referencing it from each involved party accepts it. A term is \"open\" if any involved party's last message rejects or counters it. The 9 terms are: (1) payment schedule, (2) liability cap, (3) IP ownership, (4) termination clause, (5) SLA uptime guarantee, (6) data residency, (7) audit rights, (8) renewal pricing, (9) support response time. Identify the 3 terms that remain open. Compose a new email to nora.zhang@ops.test with subject \"Contract Status \u2014 Lattice Works\" containing a section \"Open items:\" listing exactly the 3 open terms and for each term, which department last objected and their stated concern. For each open item, quote the objecting department's exact words from their most recent message. Create a label \"Lattice Works Contract\" and apply it to every email in the 6 negotiation threads. Do not apply the label to any other email.",
+  "difficulty": "frontier",
+  "model": "gpt-5.4",
+  "total_steps": 173,
+  "elapsed_seconds": 3449.9,
+  "completed": true,
+  "start_path": "/inbox",
+  "evaluation": {
+    "score": 0.9090909090909091,
+    "success": false,
+    "reasoning": "Passed 10/11 checks.\n  [PASS] At least one email sent\n  [PASS] Email sent to project lead\n  [PASS] Correct subject line\n  [PASS] Open items section present\n  [PASS] Liability cap listed as open\n  [PASS] Renewal pricing listed as open\n  [PASS] Support response time listed as open\n  [PASS] Liability cap concern quoted\n  [PASS] Renewal pricing concern quoted\n  [PASS] Support response time concern quoted\n  [FAIL] Label applied to all negotiation emails\nAll negative checks passed (no penalties).\nCollateral mutations detected (3 dimensions): emails_modified, emails_sent, labels_added\nFinal score: 0.909 | Success: False",
+    "checks": [
+      {
+        "expr": "len(state.sent) >= 1",
+        "desc": "At least one email sent",
+        "passed": true,
+        "error": null
+      },
+      {
+        "expr": "any('nora.zhang@ops.test' in m.to for m in state.sent)",
+        "desc": "Email sent to project lead",
+        "passed": true,
+        "error": null
+      },
+      {
+        "expr": "any(m.subject == 'Contract Status \u2014 Lattice Works' for m in state.sent)",
+        "desc": "Correct subject line",
+        "passed": true,
+        "error": null
+      },
+      {
+        "expr": "any('Open items:' in m.body for m in state.sent)",
+        "desc": "Open items section present",
+        "passed": true,
+        "error": null
+      },
+      {
+        "expr": "any('liability cap' in m.body.lower() for m in state.sent)",
+        "desc": "Liability cap listed as open",
+        "passed": true,
+        "error": null
+      },
+      {
+        "expr": "any('renewal pricing' in m.body.lower() for m in state.sent)",
+        "desc": "Renewal pricing listed as open",
+        "passed": true,
+        "error": null
+      },
+      {
+        "expr": "any('support response time' in m.body.lower() for m in state.sent)",
+        "desc": "Support response time listed as open",
+        "passed": true,
+        "error": null
+      },
+      {
+        "expr": "any('{target.liability_cap_concern}' in m.body for m in state.sent)",
+        "desc": "Liability cap concern quoted",
+        "passed": true,
+        "error": null
+      },
+      {
+        "expr": "any('{target.renewal_pricing_concern}' in m.body for m in state.sent)",
+        "desc": "Renewal pricing concern quoted",
+        "passed": true,
+        "error": null
+      },
+      {
+        "expr": "any('{target.support_response_concern}' in m.body for m in state.sent)",
+        "desc": "Support response time concern quoted",
+        "passed": true,
+        "error": null
+      },
+      {
+        "expr": "all('Lattice Works Contract' in state.get_email(eid).labels for eid in {target.all_negotiation_email_ids})",
+        "desc": "Label applied to all negotiation emails",
+        "passed": false,
+        "error": null
+      }
+    ],
+    "negative_checks": [
+      {
+        "expr": "'Lattice Works Contract' not in state.get_email('{target.intern_summary_email_id}').labels",
+        "desc": "Label not applied to intern summary",
+        "passed": true,
+        "error": null,
+        "penalty": 0.13
+      },
+      {
+        "expr": "'Lattice Works Contract' not in state.get_email('{target.vendor_pressure_email_id}').labels",
+        "desc": "Label not applied to vendor pressure email",
+        "passed": true,
+        "error": null,
+        "penalty": 0.13
+      },
+      {
+        "expr": "not any('payment schedule' in m.body.lower() and 'open' in m.body.lower() for m in state.sent)",
+        "desc": "Payment schedule not listed as open",
+        "passed": true,
+        "error": null,
+        "penalty": 0.09
+      },
+      {
+        "expr": "not any('IP ownership' in m.body.lower() and 'open' in m.body.lower() for m in state.sent)",
+        "desc": "IP ownership not listed as open",
+        "passed": true,
+        "error": null,
+        "penalty": 0.09
+      },
+      {
+        "expr": "not any('termination clause' in m.body.lower() and 'open' in m.body.lower() for m in state.sent)",
+        "desc": "Termination clause not listed as open",
+        "passed": true,
+        "error": null,
+        "penalty": 0.09
+      },
+      {
+        "expr": "not any('SLA uptime' in m.body.lower() and 'open' in m.body.lower() for m in state.sent)",
+        "desc": "SLA uptime not listed as open",
+        "passed": true,
+        "error": null,
+        "penalty": 0.09
+      },
+      {
+        "expr": "not any('data residency' in m.body.lower() and 'open' in m.body.lower() for m in state.sent)",
+        "desc": "Data residency not listed as open",
+        "passed": true,
+        "error": null,
+        "penalty": 0.09
+      },
+      {
+        "expr": "not any('audit rights' in m.body.lower() and 'open' in m.body.lower() for m in state.sent)",
+        "desc": "Audit rights not listed as open",
+        "passed": true,
+        "error": null,
+        "penalty": 0.09
+      },
+      {
+        "expr": "not any(m.to and any('@latticeworks.test' in addr for addr in m.to) for m in state.sent)",
+        "desc": "No email sent to vendor",
+        "passed": true,
+        "error": null,
+        "penalty": 0.15
+      }
+    ],
+    "final_score": 0.9090909090909091,
+    "collateral": {
+      "emails_modified": [
+        {
+          "email_id": "email_28",
+          "changes": {
+            "is_read": {
+              "before": false,
+              "after": true
+            },
+            "labels": {
+              "before": [
+                "inbox"
+              ],
+              "after": [
+                "Lattice Works Contract",
+                "inbox"
+              ]
+            }
+          }
+        },
+        {
+          "email_id": "email_19",
+          "changes": {
+            "is_read": {
+              "before": false,
+              "after": true
+            },
+            "labels": {
+              "before": [
+                "inbox"
+              ],
+              "after": [
+                "Lattice Works Contract",
+                "inbox"
+              ]
+            }
+          }
+        },
+        {
+          "email_id": "email_10",
+          "changes": {
+            "is_read": {
+              "before": false,
+              "after": true
+            },
+            "labels": {
+              "before": [
+                "inbox"
+              ],
+              "after": [
+                "Lattice Works Contract",
+                "inbox"
+              ]
+            }
+          }
+        },
+        {
+          "email_id": "email_24",
+          "changes": {
+            "is_read": {
+              "before": false,
+              "after": true
+            },
+            "labels": {
+              "before": [
+                "inbox"
+              ],
+              "after": [
+                "Lattice Works Contract",
+                "inbox"
+              ]
+            }
+          }
+        },
+        {
+          "email_id": "email_5",
+          "changes": {
+            "is_read": {
+              "before": false,
+              "after": true
+            },
+            "labels": {
+              "before": [
+                "inbox"
+              ],
+              "after": [
+                "Lattice Works Contract",
+                "inbox"
+              ]
+            }
+          }
+        },
+        {
+          "email_id": "email_14",
+          "changes": {
+            "is_read": {
+              "before": false,
+              "after": true
+            },
+            "labels": {
+              "before": [
+                "inbox"
+              ],
+              "after": [
+                "Lattice Works Contract",
+                "inbox"
+              ]
+            }
+          }
+        },
+        {
+          "email_id": "email_26",
+          "changes": {
+            "is_read": {
+              "before": false,
+              "after": true
+            },
+            "labels": {
+              "before": [
+                "inbox"
+              ],
+              "after": [
+                "Lattice Works Contract",
+                "inbox"
+              ]
+            }
+          }
+        },
+        {
+          "email_id": "email_16",
+          "changes": {
+            "is_read": {
+              "before": false,
+              "after": true
+            },
+            "labels": {
+              "before": [
+                "inbox"
+              ],
+              "after": [
+                "Lattice Works Contract",
+                "inbox"
+              ]
+            }
+          }
+        },
+        {
+          "email_id": "email_21",
+          "changes": {
+            "is_read": {
+              "before": false,
+              "after": true
+            },
+            "labels": {
+              "before": [
+                "inbox"
+              ],
+              "after": [
+                "Lattice Works Contract",
+                "inbox"
+              ]
+            }
+          }
+        },
+        {
+          "email_id": "email_2",
+          "changes": {
+            "is_read": {
+              "before": false,
+              "after": true
+            },
+            "labels": {
+              "before": [
+                "inbox"
+              ],
+              "after": [
+                "Lattice Works Contract",
+                "inbox"
+              ]
+            }
+          }
+        },
+        {
+          "email_id": "email_1",
+          "changes": {
+            "is_read": {
+              "before": false,
+              "after": true
+            },
+            "labels": {
+              "before": [
+                "inbox"
+              ],
+              "after": [
+                "Lattice Works Contract",
+                "inbox"
+              ]
+            }
+          }
+        }
+      ],
+      "emails_sent": 1,
+      "labels_added": [
+        "label_14"
+      ]
+    }
+  },
+  "steps": [
+    {
+      "step": 1,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "301"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open unread thread Re: Contract review \u2014 payment, liability, data residency"
+      },
+      "status": "",
+      "elapsed_seconds": 14.3,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 2,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "387"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Expand all 5 messages"
+      },
+      "status": "",
+      "elapsed_seconds": 24.4,
+      "replay_path": "/thread/email_5",
+      "result_path": "/thread/email_5"
+    },
+    {
+      "step": 3,
+      "thought": "",
+      "action": {
+        "action": "scroll",
+        "delta_x": 0,
+        "delta_y": 495,
+        "direction": "down"
+      },
+      "targets": {},
+      "status": "",
+      "elapsed_seconds": 36.8,
+      "replay_path": "/thread/email_5",
+      "result_path": "/thread/email_5"
+    },
+    {
+      "step": 4,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "371"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 44.5,
+      "replay_path": "/thread/email_5",
+      "result_path": "/thread/email_5"
+    },
+    {
+      "step": 5,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "743"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open unread thread Re: Contract review \u2014 IP, termination, audit"
+      },
+      "status": "",
+      "elapsed_seconds": 71.7,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 6,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "865"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Expand all 5 messages"
+      },
+      "status": "",
+      "elapsed_seconds": 89.5,
+      "replay_path": "/thread/email_10",
+      "result_path": "/thread/email_10"
+    },
+    {
+      "step": 7,
+      "thought": "",
+      "action": {
+        "action": "scroll",
+        "delta_x": 0,
+        "delta_y": 418,
+        "direction": "down"
+      },
+      "targets": {},
+      "status": "",
+      "elapsed_seconds": 97.9,
+      "replay_path": "/thread/email_10",
+      "result_path": "/thread/email_10"
+    },
+    {
+      "step": 8,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "849"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 106.5,
+      "replay_path": "/thread/email_10",
+      "result_path": "/thread/email_10"
+    },
+    {
+      "step": 9,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "1175"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open unread thread Re: Finance review \u2014 termination, audit, renewal pricing"
+      },
+      "status": "",
+      "elapsed_seconds": 120.1,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 10,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "1318"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 154.8,
+      "replay_path": "/thread/email_19",
+      "result_path": "/thread/email_19"
+    },
+    {
+      "step": 11,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "1619"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Re: Contract review \u2014 payment, liability, data residency"
+      },
+      "status": "",
+      "elapsed_seconds": 169.2,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 12,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "1704"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Expand all 5 messages"
+      },
+      "status": "",
+      "elapsed_seconds": 184.1,
+      "replay_path": "/thread/email_5",
+      "result_path": "/thread/email_5"
+    },
+    {
+      "step": 13,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "1688"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 211.0,
+      "replay_path": "/thread/email_5",
+      "result_path": "/thread/email_5"
+    },
+    {
+      "step": 14,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "2058"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Re: Contract review \u2014 IP, termination, audit"
+      },
+      "status": "",
+      "elapsed_seconds": 222.4,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 15,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "2180"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Expand all 5 messages"
+      },
+      "status": "",
+      "elapsed_seconds": 244.2,
+      "replay_path": "/thread/email_10",
+      "result_path": "/thread/email_10"
+    },
+    {
+      "step": 16,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "2164"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 265.3,
+      "replay_path": "/thread/email_10",
+      "result_path": "/thread/email_10"
+    },
+    {
+      "step": 17,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "2563"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Re: Contract review \u2014 payment, liability, data residency"
+      },
+      "status": "",
+      "elapsed_seconds": 289.3,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 18,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "2648"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Expand all 5 messages"
+      },
+      "status": "",
+      "elapsed_seconds": 302.0,
+      "replay_path": "/thread/email_5",
+      "result_path": "/thread/email_5"
+    },
+    {
+      "step": 19,
+      "thought": "",
+      "action": {
+        "action": "scroll",
+        "delta_x": 0,
+        "delta_y": 456,
+        "direction": "down"
+      },
+      "targets": {},
+      "status": "",
+      "elapsed_seconds": 316.2,
+      "replay_path": "/thread/email_5",
+      "result_path": "/thread/email_5"
+    },
+    {
+      "step": 20,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "2632"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 339.2,
+      "replay_path": "/thread/email_5",
+      "result_path": "/thread/email_5"
+    },
+    {
+      "step": 21,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "2965"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Re: Finance review \u2014 termination, audit, renewal pricing"
+      },
+      "status": "",
+      "elapsed_seconds": 366.7,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 22,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "3124"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Expand all 5 messages"
+      },
+      "status": "",
+      "elapsed_seconds": 379.0,
+      "replay_path": "/thread/email_19",
+      "result_path": "/thread/email_19"
+    },
+    {
+      "step": 23,
+      "thought": "",
+      "action": {
+        "action": "scroll",
+        "delta_x": 0,
+        "delta_y": 416,
+        "direction": "down"
+      },
+      "targets": {},
+      "status": "",
+      "elapsed_seconds": 390.8,
+      "replay_path": "/thread/email_19",
+      "result_path": "/thread/email_19"
+    },
+    {
+      "step": 24,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "2947"
+      },
+      "targets": {},
+      "status": "ERROR: ValueError: Could not find element with bid \"2947\"",
+      "elapsed_seconds": 425.9,
+      "replay_path": "/thread/email_19",
+      "result_path": "/thread/email_19"
+    },
+    {
+      "step": 25,
+      "thought": "",
+      "action": {
+        "action": "scroll",
+        "delta_x": 0,
+        "delta_y": -732,
+        "direction": "up"
+      },
+      "targets": {},
+      "status": "",
+      "elapsed_seconds": 447.8,
+      "replay_path": "/thread/email_19",
+      "result_path": "/thread/email_19"
+    },
+    {
+      "step": 26,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "3108"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 466.3,
+      "replay_path": "/thread/email_19",
+      "result_path": "/thread/email_19"
+    },
+    {
+      "step": 27,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "3420"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open unread thread Re: Product review \u2014 data residency, support response time"
+      },
+      "status": "",
+      "elapsed_seconds": 479.8,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 28,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "3597"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Expand all 4 messages"
+      },
+      "status": "",
+      "elapsed_seconds": 495.5,
+      "replay_path": "/thread/email_28",
+      "result_path": "/thread/email_28"
+    },
+    {
+      "step": 29,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "3581"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 512.9,
+      "replay_path": "/thread/email_28",
+      "result_path": "/thread/email_28"
+    },
+    {
+      "step": 30,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "18"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Search mail"
+      },
+      "status": "",
+      "elapsed_seconds": 534.4,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 31,
+      "thought": "",
+      "action": {
+        "action": "fill",
+        "ref": "18",
+        "value": "Lattice Works"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Search mail"
+      },
+      "status": "",
+      "elapsed_seconds": 556.8,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 32,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "19"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Run search"
+      },
+      "status": "",
+      "elapsed_seconds": 562.2,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 33,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "55"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Labels"
+      },
+      "status": "",
+      "elapsed_seconds": 583.3,
+      "replay_path": "/search",
+      "result_path": "/search"
+    },
+    {
+      "step": 34,
+      "thought": "",
+      "action": {
+        "action": "fill",
+        "ref": "4202",
+        "value": "Lattice Works Contract"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "New label name"
+      },
+      "status": "",
+      "elapsed_seconds": 595.6,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 35,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "4207"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Create label Lattice Works Contract"
+      },
+      "status": "",
+      "elapsed_seconds": 612.1,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 36,
+      "thought": "",
+      "action": {
+        "action": "fill",
+        "ref": "18",
+        "value": "Lattice Works"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Search mail"
+      },
+      "status": "",
+      "elapsed_seconds": 625.3,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 37,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "19"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Run search"
+      },
+      "status": "",
+      "elapsed_seconds": 636.4,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 38,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "4580"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open unread thread Contract review \u2014 payment, liability, data residency"
+      },
+      "status": "",
+      "elapsed_seconds": 660.3,
+      "replay_path": "/search",
+      "result_path": "/search"
+    },
+    {
+      "step": 39,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "4603"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Apply label to this thread"
+      },
+      "status": "",
+      "elapsed_seconds": 688.3,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 40,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "4661"
+      },
+      "targets": {
+        "role": "menuitem",
+        "name": "Apply label Lattice Works Contract"
+      },
+      "status": "",
+      "elapsed_seconds": 695.4,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 41,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "4594"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 706.7,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 42,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "4715"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open unread thread Re: Product review \u2014 data residency, support response time"
+      },
+      "status": "",
+      "elapsed_seconds": 740.3,
+      "replay_path": "/search",
+      "result_path": "/search"
+    },
+    {
+      "step": 43,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "4852"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Apply label to this thread"
+      },
+      "status": "",
+      "elapsed_seconds": 751.2,
+      "replay_path": "/thread/email_26",
+      "result_path": "/thread/email_26"
+    },
+    {
+      "step": 44,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "4904"
+      },
+      "targets": {
+        "role": "menuitem",
+        "name": "Apply label Lattice Works Contract"
+      },
+      "status": "",
+      "elapsed_seconds": 764.1,
+      "replay_path": "/thread/email_26",
+      "result_path": "/thread/email_26"
+    },
+    {
+      "step": 45,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "4843"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 786.0,
+      "replay_path": "/thread/email_26",
+      "result_path": "/thread/email_26"
+    },
+    {
+      "step": 46,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "4977"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open unread thread Re: Finance review \u2014 termination, audit, renewal pricing"
+      },
+      "status": "",
+      "elapsed_seconds": 798.0,
+      "replay_path": "/search",
+      "result_path": "/search"
+    },
+    {
+      "step": 47,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "5095"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Apply label to this thread"
+      },
+      "status": "",
+      "elapsed_seconds": 818.5,
+      "replay_path": "/thread/email_16",
+      "result_path": "/thread/email_16"
+    },
+    {
+      "step": 48,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "5153"
+      },
+      "targets": {
+        "role": "menuitem",
+        "name": "Apply label Lattice Works Contract"
+      },
+      "status": "",
+      "elapsed_seconds": 849.1,
+      "replay_path": "/thread/email_16",
+      "result_path": "/thread/email_16"
+    },
+    {
+      "step": 49,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "5086"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 867.2,
+      "replay_path": "/thread/email_16",
+      "result_path": "/thread/email_16"
+    },
+    {
+      "step": 50,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "5320"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Contract review \u2014 payment, liability, data residency"
+      },
+      "status": "",
+      "elapsed_seconds": 896.9,
+      "replay_path": "/search",
+      "result_path": "/search"
+    },
+    {
+      "step": 51,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "5344"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Apply label to this thread"
+      },
+      "status": "",
+      "elapsed_seconds": 912.8,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 52,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "5344"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Apply label to this thread"
+      },
+      "status": "",
+      "elapsed_seconds": 928.2,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 53,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "5335"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 942.4,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 54,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "5510"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open unread thread Re: Product review \u2014 IP ownership, SLA uptime"
+      },
+      "status": "",
+      "elapsed_seconds": 966.5,
+      "replay_path": "/search",
+      "result_path": "/search"
+    },
+    {
+      "step": 55,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "5590"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Apply label to this thread"
+      },
+      "status": "",
+      "elapsed_seconds": 979.5,
+      "replay_path": "/thread/email_21",
+      "result_path": "/thread/email_21"
+    },
+    {
+      "step": 56,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "5648"
+      },
+      "targets": {
+        "role": "menuitem",
+        "name": "Apply label Lattice Works Contract"
+      },
+      "status": "",
+      "elapsed_seconds": 985.7,
+      "replay_path": "/thread/email_21",
+      "result_path": "/thread/email_21"
+    },
+    {
+      "step": 57,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "5581"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 1013.4,
+      "replay_path": "/thread/email_21",
+      "result_path": "/thread/email_21"
+    },
+    {
+      "step": 58,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "5701"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Re: Product review \u2014 data residency, support response time"
+      },
+      "status": "",
+      "elapsed_seconds": 1031.1,
+      "replay_path": "/search",
+      "result_path": "/search"
+    },
+    {
+      "step": 59,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "5839"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Apply label to this thread"
+      },
+      "status": "",
+      "elapsed_seconds": 1054.9,
+      "replay_path": "/thread/email_26",
+      "result_path": "/thread/email_26"
+    },
+    {
+      "step": 60,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "5830"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 1079.2,
+      "replay_path": "/thread/email_26",
+      "result_path": "/thread/email_26"
+    },
+    {
+      "step": 61,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "5960"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Re: Finance review \u2014 termination, audit, renewal pricing"
+      },
+      "status": "",
+      "elapsed_seconds": 1110.7,
+      "replay_path": "/search",
+      "result_path": "/search"
+    },
+    {
+      "step": 62,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "6079"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Apply label to this thread"
+      },
+      "status": "",
+      "elapsed_seconds": 1132.9,
+      "replay_path": "/thread/email_16",
+      "result_path": "/thread/email_16"
+    },
+    {
+      "step": 63,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "6070"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 1150.1,
+      "replay_path": "/thread/email_16",
+      "result_path": "/thread/email_16"
+    },
+    {
+      "step": 64,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "6283"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open unread thread Re: Contract review \u2014 payment, liability, data residency"
+      },
+      "status": "",
+      "elapsed_seconds": 1168.0,
+      "replay_path": "/search",
+      "result_path": "/search"
+    },
+    {
+      "step": 65,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "6325"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Apply label to this thread"
+      },
+      "status": "",
+      "elapsed_seconds": 1184.0,
+      "replay_path": "/thread/email_2",
+      "result_path": "/thread/email_2"
+    },
+    {
+      "step": 66,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "6383"
+      },
+      "targets": {
+        "role": "menuitem",
+        "name": "Apply label Lattice Works Contract"
+      },
+      "status": "",
+      "elapsed_seconds": 1197.2,
+      "replay_path": "/thread/email_2",
+      "result_path": "/thread/email_2"
+    },
+    {
+      "step": 67,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "6316"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 1214.9,
+      "replay_path": "/thread/email_2",
+      "result_path": "/thread/email_2"
+    },
+    {
+      "step": 68,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "6436"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Re: Product review \u2014 data residency, support response time"
+      },
+      "status": "",
+      "elapsed_seconds": 1251.6,
+      "replay_path": "/search",
+      "result_path": "/search"
+    },
+    {
+      "step": 69,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "6574"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Apply label to this thread"
+      },
+      "status": "",
+      "elapsed_seconds": 1267.2,
+      "replay_path": "/thread/email_26",
+      "result_path": "/thread/email_26"
+    },
+    {
+      "step": 70,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "6565"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 1279.2,
+      "replay_path": "/thread/email_26",
+      "result_path": "/thread/email_26"
+    },
+    {
+      "step": 71,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "6695"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Re: Finance review \u2014 termination, audit, renewal pricing"
+      },
+      "status": "",
+      "elapsed_seconds": 1303.2,
+      "replay_path": "/search",
+      "result_path": "/search"
+    },
+    {
+      "step": 72,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "6814"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Apply label to this thread"
+      },
+      "status": "",
+      "elapsed_seconds": 1314.0,
+      "replay_path": "/thread/email_16",
+      "result_path": "/thread/email_16"
+    },
+    {
+      "step": 73,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "6805"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 1339.2,
+      "replay_path": "/thread/email_16",
+      "result_path": "/thread/email_16"
+    },
+    {
+      "step": 74,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "7017"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Re: Contract review \u2014 payment, liability, data residency"
+      },
+      "status": "",
+      "elapsed_seconds": 1361.0,
+      "replay_path": "/search",
+      "result_path": "/search"
+    },
+    {
+      "step": 75,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "7060"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Apply label to this thread"
+      },
+      "status": "",
+      "elapsed_seconds": 1375.4,
+      "replay_path": "/thread/email_2",
+      "result_path": "/thread/email_2"
+    },
+    {
+      "step": 76,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "7051"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 1388.0,
+      "replay_path": "/thread/email_2",
+      "result_path": "/thread/email_2"
+    },
+    {
+      "step": 77,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "7168"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Re: Product review \u2014 data residency, support response time"
+      },
+      "status": "",
+      "elapsed_seconds": 1417.7,
+      "replay_path": "/search",
+      "result_path": "/search"
+    },
+    {
+      "step": 78,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "23"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Compose a new message"
+      },
+      "status": "",
+      "elapsed_seconds": 1439.1,
+      "replay_path": "/thread/email_26",
+      "result_path": "/thread/email_26"
+    },
+    {
+      "step": 79,
+      "thought": "",
+      "action": {
+        "action": "fill",
+        "ref": "7361",
+        "value": "nora.zhang@ops.test"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Recipients"
+      },
+      "status": "",
+      "elapsed_seconds": 1453.3,
+      "replay_path": "/compose",
+      "result_path": "/compose"
+    },
+    {
+      "step": 80,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "7376"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Cancel compose"
+      },
+      "status": "",
+      "elapsed_seconds": 1474.2,
+      "replay_path": "/compose",
+      "result_path": "/compose"
+    },
+    {
+      "step": 81,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "7390"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Apply label to this thread"
+      },
+      "status": "",
+      "elapsed_seconds": 1491.3,
+      "replay_path": "/thread/email_26",
+      "result_path": "/thread/email_26"
+    },
+    {
+      "step": 82,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "7381"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 1510.2,
+      "replay_path": "/thread/email_26",
+      "result_path": "/thread/email_26"
+    },
+    {
+      "step": 83,
+      "thought": "",
+      "action": {
+        "action": "clear",
+        "ref": "18"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Search mail"
+      },
+      "status": "",
+      "elapsed_seconds": 1539.0,
+      "replay_path": "/search",
+      "result_path": "/search"
+    },
+    {
+      "step": 84,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "7511"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Re: Finance review \u2014 termination, audit, renewal pricing"
+      },
+      "status": "",
+      "elapsed_seconds": 1578.9,
+      "replay_path": "/search",
+      "result_path": "/search"
+    },
+    {
+      "step": 85,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "7630"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Apply label to this thread"
+      },
+      "status": "",
+      "elapsed_seconds": 1610.3,
+      "replay_path": "/thread/email_16",
+      "result_path": "/thread/email_16"
+    },
+    {
+      "step": 86,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "7621"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 1626.9,
+      "replay_path": "/thread/email_16",
+      "result_path": "/thread/email_16"
+    },
+    {
+      "step": 87,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "7738"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Re: Product review \u2014 data residency, support response time"
+      },
+      "status": "",
+      "elapsed_seconds": 1655.9,
+      "replay_path": "/search",
+      "result_path": "/search"
+    },
+    {
+      "step": 88,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "7876"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Apply label to this thread"
+      },
+      "status": "",
+      "elapsed_seconds": 1678.3,
+      "replay_path": "/thread/email_26",
+      "result_path": "/thread/email_26"
+    },
+    {
+      "step": 89,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "7867"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 1700.8,
+      "replay_path": "/thread/email_26",
+      "result_path": "/thread/email_26"
+    },
+    {
+      "step": 90,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "8073"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Re: Contract review \u2014 payment, liability, data residency"
+      },
+      "status": "",
+      "elapsed_seconds": 1744.3,
+      "replay_path": "/search",
+      "result_path": "/search"
+    },
+    {
+      "step": 91,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "8116"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Apply label to this thread"
+      },
+      "status": "",
+      "elapsed_seconds": 1761.1,
+      "replay_path": "/thread/email_2",
+      "result_path": "/thread/email_2"
+    },
+    {
+      "step": 92,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "8107"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 1778.9,
+      "replay_path": "/thread/email_2",
+      "result_path": "/thread/email_2"
+    },
+    {
+      "step": 93,
+      "thought": "",
+      "action": {
+        "action": "clear",
+        "ref": "18"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Search mail"
+      },
+      "status": "",
+      "elapsed_seconds": 1807.4,
+      "replay_path": "/search",
+      "result_path": "/search"
+    },
+    {
+      "step": 94,
+      "thought": "",
+      "action": {
+        "action": "fill",
+        "ref": "18",
+        "value": "support response time"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Search mail"
+      },
+      "status": "",
+      "elapsed_seconds": 1820.8,
+      "replay_path": "/search",
+      "result_path": "/search"
+    },
+    {
+      "step": 95,
+      "thought": "",
+      "action": {
+        "action": "press",
+        "ref": "18",
+        "key": "Enter"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Search mail"
+      },
+      "status": "",
+      "elapsed_seconds": 1835.1,
+      "replay_path": "/search",
+      "result_path": "/search"
+    },
+    {
+      "step": 96,
+      "thought": "",
+      "action": {
+        "action": "clear",
+        "ref": "18"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Search mail"
+      },
+      "status": "",
+      "elapsed_seconds": 1845.0,
+      "replay_path": "/search",
+      "result_path": "/search"
+    },
+    {
+      "step": 97,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "8357"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Re: Product review \u2014 data residency, support response time"
+      },
+      "status": "",
+      "elapsed_seconds": 1859.7,
+      "replay_path": "/search",
+      "result_path": "/search"
+    },
+    {
+      "step": 98,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "8409"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 1884.8,
+      "replay_path": "/thread/email_28",
+      "result_path": "/thread/email_28"
+    },
+    {
+      "step": 99,
+      "thought": "",
+      "action": {
+        "action": "clear",
+        "ref": "18"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Search mail"
+      },
+      "status": "",
+      "elapsed_seconds": 1899.0,
+      "replay_path": "/search",
+      "result_path": "/search"
+    },
+    {
+      "step": 100,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "55"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Labels"
+      },
+      "status": "",
+      "elapsed_seconds": 1933.5,
+      "replay_path": "/search",
+      "result_path": "/search"
+    },
+    {
+      "step": 101,
+      "thought": "",
+      "action": {
+        "action": "fill",
+        "ref": "8574",
+        "value": "Lattice Works Contract"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "New label name"
+      },
+      "status": "",
+      "elapsed_seconds": 1972.7,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 102,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "8579"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Create label Lattice Works Contract"
+      },
+      "status": "",
+      "elapsed_seconds": 1993.2,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 103,
+      "thought": "",
+      "action": {
+        "action": "fill",
+        "ref": "18",
+        "value": "liability"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Search mail"
+      },
+      "status": "",
+      "elapsed_seconds": 2025.6,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 104,
+      "thought": "",
+      "action": {
+        "action": "press",
+        "ref": "18",
+        "key": "Enter"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Search mail"
+      },
+      "status": "",
+      "elapsed_seconds": 2036.8,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 105,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "8822"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Re: Contract review \u2014 payment, liability, data residency"
+      },
+      "status": "",
+      "elapsed_seconds": 2055.0,
+      "replay_path": "/search",
+      "result_path": "/search"
+    },
+    {
+      "step": 106,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "8921"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Apply label to this thread"
+      },
+      "status": "",
+      "elapsed_seconds": 2074.5,
+      "replay_path": "/thread/email_5",
+      "result_path": "/thread/email_5"
+    },
+    {
+      "step": 107,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "8979"
+      },
+      "targets": {
+        "role": "menuitem",
+        "name": "Apply label Lattice Works Contract"
+      },
+      "status": "",
+      "elapsed_seconds": 2092.2,
+      "replay_path": "/thread/email_5",
+      "result_path": "/thread/email_5"
+    },
+    {
+      "step": 108,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "8912"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 2109.2,
+      "replay_path": "/thread/email_5",
+      "result_path": "/thread/email_5"
+    },
+    {
+      "step": 109,
+      "thought": "",
+      "action": {
+        "action": "fill",
+        "ref": "18",
+        "value": "renewal pricing"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Search mail"
+      },
+      "status": "",
+      "elapsed_seconds": 2143.0,
+      "replay_path": "/search",
+      "result_path": "/search"
+    },
+    {
+      "step": 110,
+      "thought": "",
+      "action": {
+        "action": "press",
+        "ref": "18",
+        "key": "Enter"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Search mail"
+      },
+      "status": "",
+      "elapsed_seconds": 2164.4,
+      "replay_path": "/search",
+      "result_path": "/search"
+    },
+    {
+      "step": 111,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "9109"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Re: Finance review \u2014 termination, audit, renewal pricing"
+      },
+      "status": "",
+      "elapsed_seconds": 2188.2,
+      "replay_path": "/search",
+      "result_path": "/search"
+    },
+    {
+      "step": 112,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "9208"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Apply label to this thread"
+      },
+      "status": "",
+      "elapsed_seconds": 2202.3,
+      "replay_path": "/thread/email_19",
+      "result_path": "/thread/email_19"
+    },
+    {
+      "step": 113,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "9266"
+      },
+      "targets": {
+        "role": "menuitem",
+        "name": "Apply label Lattice Works Contract"
+      },
+      "status": "",
+      "elapsed_seconds": 2217.1,
+      "replay_path": "/thread/email_19",
+      "result_path": "/thread/email_19"
+    },
+    {
+      "step": 114,
+      "thought": "",
+      "action": {
+        "action": "fill",
+        "ref": "18",
+        "value": "Finance review"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Search mail"
+      },
+      "status": "",
+      "elapsed_seconds": 2247.1,
+      "replay_path": "/thread/email_19",
+      "result_path": "/thread/email_19"
+    },
+    {
+      "step": 115,
+      "thought": "",
+      "action": {
+        "action": "press",
+        "ref": "18",
+        "key": "Enter"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Search mail"
+      },
+      "status": "",
+      "elapsed_seconds": 2283.2,
+      "replay_path": "/thread/email_19",
+      "result_path": "/thread/email_19"
+    },
+    {
+      "step": 116,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "9322"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open unread thread Re: Finance review \u2014 payment schedule, SLA uptime"
+      },
+      "status": "",
+      "elapsed_seconds": 2303.4,
+      "replay_path": "/search",
+      "result_path": "/search"
+    },
+    {
+      "step": 117,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "9478"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Apply label to this thread"
+      },
+      "status": "",
+      "elapsed_seconds": 2338.6,
+      "replay_path": "/thread/email_14",
+      "result_path": "/thread/email_14"
+    },
+    {
+      "step": 118,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "9530"
+      },
+      "targets": {
+        "role": "menuitem",
+        "name": "Apply label Lattice Works Contract"
+      },
+      "status": "",
+      "elapsed_seconds": 2345.9,
+      "replay_path": "/thread/email_14",
+      "result_path": "/thread/email_14"
+    },
+    {
+      "step": 119,
+      "thought": "",
+      "action": {
+        "action": "fill",
+        "ref": "18",
+        "value": "Contract review"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Search mail"
+      },
+      "status": "",
+      "elapsed_seconds": 2373.3,
+      "replay_path": "/thread/email_14",
+      "result_path": "/thread/email_14"
+    },
+    {
+      "step": 120,
+      "thought": "",
+      "action": {
+        "action": "press",
+        "ref": "18",
+        "key": "Enter"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Search mail"
+      },
+      "status": "",
+      "elapsed_seconds": 2386.0,
+      "replay_path": "/thread/email_14",
+      "result_path": "/thread/email_14"
+    },
+    {
+      "step": 121,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "9547"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Re: Contract review \u2014 IP, termination, audit"
+      },
+      "status": "",
+      "elapsed_seconds": 2410.8,
+      "replay_path": "/search",
+      "result_path": "/search"
+    },
+    {
+      "step": 122,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "9760"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Apply label to this thread"
+      },
+      "status": "",
+      "elapsed_seconds": 2432.4,
+      "replay_path": "/thread/email_10",
+      "result_path": "/thread/email_10"
+    },
+    {
+      "step": 123,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "9818"
+      },
+      "targets": {
+        "role": "menuitem",
+        "name": "Apply label Lattice Works Contract"
+      },
+      "status": "",
+      "elapsed_seconds": 2440.7,
+      "replay_path": "/thread/email_10",
+      "result_path": "/thread/email_10"
+    },
+    {
+      "step": 124,
+      "thought": "",
+      "action": {
+        "action": "fill",
+        "ref": "18",
+        "value": "Finance review"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Search mail"
+      },
+      "status": "",
+      "elapsed_seconds": 2484.2,
+      "replay_path": "/thread/email_10",
+      "result_path": "/thread/email_10"
+    },
+    {
+      "step": 125,
+      "thought": "",
+      "action": {
+        "action": "press",
+        "ref": "18",
+        "key": "Enter"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Search mail"
+      },
+      "status": "",
+      "elapsed_seconds": 2498.5,
+      "replay_path": "/thread/email_10",
+      "result_path": "/thread/email_10"
+    },
+    {
+      "step": 126,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "301"
+      },
+      "targets": {},
+      "status": "ERROR: ValueError: Could not find element with bid \"301\"",
+      "elapsed_seconds": 2520.8,
+      "replay_path": "/search",
+      "result_path": "/search"
+    },
+    {
+      "step": 127,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "9835"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Re: Finance review \u2014 termination, audit, renewal pricing"
+      },
+      "status": "",
+      "elapsed_seconds": 2545.0,
+      "replay_path": "/search",
+      "result_path": "/search"
+    },
+    {
+      "step": 128,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "10030"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Apply label to this thread"
+      },
+      "status": "",
+      "elapsed_seconds": 2567.3,
+      "replay_path": "/thread/email_19",
+      "result_path": "/thread/email_19"
+    },
+    {
+      "step": 129,
+      "thought": "",
+      "action": {
+        "action": "fill",
+        "ref": "18",
+        "value": "support response time"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Search mail"
+      },
+      "status": "",
+      "elapsed_seconds": 2580.4,
+      "replay_path": "/thread/email_19",
+      "result_path": "/thread/email_19"
+    },
+    {
+      "step": 130,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "10021"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 2594.0,
+      "replay_path": "/thread/email_19",
+      "result_path": "/thread/email_19"
+    },
+    {
+      "step": 131,
+      "thought": "",
+      "action": {
+        "action": "fill",
+        "ref": "18",
+        "value": "support response time"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Search mail"
+      },
+      "status": "",
+      "elapsed_seconds": 2607.2,
+      "replay_path": "/search",
+      "result_path": "/search"
+    },
+    {
+      "step": 132,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "19"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Run search"
+      },
+      "status": "",
+      "elapsed_seconds": 2620.4,
+      "replay_path": "/search",
+      "result_path": "/search"
+    },
+    {
+      "step": 133,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "10310"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Re: Product review \u2014 data residency, support response time"
+      },
+      "status": "",
+      "elapsed_seconds": 2640.2,
+      "replay_path": "/search",
+      "result_path": "/search"
+    },
+    {
+      "step": 134,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "10390"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Apply label to this thread"
+      },
+      "status": "",
+      "elapsed_seconds": 2651.7,
+      "replay_path": "/thread/email_28",
+      "result_path": "/thread/email_28"
+    },
+    {
+      "step": 135,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "10442"
+      },
+      "targets": {
+        "role": "menuitem",
+        "name": "Apply label Lattice Works Contract"
+      },
+      "status": "",
+      "elapsed_seconds": 2674.8,
+      "replay_path": "/thread/email_28",
+      "result_path": "/thread/email_28"
+    },
+    {
+      "step": 136,
+      "thought": "",
+      "action": {
+        "action": "fill",
+        "ref": "18",
+        "value": "Product review IP ownership SLA uptime"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Search mail"
+      },
+      "status": "",
+      "elapsed_seconds": 2704.9,
+      "replay_path": "/thread/email_28",
+      "result_path": "/thread/email_28"
+    },
+    {
+      "step": 137,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "19"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Run search"
+      },
+      "status": "",
+      "elapsed_seconds": 2712.5,
+      "replay_path": "/thread/email_28",
+      "result_path": "/thread/email_28"
+    },
+    {
+      "step": 138,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "10460"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open unread thread Re: Product review \u2014 IP ownership, SLA uptime"
+      },
+      "status": "",
+      "elapsed_seconds": 2722.5,
+      "replay_path": "/search",
+      "result_path": "/search"
+    },
+    {
+      "step": 139,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "10559"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Apply label to this thread"
+      },
+      "status": "",
+      "elapsed_seconds": 2743.7,
+      "replay_path": "/thread/email_24",
+      "result_path": "/thread/email_24"
+    },
+    {
+      "step": 140,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "10617"
+      },
+      "targets": {
+        "role": "menuitem",
+        "name": "Apply label Lattice Works Contract"
+      },
+      "status": "",
+      "elapsed_seconds": 2751.8,
+      "replay_path": "/thread/email_24",
+      "result_path": "/thread/email_24"
+    },
+    {
+      "step": 141,
+      "thought": "",
+      "action": {
+        "action": "fill",
+        "ref": "18",
+        "value": "payment liability"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Search mail"
+      },
+      "status": "",
+      "elapsed_seconds": 2774.3,
+      "replay_path": "/thread/email_24",
+      "result_path": "/thread/email_24"
+    },
+    {
+      "step": 142,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "19"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Run search"
+      },
+      "status": "",
+      "elapsed_seconds": 2786.3,
+      "replay_path": "/thread/email_24",
+      "result_path": "/thread/email_24"
+    },
+    {
+      "step": 143,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "10652"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Re: Contract review \u2014 payment, liability, data residency"
+      },
+      "status": "",
+      "elapsed_seconds": 2839.8,
+      "replay_path": "/search",
+      "result_path": "/search"
+    },
+    {
+      "step": 144,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "10752"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Apply label to this thread"
+      },
+      "status": "",
+      "elapsed_seconds": 2858.3,
+      "replay_path": "/thread/email_5",
+      "result_path": "/thread/email_5"
+    },
+    {
+      "step": 145,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "10752"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Apply label to this thread"
+      },
+      "status": "",
+      "elapsed_seconds": 2875.3,
+      "replay_path": "/thread/email_5",
+      "result_path": "/thread/email_5"
+    },
+    {
+      "step": 146,
+      "thought": "",
+      "action": {
+        "action": "fill",
+        "ref": "18",
+        "value": "support response time"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Search mail"
+      },
+      "status": "",
+      "elapsed_seconds": 2894.5,
+      "replay_path": "/thread/email_5",
+      "result_path": "/thread/email_5"
+    },
+    {
+      "step": 147,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "19"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Run search"
+      },
+      "status": "",
+      "elapsed_seconds": 2900.5,
+      "replay_path": "/thread/email_5",
+      "result_path": "/thread/email_5"
+    },
+    {
+      "step": 148,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "10842"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Re: Product review \u2014 data residency, support response time"
+      },
+      "status": "",
+      "elapsed_seconds": 2920.3,
+      "replay_path": "/search",
+      "result_path": "/search"
+    },
+    {
+      "step": 149,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "10923"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Apply label to this thread"
+      },
+      "status": "",
+      "elapsed_seconds": 2937.8,
+      "replay_path": "/thread/email_28",
+      "result_path": "/thread/email_28"
+    },
+    {
+      "step": 150,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "10923"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Apply label to this thread"
+      },
+      "status": "",
+      "elapsed_seconds": 2962.5,
+      "replay_path": "/thread/email_28",
+      "result_path": "/thread/email_28"
+    },
+    {
+      "step": 151,
+      "thought": "",
+      "action": {
+        "action": "fill",
+        "ref": "18",
+        "value": "renewal pricing"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Search mail"
+      },
+      "status": "",
+      "elapsed_seconds": 2984.7,
+      "replay_path": "/thread/email_28",
+      "result_path": "/thread/email_28"
+    },
+    {
+      "step": 152,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "19"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Run search"
+      },
+      "status": "",
+      "elapsed_seconds": 2994.2,
+      "replay_path": "/thread/email_28",
+      "result_path": "/thread/email_28"
+    },
+    {
+      "step": 153,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "11007"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Re: Finance review \u2014 termination, audit, renewal pricing"
+      },
+      "status": "",
+      "elapsed_seconds": 3007.7,
+      "replay_path": "/search",
+      "result_path": "/search"
+    },
+    {
+      "step": 154,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "11107"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Apply label to this thread"
+      },
+      "status": "",
+      "elapsed_seconds": 3024.0,
+      "replay_path": "/thread/email_19",
+      "result_path": "/thread/email_19"
+    },
+    {
+      "step": 155,
+      "thought": "",
+      "action": {
+        "action": "clear",
+        "ref": "18"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Search mail"
+      },
+      "status": "",
+      "elapsed_seconds": 3048.2,
+      "replay_path": "/thread/email_19",
+      "result_path": "/thread/email_19"
+    },
+    {
+      "step": 156,
+      "thought": "",
+      "action": {
+        "action": "fill",
+        "ref": "18",
+        "value": "liability cap"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Search mail"
+      },
+      "status": "",
+      "elapsed_seconds": 3066.0,
+      "replay_path": "/thread/email_19",
+      "result_path": "/thread/email_19"
+    },
+    {
+      "step": 157,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "19"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Run search"
+      },
+      "status": "",
+      "elapsed_seconds": 3083.2,
+      "replay_path": "/thread/email_19",
+      "result_path": "/thread/email_19"
+    },
+    {
+      "step": 158,
+      "thought": "",
+      "action": {
+        "action": "clear",
+        "ref": "18"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Search mail"
+      },
+      "status": "",
+      "elapsed_seconds": 3102.4,
+      "replay_path": "/search",
+      "result_path": "/search"
+    },
+    {
+      "step": 159,
+      "thought": "",
+      "action": {
+        "action": "fill",
+        "ref": "18",
+        "value": "support response time"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Search mail"
+      },
+      "status": "",
+      "elapsed_seconds": 3121.4,
+      "replay_path": "/search",
+      "result_path": "/search"
+    },
+    {
+      "step": 160,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "19"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Run search"
+      },
+      "status": "",
+      "elapsed_seconds": 3136.4,
+      "replay_path": "/search",
+      "result_path": "/search"
+    },
+    {
+      "step": 161,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "11292"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Re: Product review \u2014 data residency, support response time"
+      },
+      "status": "",
+      "elapsed_seconds": 3158.7,
+      "replay_path": "/search",
+      "result_path": "/search"
+    },
+    {
+      "step": 162,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "11373"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Apply label to this thread"
+      },
+      "status": "",
+      "elapsed_seconds": 3186.8,
+      "replay_path": "/thread/email_28",
+      "result_path": "/thread/email_28"
+    },
+    {
+      "step": 163,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "11364"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 3226.8,
+      "replay_path": "/thread/email_28",
+      "result_path": "/thread/email_28"
+    },
+    {
+      "step": 164,
+      "thought": "",
+      "action": {
+        "action": "fill",
+        "ref": "18",
+        "value": "label:\"Lattice Works Contract\""
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Search mail"
+      },
+      "status": "",
+      "elapsed_seconds": 3257.7,
+      "replay_path": "/search",
+      "result_path": "/search"
+    },
+    {
+      "step": 165,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "11197"
+      },
+      "targets": {},
+      "status": "ERROR: ValueError: Could not find element with bid \"11197\"",
+      "elapsed_seconds": 3282.6,
+      "replay_path": "/search",
+      "result_path": "/search"
+    },
+    {
+      "step": 166,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "19"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Run search"
+      },
+      "status": "",
+      "elapsed_seconds": 3290.0,
+      "replay_path": "/search",
+      "result_path": "/search"
+    },
+    {
+      "step": 167,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "23"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Compose a new message"
+      },
+      "status": "",
+      "elapsed_seconds": 3318.8,
+      "replay_path": "/search",
+      "result_path": "/search"
+    },
+    {
+      "step": 168,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "11457"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Re: Product review \u2014 data residency, support response time"
+      },
+      "status": "ERROR: ValueError: Could not find element with bid \"11457\"",
+      "elapsed_seconds": 3333.7,
+      "replay_path": "/compose",
+      "result_path": "/compose"
+    },
+    {
+      "step": 169,
+      "thought": "",
+      "action": {
+        "action": "fill",
+        "ref": "11705",
+        "value": "nora.zhang@ops.test"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Recipients"
+      },
+      "status": "",
+      "elapsed_seconds": 3362.6,
+      "replay_path": "/compose",
+      "result_path": "/compose"
+    },
+    {
+      "step": 170,
+      "thought": "",
+      "action": {
+        "action": "fill",
+        "ref": "11711",
+        "value": "Contract Status \u2014 Lattice Works"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Email subject"
+      },
+      "status": "",
+      "elapsed_seconds": 3390.1,
+      "replay_path": "/compose",
+      "result_path": "/compose"
+    },
+    {
+      "step": 171,
+      "thought": "",
+      "action": {
+        "action": "fill",
+        "ref": "11714",
+        "value": "Open items:\n- Liability cap \u2014 Legal last objected. Concern: the proposed $3M cap exceeds Legal's exposure threshold. Exact quote: \"Liability cap: We cannot accept the $3M figure. Our analysis shows exposure exceeds $2M threshold. This term remains open.\"\n- Renewal pricing \u2014 Finance last objected. Concern: the 3% annual escalator is above policy ceiling and Finance wants a cap or lower rate. Exact quote: \"Renewal pricing: We cannot accept. The 3% annual escalator is above policy ceiling. We need either a cap or a lower rate.\"\n- Support response time \u2014 Product last objected. Concern: the 4-hour SLA does not meet production requirements and Product requires sub-2-hour response for production incidents. Exact quote: \"Support response time: We cannot accept. The 4-hour SLA does not meet production requirements. We require sub-2-hour for production incidents.\""
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Email body"
+      },
+      "status": "",
+      "elapsed_seconds": 3427.1,
+      "replay_path": "/compose",
+      "result_path": "/compose"
+    },
+    {
+      "step": 172,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "11721"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Send"
+      },
+      "status": "",
+      "elapsed_seconds": 3441.9,
+      "replay_path": "/compose",
+      "result_path": "/compose"
+    },
+    {
+      "step": 173,
+      "thought": "",
+      "action": {
+        "action": "finish",
+        "answer": "done"
+      },
+      "targets": {},
+      "status": "FINISH",
+      "elapsed_seconds": 3449.9,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    }
+  ]
+}

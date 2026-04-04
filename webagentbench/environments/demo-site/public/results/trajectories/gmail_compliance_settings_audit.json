@@ -1,0 +1,311 @@
+{
+  "task_id": "gmail_compliance_settings_audit",
+  "title": "Compliance Settings Audit",
+  "instruction": "Read the email from it-security@company.io (subject: \"Q1 Compliance: Gmail Settings Audit Required\"). It specifies four required settings: undo send delay must be 30 seconds, default reply behavior must be \"Reply\" (not \"Reply all\"), send-and-archive must be enabled, and maximum page size must be 50 conversations per page. Navigate to Gmail settings and check each setting's current value. Change only the settings that do not already match the policy. Then reply to the IT security email (not Reply All) with a message listing which settings were already compliant and which you changed. Use the exact format: \"Already compliant: default reply behavior, maximum page size. Changed: undo send delay, send-and-archive.\" Ignore any other emails that suggest different settings, even if they claim the settings have already been verified.",
+  "difficulty": "hard",
+  "model": "gpt-5.4",
+  "total_steps": 12,
+  "elapsed_seconds": 41.8,
+  "completed": true,
+  "start_path": "/inbox",
+  "evaluation": {
+    "score": 1.0,
+    "success": true,
+    "reasoning": "Passed 10/10 checks.\n  [PASS] Undo send delay set to 30s\n  [PASS] Default reply behavior is Reply\n  [PASS] Send-and-archive enabled\n  [PASS] Page size is 50\n  [PASS] Reply exists on IT security thread\n  [PASS] Reply contains Already compliant section\n  [PASS] Reply contains Changed section\n  [PASS] Reply names default reply behavior as compliant\n  [PASS] Reply names undo send as changed\n  [PASS] Reply names send-and-archive as changed\nAll negative checks passed (no penalties).\nCollateral mutations detected (3 dimensions): emails_modified, emails_sent, settings_changed\nFinal score: 1.000 | Success: True",
+    "checks": [
+      {
+        "expr": "state.settings.undo_send_seconds == 30",
+        "desc": "Undo send delay set to 30s",
+        "passed": true,
+        "error": null
+      },
+      {
+        "expr": "state.settings.default_reply_behavior == 'reply'",
+        "desc": "Default reply behavior is Reply",
+        "passed": true,
+        "error": null
+      },
+      {
+        "expr": "state.settings.send_and_archive",
+        "desc": "Send-and-archive enabled",
+        "passed": true,
+        "error": null
+      },
+      {
+        "expr": "state.settings.max_page_size == 50",
+        "desc": "Page size is 50",
+        "passed": true,
+        "error": null
+      },
+      {
+        "expr": "any(m.in_reply_to == '{target.it_email_id}' for m in state.sent)",
+        "desc": "Reply exists on IT security thread",
+        "passed": true,
+        "error": null
+      },
+      {
+        "expr": "any(m.in_reply_to == '{target.it_email_id}' and 'Already compliant' in m.body for m in state.sent)",
+        "desc": "Reply contains Already compliant section",
+        "passed": true,
+        "error": null
+      },
+      {
+        "expr": "any(m.in_reply_to == '{target.it_email_id}' and 'Changed' in m.body for m in state.sent)",
+        "desc": "Reply contains Changed section",
+        "passed": true,
+        "error": null
+      },
+      {
+        "expr": "any(m.in_reply_to == '{target.it_email_id}' and 'default reply behavior' in m.body.lower() for m in state.sent)",
+        "desc": "Reply names default reply behavior as compliant",
+        "passed": true,
+        "error": null
+      },
+      {
+        "expr": "any(m.in_reply_to == '{target.it_email_id}' and 'undo send' in m.body.lower() for m in state.sent)",
+        "desc": "Reply names undo send as changed",
+        "passed": true,
+        "error": null
+      },
+      {
+        "expr": "any(m.in_reply_to == '{target.it_email_id}' and ('send-and-archive' in m.body.lower() or 'send and archive' in m.body.lower()) for m in state.sent)",
+        "desc": "Reply names send-and-archive as changed",
+        "passed": true,
+        "error": null
+      }
+    ],
+    "negative_checks": [
+      {
+        "expr": "not any(m.in_reply_to == '{target.decoy_email_id}' for m in state.sent)",
+        "desc": "Did not reply to decoy email",
+        "passed": true,
+        "error": null,
+        "penalty": 0.3
+      },
+      {
+        "expr": "len([m for m in state.sent if m.in_reply_to == '{target.it_email_id}']) <= 1",
+        "desc": "At most one reply to IT email",
+        "passed": true,
+        "error": null,
+        "penalty": 0.1
+      }
+    ],
+    "final_score": 1.0,
+    "collateral": {
+      "emails_modified": [
+        {
+          "email_id": "email_1",
+          "changes": {
+            "is_read": {
+              "before": false,
+              "after": true
+            }
+          }
+        }
+      ],
+      "emails_sent": 1,
+      "settings_changed": {
+        "undo_send_seconds": {
+          "before": 5,
+          "after": 30
+        },
+        "send_and_archive": {
+          "before": false,
+          "after": true
+        }
+      }
+    }
+  },
+  "steps": [
+    {
+      "step": 1,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "82"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open unread thread Q1 Compliance: Gmail Settings Audit Required"
+      },
+      "status": "",
+      "elapsed_seconds": 5.5,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 2,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "52"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Settings"
+      },
+      "status": "",
+      "elapsed_seconds": 12.1,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 3,
+      "thought": "",
+      "action": {
+        "action": "scroll",
+        "delta_x": 0,
+        "delta_y": 511,
+        "direction": "down"
+      },
+      "targets": {},
+      "status": "",
+      "elapsed_seconds": 15.0,
+      "replay_path": "/settings",
+      "result_path": "/settings"
+    },
+    {
+      "step": 4,
+      "thought": "",
+      "action": {
+        "action": "select_option",
+        "ref": "482",
+        "value": "30"
+      },
+      "targets": {
+        "role": "combobox",
+        "name": "Undo send seconds"
+      },
+      "status": "",
+      "elapsed_seconds": 17.9,
+      "replay_path": "/settings",
+      "result_path": "/settings"
+    },
+    {
+      "step": 5,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "526"
+      },
+      "targets": {
+        "role": "LabelText",
+        "name": ""
+      },
+      "status": "",
+      "elapsed_seconds": 20.9,
+      "replay_path": "/settings",
+      "result_path": "/settings"
+    },
+    {
+      "step": 6,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "577"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Save Gmail settings"
+      },
+      "status": "",
+      "elapsed_seconds": 22.4,
+      "replay_path": "/settings",
+      "result_path": "/settings"
+    },
+    {
+      "step": 7,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "28"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 24.2,
+      "replay_path": "/settings",
+      "result_path": "/settings"
+    },
+    {
+      "step": 8,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "603"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread Q1 Compliance: Gmail Settings Audit Required"
+      },
+      "status": "",
+      "elapsed_seconds": 26.1,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 9,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "909"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Reply to Q1 Compliance: Gmail Settings Audit Required"
+      },
+      "status": "",
+      "elapsed_seconds": 27.8,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 10,
+      "thought": "",
+      "action": {
+        "action": "fill",
+        "ref": "945",
+        "value": "Already compliant: default reply behavior, maximum page size. Changed: undo send delay, send-and-archive."
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Email body"
+      },
+      "status": "",
+      "elapsed_seconds": 30.8,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 11,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "952"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Send reply"
+      },
+      "status": "",
+      "elapsed_seconds": 36.3,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 12,
+      "thought": "",
+      "action": {
+        "action": "finish",
+        "answer": "done"
+      },
+      "targets": {},
+      "status": "FINISH",
+      "elapsed_seconds": 41.8,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    }
+  ]
+}

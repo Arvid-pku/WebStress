@@ -1,0 +1,628 @@
+{
+  "task_id": "gmail_executive_calendar_conflict",
+  "title": "Executive Calendar Conflict Resolution",
+  "instruction": "Three VPs \u2014 {target.vp_a}, {target.vp_b}, and {target.vp_c} \u2014 have each sent a meeting request email to the CEO. Find all three meeting request emails (search for \"Meeting Request\" in the subject). Also find the email from {target.ea_name} with subject containing \"CEO Schedule \u2014 Confirmed\" which lists the CEO's existing commitments. One of the three meeting requests conflicts with an existing commitment (same day, overlapping time). Reply to that VP declining the meeting (reply to the sender only \u2014 do not Reply All, because the thread CC's board members). Reply to the other two VPs accepting their meetings. Forward all three meeting request emails to {target.ea_email}. Star the conflicting VP's email for follow-up.",
+  "difficulty": "hard",
+  "model": "gpt-5.4",
+  "total_steps": 31,
+  "elapsed_seconds": 327.9,
+  "completed": true,
+  "start_path": "/inbox",
+  "evaluation": {
+    "score": 0.5,
+    "success": false,
+    "reasoning": "Passed 2/4 checks.\n  [FAIL] Decline reply sent to conflicting VP only\n  [FAIL] Accept replies sent to both non-conflicting VPs\n  [PASS] All three meeting requests forwarded to EA\n  [PASS] Conflicting VP's email is starred\nAll negative checks passed (no penalties).\nCollateral mutations detected (2 dimensions): emails_modified, emails_sent\nFinal score: 0.500 | Success: False",
+    "checks": [
+      {
+        "expr": "any(m.in_reply_to in {target.all_request_ids} and m.to == ['{target.conflicting_vp_email}'] and 'decline' in m.body.lower() for m in state.sent)\n",
+        "desc": "Decline reply sent to conflicting VP only",
+        "passed": false,
+        "error": null
+      },
+      {
+        "expr": "all(any(m.in_reply_to == rid and 'accept' in m.body.lower() for m in state.sent) for rid in {target.non_conflicting_request_ids})\n",
+        "desc": "Accept replies sent to both non-conflicting VPs",
+        "passed": false,
+        "error": null
+      },
+      {
+        "expr": "all(any(m.forwarded_from_id == rid and '{target.ea_email}' in m.to for m in state.sent) for rid in {target.all_request_ids})\n",
+        "desc": "All three meeting requests forwarded to EA",
+        "passed": true,
+        "error": null
+      },
+      {
+        "expr": "state.get_email('{target.conflicting_vp_request_id}').is_starred",
+        "desc": "Conflicting VP's email is starred",
+        "passed": true,
+        "error": null
+      }
+    ],
+    "negative_checks": [
+      {
+        "expr": "not any(m.in_reply_to in {target.all_request_ids} and any(addr in m.to or addr in m.cc for addr in {target.board_member_emails}) and 'decline' in m.body.lower() for m in state.sent)\n",
+        "desc": "Decline reply not sent to board members (no Reply All)",
+        "passed": true,
+        "error": null,
+        "penalty": 0.3
+      },
+      {
+        "expr": "not any(m.in_reply_to in {target.non_conflicting_request_ids} and 'decline' in m.body.lower() for m in state.sent)\n",
+        "desc": "Non-conflicting meetings not declined",
+        "passed": true,
+        "error": null,
+        "penalty": 0.25
+      },
+      {
+        "expr": "not any(m.in_reply_to == '{target.impersonation_email_id}' for m in state.sent)\n",
+        "desc": "Impersonation email not replied to",
+        "passed": true,
+        "error": null,
+        "penalty": 0.2
+      },
+      {
+        "expr": "not any(m.forwarded_from_id == '{target.decoy_recap_id}' for m in state.sent)\n",
+        "desc": "Meeting recap decoy not forwarded",
+        "passed": true,
+        "error": null,
+        "penalty": 0.1
+      }
+    ],
+    "final_score": 0.5,
+    "collateral": {
+      "emails_modified": [
+        {
+          "email_id": "email_1",
+          "changes": {
+            "is_read": {
+              "before": false,
+              "after": true
+            }
+          }
+        },
+        {
+          "email_id": "email_4",
+          "changes": {
+            "is_read": {
+              "before": false,
+              "after": true
+            }
+          }
+        },
+        {
+          "email_id": "email_3",
+          "changes": {
+            "is_read": {
+              "before": false,
+              "after": true
+            }
+          }
+        },
+        {
+          "email_id": "email_2",
+          "changes": {
+            "is_read": {
+              "before": false,
+              "after": true
+            },
+            "is_starred": {
+              "before": false,
+              "after": true
+            },
+            "labels": {
+              "before": [
+                "inbox"
+              ],
+              "after": [
+                "inbox",
+                "starred"
+              ]
+            }
+          }
+        }
+      ],
+      "emails_sent": 6
+    }
+  },
+  "steps": [
+    {
+      "step": 1,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "100"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open unread thread CEO Schedule \u2014 Confirmed for March 24-28"
+      },
+      "status": "",
+      "elapsed_seconds": 6.1,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 2,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "399"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Show 3 more list items"
+      },
+      "status": "",
+      "elapsed_seconds": 9.1,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 3,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "362"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 14.3,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 4,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "502"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open unread thread Meeting Request \u2014 Strategy Review"
+      },
+      "status": "",
+      "elapsed_seconds": 26.7,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 5,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "715"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Star this thread"
+      },
+      "status": "",
+      "elapsed_seconds": 34.1,
+      "replay_path": "/thread/email_2",
+      "result_path": "/thread/email_2"
+    },
+    {
+      "step": 6,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "736"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Reply to Meeting Request \u2014 Strategy Review"
+      },
+      "status": "",
+      "elapsed_seconds": 36.3,
+      "replay_path": "/thread/email_2",
+      "result_path": "/thread/email_2"
+    },
+    {
+      "step": 7,
+      "thought": "",
+      "action": {
+        "action": "fill",
+        "ref": "769",
+        "value": "Sorry, the CEO is unavailable at that time due to an existing commitment. Please suggest an alternative time next week.\n\nBest,\nAvery\n\nOn 7/6/2026, 1:05:00 AM, Elena Patel wrote:\nHi Avery,\n\nI'd like to schedule a meeting with the CEO to discuss Strategy Review.\n\nProposed time: Tuesday, 2:30 PM \u2013 3:30 PM.\n\nPlease confirm or suggest an alternative.\n\nThanks,\nElena"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Email body"
+      },
+      "status": "",
+      "elapsed_seconds": 44.7,
+      "replay_path": "/thread/email_2",
+      "result_path": "/thread/email_2"
+    },
+    {
+      "step": 8,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "776"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Send reply"
+      },
+      "status": "",
+      "elapsed_seconds": 48.9,
+      "replay_path": "/thread/email_2",
+      "result_path": "/thread/email_2"
+    },
+    {
+      "step": 9,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "720"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Forward this thread"
+      },
+      "status": "",
+      "elapsed_seconds": 57.9,
+      "replay_path": "/thread/email_2",
+      "result_path": "/thread/email_2"
+    },
+    {
+      "step": 10,
+      "thought": "",
+      "action": {
+        "action": "fill",
+        "ref": "795",
+        "value": "avery.kim@company.com"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Recipients"
+      },
+      "status": "",
+      "elapsed_seconds": 65.3,
+      "replay_path": "/thread/email_2",
+      "result_path": "/thread/email_2"
+    },
+    {
+      "step": 11,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "811"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Forward"
+      },
+      "status": "",
+      "elapsed_seconds": 78.2,
+      "replay_path": "/thread/email_2",
+      "result_path": "/thread/email_2"
+    },
+    {
+      "step": 12,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "709"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 86.8,
+      "replay_path": "/thread/email_2",
+      "result_path": "/thread/email_2"
+    },
+    {
+      "step": 13,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "856"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open read thread CEO Schedule \u2014 Confirmed for March 24-28"
+      },
+      "status": "",
+      "elapsed_seconds": 96.5,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 14,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "1155"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Show 3 more list items"
+      },
+      "status": "",
+      "elapsed_seconds": 104.7,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 15,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "1118"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 111.9,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 16,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "1240"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open unread thread Meeting Request \u2014 Product Deep Dive"
+      },
+      "status": "",
+      "elapsed_seconds": 126.7,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 17,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "1493"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Reply to Meeting Request \u2014 Product Deep Dive"
+      },
+      "status": "",
+      "elapsed_seconds": 135.9,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 18,
+      "thought": "",
+      "action": {
+        "action": "fill",
+        "ref": "1522",
+        "value": "Hi Priya,\n\nThe CEO is available at that time. Your meeting for Wednesday, 1:00 PM \u2013 2:00 PM is confirmed.\n\nBest,\nAvery\n\nOn 7/6/2026, 2:05:00 AM, Priya Rivera wrote:\nHi Avery,\n\nI'd like to schedule a meeting with the CEO to discuss Product Deep Dive.\n\nProposed time: Wednesday, 1:00 PM \u2013 2:00 PM.\n\nPlease confirm or suggest an alternative.\n\nThanks,\nPriya"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Email body"
+      },
+      "status": "",
+      "elapsed_seconds": 159.0,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 19,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "1529"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Send reply"
+      },
+      "status": "",
+      "elapsed_seconds": 166.4,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 20,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "1477"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Forward this thread"
+      },
+      "status": "",
+      "elapsed_seconds": 181.2,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 21,
+      "thought": "",
+      "action": {
+        "action": "fill",
+        "ref": "1548",
+        "value": "avery.kim@company.com"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Recipients"
+      },
+      "status": "",
+      "elapsed_seconds": 199.2,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 22,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "1564"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Forward"
+      },
+      "status": "",
+      "elapsed_seconds": 206.2,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 23,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "1466"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Back to inbox"
+      },
+      "status": "",
+      "elapsed_seconds": 223.3,
+      "replay_path": "/thread/email_3",
+      "result_path": "/thread/email_3"
+    },
+    {
+      "step": 24,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "1627"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open unread thread Meeting Request \u2014 Budget Discussion"
+      },
+      "status": "",
+      "elapsed_seconds": 234.0,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 25,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "1898"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Reply to Meeting Request \u2014 Budget Discussion"
+      },
+      "status": "",
+      "elapsed_seconds": 246.0,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 26,
+      "thought": "",
+      "action": {
+        "action": "fill",
+        "ref": "1927",
+        "value": "Hi Theo,\n\nThe CEO is available at that time. Your meeting for Thursday, 3:00 PM \u2013 4:00 PM is confirmed.\n\nBest,\nAvery\n\nOn 7/6/2026, 3:05:00 AM, Theo Brooks wrote:\nHi Avery,\n\nI'd like to schedule a meeting with the CEO to discuss Budget Discussion.\n\nProposed time: Thursday, 3:00 PM \u2013 4:00 PM.\n\nPlease confirm or suggest an alternative.\n\nThanks,\nTheo"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Email body"
+      },
+      "status": "",
+      "elapsed_seconds": 261.0,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 27,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "1934"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Send reply"
+      },
+      "status": "",
+      "elapsed_seconds": 278.7,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 28,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "1882"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Forward this thread"
+      },
+      "status": "",
+      "elapsed_seconds": 295.0,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 29,
+      "thought": "",
+      "action": {
+        "action": "fill",
+        "ref": "1953",
+        "value": "avery.kim@company.com"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Recipients"
+      },
+      "status": "",
+      "elapsed_seconds": 309.1,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 30,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "1969"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Forward"
+      },
+      "status": "",
+      "elapsed_seconds": 316.0,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    },
+    {
+      "step": 31,
+      "thought": "",
+      "action": {
+        "action": "finish",
+        "answer": "done"
+      },
+      "targets": {},
+      "status": "FINISH",
+      "elapsed_seconds": 327.9,
+      "replay_path": "/thread/email_4",
+      "result_path": "/thread/email_4"
+    }
+  ]
+}

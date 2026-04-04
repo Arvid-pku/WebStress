@@ -1,0 +1,143 @@
+{
+  "task_id": "gmail_forward_email",
+  "title": "Forward an Invoice Email",
+  "instruction": "Find the email from Carol Wang with subject \"Invoice #1234 \u2014 March Services\" and forward it to dave@company.test with the note \"Please review this invoice.\"",
+  "difficulty": "easy",
+  "model": "gpt-5.4",
+  "total_steps": 6,
+  "elapsed_seconds": 14.0,
+  "completed": true,
+  "start_path": "/inbox",
+  "evaluation": {
+    "score": 1.0,
+    "success": true,
+    "reasoning": "Passed 2/2 checks.\n  [PASS] Email forwarded to dave@company.test\n  [PASS] Forward note included\nCollateral mutations detected (2 dimensions): emails_modified, emails_sent\nFinal score: 1.000 | Success: True",
+    "checks": [
+      {
+        "expr": "any('dave@company.test' in m.to and 'Invoice #1234' in m.subject for m in state.sent)",
+        "desc": "Email forwarded to dave@company.test",
+        "passed": true,
+        "error": null
+      },
+      {
+        "expr": "any('Please review this invoice' in m.body for m in state.sent)",
+        "desc": "Forward note included",
+        "passed": true,
+        "error": null
+      }
+    ],
+    "negative_checks": [],
+    "final_score": 1.0,
+    "collateral": {
+      "emails_modified": [
+        {
+          "email_id": "email_1",
+          "changes": {
+            "is_read": {
+              "before": false,
+              "after": true
+            }
+          }
+        }
+      ],
+      "emails_sent": 1
+    }
+  },
+  "steps": [
+    {
+      "step": 1,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "82"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open unread thread Invoice #1234 \u2014 March Services"
+      },
+      "status": "",
+      "elapsed_seconds": 3.8,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 2,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "231"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Forward this thread"
+      },
+      "status": "",
+      "elapsed_seconds": 5.8,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 3,
+      "thought": "",
+      "action": {
+        "action": "fill",
+        "ref": "268",
+        "value": "dave@company.test"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Recipients"
+      },
+      "status": "",
+      "elapsed_seconds": 8.9,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 4,
+      "thought": "",
+      "action": {
+        "action": "fill",
+        "ref": "277",
+        "value": "Please review this invoice."
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Email body"
+      },
+      "status": "",
+      "elapsed_seconds": 10.6,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 5,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "284"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Forward"
+      },
+      "status": "",
+      "elapsed_seconds": 12.2,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 6,
+      "thought": "",
+      "action": {
+        "action": "finish",
+        "answer": "done"
+      },
+      "targets": {},
+      "status": "FINISH",
+      "elapsed_seconds": 14.0,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    }
+  ]
+}

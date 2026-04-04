@@ -1,0 +1,141 @@
+{
+  "task_id": "gmail_mark_all_read",
+  "title": "Mark All Unread Emails as Read",
+  "instruction": "Mark all unread emails in your inbox as read. There are 5 unread emails.",
+  "difficulty": "easy",
+  "model": "gpt-5.4",
+  "total_steps": 3,
+  "elapsed_seconds": 10.7,
+  "completed": true,
+  "start_path": "/inbox",
+  "evaluation": {
+    "score": 1.0,
+    "success": true,
+    "reasoning": "Passed 1/1 checks.\n  [PASS] All inbox emails are marked as read\nCollateral mutations detected (1 dimensions): emails_modified\nFinal score: 1.000 | Success: True",
+    "checks": [
+      {
+        "expr": "all(e.is_read for e in state.list_emails('inbox'))",
+        "desc": "All inbox emails are marked as read",
+        "passed": true,
+        "error": null
+      }
+    ],
+    "negative_checks": [],
+    "final_score": 1.0,
+    "collateral": {
+      "emails_modified": [
+        {
+          "email_id": "email_1",
+          "changes": {
+            "is_read": {
+              "before": false,
+              "after": true
+            }
+          }
+        },
+        {
+          "email_id": "email_2",
+          "changes": {
+            "is_read": {
+              "before": false,
+              "after": true
+            }
+          }
+        },
+        {
+          "email_id": "email_3",
+          "changes": {
+            "is_read": {
+              "before": false,
+              "after": true
+            }
+          }
+        },
+        {
+          "email_id": "email_4",
+          "changes": {
+            "is_read": {
+              "before": false,
+              "after": true
+            }
+          }
+        },
+        {
+          "email_id": "email_5",
+          "changes": {
+            "is_read": {
+              "before": false,
+              "after": true
+            }
+          }
+        },
+        {
+          "email_id": "email_6",
+          "changes": {
+            "is_read": {
+              "before": false,
+              "after": true
+            }
+          }
+        },
+        {
+          "email_id": "email_8",
+          "changes": {
+            "is_read": {
+              "before": false,
+              "after": true
+            }
+          }
+        }
+      ]
+    }
+  },
+  "steps": [
+    {
+      "step": 1,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "67"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Mark all as read"
+      },
+      "status": "",
+      "elapsed_seconds": 5.2,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 2,
+      "thought": "",
+      "action": {
+        "action": "press",
+        "ref": "67",
+        "key": "Enter"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Mark all as read"
+      },
+      "status": "",
+      "elapsed_seconds": 9.2,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 3,
+      "thought": "",
+      "action": {
+        "action": "finish",
+        "answer": "done"
+      },
+      "targets": {},
+      "status": "FINISH",
+      "elapsed_seconds": 10.7,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    }
+  ]
+}

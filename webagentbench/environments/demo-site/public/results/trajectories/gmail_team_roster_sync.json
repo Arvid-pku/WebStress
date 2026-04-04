@@ -1,0 +1,1562 @@
+{
+  "task_id": "gmail_team_roster_sync",
+  "title": "Sync contacts with HR roster, apply promotion, and mark team lead as VIP",
+  "instruction": "HR sent you a \"Q1 2026 Engineering Team Roster\" email listing 8 people with their names, emails, and titles. The email CCs j.morales-mgr@company.com (Javier Morales-Garcia, the outgoing team's manager) \u2014 this person is NOT on the roster and must not be added as a contact. Compare this roster against your existing contacts. Perform all of the following:\n1. Add contacts for the 3 people on the roster who do not have existing contact entries (Javier Morales <j.morales@engteam.co>, Anika Pham <a.pham@engteam.co>, Leo Fischer <l.fischer@engteam.co>). Set each new contact's note to \"Added from Q1 roster\".\n2. Delete the 2 contacts for people who appear in your contacts but are NOT on the roster and whose names appear in the roster email's \"Departures\" section (Tom Reeves and Carla Diaz).\n3. Find the separate email from \"Diana Holtz\" with subject \"Congrats Marcus!\" and update the contact for Marcus Webb to change his note to \"Promoted to Senior Engineer \u2014 Q1 2026\".\n4. Star the contact for the person listed as \"Team Lead\" on the roster (Sana Hussain).\nDo not modify any contacts not mentioned above. Do not add the CC'd manager as a contact.",
+  "difficulty": "hard",
+  "model": "gpt-5.4",
+  "total_steps": 90,
+  "elapsed_seconds": 1554.2,
+  "completed": true,
+  "start_path": "/inbox",
+  "evaluation": {
+    "score": 0.7071428571428571,
+    "success": false,
+    "reasoning": "Passed 6/7 checks.\n  [FAIL] Javier Morales added with roster note\n  [PASS] Anika Pham added with roster note\n  [PASS] Leo Fischer added with roster note\n  [PASS] Tom Reeves contact deleted\n  [PASS] Carla Diaz contact deleted\n  [PASS] Marcus Webb note updated with promotion\n  [PASS] Sana Hussain contact starred\nNegative check penalties: 1 triggered, total penalty 0.15.\n  [PENALTY -0.15] Decoy Thomas Reeve preserved\nCollateral mutations detected (4 dimensions): emails_modified, contacts_added, contacts_removed, contacts_modified\nFinal score: 0.707 | Success: False",
+    "checks": [
+      {
+        "expr": "any(c.email == 'j.morales@engteam.co' and c.note == 'Added from Q1 roster' for c in state.contacts)",
+        "desc": "Javier Morales added with roster note",
+        "passed": false,
+        "error": null
+      },
+      {
+        "expr": "any(c.email == 'a.pham@engteam.co' and c.note == 'Added from Q1 roster' for c in state.contacts)",
+        "desc": "Anika Pham added with roster note",
+        "passed": true,
+        "error": null
+      },
+      {
+        "expr": "any(c.email == 'l.fischer@engteam.co' and c.note == 'Added from Q1 roster' for c in state.contacts)",
+        "desc": "Leo Fischer added with roster note",
+        "passed": true,
+        "error": null
+      },
+      {
+        "expr": "all(c.id != '{target.tom_reeves_id}' for c in state.contacts)",
+        "desc": "Tom Reeves contact deleted",
+        "passed": true,
+        "error": null
+      },
+      {
+        "expr": "all(c.id != '{target.carla_diaz_id}' for c in state.contacts)",
+        "desc": "Carla Diaz contact deleted",
+        "passed": true,
+        "error": null
+      },
+      {
+        "expr": "any(c.id == '{target.marcus_webb_id}' and c.note == 'Promoted to Senior Engineer \u2014 Q1 2026' for c in state.contacts)",
+        "desc": "Marcus Webb note updated with promotion",
+        "passed": true,
+        "error": null
+      },
+      {
+        "expr": "any(c.id == '{target.sana_hussain_id}' and c.is_starred for c in state.contacts)",
+        "desc": "Sana Hussain contact starred",
+        "passed": true,
+        "error": null
+      }
+    ],
+    "negative_checks": [
+      {
+        "expr": "any(c.id == '{target.carlos_dm_id}' for c in state.contacts)",
+        "desc": "Decoy Carlos Diaz-Mendez preserved",
+        "passed": true,
+        "error": null,
+        "penalty": 0.15
+      },
+      {
+        "expr": "any(c.id == '{target.thomas_reeve_id}' for c in state.contacts)",
+        "desc": "Decoy Thomas Reeve preserved",
+        "passed": false,
+        "error": null,
+        "penalty": 0.15
+      },
+      {
+        "expr": "not any(c.email == 'j.morales-mgr@company.com' for c in state.contacts)",
+        "desc": "CC'd manager not added as contact",
+        "passed": true,
+        "error": null,
+        "penalty": 0.2
+      },
+      {
+        "expr": "any(c.id == '{target.sana_hussain_id}' for c in state.contacts)",
+        "desc": "Sana Hussain contact not deleted",
+        "passed": true,
+        "error": null,
+        "penalty": 0.2
+      }
+    ],
+    "final_score": 0.7071428571428571,
+    "collateral": {
+      "emails_modified": [
+        {
+          "email_id": "email_1",
+          "changes": {
+            "is_read": {
+              "before": false,
+              "after": true
+            }
+          }
+        }
+      ],
+      "contacts_added": [
+        "contact_manual_22",
+        "contact_manual_23"
+      ],
+      "contacts_removed": [
+        "contact_16",
+        "contact_17",
+        "contact_19"
+      ],
+      "contacts_modified": [
+        {
+          "contact_id": "contact_11",
+          "changes": {
+            "is_starred": {
+              "before": false,
+              "after": true
+            }
+          }
+        },
+        {
+          "contact_id": "contact_12",
+          "changes": {
+            "note": {
+              "before": "Engineer \u2014 Q4 2025",
+              "after": "Promoted to Senior Engineer \u2014 Q1 2026"
+            }
+          }
+        }
+      ]
+    }
+  },
+  "steps": [
+    {
+      "step": 1,
+      "thought": "",
+      "action": {
+        "action": "fill",
+        "ref": "18",
+        "value": "Q1 2026 Engineering Team Roster"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Search mail"
+      },
+      "status": "",
+      "elapsed_seconds": 6.8,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 2,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "19"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Run search"
+      },
+      "status": "",
+      "elapsed_seconds": 8.7,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 3,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "367"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open unread thread Q1 2026 Engineering Team Roster"
+      },
+      "status": "",
+      "elapsed_seconds": 11.0,
+      "replay_path": "/search",
+      "result_path": "/search"
+    },
+    {
+      "step": 4,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "52"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Settings"
+      },
+      "status": "",
+      "elapsed_seconds": 62.3,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 5,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "55"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Labels"
+      },
+      "status": "",
+      "elapsed_seconds": 73.6,
+      "replay_path": "/settings",
+      "result_path": "/settings"
+    },
+    {
+      "step": 6,
+      "thought": "",
+      "action": {
+        "action": "scroll",
+        "delta_x": 0,
+        "delta_y": 487,
+        "direction": "down"
+      },
+      "targets": {},
+      "status": "",
+      "elapsed_seconds": 76.3,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 7,
+      "thought": "",
+      "action": {
+        "action": "scroll",
+        "delta_x": 0,
+        "delta_y": 250,
+        "direction": "down"
+      },
+      "targets": {},
+      "status": "",
+      "elapsed_seconds": 79.6,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 8,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "816"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Next contacts page"
+      },
+      "status": "",
+      "elapsed_seconds": 85.0,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 9,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "816"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Next contacts page"
+      },
+      "status": "",
+      "elapsed_seconds": 89.8,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 10,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "788"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Edit contact Tom Reeves"
+      },
+      "status": "",
+      "elapsed_seconds": 100.2,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 11,
+      "thought": "",
+      "action": {
+        "action": "scroll",
+        "delta_x": 0,
+        "delta_y": 210,
+        "direction": "down"
+      },
+      "targets": {},
+      "status": "",
+      "elapsed_seconds": 107.4,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 12,
+      "thought": "",
+      "action": {
+        "action": "scroll",
+        "delta_x": 0,
+        "delta_y": 300,
+        "direction": "down"
+      },
+      "targets": {},
+      "status": "",
+      "elapsed_seconds": 113.6,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 13,
+      "thought": "",
+      "action": {
+        "action": "scroll",
+        "delta_x": 0,
+        "delta_y": 1000,
+        "direction": "down"
+      },
+      "targets": {},
+      "status": "",
+      "elapsed_seconds": 122.7,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 14,
+      "thought": "",
+      "action": {
+        "action": "hover",
+        "ref": "782"
+      },
+      "targets": {
+        "role": "row",
+        "name": ""
+      },
+      "status": "",
+      "elapsed_seconds": 145.2,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 15,
+      "thought": "",
+      "action": {
+        "action": "press",
+        "ref": "788",
+        "key": "Tab"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Edit contact Tom Reeves"
+      },
+      "status": "",
+      "elapsed_seconds": 158.2,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 16,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "795"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Delete contact Tom Reeves"
+      },
+      "status": "",
+      "elapsed_seconds": 164.9,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 17,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "814"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Previous contacts page"
+      },
+      "status": "",
+      "elapsed_seconds": 173.8,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 18,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "814"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Previous contacts page"
+      },
+      "status": "",
+      "elapsed_seconds": 188.5,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 19,
+      "thought": "",
+      "action": {
+        "action": "scroll",
+        "delta_x": 0,
+        "delta_y": -517,
+        "direction": "up"
+      },
+      "targets": {},
+      "status": "",
+      "elapsed_seconds": 204.4,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 20,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "720"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Delete contact Carla Diaz"
+      },
+      "status": "",
+      "elapsed_seconds": 211.4,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 21,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "816"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Next contacts page"
+      },
+      "status": "",
+      "elapsed_seconds": 227.5,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 22,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "851"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Star contact Sana Hussain"
+      },
+      "status": "",
+      "elapsed_seconds": 234.1,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 23,
+      "thought": "",
+      "action": {
+        "action": "scroll",
+        "delta_x": 0,
+        "delta_y": 391,
+        "direction": "down"
+      },
+      "targets": {},
+      "status": "",
+      "elapsed_seconds": 251.7,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 24,
+      "thought": "",
+      "action": {
+        "action": "clear",
+        "ref": "824"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Contact name"
+      },
+      "status": "",
+      "elapsed_seconds": 261.4,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 25,
+      "thought": "",
+      "action": {
+        "action": "fill",
+        "ref": "824",
+        "value": "Javier Morales"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Contact name"
+      },
+      "status": "",
+      "elapsed_seconds": 273.8,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 26,
+      "thought": "",
+      "action": {
+        "action": "clear",
+        "ref": "827"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Contact email address"
+      },
+      "status": "",
+      "elapsed_seconds": 283.0,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 27,
+      "thought": "",
+      "action": {
+        "action": "fill",
+        "ref": "827",
+        "value": "j.morales@engteam.co"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Contact email address"
+      },
+      "status": "",
+      "elapsed_seconds": 299.6,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 28,
+      "thought": "",
+      "action": {
+        "action": "fill",
+        "ref": "833",
+        "value": "Added from Q1 roster"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Contact note"
+      },
+      "status": "",
+      "elapsed_seconds": 316.8,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 29,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "837"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Add contact"
+      },
+      "status": "",
+      "elapsed_seconds": 324.9,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 30,
+      "thought": "",
+      "action": {
+        "action": "noop",
+        "wait_ms": 1000
+      },
+      "targets": {},
+      "status": "",
+      "elapsed_seconds": 334.7,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 31,
+      "thought": "",
+      "action": {
+        "action": "press",
+        "ref": "837",
+        "key": "Enter"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Add contact"
+      },
+      "status": "",
+      "elapsed_seconds": 341.3,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 32,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "814"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Previous contacts page"
+      },
+      "status": "",
+      "elapsed_seconds": 378.9,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 33,
+      "thought": "",
+      "action": {
+        "action": "scroll",
+        "delta_x": 0,
+        "delta_y": -585,
+        "direction": "up"
+      },
+      "targets": {},
+      "status": "",
+      "elapsed_seconds": 406.6,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 34,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "816"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Next contacts page"
+      },
+      "status": "",
+      "elapsed_seconds": 422.8,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 35,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "816"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Next contacts page"
+      },
+      "status": "",
+      "elapsed_seconds": 432.0,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 36,
+      "thought": "",
+      "action": {
+        "action": "dblclick",
+        "ref": "837"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Add contact"
+      },
+      "status": "",
+      "elapsed_seconds": 448.2,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 37,
+      "thought": "",
+      "action": {
+        "action": "scroll",
+        "delta_x": 0,
+        "delta_y": -336,
+        "direction": "up"
+      },
+      "targets": {},
+      "status": "",
+      "elapsed_seconds": 472.4,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 38,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "814"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Previous contacts page"
+      },
+      "status": "",
+      "elapsed_seconds": 536.9,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 39,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "713"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Edit contact Marcus Webb"
+      },
+      "status": "",
+      "elapsed_seconds": 558.6,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 40,
+      "thought": "",
+      "action": {
+        "action": "dblclick",
+        "ref": "713"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Edit contact Marcus Webb"
+      },
+      "status": "",
+      "elapsed_seconds": 571.1,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 41,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "713"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Edit contact Marcus Webb"
+      },
+      "status": "",
+      "elapsed_seconds": 583.7,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 42,
+      "thought": "",
+      "action": {
+        "action": "scroll",
+        "delta_x": 0,
+        "delta_y": 512,
+        "direction": "down"
+      },
+      "targets": {},
+      "status": "",
+      "elapsed_seconds": 592.1,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 43,
+      "thought": "",
+      "action": {
+        "action": "clear",
+        "ref": "833"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Contact note"
+      },
+      "status": "",
+      "elapsed_seconds": 598.6,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 44,
+      "thought": "",
+      "action": {
+        "action": "fill",
+        "ref": "833",
+        "value": "Promoted to Senior Engineer \u2014 Q1 2026"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Contact note"
+      },
+      "status": "",
+      "elapsed_seconds": 613.5,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 45,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "837"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Save contact changes"
+      },
+      "status": "",
+      "elapsed_seconds": 625.6,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 46,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "814"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Previous contacts page"
+      },
+      "status": "",
+      "elapsed_seconds": 637.8,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 47,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "816"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Next contacts page"
+      },
+      "status": "",
+      "elapsed_seconds": 650.9,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 48,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "816"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Next contacts page"
+      },
+      "status": "",
+      "elapsed_seconds": 661.3,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 49,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "814"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Previous contacts page"
+      },
+      "status": "",
+      "elapsed_seconds": 678.0,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 50,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "816"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Next contacts page"
+      },
+      "status": "",
+      "elapsed_seconds": 694.1,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 51,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "765"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Delete contact Thomas Reeve"
+      },
+      "status": "",
+      "elapsed_seconds": 705.6,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 52,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "814"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Previous contacts page"
+      },
+      "status": "",
+      "elapsed_seconds": 715.5,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 53,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "814"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Previous contacts page"
+      },
+      "status": "",
+      "elapsed_seconds": 735.7,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 54,
+      "thought": "",
+      "action": {
+        "action": "scroll",
+        "delta_x": 0,
+        "delta_y": -476,
+        "direction": "up"
+      },
+      "targets": {},
+      "status": "",
+      "elapsed_seconds": 761.6,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 55,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "816"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Next contacts page"
+      },
+      "status": "",
+      "elapsed_seconds": 811.2,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 56,
+      "thought": "",
+      "action": {
+        "action": "scroll",
+        "delta_x": 0,
+        "delta_y": -423,
+        "direction": "up"
+      },
+      "targets": {},
+      "status": "",
+      "elapsed_seconds": 828.7,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 57,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "814"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Previous contacts page"
+      },
+      "status": "",
+      "elapsed_seconds": 856.4,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 58,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "816"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Next contacts page"
+      },
+      "status": "",
+      "elapsed_seconds": 875.5,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 59,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "816"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Next contacts page"
+      },
+      "status": "",
+      "elapsed_seconds": 892.8,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 60,
+      "thought": "",
+      "action": {
+        "action": "scroll",
+        "delta_x": 0,
+        "delta_y": -325,
+        "direction": "up"
+      },
+      "targets": {},
+      "status": "",
+      "elapsed_seconds": 914.4,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 61,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "814"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Previous contacts page"
+      },
+      "status": "",
+      "elapsed_seconds": 925.8,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 62,
+      "thought": "",
+      "action": {
+        "action": "fill",
+        "ref": "824",
+        "value": "Anika Pham"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Contact name"
+      },
+      "status": "",
+      "elapsed_seconds": 947.2,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 63,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "814"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Previous contacts page"
+      },
+      "status": "",
+      "elapsed_seconds": 969.7,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 64,
+      "thought": "",
+      "action": {
+        "action": "scroll",
+        "delta_x": 0,
+        "delta_y": 300,
+        "direction": "down"
+      },
+      "targets": {},
+      "status": "",
+      "elapsed_seconds": 980.3,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 65,
+      "thought": "",
+      "action": {
+        "action": "fill",
+        "ref": "827",
+        "value": "a.pham@engteam.co"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Contact email address"
+      },
+      "status": "",
+      "elapsed_seconds": 998.9,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 66,
+      "thought": "",
+      "action": {
+        "action": "fill",
+        "ref": "833",
+        "value": "Added from Q1 roster"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Contact note"
+      },
+      "status": "",
+      "elapsed_seconds": 1011.4,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 67,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "837"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Add contact"
+      },
+      "status": "",
+      "elapsed_seconds": 1025.5,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 68,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "816"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Next contacts page"
+      },
+      "status": "",
+      "elapsed_seconds": 1052.2,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 69,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "816"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Next contacts page"
+      },
+      "status": "",
+      "elapsed_seconds": 1067.6,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 70,
+      "thought": "",
+      "action": {
+        "action": "fill",
+        "ref": "824",
+        "value": "Leo Fischer"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Contact name"
+      },
+      "status": "",
+      "elapsed_seconds": 1108.8,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 71,
+      "thought": "",
+      "action": {
+        "action": "fill",
+        "ref": "827",
+        "value": "l.fischer@engteam.co"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Contact email address"
+      },
+      "status": "",
+      "elapsed_seconds": 1124.0,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 72,
+      "thought": "",
+      "action": {
+        "action": "fill",
+        "ref": "833",
+        "value": "Added from Q1 roster"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Contact note"
+      },
+      "status": "",
+      "elapsed_seconds": 1138.3,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 73,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "837"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Add contact"
+      },
+      "status": "",
+      "elapsed_seconds": 1147.5,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 74,
+      "thought": "",
+      "action": {
+        "action": "scroll",
+        "delta_x": 0,
+        "delta_y": -439,
+        "direction": "up"
+      },
+      "targets": {},
+      "status": "",
+      "elapsed_seconds": 1163.1,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 75,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "814"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Previous contacts page"
+      },
+      "status": "",
+      "elapsed_seconds": 1175.6,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 76,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "814"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Previous contacts page"
+      },
+      "status": "",
+      "elapsed_seconds": 1193.4,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 77,
+      "thought": "",
+      "action": {
+        "action": "scroll",
+        "delta_x": 0,
+        "delta_y": 334,
+        "direction": "down"
+      },
+      "targets": {},
+      "status": "",
+      "elapsed_seconds": 1227.8,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 78,
+      "thought": "",
+      "action": {
+        "action": "scroll",
+        "delta_x": 0,
+        "delta_y": -431,
+        "direction": "up"
+      },
+      "targets": {},
+      "status": "",
+      "elapsed_seconds": 1240.5,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 79,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "816"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Next contacts page"
+      },
+      "status": "",
+      "elapsed_seconds": 1250.9,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 80,
+      "thought": "",
+      "action": {
+        "action": "scroll",
+        "delta_x": 0,
+        "delta_y": 330,
+        "direction": "down"
+      },
+      "targets": {},
+      "status": "",
+      "elapsed_seconds": 1281.2,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 81,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "816"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Next contacts page"
+      },
+      "status": "",
+      "elapsed_seconds": 1292.0,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 82,
+      "thought": "",
+      "action": {
+        "action": "scroll",
+        "delta_x": 0,
+        "delta_y": -470,
+        "direction": "up"
+      },
+      "targets": {},
+      "status": "",
+      "elapsed_seconds": 1306.3,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 83,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "814"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Previous contacts page"
+      },
+      "status": "",
+      "elapsed_seconds": 1317.0,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 84,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "814"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Previous contacts page"
+      },
+      "status": "",
+      "elapsed_seconds": 1339.2,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 85,
+      "thought": "",
+      "action": {
+        "action": "scroll",
+        "delta_x": 0,
+        "delta_y": -248,
+        "direction": "up"
+      },
+      "targets": {},
+      "status": "",
+      "elapsed_seconds": 1364.7,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 86,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "816"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Next contacts page"
+      },
+      "status": "",
+      "elapsed_seconds": 1386.3,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 87,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "814"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Previous contacts page"
+      },
+      "status": "",
+      "elapsed_seconds": 1410.3,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 88,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "816"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Next contacts page"
+      },
+      "status": "",
+      "elapsed_seconds": 1468.5,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 89,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "816"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Next contacts page"
+      },
+      "status": "",
+      "elapsed_seconds": 1486.6,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 90,
+      "thought": "",
+      "action": {
+        "action": "finish",
+        "answer": "done"
+      },
+      "targets": {},
+      "status": "FINISH",
+      "elapsed_seconds": 1554.2,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    }
+  ]
+}

@@ -21,6 +21,8 @@ interface ComposeDraft {
   subject: string;
   body: string;
   attachments: string;
+  showCc?: boolean;
+  showBcc?: boolean;
 }
 
 interface FilterDraft {
@@ -38,6 +40,8 @@ interface FilterDraft {
 
 interface ReplayDrafts {
   compose: ComposeDraft | null;
+  searchQuery: string;
+  searchActive: boolean;
   labelsPage: {
     name: string;
     color: string;
@@ -311,6 +315,8 @@ function createComposeDraft(): ComposeDraft {
 function createInitialDrafts(state: GmailFixture): ReplayDrafts {
   return {
     compose: null,
+    searchQuery: "",
+    searchActive: false,
     labelsPage: {
       name: "",
       color: "#1a73e8",
@@ -340,6 +346,11 @@ function createInitialDrafts(state: GmailFixture): ReplayDrafts {
 function withReplayParams(route: string, drafts: ReplayDrafts) {
   const { pathname, searchParams } = parseRoute(route);
 
+  // Search: show search results after "Run search" was clicked
+  if (drafts.searchActive && drafts.searchQuery) {
+    return buildRoute("/search", new URLSearchParams({ q: drafts.searchQuery }));
+  }
+
   if (pathname === "/thread") {
     return route;
   }
@@ -347,8 +358,14 @@ function withReplayParams(route: string, drafts: ReplayDrafts) {
   if (pathname.startsWith("/thread/")) {
     if (drafts.compose && drafts.compose.mode !== "compose") {
       searchParams.set("replayCompose", drafts.compose.mode);
+      if (drafts.compose.body) searchParams.set("replayBody", drafts.compose.body);
+      else searchParams.delete("replayBody");
+      if (drafts.compose.to) searchParams.set("replayTo", drafts.compose.to);
+      else searchParams.delete("replayTo");
     } else {
       searchParams.delete("replayCompose");
+      searchParams.delete("replayBody");
+      searchParams.delete("replayTo");
     }
 
     if (drafts.thread.labelMenuOpen || drafts.thread.creatingLabel) {
@@ -370,6 +387,25 @@ function withReplayParams(route: string, drafts: ReplayDrafts) {
     }
 
     return buildRoute(pathname, searchParams);
+  }
+
+  // Compose page — pass draft fields so the Compose UI can display them
+  if (pathname === "/compose" || drafts.compose) {
+    if (drafts.compose) {
+      if (drafts.compose.to) searchParams.set("replayTo", drafts.compose.to);
+      else searchParams.delete("replayTo");
+      if (drafts.compose.cc) searchParams.set("replayCc", drafts.compose.cc);
+      else searchParams.delete("replayCc");
+      if (drafts.compose.subject) searchParams.set("replaySubject", drafts.compose.subject);
+      else searchParams.delete("replaySubject");
+      if (drafts.compose.body) searchParams.set("replayBody", drafts.compose.body);
+      else searchParams.delete("replayBody");
+    } else {
+      ["replayTo", "replayCc", "replaySubject", "replayBody"].forEach((k) => searchParams.delete(k));
+    }
+    if (pathname === "/compose") {
+      return buildRoute(pathname, searchParams);
+    }
   }
 
   if (pathname === "/settings") {
@@ -483,6 +519,12 @@ function applyFill(
     case "Filter name":
       drafts.settings.filter.name = stringValue;
       return;
+    case "Search mail":
+      drafts.searchQuery = stringValue;
+      return;
+    case "Mark as VIP contact":
+      drafts.contacts.isVip = true;
+      return;
     case "Email signature":
       drafts.settings.values.signature = stringValue;
       return;
@@ -494,6 +536,18 @@ function applyFill(
       return;
     default:
       break;
+  }
+
+  // Rename label — store the new name, actual rename applies on click "Save"/"Rename"
+  if (field.startsWith("Rename label ")) {
+    drafts.labelsPage.name = stringValue;
+    return;
+  }
+
+  // Edit contact fields — field is "Edit contact XYZ" for inline editing
+  if (field.startsWith("Edit contact ")) {
+    // The edit button opens inline editing — no state mutation until save
+    return;
   }
 
   if (
@@ -630,7 +684,7 @@ function applyClick(
 
   applySettingsRadio(drafts, field);
 
-  if (field.startsWith("Open thread ")) {
+  if (field.startsWith("Open thread ") || field.startsWith("Open unread thread ") || field.startsWith("Open read thread ")) {
     const email = resolveEmailFromTarget(state, route, target);
     if (email) {
       applyRequest(state, "POST", `emails/${email.id}/read`, { is_read: true });
@@ -639,6 +693,8 @@ function applyClick(
     drafts.thread.creatingLabel = false;
     drafts.thread.labelDraftName = "";
     drafts.compose = null;
+    drafts.searchQuery = "";
+    drafts.searchActive = false;
     return;
   }
 
@@ -878,6 +934,107 @@ function applyClick(
     return;
   }
 
+  if (field === "Run search" || field === "Search") {
+    drafts.searchActive = true;
+    return;
+  }
+
+  // Navigation — these change the displayed page but don't mutate state
+  if (field === "Back to inbox" || field === "Inbox" || field === "Cancel compose") {
+    drafts.compose = null;
+    drafts.searchQuery = "";
+    drafts.searchActive = false;
+    return;
+  }
+
+  if (field === "Labels" || field === "Settings" || field === "Sent" ||
+      field === "Starred" || field === "Promotions" || field === "Updates" ||
+      field === "Primary" || field === "General") {
+    drafts.searchQuery = "";
+    drafts.searchActive = false;
+    return;
+  }
+
+  if (field === "Filters and Blocked Addresses") {
+    drafts.settings.activeTab = "Filters and Blocked Addresses";
+    return;
+  }
+
+  if (field === "Show CC field") {
+    if (drafts.compose) drafts.compose.showCc = true;
+    return;
+  }
+
+  if (field === "Show BCC field") {
+    if (drafts.compose) drafts.compose.showBcc = true;
+    return;
+  }
+
+  if (field === "Cancel filter creation" || field === "Close Create a filter") {
+    drafts.settings.filterWizardOpen = false;
+    drafts.settings.filterWizardStep = "criteria";
+    drafts.settings.filter = { ...EMPTY_FILTER_DRAFT };
+    return;
+  }
+
+  if (field === "Save contact changes") {
+    // Contact edit save — the actual mutation happens through applyRequest
+    // but we don't track per-field edits, just acknowledge the click
+    return;
+  }
+
+  if (field === "Cancel contact editing") {
+    return;
+  }
+
+  if (field === "Next contacts page" || field === "Previous contacts page") {
+    return;
+  }
+
+  if (field === "Mark all as read") {
+    for (const email of state.emails) {
+      email.is_read = true;
+    }
+    return;
+  }
+
+  if (field === "Mark as read") {
+    const currentThread = getCurrentThreadEmail(state, route);
+    if (currentThread) {
+      applyRequest(state, "POST", `emails/${currentThread.id}/read`, { is_read: true });
+    }
+    return;
+  }
+
+  if (field.startsWith("Expand ") || field === "show" || field === "hide" ||
+      field === "show if unread" || field.startsWith("Show ") || field === "Rename" ||
+      field === "Save" || field === "Confirm delete label" || field === "Delete") {
+    // UI expand/collapse — no state mutation
+    return;
+  }
+
+  if (field.startsWith("Read thread from ")) {
+    // Clicking a read thread works like Open thread
+    const email = resolveEmailFromTarget(state, route, target);
+    if (email) {
+      applyRequest(state, "POST", `emails/${email.id}/read`, { is_read: true });
+    }
+    drafts.searchQuery = "";
+    drafts.searchActive = false;
+    drafts.compose = null;
+    return;
+  }
+
+  if (field.startsWith("Create label ") && !field.startsWith("Create label ")) {
+    // Already handled above for the generic "Create label" button
+  }
+
+  // Tab clicks in settings
+  if (target?.role === "tab") {
+    drafts.settings.activeTab = field;
+    return;
+  }
+
   if (field === "Compose a new message" || (pathname === "/compose" && field === "Compose")) {
     drafts.compose = createComposeDraft();
     return;
@@ -950,11 +1107,11 @@ export function buildGmailReplayStepStates(
   const drafts = createInitialDrafts(state);
   const snapshots: GmailReplayStepState[] = [];
 
-  for (const step of steps) {
+  for (let i = 0; i < steps.length; i++) {
+    const step = steps[i];
     const target = stepTarget(step);
     const route = step.replay_path ?? DEFAULT_ROUTE;
     const action = String(step.action?.action ?? "");
-    const displayRoute = withReplayParams(route, drafts);
 
     switch (action) {
       case "fill":
@@ -964,14 +1121,37 @@ export function buildGmailReplayStepStates(
         applyCheck(drafts, target);
         break;
       case "select":
+      case "select_option":
         applySelect(drafts, target, step.action?.value);
         break;
       case "click":
+      case "dblclick":
         applyClick(state, drafts, route, target);
+        break;
+      case "clear":
+        // Clear a form field — reset the draft value
+        applyFill(drafts, route, target, "");
+        break;
+      case "scroll":
+      case "hover":
+      case "press":
+      case "focus":
+      case "noop":
+      case "finish":
+      case "report_infeasible":
+        // Visual-only actions — no state mutation needed
         break;
       default:
         break;
     }
+
+    // Use the NEXT step's replay_path as the result route (where the agent
+    // ended up after this action), falling back to current step's result_path
+    const resultRoute =
+      step.result_path ||
+      (i + 1 < steps.length ? steps[i + 1].replay_path : undefined) ||
+      route;
+    const displayRoute = withReplayParams(resultRoute, drafts);
 
     snapshots.push({
       fixture: structuredClone(state),

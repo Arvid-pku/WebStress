@@ -1,0 +1,95 @@
+{
+  "task_id": "gmail_create_label",
+  "title": "Create a New Label",
+  "instruction": "Create a new label called \"Important Projects\".",
+  "difficulty": "easy",
+  "model": "gpt-5.4",
+  "total_steps": 4,
+  "elapsed_seconds": 9.8,
+  "completed": true,
+  "start_path": "/inbox",
+  "evaluation": {
+    "score": 1.0,
+    "success": true,
+    "reasoning": "Passed 1/1 checks.\n  [PASS] Label 'Important Projects' exists\nCollateral mutations detected (1 dimensions): labels_added\nFinal score: 1.000 | Success: True",
+    "checks": [
+      {
+        "expr": "any(l.name == 'Important Projects' for l in state.labels)",
+        "desc": "Label 'Important Projects' exists",
+        "passed": true,
+        "error": null
+      }
+    ],
+    "negative_checks": [],
+    "final_score": 1.0,
+    "collateral": {
+      "labels_added": [
+        "label_14"
+      ]
+    }
+  },
+  "steps": [
+    {
+      "step": 1,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "55"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Labels"
+      },
+      "status": "",
+      "elapsed_seconds": 4.8,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 2,
+      "thought": "",
+      "action": {
+        "action": "fill",
+        "ref": "142",
+        "value": "Important Projects"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "New label name"
+      },
+      "status": "",
+      "elapsed_seconds": 6.6,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 3,
+      "thought": "",
+      "action": {
+        "action": "click",
+        "ref": "147"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Create label Important Projects"
+      },
+      "status": "",
+      "elapsed_seconds": 8.0,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    },
+    {
+      "step": 4,
+      "thought": "",
+      "action": {
+        "action": "finish",
+        "answer": "done"
+      },
+      "targets": {},
+      "status": "FINISH",
+      "elapsed_seconds": 9.8,
+      "replay_path": "/labels",
+      "result_path": "/labels"
+    }
+  ]
+}
