@@ -20,6 +20,8 @@ export function createGmailApi(request: RequestFn) {
       request<ThreadResponse>(`emails/${emailId}`),
     markRead: (emailId: string) =>
       request(`emails/${emailId}/read`, { method: "POST" }),
+    markAllRead: () =>
+      request("emails/mark-all-read", { method: "POST" }),
     toggleStar: (emailId: string) =>
       request(`emails/${emailId}/star`, { method: "POST" }),
     archive: (emailId: string) =>

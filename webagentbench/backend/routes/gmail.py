@@ -656,6 +656,23 @@ def mark_read(
     return {"email": _serialize_email(state, result)}
 
 
+@router.post("/emails/mark-all-read")
+def mark_all_read(
+    body: SessionScopedRequest,
+    session_manager: SessionManager = Depends(get_session_manager),
+) -> dict[str, Any]:
+    state = _gmail_state(session_manager, body.session_id)
+    count = 0
+    for email in state.emails:
+        if not email.is_read:
+            email.is_read = True
+            count += 1
+    if count:
+        state.touch()
+        _audit(session_manager, body.session_id, "gmail.email.mark_all_read", {"count": count})
+    return {"marked": count}
+
+
 @router.post("/emails/{email_id}/star")
 def toggle_star(
     email_id: str,
