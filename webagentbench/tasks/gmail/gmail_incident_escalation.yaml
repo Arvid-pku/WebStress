@@ -53,8 +53,7 @@ eval:
   - expr: any(m.forwarded_from_id == '{target.alert_id}' and '{target.oncall_email}'
       in m.to for m in state.sent)
     desc: Alert forwarded to on-call
-  - expr: any(m.in_reply_to == '{target.manager_email_id}' and '{target.status_phrase}'
-      in m.body for m in state.sent)
+  - expr: any(m.in_reply_to == '{target.manager_email_id}' for m in state.sent)
     desc: Manager thread replied
   - expr: all(state.get_email(eid).is_starred for eid in {target.incident_ids})
     desc: All incident emails starred

@@ -112,11 +112,11 @@ eval:
   checks:
   - expr: all(state.get_email(eid).deleted for eid in {target.spam_ids})
     desc: All 8 spam emails deleted
-  - expr: any(m.forwarded_from_id == '{target.escalation_fwd_ids}'[0] and 'infra-lead@company.test' in m.to for m in state.sent)
+  - expr: any(m.forwarded_from_id == {target.escalation_fwd_ids}[0] and 'infra-lead@company.test' in m.to for m in state.sent)
     desc: Datacenter Migration thread forwarded to infra-lead
-  - expr: any(m.forwarded_from_id == '{target.escalation_fwd_ids}'[1] and 'cfo-office@company.test' in m.to for m in state.sent)
+  - expr: any(m.forwarded_from_id == {target.escalation_fwd_ids}[1] and 'cfo-office@company.test' in m.to for m in state.sent)
     desc: Q2 Revenue thread forwarded to cfo-office
-  - expr: any(m.forwarded_from_id == '{target.escalation_fwd_ids}'[2] and 'support-mgr@company.test' in m.to for m in state.sent)
+  - expr: any(m.forwarded_from_id == {target.escalation_fwd_ids}[2] and 'support-mgr@company.test' in m.to for m in state.sent)
     desc: Customer Complaint thread forwarded to support-mgr
   - expr: any(m.in_reply_to == '{target.personal_friend_id}' and 'back in the office' in m.body for m in state.sent)
     desc: Reply sent to friend with canned text
