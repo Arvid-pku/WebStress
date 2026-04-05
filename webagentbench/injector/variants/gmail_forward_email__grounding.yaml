@@ -21,12 +21,12 @@ injections:
         snippet: "Invoice attached as requested"
         note: "Same sender, different subject"
       - type: email
-        from: "carol.w@company.test"
+        from: "carol.w@thornton.com"
         subject: "Re: Invoice #1234"
         snippet: "Following up on invoice"
         note: "Reply, not original"
       - type: email
-        from: "Carol W <cw@vendor.test>"
+        from: "Carol W <cw@bluespark.io>"
         subject: "Invoice #1234 - Revised"
         snippet: "Updated invoice attached"
         note: "Similar subject, revision"

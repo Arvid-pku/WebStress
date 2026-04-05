@@ -23,6 +23,6 @@ injections:
     - from_name: Spam-C Review
       from: review@spam-c-news.test
       subject: Spam-c digest
-      body: Looks spammy but comes from a different domain family than spam-c.test.
+      body: Looks spammy but comes from a different domain family than quicksavings.net.
       labels:
       - inbox
