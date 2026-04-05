@@ -365,7 +365,7 @@ export default function TrajectoryPage({ taskId }: { taskId: string }) {
               </div>
 
               {/* Tab content */}
-              <div className="flex-1 min-h-0">
+              <div className="flex-1 min-h-0 flex flex-col">
                 {rightTab === "trajectory" ? (
                   <TrajectoryViewer
                     steps={data.steps}
@@ -373,7 +373,7 @@ export default function TrajectoryPage({ taskId }: { taskId: string }) {
                     onStep={handleStepChange}
                   />
                 ) : (
-                  <div className="overflow-y-auto h-full px-3 py-3">
+                  <div className="flex-1 min-h-0 overflow-y-auto px-3 py-3">
                     {/* Reasoning summary */}
                     {data.evaluation?.reasoning && (
                       <p className="text-[12px] text-[var(--text-secondary)] leading-[1.7] mb-4">
@@ -382,10 +382,37 @@ export default function TrajectoryPage({ taskId }: { taskId: string }) {
                     )}
 
                     {[
-                      { label: "Failed", color: "var(--red)", items: failedCriteria, cardBg: "var(--red)/[0.05]", textColor: "var(--text-primary)", showSteps: true },
-                      { label: "Penalties triggered", color: "var(--amber)", items: triggeredPenalties, cardBg: "var(--amber)/[0.07]", textColor: "var(--text-primary)", showPenalty: true },
-                      { label: "Passed", color: "var(--green)", items: passedCriteria, cardBg: undefined, textColor: "var(--text-secondary)", showSteps: true },
-                      { label: "Penalties avoided", color: "var(--text-tertiary)", items: avoidedPenalties, cardBg: undefined, textColor: "var(--text-tertiary)" },
+                      {
+                        label: "Failed",
+                        color: "var(--red)",
+                        items: failedCriteria,
+                        cardBg: "color-mix(in oklch, var(--red) 7%, transparent)",
+                        textColor: "var(--text-primary)",
+                        showSteps: true,
+                      },
+                      {
+                        label: "Penalties triggered",
+                        color: "var(--amber)",
+                        items: triggeredPenalties,
+                        cardBg: "color-mix(in oklch, var(--amber) 9%, transparent)",
+                        textColor: "var(--text-primary)",
+                        showPenalty: true,
+                      },
+                      {
+                        label: "Passed",
+                        color: "var(--green)",
+                        items: passedCriteria,
+                        cardBg: undefined,
+                        textColor: "var(--text-secondary)",
+                        showSteps: true,
+                      },
+                      {
+                        label: "Penalties avoided",
+                        color: "var(--text-tertiary)",
+                        items: avoidedPenalties,
+                        cardBg: undefined,
+                        textColor: "var(--text-tertiary)",
+                      },
                     ].map((section) => section.items.length > 0 && (
                       <div key={section.label} className="mb-4">
                         <div className="flex items-center gap-2 mb-2 px-1">
@@ -400,7 +427,20 @@ export default function TrajectoryPage({ taskId }: { taskId: string }) {
                             return (
                               <div
                                 key={i}
-                                className={`px-3 py-2.5 rounded-xl ${section.cardBg ? `bg-[${section.cardBg}]` : "hover:bg-[var(--bg)]/50"} transition-colors`}
+                                className="px-3 py-2.5 rounded-xl transition-colors"
+                                style={{
+                                  background: section.cardBg ?? "transparent",
+                                }}
+                                onMouseEnter={(event) => {
+                                  if (!section.cardBg) {
+                                    event.currentTarget.style.background = "color-mix(in oklch, var(--bg) 55%, transparent)";
+                                  }
+                                }}
+                                onMouseLeave={(event) => {
+                                  if (!section.cardBg) {
+                                    event.currentTarget.style.background = "transparent";
+                                  }
+                                }}
                               >
                                 <p className="text-[12px] leading-[1.5]" style={{ color: section.textColor }}>
                                   {cr.desc}
@@ -416,7 +456,16 @@ export default function TrajectoryPage({ taskId }: { taskId: string }) {
                                       <button
                                         key={stepIdx}
                                         onClick={() => handleStepChange(stepIdx)}
-                                        className="text-[10px] px-1.5 py-0.5 rounded-md text-[var(--accent)] bg-[var(--accent)]/[0.08] hover:bg-[var(--accent)]/[0.15] cursor-pointer transition-colors"
+                                        className="text-[10px] px-1.5 py-0.5 rounded-md text-[var(--accent)] cursor-pointer transition-colors border-none"
+                                        style={{
+                                          background: "color-mix(in oklch, var(--accent) 10%, transparent)",
+                                        }}
+                                        onMouseEnter={(event) => {
+                                          event.currentTarget.style.background = "color-mix(in oklch, var(--accent) 16%, transparent)";
+                                        }}
+                                        onMouseLeave={(event) => {
+                                          event.currentTarget.style.background = "color-mix(in oklch, var(--accent) 10%, transparent)";
+                                        }}
                                       >
                                         step {data.steps[stepIdx].step}
                                       </button>
