@@ -56,7 +56,7 @@
       "step": 1,
       "thought": "",
       "action": {
-        "action": "unknown"
+        "action": "think"
       },
       "targets": {},
       "status": "ERROR: no action",
