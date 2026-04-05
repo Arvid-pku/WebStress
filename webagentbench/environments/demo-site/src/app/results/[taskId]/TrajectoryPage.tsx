@@ -134,6 +134,24 @@ export default function TrajectoryPage({ taskId }: { taskId: string }) {
     setTimeout(() => setCopiedAll(false), 1500);
   }, [data]);
 
+  const allChecks = useMemo(() => {
+    if (!data) return [];
+    const explicit = data.evaluation?.criteria_results ?? [];
+    if (explicit.length > 0) return explicit;
+    const reasoning = data.evaluation?.reasoning ?? "";
+    const parsed: typeof explicit = [];
+    for (const line of reasoning.split("\n")) {
+      const trimmed = line.trim();
+      const passMatch = trimmed.match(/^\[PASS]\s+(.+)/);
+      if (passMatch) { parsed.push({ desc: passMatch[1], passed: true, kind: "criterion" }); continue; }
+      const failMatch = trimmed.match(/^\[FAIL]\s+(.+)/);
+      if (failMatch) { parsed.push({ desc: failMatch[1], passed: false, kind: "criterion" }); continue; }
+      const penaltyMatch = trimmed.match(/^\[PENALTY\s*-?([\d.]+)]\s+(.+)/);
+      if (penaltyMatch) { parsed.push({ desc: penaltyMatch[2], passed: false, kind: "penalty", penalty: parseFloat(penaltyMatch[1]) }); continue; }
+    }
+    return parsed;
+  }, [data]);
+
   if (loading) {
     return (
       <div className="max-w-[720px] mx-auto px-12 py-20">
@@ -180,23 +198,6 @@ export default function TrajectoryPage({ taskId }: { taskId: string }) {
   const activeAction = activeStep?.action;
   const replayFixture = replayState?.fixture ?? fixture?.state ?? null;
 
-  const allChecks = useMemo(() => {
-    const explicit = data.evaluation?.criteria_results ?? [];
-    if (explicit.length > 0) return explicit;
-    // Parse structured checks from reasoning text: "[PASS] desc" / "[FAIL] desc" / "[PENALTY -0.30] desc"
-    const reasoning = data.evaluation?.reasoning ?? "";
-    const parsed: typeof explicit = [];
-    for (const line of reasoning.split("\n")) {
-      const trimmed = line.trim();
-      const passMatch = trimmed.match(/^\[PASS]\s+(.+)/);
-      if (passMatch) { parsed.push({ desc: passMatch[1], passed: true, kind: "criterion" }); continue; }
-      const failMatch = trimmed.match(/^\[FAIL]\s+(.+)/);
-      if (failMatch) { parsed.push({ desc: failMatch[1], passed: false, kind: "criterion" }); continue; }
-      const penaltyMatch = trimmed.match(/^\[PENALTY\s*-?([\d.]+)]\s+(.+)/);
-      if (penaltyMatch) { parsed.push({ desc: penaltyMatch[2], passed: false, kind: "penalty", penalty: parseFloat(penaltyMatch[1]) }); continue; }
-    }
-    return parsed;
-  }, [data.evaluation]);
   const criteria = allChecks.filter((c) => c.kind !== "penalty");
   const penalties = allChecks.filter((c) => c.kind === "penalty");
   const failedCriteria = criteria.filter((c) => !c.passed);
