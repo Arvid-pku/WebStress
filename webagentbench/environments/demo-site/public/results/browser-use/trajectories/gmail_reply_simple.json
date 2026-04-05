@@ -1,0 +1,130 @@
+{
+  "task_id": "gmail_reply_simple",
+  "title": "Reply to an Email",
+  "instruction": "Find the email from Bob Martinez with subject \"Meeting Tomorrow at 2pm\" and reply with exactly: \"I'll be there. Thanks!\"",
+  "difficulty": "easy",
+  "model": "gpt-5.4",
+  "total_steps": 5,
+  "elapsed_seconds": 24.9,
+  "completed": true,
+  "start_path": "/inbox",
+  "evaluation": {
+    "score": 1.0,
+    "success": true,
+    "reasoning": "Passed 2/2 checks.\n  [PASS] Reply sent to Bob's email\n  [PASS] Reply contains the required message\nAll negative checks passed (no penalties).\nCollateral mutations detected (2 dimensions): emails_modified, emails_sent\nFinal score: 1.000 | Success: True",
+    "checks": [
+      {
+        "expr": "any(m.in_reply_to == '{target.target_email_id}' for m in state.sent)",
+        "desc": "Reply sent to Bob's email",
+        "passed": true,
+        "error": null
+      },
+      {
+        "expr": "any(\"I'll be there\" in m.body for m in state.sent)",
+        "desc": "Reply contains the required message",
+        "passed": true,
+        "error": null
+      }
+    ],
+    "negative_checks": [
+      {
+        "expr": "len(state.sent) <= 1",
+        "desc": "Only one reply sent",
+        "passed": true,
+        "error": null,
+        "penalty": 0.2
+      }
+    ],
+    "final_score": 1.0,
+    "collateral": {
+      "emails_modified": [
+        {
+          "email_id": "email_1",
+          "changes": {
+            "is_read": {
+              "before": false,
+              "after": true
+            }
+          }
+        }
+      ],
+      "emails_sent": 1
+    }
+  },
+  "steps": [
+    {
+      "step": 1,
+      "thought": "",
+      "action": {
+        "action": "unknown"
+      },
+      "targets": {},
+      "status": "ERROR: no action",
+      "elapsed_seconds": 10.1,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 2,
+      "thought": "The last response was invalid because no proper action sequence was executed. The target email is still visible in the inbox, so I should open it now.",
+      "action": {
+        "action": "click",
+        "ref": "25"
+      },
+      "targets": {
+        "role": "link",
+        "name": "Open unread thread Meeting Tomorrow at 2pm"
+      },
+      "status": "",
+      "elapsed_seconds": 17.3,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 3,
+      "thought": "The thread is open and the Reply button is visible. I should start a reply.",
+      "action": {
+        "action": "click",
+        "ref": "386"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Reply to Meeting Tomorrow at 2pm"
+      },
+      "status": "",
+      "elapsed_seconds": 19.8,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 4,
+      "thought": "The reply composer is open with the body field and send button visible. I can enter the exact requested message and send it.",
+      "action": {
+        "action": "fill",
+        "ref": "446",
+        "value": "I'll be there. Thanks!"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Email body"
+      },
+      "status": "",
+      "elapsed_seconds": 23.3,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    },
+    {
+      "step": 5,
+      "thought": "The page shows 'Reply sent' and the sent message from Avery Quinn with the exact text, so the task is complete.",
+      "action": {
+        "action": "finish",
+        "answer": "Replied to Bob Martinez with: I'll be there. Thanks!"
+      },
+      "targets": {},
+      "status": "FINISH",
+      "elapsed_seconds": 24.8,
+      "replay_path": "/thread/email_1",
+      "result_path": "/thread/email_1"
+    }
+  ]
+}

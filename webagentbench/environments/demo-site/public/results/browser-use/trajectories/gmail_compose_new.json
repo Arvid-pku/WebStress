@@ -1,0 +1,112 @@
+{
+  "task_id": "gmail_compose_new",
+  "title": "Compose and Send a New Email",
+  "instruction": "Compose a new email to alice@company.test with subject \"Weekly Report\" and body \"Hi Alice, please find the weekly report attached. Best regards.\" Then send it.",
+  "difficulty": "easy",
+  "model": "gpt-5.4",
+  "total_steps": 4,
+  "elapsed_seconds": 23.7,
+  "completed": true,
+  "start_path": "/inbox",
+  "evaluation": {
+    "score": 1.0,
+    "success": true,
+    "reasoning": "Passed 3/3 checks.\n  [PASS] Email sent to alice@company.test\n  [PASS] Subject is 'Weekly Report'\n  [PASS] Body mentions weekly report\nAll negative checks passed (no penalties).\nCollateral mutations detected (1 dimensions): emails_sent\nFinal score: 1.000 | Success: True",
+    "checks": [
+      {
+        "expr": "any('alice@company.test' in m.to for m in state.sent)",
+        "desc": "Email sent to alice@company.test",
+        "passed": true,
+        "error": null
+      },
+      {
+        "expr": "any('Weekly Report' in m.subject for m in state.sent)",
+        "desc": "Subject is 'Weekly Report'",
+        "passed": true,
+        "error": null
+      },
+      {
+        "expr": "any('weekly report' in m.body.lower() for m in state.sent)",
+        "desc": "Body mentions weekly report",
+        "passed": true,
+        "error": null
+      }
+    ],
+    "negative_checks": [
+      {
+        "expr": "len(state.sent) <= 1",
+        "desc": "Only one email sent",
+        "passed": true,
+        "error": null,
+        "penalty": 0.2
+      }
+    ],
+    "final_score": 1.0,
+    "collateral": {
+      "emails_sent": 1
+    }
+  },
+  "steps": [
+    {
+      "step": 1,
+      "thought": "",
+      "action": {
+        "action": "unknown"
+      },
+      "targets": {},
+      "status": "ERROR: no action",
+      "elapsed_seconds": 10.1,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 2,
+      "thought": "Previous response failed to produce a usable action sequence. Need to click Compose now.",
+      "action": {
+        "action": "click",
+        "ref": "6"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Compose a new message"
+      },
+      "status": "",
+      "elapsed_seconds": 16.5,
+      "replay_path": "/inbox",
+      "result_path": "/inbox"
+    },
+    {
+      "step": 3,
+      "thought": "Compose form is open. Fill recipient, subject, and body first; send should then become enabled.",
+      "action": {
+        "action": "fill",
+        "ref": "213",
+        "value": "alice@company.test"
+      },
+      "targets": {
+        "role": "textbox",
+        "name": "Recipients"
+      },
+      "status": "",
+      "elapsed_seconds": 20.4,
+      "replay_path": "/compose",
+      "result_path": "/compose"
+    },
+    {
+      "step": 4,
+      "thought": "Recipient and subject are filled, send is enabled. Body text may not display in compact DOM, but task requires sending after entering it; proceed to send.",
+      "action": {
+        "action": "click",
+        "ref": "232"
+      },
+      "targets": {
+        "role": "button",
+        "name": "Send"
+      },
+      "status": "FINISH",
+      "elapsed_seconds": 23.6,
+      "replay_path": "/compose",
+      "result_path": "/compose"
+    }
+  ]
+}
