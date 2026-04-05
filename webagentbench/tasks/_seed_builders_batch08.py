@@ -131,7 +131,7 @@ def build_sender_domain_triage(ctx: SeedContext, params: dict[str, Any]) -> dict
     ]
     for i, subj in enumerate(spam_subjects):
         s_email = ctx.email(
-            from_name=f"Spam Sender {i + 1}",
+            from_name=["PromoDesk", "VIP Offers", "Sales Alert"][i % 3],
             from_addr=f"promo{i + 1}@quicksavings.net",
             subject=subj,
             body=ctx.format_email_body(
@@ -826,12 +826,12 @@ def build_backlog_bankruptcy(ctx: SeedContext, params: dict[str, Any]) -> dict[s
     spam_specs = [
         ("Junk Deals", "deals@dailyoffers.net", "Massive savings on office supplies"),
         ("Junk Promo", "promo@dailyoffers.net", "Limited time: free trial offer"),
-        ("Spam Farm", "newsletter@prizecentral.net", "You won a gift card!"),
-        ("Spam Central", "offers@prizecentral.net", "Act now: exclusive member discount"),
+        ("Member Rewards", "newsletter@prizecentral.net", "You won a gift card!"),
+        ("Daily Deals", "offers@prizecentral.net", "Act now: exclusive member discount"),
         ("Security Alert", "alerts@phish-alerts.thornton.com", "Security Alert: Unusual Login Detected"),
         ("Ad Network", "ads@adreach.net", "Boost your reach with premium ads"),
         ("Ad Platform", "platform@adreach.net", "Your ad campaign performance report"),
-        ("Scam Offers", "deals@worldrewards.net", "Investment opportunity of a lifetime"),
+        ("Premium Savings", "deals@worldrewards.net", "Investment opportunity of a lifetime"),
     ]
     phish_alert_id = None
     for i, (name, addr, subj) in enumerate(spam_specs):

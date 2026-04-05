@@ -3079,7 +3079,7 @@ def build_subscription_cleanup(ctx: SeedContext, params: dict[str, Any]) -> dict
     spam_ids: list[str] = []
     spam_entries = [
         ("Prize Center", "winner@luxurydeals.net", "You've won a free laptop! Claim now!"),
-        ("Rewards Hub", "gifts@globalwins.net", "Claim your $500 gift card now — act fast!"),
+        ("Benefits Club", "gifts@globalwins.net", "Claim your $500 gift card now — act fast!"),
     ]
     for idx, (sender_name, sender_addr, subject) in enumerate(spam_entries):
         em = ctx.email(

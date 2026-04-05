@@ -116,9 +116,9 @@ def build_delete_spam(ctx: SeedContext, params: dict[str, Any]) -> dict[str, Any
     """Seed one obvious spam email among normal emails."""
     thread = ctx.next_id("thread")
     spam = ctx.email(
-        from_name="FREE PRIZES",
+        from_name="Loyalty Program",
         from_addr="winner@prizecentral.net",
-        subject="YOU WON $1,000,000!!! Click NOW!!!",
+        subject="You Won $1,000,000!!! Click NOW!!!",
         body="Congratulations! You have been selected as a winner! Click the link to claim.",
         timestamp=ctx.now - timedelta(hours=1),
         thread_id=thread,
