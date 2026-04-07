@@ -56,27 +56,35 @@ seed:
   distractors: 40
   actors:
     victor_hahn:
+      name: Victor Hahn
       domain: buildcorp.io
       is_vip: false
     priya_rao:
+      name: Priya Rao
       domain: buildcorp.io
       is_vip: false
     alex_novak:
+      name: Alex Novak
       domain: buildcorp.io
       is_vip: false
     leila_osman:
+      name: Leila Osman
       domain: buildcorp.io
       is_vip: true
     javier_reyes:
+      name: Javier Reyes
       domain: buildcorp.io
       is_vip: false
     nadia_orozco:
+      name: Nadia Orozco
       domain: buildcorp.io
       is_vip: false
     gareth_stone:
+      name: Gareth Stone
       domain: buildcorp.io
       is_vip: false
     derek_wu:
+      name: Derek Wu
       domain: buildcorp.io
       is_vip: false
   steps:

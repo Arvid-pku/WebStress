@@ -19,7 +19,7 @@ instruction_template: 'Forward these 3 emails to the specified recipients:
 
   1. Send a new email to {target.dana_email} with subject "Forwarded on behalf of
   {target.alice_name} (on leave)" explaining that you initially forwarded Email A
-  to Alice but she is on leave, and that Dana should handle it as Alice''s backup.
+  to {target.alice_name} but she is on leave, and that {target.dana_name} should handle it as {target.alice_name}''s backup.
 
   2. Forward Email A again to {target.dana_email}.
 

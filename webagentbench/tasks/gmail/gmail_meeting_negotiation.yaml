@@ -38,14 +38,14 @@ eval:
   checks:
   - expr: len(state.sent) == 1
     desc: Exactly one email sent
-  - expr: state.sent[-1].to == ['{target.organizer_email}']
-    desc: Sent to organizer
-  - expr: all(addr in state.sent[-1].cc for addr in {target.attendee_emails})
-    desc: All 5 attendees CC'd
-  - expr: '''{target.correct_time}'' in state.sent[-1].body'
-    desc: Correct time in body
-  - expr: '''{target.room_name}'' in state.sent[-1].body'
-    desc: Room name in body
+  - expr: >
+      any(m.to == ['{target.organizer_email}']
+      and all(addr in m.cc for addr in {target.attendee_emails})
+      and '{target.correct_time}' in m.body
+      and '{target.room_name}' in m.body
+      and m.in_reply_to is None
+      for m in state.sent)
+    desc: Single confirmation email sent to organizer with all attendees CC'd, correct time, and room name
   negative_checks:
   - expr: not any(m.in_reply_to is not None for m in state.sent)
     desc: Must compose new, not reply

@@ -59,21 +59,27 @@ seed:
   distractors: 40
   actors:
     farah_nasir:
+      name: Farah Nasir
       domain: helios.dev
       is_vip: false
     dmitri_volkov:
+      name: Dmitri Volkov
       domain: helios.dev
       is_vip: false
     keiko_tanaka:
+      name: Keiko Tanaka
       domain: helios.dev
       is_vip: false
     owen_byrne:
+      name: Owen Byrne
       domain: helios.dev
       is_vip: false
     suki_park:
+      name: Suki Park
       domain: helios.dev
       is_vip: false
     nadia_orozco:
+      name: Nadia Orozco
       domain: helios.dev
       is_vip: true
   steps:

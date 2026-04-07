@@ -23,9 +23,12 @@ seed:
 eval:
   source: server_state
   checks:
-  - expr: 'any(''dave@thornton.com'' in m.to and ''Invoice #1234'' in m.subject for
-      m in state.sent)'
-    desc: Email forwarded to dave@thornton.com
+  - expr: any(m.forwarded_from_id == '{target.target_email_id}' and 'dave@thornton.com'
+      in m.to for m in state.sent)
+    desc: Correct invoice email forwarded to dave@thornton.com
   - expr: any('Please review this invoice' in m.body for m in state.sent)
     desc: Forward note included
-  negative_checks: []
+  negative_checks:
+  - expr: len(state.sent) == 1
+    desc: Only one outbound email was sent
+    penalty: 0.15

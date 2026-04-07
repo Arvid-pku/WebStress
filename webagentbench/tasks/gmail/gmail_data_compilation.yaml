@@ -54,25 +54,23 @@ eval:
   checks:
   - expr: len(state.sent) >= 1
     desc: At least one email sent
-  - expr: '''Q1 Budget Summary'' in state.sent[-1].subject'
-    desc: Subject is Q1 Budget Summary
-  - expr: state.sent[-1].to == ['{target.exec_email}']
-    desc: Sent to exec
-  - expr: all(addr in state.sent[-1].cc for addr in {target.dept_emails})
-    desc: All 3 dept heads CC'd
-  - expr: '''{target.number_a}'' in state.sent[-1].body'
-    desc: Dept A number in body
-  - expr: '''{target.number_b}'' in state.sent[-1].body'
-    desc: Dept B number in body
-  - expr: '''{target.number_c}'' in state.sent[-1].body'
-    desc: Dept C number in body
-  - expr: '''{target.dept_a_dept}'' in state.sent[-1].body'
-    desc: Dept A department name in body
-  - expr: '''{target.dept_b_dept}'' in state.sent[-1].body'
-    desc: Dept B department name in body
-  - expr: '''{target.dept_c_dept}'' in state.sent[-1].body'
-    desc: Dept C department name in body
+  - expr: >
+      any('Q1 Budget Summary' in m.subject
+      and m.to == ['{target.exec_email}']
+      and all(addr in m.cc for addr in {target.dept_emails})
+      and '{target.number_a}' in m.body
+      and '{target.number_b}' in m.body
+      and '{target.number_c}' in m.body
+      and '{target.dept_a_dept}' in m.body
+      and '{target.dept_b_dept}' in m.body
+      and '{target.dept_c_dept}' in m.body
+      for m in state.sent)
+    desc: Single summary email sent to exec with all CCs, department names, and numbers
   negative_checks:
-  - expr: not any(n in state.sent[-1].body for n in {target.wrong_numbers})
-    desc: Decoy numbers not in body
+  - expr: >
+      not any('Q1 Budget Summary' in m.subject
+      and m.to == ['{target.exec_email}']
+      and any(n in m.body for n in {target.wrong_numbers})
+      for m in state.sent)
+    desc: Summary email does not include decoy numbers
     penalty: 0.2

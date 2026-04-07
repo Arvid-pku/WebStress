@@ -38,24 +38,31 @@ seed:
   distractors: 40
   actors:
     nolan_park:
+      name: Nolan Park
       domain: atlas.dev
       is_vip: false
     suki_ware:
+      name: Suki Ware
       domain: atlas.dev
       is_vip: false
     derek_tan:
+      name: Derek Tan
       domain: atlas.dev
       is_vip: false
     yvonne_chandra:
+      name: Yvonne Chandra
       domain: atlas.dev
       is_vip: true
     morgan_lee:
+      name: Morgan Lee
       domain: atlas.dev
       is_vip: false
     jia_lin:
+      name: Jia Lin
       domain: atlas.dev
       is_vip: false
     ravi_menon:
+      name: Ravi Menon
       domain: atlas.dev
       is_vip: false
   steps:
