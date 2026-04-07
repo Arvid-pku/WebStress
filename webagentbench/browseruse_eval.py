@@ -53,7 +53,8 @@ _EMPTY_RESULT: dict[str, Any] = {
 }
 
 _PLAIN_RE = re.compile(
-    r"^(click|input|scroll|go_back|done)\s*(\d+)?\s*(.*)$", re.IGNORECASE
+    r"^(click|input|scroll_left|scroll_right|scroll|send_keys|wait|go_back|go_forward|done)\s*(\d+)?\s*(.*)$",
+    re.IGNORECASE,
 )
 
 
@@ -83,14 +84,30 @@ def _parse_plain_text(raw: str) -> dict[str, Any]:
         result["action"] = [{"click": {"index": int(idx_str)}}]
     elif verb == "input" and idx_str is not None:
         result["action"] = [{"input_text": {"index": int(idx_str), "text": rest}}]
-    elif verb == "scroll":
-        direction = idx_str or rest or "down"
-        if direction in ("up",):
-            result["action"] = [{"scroll_up": {"amount": 300}}]
-        else:
-            result["action"] = [{"scroll_down": {"amount": 300}}]
+    elif verb in ("scroll", "scroll_left", "scroll_right"):
+        direction = rest.lower() if rest else "down"
+        if verb == "scroll_left":
+            direction = "left"
+        elif verb == "scroll_right":
+            direction = "right"
+        key = f"scroll_{direction}" if direction in ("up", "down", "left", "right") else "scroll_down"
+        action_payload: dict[str, Any] = {"amount": 300}
+        if idx_str is not None:
+            action_payload["index"] = int(idx_str)
+        result["action"] = [{key: action_payload}]
+    elif verb == "send_keys":
+        result["action"] = [{"send_keys": {"keys": rest or "Enter"}}]
+    elif verb == "wait":
+        raw_secs = idx_str or rest or ""
+        try:
+            secs = float(raw_secs) if raw_secs else 2.0
+        except ValueError:
+            secs = 2.0
+        result["action"] = [{"wait": {"seconds": min(secs, 5)}}]
     elif verb == "go_back":
         result["action"] = [{"go_back": {}}]
+    elif verb == "go_forward":
+        result["action"] = [{"go_forward": {}}]
     elif verb == "done":
         result["action"] = [{"done": {"text": rest or "done", "success": True}}]
 
@@ -139,14 +156,26 @@ def action_to_trajectory_format(action: dict) -> dict:
         payload = action["select_option"]
         return {"action": "select", "ref": str(payload["index"]), "value": payload["option"]}
 
-    if "scroll_down" in action:
-        return {"action": "scroll", "direction": "down"}
+    for scroll_key in ("scroll_down", "scroll_up", "scroll_left", "scroll_right"):
+        if scroll_key in action:
+            direction = scroll_key.split("_", 1)[1]
+            result: dict[str, Any] = {"action": "scroll", "direction": direction}
+            idx = action[scroll_key].get("index")
+            if idx is not None:
+                result["ref"] = str(idx)
+            return result
 
-    if "scroll_up" in action:
-        return {"action": "scroll", "direction": "up"}
+    if "send_keys" in action:
+        return {"action": "press", "key": action["send_keys"].get("keys", "")}
+
+    if "wait" in action:
+        return {"action": "wait"}
 
     if "go_back" in action:
         return {"action": "back"}
+
+    if "go_forward" in action:
+        return {"action": "forward"}
 
     if "done" in action:
         return {"action": "finish", "answer": action["done"].get("text", "")}
@@ -203,7 +232,8 @@ def _extract_replay_path(url: str) -> str:
 
 def _get_action_index(action: dict) -> int | None:
     """Return the element index referenced by an action, or None."""
-    for key in ("click", "input_text", "select_option"):
+    for key in ("click", "input_text", "select_option",
+                "scroll_down", "scroll_up", "scroll_left", "scroll_right"):
         if key in action:
             return action[key].get("index")
     return None
@@ -282,9 +312,14 @@ Respond with valid JSON:
     {{"click": {{"index": N}}}},
     {{"input_text": {{"index": N, "text": "value"}}}},
     {{"select_option": {{"index": N, "option": "value"}}}},
+    {{"send_keys": {{"keys": "Tab"}}}},
     {{"scroll_down": {{"amount": 300}}}},
     {{"scroll_up": {{"amount": 300}}}},
+    {{"scroll_left": {{"amount": 300}}}},
+    {{"scroll_right": {{"index": N, "amount": 300}}}},
+    {{"wait": {{"seconds": 2}}}},
     {{"go_back": {{}}}},
+    {{"go_forward": {{}}}},
     {{"done": {{"text": "result or summary", "success": true}}}}
   ]
 }}
@@ -295,6 +330,8 @@ Respond with valid JSON:
 3. If an action fails, the error tells you what went wrong. Adapt.
 4. Call done with success=true only when the task is fully complete.
 5. Output valid JSON only -- no extra text.
+6. send_keys accepts key combos: "Enter", "Tab", "Escape", "ctrl+a", "ctrl+c".
+7. Add "index" to any scroll to scroll a specific container instead of the page.
 """
 
 
@@ -562,31 +599,44 @@ async def run_episode(
                             continue
                         await asyncio.sleep(0.3)
 
-                    elif "scroll_down" in action:
-                        amount = action["scroll_down"].get("amount", 300)
+                    elif any(k in action for k in ("scroll_down", "scroll_up", "scroll_left", "scroll_right")):
+                        scroll_key = next(k for k in ("scroll_down", "scroll_up", "scroll_left", "scroll_right") if k in action)
+                        direction = scroll_key.split("_", 1)[1]  # "down", "up", "left", "right"
+                        payload = action[scroll_key]
+                        amount = payload.get("amount", 300)
+                        # Optional element-targeted scroll
+                        scroll_node = None
+                        if "index" in payload:
+                            scroll_node = await browser.get_dom_element_by_index(payload["index"])
+                            if scroll_node is None:
+                                last_error = f"Scroll target index {payload['index']} not found"
+                                continue
                         from browser_use.browser.events import ScrollEvent
                         event = browser.event_bus.dispatch(
-                            ScrollEvent(node=None, direction="down", amount=amount))
+                            ScrollEvent(node=scroll_node, direction=direction, amount=amount))
                         await event
                         try:
                             await event.event_result(raise_if_any=True, raise_if_none=False)
                         except Exception as scroll_err:
-                            last_error = f"Scroll down failed: {scroll_err}"
+                            last_error = f"Scroll {direction} failed: {scroll_err}"
                             continue
                         await asyncio.sleep(0.3)
 
-                    elif "scroll_up" in action:
-                        amount = action["scroll_up"].get("amount", 300)
-                        from browser_use.browser.events import ScrollEvent
-                        event = browser.event_bus.dispatch(
-                            ScrollEvent(node=None, direction="up", amount=amount))
+                    elif "send_keys" in action:
+                        keys = action["send_keys"].get("keys", "")
+                        from browser_use.browser.events import SendKeysEvent
+                        event = browser.event_bus.dispatch(SendKeysEvent(keys=keys))
                         await event
                         try:
                             await event.event_result(raise_if_any=True, raise_if_none=False)
-                        except Exception as scroll_err:
-                            last_error = f"Scroll up failed: {scroll_err}"
+                        except Exception as key_err:
+                            last_error = f"send_keys '{keys}' failed: {key_err}"
                             continue
                         await asyncio.sleep(0.3)
+
+                    elif "wait" in action:
+                        seconds = min(action["wait"].get("seconds", 2), 5)
+                        await asyncio.sleep(seconds)
 
                     elif "go_back" in action:
                         page = await browser.get_current_page()
@@ -594,6 +644,14 @@ async def run_episode(
                             await page.go_back()
                         else:
                             last_error = "go_back failed: no active page"
+                        await asyncio.sleep(0.5)
+
+                    elif "go_forward" in action:
+                        page = await browser.get_current_page()
+                        if page:
+                            await page.go_forward()
+                        else:
+                            last_error = "go_forward failed: no active page"
                         await asyncio.sleep(0.5)
 
                     else:

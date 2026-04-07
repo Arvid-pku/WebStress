@@ -636,16 +636,20 @@ function executeAction(trajStep) {{
     if (actionName === 'finish' || actionName === 'wait') return actionName;
 
     if (actionName === 'scroll') {{
-        const delta = action.direction === 'up' ? -300 : 300;
+        const dir = action.direction || 'down';
+        const isHorizontal = dir === 'left' || dir === 'right';
+        const delta = (dir === 'up' || dir === 'left') ? -300 : 300;
+        const dx = isHorizontal ? delta : 0;
+        const dy = isHorizontal ? 0 : delta;
         if (targets.ref) {{
             const el = findBySelector(doc, targets.ref.selector) ||
                 findByRole(doc, targets.ref.role, targets.ref.name, targets.ref.nth);
-            if (el) el.scrollBy(0, delta);
-            else iframe.contentWindow.scrollBy(0, delta);
+            if (el) el.scrollBy(dx, dy);
+            else iframe.contentWindow.scrollBy(dx, dy);
         }} else {{
-            iframe.contentWindow.scrollBy(0, delta);
+            iframe.contentWindow.scrollBy(dx, dy);
         }}
-        return 'scrolled ' + (action.direction || 'down');
+        return 'scrolled ' + dir;
     }}
 
     if (actionName === 'press') {{
