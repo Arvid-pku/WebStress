@@ -28,4 +28,9 @@ eval:
   checks:
     - expr: "any(t.direction == 'deposit' and t.amount == 500 for t in state.transfers)"
       desc: A $500 deposit transfer exists
-  negative_checks: []
+    - expr: "any(t.direction == 'deposit' and t.amount == 500 and t.status == 'completed' for t in state.transfers)"
+      desc: The $500 deposit transfer has completed status
+  negative_checks:
+    - expr: "not any(t.direction == 'withdrawal' for t in state.transfers)"
+      desc: No withdrawals were initiated
+      penalty: 0.15

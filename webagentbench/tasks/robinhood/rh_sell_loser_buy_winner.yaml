@@ -23,14 +23,36 @@ seed:
       params:
         count: 5
         include_losers: true
-      outputs: []
-  targets: {}
+      outputs:
+        - worst_symbol
+        - best_symbol
+  targets:
+    worst_symbol: "{output.worst_symbol}"
+    best_symbol: "{output.best_symbol}"
 
 eval:
   source: server_state
   checks:
-    - expr: "len([o for o in state.orders if o.side == 'sell']) >= 1"
-      desc: A sell order exists for the worst-performing stock
-    - expr: "len([o for o in state.orders if o.side == 'buy']) >= 1"
-      desc: A buy order exists for the best-performing stock
-  negative_checks: []
+    - expr: >-
+        len([o for o in state.orders
+            if o.side == 'sell' and not o.id.startswith('ord_decoy_')]) >= 1
+      desc: A sell order exists (non-decoy)
+    - expr: >-
+        len([o for o in state.orders
+            if o.side == 'buy' and not o.id.startswith('ord_decoy_')]) >= 1
+      desc: A buy order exists (non-decoy)
+    - expr: >-
+        any(o.symbol == '{target.worst_symbol}' and o.side == 'sell'
+            and not o.id.startswith('ord_decoy_')
+            for o in state.orders)
+      desc: The sell order targets the worst-performing stock
+  negative_checks:
+    - expr: >-
+        (not any(o.symbol == '{target.best_symbol}' and o.side == 'sell'
+                 and not o.id.startswith('ord_decoy_')
+                 for o in state.orders)
+         and not any(o.symbol == '{target.worst_symbol}' and o.side == 'buy'
+                     and not o.id.startswith('ord_decoy_')
+                     for o in state.orders))
+      desc: Agent did not sell the best performer or buy the worst performer
+      penalty: 0.25

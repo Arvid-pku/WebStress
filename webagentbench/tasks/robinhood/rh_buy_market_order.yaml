@@ -32,6 +32,18 @@ seed:
 eval:
   source: server_state
   checks:
-    - expr: "any(o.symbol == 'AAPL' and o.side == 'buy' and o.order_type == 'market' and o.quantity == 3 and o.status == 'filled' for o in state.orders)"
-      desc: A filled market buy order for 3 shares of AAPL exists
-  negative_checks: []
+    - expr: >-
+        any(o.symbol == 'AAPL' and o.side == 'buy' and o.order_type == 'market'
+            and o.quantity == 3 and o.status == 'filled'
+            and not o.id.startswith('ord_decoy_')
+            for o in state.orders)
+      desc: A filled market buy order for 3 shares of AAPL exists (non-decoy)
+    - expr: "state.get_position('AAPL') is not None and state.get_position('AAPL').quantity >= 3"
+      desc: AAPL position reflects the purchased shares
+  negative_checks:
+    - expr: >-
+        not any(o.symbol != 'AAPL' and o.side == 'buy'
+                and not o.id.startswith('ord_decoy_')
+                for o in state.orders)
+      desc: Agent did not place buy orders on other symbols
+      penalty: 0.25

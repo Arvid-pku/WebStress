@@ -30,4 +30,11 @@ eval:
   checks:
     - expr: "any('NVDA' in w.symbols and w.name == 'Tech Stocks' for w in state.watchlists)"
       desc: NVDA is in the Tech Stocks watchlist
-  negative_checks: []
+    - expr: "len([w for w in state.watchlists if w.name == 'Tech Stocks']) == 1"
+      desc: Exactly one watchlist named Tech Stocks exists (no duplicates)
+  negative_checks:
+    - expr: >-
+        not any(w.name != 'Tech Stocks' and 'NVDA' in w.symbols
+                for w in state.watchlists)
+      desc: NVDA was not added to any other watchlist
+      penalty: 0.25

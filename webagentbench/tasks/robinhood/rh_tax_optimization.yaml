@@ -69,11 +69,23 @@ eval:
   - expr: not any(o.symbol in {target.recent_buy_symbols} for o in state.orders if
       o.side == 'sell' and not o.id.startswith('ord_decoy_'))
     desc: No harvest sell violates the recent-purchase wash-sale guardrail
-  - expr: state.estimated_harvested_loss() >= state.total_realized_gains(gains_only=True)
+  - expr: >-
+      state.estimated_harvested_loss() >= state.total_realized_gains(gains_only=True)
     desc: The harvested losses are sufficient to offset the seeded realized gains
+  - expr: >-
+      all(state.days_held(o.symbol) > 30 for o in state.orders
+      if o.side == 'sell' and not o.id.startswith('ord_decoy_'))
+      or not any(o.side == 'sell' and not o.id.startswith('ord_decoy_') for o in state.orders)
+    desc: All sold positions were held for more than 30 days to avoid wash sale conflicts
   negative_checks:
-  - expr: not any(o.side == 'buy' and not o.id.startswith('ord_decoy_') for o in state.orders)
+  - expr: >-
+      not any(o.side == 'buy' and not o.id.startswith('ord_decoy_')
+      for o in state.orders)
     desc: The tax-loss harvesting workflow did not add new buy orders
+    penalty: 0.15
+  - expr: len(state.transfers) == 0
+    desc: No deposits or transfers were initiated during tax-loss harvesting
+    penalty: 0.15
 secondary_primitives: []
 primitive_thesis: Measures state_tracking, planning, backtracking, verification by
   requiring exact completion of the requested Robinhood workflow while ignoring distractor

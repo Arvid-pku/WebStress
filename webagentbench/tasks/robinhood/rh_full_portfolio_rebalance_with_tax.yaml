@@ -76,9 +76,22 @@ eval:
   - expr: state.allocation_error_vs_targets({target.target_allocation}) <= Decimal('65')
     desc: The allocation is reasonably close to the requested core mix (relaxed for wash-sale constraints)
   negative_checks:
-  - expr: not any(o.side == 'buy' and o.symbol not in ('VTI', 'VXUS', 'BND', 'GLD')
-      and not o.id.startswith('ord_decoy_') for o in state.orders)
+  - expr: >-
+      not any(o.side == 'buy' and o.symbol not in ('VTI', 'VXUS', 'BND', 'GLD')
+      and not o.id.startswith('ord_decoy_')
+      for o in state.orders)
     desc: Rebalance buy orders did not drift into unrelated symbols
+    penalty: 0.25
+  - expr: >-
+      not any(o.side == 'sell'
+      and o.symbol in ('VTI', 'VXUS', 'BND', 'GLD')
+      and not o.id.startswith('ord_decoy_')
+      for o in state.orders)
+    desc: Target allocation symbols were not sold during the rebalance
+    penalty: 0.20
+  - expr: len(state.transfers) == 0
+    desc: No transfers were initiated during the rebalance
+    penalty: 0.15
 secondary_primitives: []
 primitive_thesis: Measures state_tracking, planning, backtracking, verification, grounding
   by requiring exact completion of the requested Robinhood workflow while ignoring

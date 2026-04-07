@@ -98,22 +98,53 @@ seed:
 eval:
   source: server_state
   checks:
-  - expr: all(any(any(leg.underlying_symbol == sym and leg.side == 'sell' for leg
+  - expr: >-
+      len({target.profitable_long_symbols}) >= 1
+      and all(any(any(leg.underlying_symbol == sym and leg.side == 'sell' for leg
       in oo.legs) for oo in state.options_orders if oo.id not in {target.seeded_option_order_ids})
       for sym in {target.profitable_long_symbols})
     desc: Every profitable long option that required action was sold to close
-  - expr: all(any(any(leg.underlying_symbol == sym and leg.side == 'buy' for leg
+  - expr: >-
+      len({target.short_itm_symbols}) >= 1
+      and all(any(any(leg.underlying_symbol == sym and leg.side == 'buy' for leg
       in oo.legs) for oo in state.options_orders if oo.id not in {target.seeded_option_order_ids})
       for sym in {target.short_itm_symbols})
     desc: Every short in-the-money option that required action was bought to close
-  - expr: not any(any(leg.underlying_symbol in {target.no_action_symbols} for leg
+  - expr: >-
+      not any(any(leg.underlying_symbol in {target.no_action_symbols} for leg
       in oo.legs) for oo in state.options_orders if oo.id not in {target.seeded_option_order_ids})
     desc: Positions that should have been left to expire were not touched
+  - expr: >-
+      sum(1 for oo in state.options_orders
+      if oo.id not in {target.seeded_option_order_ids}
+      and any(leg.side == 'sell' for leg in oo.legs))
+      >= len({target.profitable_long_symbols})
+    desc: The correct number of sell-to-close orders was placed for profitable longs
+  - expr: >-
+      sum(1 for oo in state.options_orders
+      if oo.id not in {target.seeded_option_order_ids}
+      and any(leg.side == 'buy' for leg in oo.legs))
+      >= len({target.short_itm_symbols})
+    desc: The correct number of buy-to-close orders was placed for short ITM positions
+  - expr: >-
+      len([oo for oo in state.options_orders
+      if oo.id not in {target.seeded_option_order_ids}]) >= 1
+    desc: At least one new options order was placed to manage expiring positions
   negative_checks:
-  - expr: not any(any(leg.underlying_symbol not in set({target.profitable_long_symbols})
+  - expr: >-
+      not any(any(leg.underlying_symbol not in set({target.profitable_long_symbols})
       | set({target.short_itm_symbols}) for leg in oo.legs) for oo in state.options_orders
       if oo.id not in {target.seeded_option_order_ids})
     desc: New close-out orders were not placed on unrelated option positions
+    penalty: 0.25
+  - expr: >-
+      not any(o.side in ('buy', 'sell') and not o.id.startswith('ord_decoy_')
+      for o in state.orders)
+    desc: No equity orders were placed (task is options management only)
+    penalty: 0.15
+  - expr: len(state.transfers) == 0
+    desc: No transfers were initiated during expiration management
+    penalty: 0.15
 secondary_primitives: []
 primitive_thesis: Measures state_tracking, planning, grounding, verification, backtracking
   by requiring exact completion of the requested Robinhood workflow while ignoring

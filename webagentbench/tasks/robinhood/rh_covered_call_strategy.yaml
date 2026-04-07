@@ -58,10 +58,24 @@ eval:
       <= state.get_stock('AAPL').price * Decimal('1.12')
     desc: The covered call uses an expiration around 30 days out and a strike about
       10% above spot
+  - expr: >-
+      state.latest_options_order(symbol='AAPL') is not None
+      and state.latest_options_order(symbol='AAPL').legs[0].quantity == 1
+    desc: Exactly 1 contract was sold (standard covered call quantity)
+  - expr: >-
+      state.get_position('AAPL') is not None
+      and state.get_position('AAPL').quantity >= 100
+    desc: The agent owns at least 100 shares of AAPL (covered call requirement)
   negative_checks:
-  - expr: state.latest_options_order(symbol='AAPL') is None or not any(leg.option_type
-      == 'put' for leg in state.latest_options_order(symbol='AAPL').legs)
+  - expr: >-
+      state.latest_options_order(symbol='AAPL') is None
+      or not any(leg.option_type == 'put'
+      for leg in state.latest_options_order(symbol='AAPL').legs)
     desc: The order did not include an unnecessary put leg
+  - expr: >-
+      all(o.id.startswith('ord_decoy_') for o in state.orders)
+    desc: No equity orders were placed during the options task
+    penalty: 0.15
 secondary_primitives: []
 primitive_thesis: Measures state_tracking, exploration, planning, grounding by requiring
   exact completion of the requested Robinhood workflow while ignoring distractor account

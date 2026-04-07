@@ -28,6 +28,19 @@ seed:
 eval:
   source: server_state
   checks:
-    - expr: "any(t.direction == 'withdrawal' and t.amount == 2500 for t in state.transfers)"
+    - expr: >-
+        any(t.direction == 'withdrawal' and t.amount == 2500
+            for t in state.transfers)
       desc: A withdrawal of $2,500 (half of $5,000 cash balance) exists
-  negative_checks: []
+    - expr: >-
+        any(t.direction == 'withdrawal' and t.status in ('completed', 'pending')
+            for t in state.transfers)
+      desc: A withdrawal transfer was successfully initiated
+    - expr: >-
+        len([t for t in state.transfers if t.direction == 'withdrawal']) >= 1
+      desc: At least one withdrawal transfer exists
+  negative_checks:
+    - expr: >-
+        not any(t.direction == 'deposit' for t in state.transfers)
+      desc: No deposits were made (task only required a withdrawal)
+      penalty: 0.15

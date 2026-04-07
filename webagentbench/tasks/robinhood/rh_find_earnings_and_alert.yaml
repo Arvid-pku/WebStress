@@ -34,4 +34,16 @@ eval:
   checks:
     - expr: "len(state.price_alerts) >= 1"
       desc: At least one price alert was created for a stock with upcoming earnings
-  negative_checks: []
+    - expr: >-
+        len([a for a in state.price_alerts if a.status == 'active']) >= 1
+      desc: At least one active price alert exists
+    - expr: >-
+        all(a.condition == 'below' for a in state.price_alerts
+            if a.status == 'active' and not a.id.startswith('alert_decoy_'))
+      desc: All agent-created alerts are set to trigger below current price (5% below)
+  negative_checks:
+    - expr: >-
+        len([o for o in state.orders
+            if not o.id.startswith('ord_decoy_')]) == 0
+      desc: No orders were placed (task only required setting price alerts)
+      penalty: 0.15

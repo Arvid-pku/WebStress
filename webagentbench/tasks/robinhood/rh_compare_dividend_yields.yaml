@@ -31,4 +31,16 @@ eval:
   checks:
     - expr: "any('KO' in w.symbols and w.name == 'Dividend Kings' for w in state.watchlists)"
       desc: KO (highest dividend yield) is in the Dividend Kings watchlist
-  negative_checks: []
+    - expr: >-
+        any(w.name == 'Dividend Kings' and len(w.symbols) == 1
+            for w in state.watchlists)
+      desc: Exactly one symbol was added to the Dividend Kings watchlist
+    - expr: "any(w.name == 'Dividend Kings' for w in state.watchlists)"
+      desc: The Dividend Kings watchlist still exists
+  negative_checks:
+    - expr: >-
+        not any(s in next((w.symbols for w in state.watchlists
+            if w.name == 'Dividend Kings'), [])
+            for s in ['PEP', 'PG'])
+      desc: PEP and PG were not added to the Dividend Kings watchlist
+      penalty: 0.25

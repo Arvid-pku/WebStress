@@ -24,17 +24,51 @@ seed:
       params:
         count: 6
         include_losers: true
-      outputs: []
+      outputs: [loss_symbols, gain_symbols]
     - use: transaction_ledger
       params:
         months: 2
         symbols: ["AAPL", "MSFT", "GOOGL", "AMZN", "TSLA", "META"]
-      outputs: []
-  targets: {}
+        include_recent_buys: true
+        recent_buy_count: 2
+      outputs: [recent_buy_symbols]
+  targets:
+    loss_symbols: "{output.loss_symbols}"
+    recent_buy_symbols: "{output.recent_buy_symbols}"
+    gain_symbols: "{output.gain_symbols}"
 
 eval:
   source: server_state
   checks:
-    - expr: "len([o for o in state.orders if o.side == 'sell']) >= 1"
+    - expr: >-
+        len([o for o in state.orders
+        if o.side == 'sell' and not o.id.startswith('ord_decoy_')]) >= 1
       desc: At least one loss position was sold for tax-loss harvesting
-  negative_checks: []
+    - expr: >-
+        any(o.side == 'sell' and o.symbol in {target.loss_symbols}
+        and not o.id.startswith('ord_decoy_')
+        for o in state.orders)
+      desc: A sell order targets a stock with unrealized losses
+    - expr: >-
+        all(o.symbol in {target.loss_symbols}
+        for o in state.orders
+        if o.side == 'sell' and not o.id.startswith('ord_decoy_'))
+      desc: All sell orders target stocks with unrealized losses (not gainers)
+    - expr: >-
+        not any(o.side == 'sell'
+        and o.symbol in {target.recent_buy_symbols}
+        and not o.id.startswith('ord_decoy_')
+        for o in state.orders)
+      desc: No sells were placed on stocks purchased within the last 30 days (wash sale avoidance)
+  negative_checks:
+    - expr: >-
+        not any(o.side == 'sell' and o.symbol in {target.gain_symbols}
+        and not o.id.startswith('ord_decoy_')
+        for o in state.orders)
+      desc: No profitable positions were sold (only loss positions qualify for harvesting)
+      penalty: 0.25
+    - expr: >-
+        not any(o.side == 'buy' and not o.id.startswith('ord_decoy_')
+        for o in state.orders)
+      desc: No buy orders were placed (task is only about selling losers)
+      penalty: 0.15

@@ -20,4 +20,11 @@ eval:
   checks:
     - expr: "state.settings.extended_hours_enabled == True"
       desc: Extended hours trading is enabled in settings
-  negative_checks: []
+    - expr: "bool(state.settings.extended_hours_enabled)"
+      desc: Extended hours setting is truthy
+  negative_checks:
+    - expr: >-
+        len(state.orders) == 0
+        or all(o.id.startswith('ord_decoy_') for o in state.orders)
+      desc: Agent did not place any orders (task only required toggling a setting)
+      penalty: 0.15

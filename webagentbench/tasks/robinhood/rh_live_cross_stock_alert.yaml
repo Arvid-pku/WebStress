@@ -83,9 +83,21 @@ eval:
       \ if o.symbol == 'CVX' and o.side == 'buy' and o.status == 'filled')"
     desc: CVX was bought after it dropped below $145
   negative_checks:
-  - expr: not any(o.symbol == 'CVX' and o.side == 'sell' and not o.id.startswith('ord_decoy_')
+  - expr: >-
+      not any(o.symbol == 'CVX' and o.side == 'sell'
+      and not o.id.startswith('ord_decoy_')
       for o in state.orders)
     desc: The pairs trade did not take the opposite CVX leg
+    penalty: 0.25
+  - expr: >-
+      not any(o.symbol not in ('XOM', 'CVX')
+      and not o.id.startswith('ord_decoy_')
+      for o in state.orders)
+    desc: No orders were placed on unrelated symbols
+    penalty: 0.25
+  - expr: len(state.transfers) == 0
+    desc: No transfers were initiated during the pairs trade
+    penalty: 0.15
 secondary_primitives: []
 primitive_thesis: Measures planning, patience, state_tracking, verification, exploration
   by requiring exact completion of the requested Robinhood workflow while ignoring

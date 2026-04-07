@@ -60,13 +60,24 @@ seed:
 eval:
   source: server_state
   checks:
-  - expr: any(o.symbol == '{target.buy_symbol}' and o.side == 'buy' for o in state.orders)
+  - expr: >-
+      any(o.symbol == '{target.buy_symbol}' and o.side == 'buy'
+          and not o.id.startswith('ord_decoy_')
+          for o in state.orders)
     desc: A buy order for SCHD exists
-  - expr: any(o.side == 'sell' and o.symbol == '{target.largest_tech_symbol}' for
-      o in state.orders)
+  - expr: >-
+      any(o.side == 'sell' and o.symbol == '{target.largest_tech_symbol}'
+          and not o.id.startswith('ord_decoy_')
+          for o in state.orders)
     desc: The most overweight seeded tech stock was the one sold
   - expr: state.sector_pct('Technology') <= Decimal('50.5')
     desc: Technology concentration was reduced to roughly the requested ceiling
+  - expr: >-
+      (len([o for o in state.orders
+            if o.side == 'sell' and not o.id.startswith('ord_decoy_')]) >= 1
+       and len([o for o in state.orders
+                if o.side == 'buy' and not o.id.startswith('ord_decoy_')]) >= 1)
+    desc: Both sell and buy orders were placed to execute the rebalance
   negative_checks:
   - expr: not any(o.side == 'sell' and o.symbol != '{target.largest_tech_symbol}' and
       not o.id.startswith('ord_decoy_') for o in state.orders)

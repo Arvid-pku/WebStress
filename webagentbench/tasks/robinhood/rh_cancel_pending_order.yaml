@@ -30,6 +30,21 @@ seed:
 eval:
   source: server_state
   checks:
-    - expr: "any(o.symbol == 'MSFT' and o.status == 'cancelled' for o in state.orders)"
-      desc: The MSFT pending order has been cancelled
-  negative_checks: []
+    - expr: >-
+        any(o.symbol == 'MSFT' and o.status == 'cancelled'
+            and not o.id.startswith('ord_decoy_')
+            for o in state.orders)
+      desc: The MSFT pending order has been cancelled (non-decoy)
+    - expr: >-
+        any(o.symbol == 'MSFT' and o.status == 'cancelled'
+            and o.order_type == 'limit'
+            and not o.id.startswith('ord_decoy_')
+            for o in state.orders)
+      desc: The cancelled MSFT order is a limit order
+  negative_checks:
+    - expr: >-
+        not any(o.symbol != 'MSFT' and o.status == 'cancelled'
+                and not o.id.startswith('ord_decoy_')
+                for o in state.orders)
+      desc: No non-MSFT orders were cancelled
+      penalty: 0.25

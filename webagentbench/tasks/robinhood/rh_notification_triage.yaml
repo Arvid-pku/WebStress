@@ -53,14 +53,34 @@ seed:
 eval:
   source: server_state
   checks:
-  - expr: all(n.is_read for n in state.notifications if n.type == 'order_fill')
+  - expr: >-
+      len([n for n in state.notifications
+      if n.type == 'order_fill']) >= 1
+      and all(n.is_read for n in state.notifications
+      if n.type == 'order_fill')
     desc: All order-fill notifications have been marked as read
-  - expr: all(any(a.symbol == sym for a in state.price_alerts) for sym in {target.high_slippage_symbols})
+  - expr: >-
+      all(any(a.symbol == sym for a in state.price_alerts)
+      for sym in {target.high_slippage_symbols})
     desc: Price alerts were set for every stock with more than 2 percent slippage
+  - expr: >-
+      len([a for a in state.price_alerts
+      if a.symbol in {target.high_slippage_symbols}])
+      == len({target.high_slippage_symbols})
+    desc: The correct number of price alerts were created (one per high-slippage stock)
+  - expr: >-
+      not any(a.symbol not in {target.high_slippage_symbols}
+      for a in state.price_alerts)
+    desc: No price alerts were set for stocks without high slippage
   negative_checks:
-  - expr: not any(o.status == 'cancelled' and not o.id.startswith('ord_decoy_') for
-      o in state.orders)
+  - expr: >-
+      not any(o.status == 'cancelled' and not o.id.startswith('ord_decoy_')
+      for o in state.orders)
     desc: Triage did not cancel filled orders
+    penalty: 0.15
+  - expr: len(state.transfers) == 0
+    desc: No transfers were initiated during the triage task
+    penalty: 0.15
 secondary_primitives: []
 primitive_thesis: Measures state_tracking, verification, grounding by requiring exact
   completion of the requested Robinhood workflow while ignoring distractor account

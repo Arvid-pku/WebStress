@@ -80,11 +80,19 @@ eval:
       if sym in state.owned_symbols())
     desc: All owned stocks with upcoming corporate actions were added to the watchlist
   negative_checks:
-  - expr: not any(o.side == 'sell' and o.symbol != '{target.worst_symbol}' and not
-      o.id.startswith('ord_decoy_') for o in state.orders)
+  - expr: >-
+      not any(o.side == 'sell' and o.symbol != '{target.worst_symbol}'
+      and not o.id.startswith('ord_decoy_')
+      for o in state.orders)
     desc: Only the worst-performing position was sold
   - expr: len(state.transfers) == 0
     desc: No transfers were initiated during the cleanup
+  - expr: >-
+      not any(a.symbol == '{target.worst_symbol}'
+      and not a.id.startswith('alert_decoy_')
+      for a in state.price_alerts)
+    desc: No alerts were set on the worst-performing position that was sold
+    penalty: 0.15
 secondary_primitives: []
 primitive_thesis: Measures state_tracking, exploration, grounding, verification, patience
   by requiring the agent to identify best/worst performers, manage notifications, and

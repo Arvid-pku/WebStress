@@ -33,6 +33,23 @@ seed:
 eval:
   source: server_state
   checks:
-    - expr: "any(oo.strategy == 'single' and any(leg.option_type == 'call' and leg.side == 'buy' for leg in oo.legs) for oo in state.options_orders)"
-      desc: An options order exists with a call buy leg
-  negative_checks: []
+    - expr: >-
+        any(oo.strategy == 'single'
+            and any(leg.option_type == 'call' and leg.side == 'buy' for leg in oo.legs)
+            for oo in state.options_orders)
+      desc: An options order exists with a single-leg call buy
+    - expr: >-
+        any(oo.underlying_symbol == 'AAPL'
+            and any(leg.option_type == 'call' and leg.side == 'buy' for leg in oo.legs)
+            for oo in state.options_orders)
+      desc: The call option order is for AAPL
+    - expr: >-
+        any(oo.strategy == 'single' for oo in state.options_orders
+            if any(leg.side == 'buy' for leg in oo.legs))
+      desc: The options order strategy is single (not a multi-leg spread)
+  negative_checks:
+    - expr: >-
+        not any(any(leg.option_type == 'put' and leg.side == 'buy' for leg in oo.legs)
+            for oo in state.options_orders)
+      desc: No put options were bought
+      penalty: 0.25

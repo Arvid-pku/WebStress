@@ -24,16 +24,61 @@ seed:
       params:
         name: "Potential Buys"
         symbols: ["KO", "JNJ", "PG", "XOM", "CVX", "T", "VZ", "MO"]
-      outputs: []
+      outputs:
+      - passing_symbols
+      - failing_all_symbols
+      - initial_watchlist_count
     - use: linked_banks
       params: {}
       outputs: []
   targets:
     watchlist_name: "Potential Buys"
+    passing_symbols: "{output.passing_symbols}"
+    failing_all_symbols: "{output.failing_all_symbols}"
+    initial_watchlist_count: "{output.initial_watchlist_count}"
 
 eval:
   source: server_state
   checks:
-    - expr: "any(o.side == 'buy' and o.order_type == 'limit' and o.status in ('filled', 'pending') for o in state.orders)"
-      desc: At least one limit buy order was placed for a passing stock
-  negative_checks: []
+    - expr: >-
+        len({target.passing_symbols}) == 0
+        or all(any(o.symbol == sym and o.side == 'buy' and o.order_type == 'limit'
+        and o.status in ('filled', 'pending')
+        and not o.id.startswith('ord_decoy_')
+        for o in state.orders)
+        for sym in {target.passing_symbols})
+      desc: A limit buy order was placed for every stock that passes all three criteria
+    - expr: >-
+        len({target.passing_symbols}) == 0
+        or all(any(o.symbol == sym and o.order_type == 'limit'
+        and o.limit_price is not None
+        and o.limit_price >= state.get_stock(sym).price * Decimal('0.96')
+        and o.limit_price <= state.get_stock(sym).price * Decimal('0.98')
+        and not o.id.startswith('ord_decoy_')
+        for o in state.orders)
+        for sym in {target.passing_symbols})
+      desc: Each buy order is a limit order at approximately 3% below current price
+    - expr: >-
+        len({target.failing_all_symbols}) == 0
+        or all(sym not in state.watchlist_symbols('{target.watchlist_name}')
+        for sym in {target.failing_all_symbols})
+      desc: Stocks that fail all three criteria were removed from the watchlist
+    - expr: >-
+        not any(o.symbol in {target.failing_all_symbols}
+        and not o.id.startswith('ord_decoy_')
+        for o in state.orders)
+      desc: No buy orders were placed for stocks that fail all three criteria
+    - expr: >-
+        len([o for o in state.orders
+        if o.side == 'buy' and o.order_type == 'limit'
+        and not o.id.startswith('ord_decoy_')]) == len({target.passing_symbols})
+      desc: The number of buy orders matches the number of passing stocks
+  negative_checks:
+    - expr: >-
+        not any(o.side == 'sell' and not o.id.startswith('ord_decoy_')
+        for o in state.orders)
+      desc: No sell orders were placed during the watchlist screening task
+      penalty: 0.15
+    - expr: len(state.transfers) == 0
+      desc: No transfers or deposits were initiated
+      penalty: 0.15

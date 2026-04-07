@@ -63,9 +63,17 @@ eval:
       \ if o.symbol == 'META' and o.side == 'sell' and o.status == 'filled')"
     desc: META was sold near or below the $480 alert trigger
   negative_checks:
-  - expr: not any(o.symbol == 'META' and o.side == 'buy' and not o.id.startswith('ord_decoy_')
+  - expr: >-
+      not any(o.symbol == 'META' and o.side == 'buy'
+      and not o.id.startswith('ord_decoy_')
       for o in state.orders)
     desc: The seeded bearish branch did not incorrectly place a bullish buy
+    penalty: 0.25
+  - expr: >-
+      not any(o.symbol != 'META' and not o.id.startswith('ord_decoy_')
+      for o in state.orders)
+    desc: No orders were placed on symbols other than META
+    penalty: 0.25
 secondary_primitives: []
 primitive_thesis: Measures planning, patience, state_tracking, grounding by requiring
   exact completion of the requested Robinhood workflow while ignoring distractor account

@@ -77,11 +77,26 @@ eval:
     desc: All overdue recurring investments were removed
   - expr: all(n.is_read for n in state.notifications)
     desc: All notifications were marked as read
+  - expr: >-
+      len([a for a in state.price_alerts
+      if a.symbol in state.owned_symbols()
+      and not a.id.startswith('alert_decoy_')]) >= 1
+    desc: Price alerts for currently owned stocks were preserved (only stale alerts deleted)
   negative_checks:
-  - expr: all(o.id.startswith('ord_decoy_') for o in state.orders)
+  - expr: >-
+      all(o.id.startswith('ord_decoy_') for o in state.orders)
     desc: The audit did not place any orders
+    penalty: 0.20
   - expr: len(state.transfers) == 0
     desc: The audit did not initiate any transfers
+    penalty: 0.15
+  - expr: >-
+      not any(a.symbol in state.owned_symbols()
+      and not a.id.startswith('alert_decoy_')
+      and a.status == 'deleted'
+      for a in state.price_alerts)
+    desc: Non-stale alerts for owned stocks were not deleted
+    penalty: 0.20
 secondary_primitives: []
 primitive_thesis: Measures state_tracking, verification, exploration, patience, grounding
   by requiring the agent to audit multiple account areas and take corrective action

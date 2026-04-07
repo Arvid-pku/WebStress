@@ -2,9 +2,9 @@
 task_id: rh_live_intraday_reversal
 env_id: robinhood
 title: Intraday Reversal Buy
-instruction_template: Watch NVDA's price. It will experience a decline followed by
-  a recovery. Buy 5 shares once you believe the reversal has begun — after the price
-  starts going back up.
+instruction_template: Watch NVDA's price. It will decline from around $875 toward the
+  low $840s then recover. Once the price has dropped below $845 and starts rising again,
+  buy 5 shares at market price. Do not buy while the price is still falling.
 difficulty: expert
 time_limit_seconds: 350
 expected_steps: 22
@@ -47,22 +47,49 @@ seed:
 eval:
   source: server_state
   checks:
-  - expr: any(o.symbol == 'NVDA' and o.side == 'buy' and o.order_type == 'market'
-      and o.status == 'filled' and o.quantity == 5 for o in state.orders)
-    desc: A filled market buy order for 10 shares of NVDA exists
-  - expr: sum(1 for o in state.orders if not o.id.startswith('ord_decoy_')) == 1
+  - expr: >-
+      any(o.symbol == 'NVDA' and o.side == 'buy' and o.order_type == 'market'
+          and o.status == 'filled' and o.quantity == 5
+          and not o.id.startswith('ord_decoy_')
+          for o in state.orders)
+    desc: A filled market buy order for 5 shares of NVDA exists
+  - expr: >-
+      sum(1 for o in state.orders if not o.id.startswith('ord_decoy_')) == 1
     desc: Only the intended reversal buy order was placed
-  - expr: "all(o.filled_tick is not None and o.filled_tick >= 12 for o in state.orders\
-      \ if o.symbol == 'NVDA' and o.side == 'buy' and o.status == 'filled')"
+  - expr: >-
+      (len([o for o in state.orders
+            if o.symbol == 'NVDA' and o.side == 'buy' and o.status == 'filled'
+            and not o.id.startswith('ord_decoy_')]) >= 1
+       and all(o.filled_tick is not None and o.filled_tick >= 12
+               for o in state.orders
+               if o.symbol == 'NVDA' and o.side == 'buy' and o.status == 'filled'
+               and not o.id.startswith('ord_decoy_')))
     desc: NVDA was purchased after the decline phase (not too early)
-  - expr: "all(o.filled_price is not None and o.filled_price < 870 for o in state.orders\
-      \ if o.symbol == 'NVDA' and o.side == 'buy' and o.status == 'filled')"
+  - expr: >-
+      (len([o for o in state.orders
+            if o.symbol == 'NVDA' and o.side == 'buy' and o.status == 'filled'
+            and not o.id.startswith('ord_decoy_')]) >= 1
+       and all(o.filled_price is not None and o.filled_price < 870
+               for o in state.orders
+               if o.symbol == 'NVDA' and o.side == 'buy' and o.status == 'filled'
+               and not o.id.startswith('ord_decoy_')))
     desc: NVDA was bought near the trough, not at the starting price
+  - expr: >-
+      state.get_position('NVDA') is not None
+      and state.get_position('NVDA').quantity >= 5
+    desc: NVDA position reflects the purchased shares
   negative_checks:
-  - expr: not any(o.order_type == 'limit' and o.symbol == 'NVDA' and not o.id.startswith('ord_decoy_')
-      for o in state.orders)
+  - expr: >-
+      not any(o.order_type == 'limit' and o.symbol == 'NVDA'
+              and not o.id.startswith('ord_decoy_')
+              for o in state.orders)
     desc: No limit orders were placed for NVDA (must watch and buy manually)
-    penalty: 0.5
+    penalty: 0.25
+  - expr: >-
+      not any(o.symbol != 'NVDA' and not o.id.startswith('ord_decoy_')
+              for o in state.orders)
+    desc: Agent did not trade symbols other than NVDA
+    penalty: 0.25
 secondary_primitives: []
 primitive_thesis: Measures patience, state_tracking, grounding, verification by requiring
   exact completion of the requested Robinhood workflow while ignoring distractor account

@@ -53,12 +53,54 @@ seed:
 eval:
   source: server_state
   checks:
-    - expr: "any(o.side == 'sell' and o.status in ('filled', 'pending') for o in state.orders)"
+    - expr: >-
+        any(o.side == 'sell' and o.status in ('filled', 'pending')
+        and not o.id.startswith('ord_decoy_')
+        for o in state.orders)
       desc: Sell orders exist for tax-loss harvesting
-    - expr: "any(o.status in ('filled', 'pending') and any(leg.side == 'buy' and leg.option_type == 'put' for leg in o.legs) for o in state.options_orders)"
+    - expr: >-
+        any(o.status in ('filled', 'pending')
+        and any(leg.side == 'buy' and leg.option_type == 'put' for leg in o.legs)
+        for o in state.options_orders)
       desc: A protective put was purchased for the collar
-    - expr: "any(o.status in ('filled', 'pending') and any(leg.side == 'sell' and leg.option_type == 'call' for leg in o.legs) for o in state.options_orders)"
+    - expr: >-
+        any(o.status in ('filled', 'pending')
+        and any(leg.side == 'sell' and leg.option_type == 'call' for leg in o.legs)
+        for o in state.options_orders)
       desc: A covered call was sold for the collar
-    - expr: "sum(1 for r in state.recurring_investments if r.frequency == 'weekly' and r.amount == 100 and r.status == 'active') >= 3"
+    - expr: >-
+        sum(1 for r in state.recurring_investments
+        if r.frequency == 'weekly' and r.amount == 100 and r.status == 'active'
+        and not r.id.startswith('ri_decoy_')) >= 3
       desc: Three weekly $100 recurring investments were created
-  negative_checks: []
+    - expr: >-
+        any(o.status in ('filled', 'pending')
+        and any(leg.underlying_symbol == 'AAPL' and leg.side == 'buy' and leg.option_type == 'put' for leg in o.legs)
+        for o in state.options_orders)
+        and any(o.status in ('filled', 'pending')
+        and any(leg.underlying_symbol == 'AAPL' and leg.side == 'sell' and leg.option_type == 'call' for leg in o.legs)
+        for o in state.options_orders)
+      desc: The collar was placed on AAPL (largest position) with both a put buy and call sell
+    - expr: >-
+        all(r.symbol in ['SQ', 'PLTR', 'NVDA']
+        for r in state.recurring_investments
+        if r.frequency == 'weekly' and r.amount == 100 and r.status == 'active'
+        and not r.id.startswith('ri_decoy_'))
+      desc: Recurring investments target the watchlist symbols (SQ, PLTR, NVDA)
+  negative_checks:
+    - expr: >-
+        not any(o.side == 'sell' and o.symbol == 'AAPL'
+        and not o.id.startswith('ord_decoy_')
+        for o in state.orders)
+      desc: The protected stock (AAPL) was not sold in tax-loss harvesting (cross-goal constraint)
+      penalty: 0.30
+    - expr: >-
+        not any(o.symbol not in state.loss_position_symbols(Decimal('500'))
+        and o.side == 'sell'
+        and not o.id.startswith('ord_decoy_')
+        for o in state.orders)
+      desc: No sell orders on positions without >$500 unrealized losses
+      penalty: 0.25
+    - expr: len(state.transfers) == 0
+      desc: No transfers were initiated during multi-strategy execution
+      penalty: 0.15

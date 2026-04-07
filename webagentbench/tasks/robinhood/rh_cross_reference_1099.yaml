@@ -66,20 +66,45 @@ seed:
 eval:
   source: server_state
   checks:
-  - expr: any(sym in state.owned_symbols() for sym in {target.discrepancy_symbols})
-      and all(any(a.symbol == sym for a in state.price_alerts) for sym in {target.discrepancy_symbols}
-      if sym in state.owned_symbols())
+  - expr: >-
+      len([sym for sym in {target.discrepancy_symbols} if sym in state.owned_symbols()]) >= 1
+      and all(any(a.symbol == sym and not a.id.startswith('alert_decoy_')
+      for a in state.price_alerts)
+      for sym in {target.discrepancy_symbols} if sym in state.owned_symbols())
     desc: Every discrepancy symbol still held in the portfolio has a price alert
-  - expr: any(sym in state.owned_symbols() for sym in {target.discrepancy_symbols})
-      and all(any(a.symbol == sym and a.target_price == Decimal({target.reported_cost_bases}[sym])
-      for a in state.price_alerts) for sym in {target.discrepancy_symbols} if sym in
-      state.owned_symbols())
+  - expr: >-
+      all(any(a.symbol == sym and a.target_price == Decimal({target.reported_cost_bases}[sym])
+      and not a.id.startswith('alert_decoy_')
+      for a in state.price_alerts)
+      for sym in {target.discrepancy_symbols} if sym in state.owned_symbols())
     desc: Each alert is set at the 1099 reported cost basis
+  - expr: >-
+      all(any(a.symbol == sym
+      and ((a.condition == 'above' and state.get_stock(sym).price < a.target_price)
+      or (a.condition == 'below' and state.get_stock(sym).price > a.target_price))
+      and not a.id.startswith('alert_decoy_')
+      for a in state.price_alerts)
+      for sym in {target.discrepancy_symbols} if sym in state.owned_symbols())
+    desc: Each alert uses the correct above/below condition relative to current price
+  - expr: >-
+      len([a for a in state.price_alerts
+      if a.symbol in {target.discrepancy_symbols}
+      and a.symbol in state.owned_symbols()
+      and not a.id.startswith('alert_decoy_')]) >= len([sym for sym in {target.discrepancy_symbols} if sym in state.owned_symbols()])
+    desc: The number of non-decoy alerts matches the number of discrepancy symbols held
+  - expr: >-
+      not any(a.symbol not in {target.discrepancy_symbols}
+      and not a.id.startswith('alert_decoy_')
+      for a in state.price_alerts)
+    desc: No alerts were set for non-discrepancy symbols
   negative_checks:
-  - expr: all(o.id.startswith('ord_decoy_') for o in state.orders)
+  - expr: >-
+      all(o.id.startswith('ord_decoy_') for o in state.orders)
     desc: No trades were placed during this task
+    penalty: 0.15
   - expr: len(state.transfers) == 0
     desc: No transfers were initiated
+    penalty: 0.15
 secondary_primitives: []
 primitive_thesis: Measures state_tracking, verification, grounding, exploration by
   requiring the agent to cross-reference tax documents with current holdings and set

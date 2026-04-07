@@ -33,8 +33,22 @@ seed:
 eval:
   source: server_state
   checks:
-    - expr: "any(t.direction == 'deposit' and t.amount == 2000 for t in state.transfers)"
-      desc: A $2,000 deposit transfer exists
-    - expr: "any(o.symbol == 'VTI' and o.side == 'buy' and o.order_type == 'market' for o in state.orders)"
-      desc: A market buy order for VTI exists
-  negative_checks: []
+    - expr: >-
+        any(t.direction == 'deposit' and t.amount == 2000 and t.status == 'completed'
+            for t in state.transfers)
+      desc: A completed $2,000 deposit transfer exists
+    - expr: >-
+        any(o.symbol == 'VTI' and o.side == 'buy' and o.order_type == 'market'
+            and not o.id.startswith('ord_decoy_')
+            for o in state.orders)
+      desc: A market buy order for VTI exists (non-decoy)
+    - expr: >-
+        len([t for t in state.transfers if t.direction == 'deposit']) >= 1
+      desc: At least one deposit was completed
+  negative_checks:
+    - expr: >-
+        not any(o.symbol != 'VTI' and o.side == 'buy'
+            and not o.id.startswith('ord_decoy_')
+            for o in state.orders)
+      desc: No buy orders were placed on symbols other than VTI
+      penalty: 0.25
