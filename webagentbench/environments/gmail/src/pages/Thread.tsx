@@ -8,6 +8,20 @@ import { ThreadView } from "../components/ThreadView";
 import { useGmailLayout } from "../context";
 import type { ComposePayload, Email, Label, ThreadResponse } from "../types";
 
+export function getThreadNextStarState(emails: Pick<Email, "is_starred">[]) {
+  return !emails.every((email) => email.is_starred);
+}
+
+export function isThreadLabelApplied(
+  emails: Pick<Email, "labels">[],
+  labelName: string,
+) {
+  const labelLower = labelName.toLowerCase();
+  return emails.every(
+    (email) => email.labels.includes(labelName) || email.labels.includes(labelLower),
+  );
+}
+
 export function ThreadPage() {
   const { emailId } = useParams();
   const { api, notify, refreshMailbox, summary } = useGmailLayout();
@@ -126,20 +140,23 @@ export function ThreadPage() {
   const handleToggleStar = async () => {
     if (!thread) return;
     await withErrorToast(async () => {
-      await api.toggleStar(thread.email.id);
+      const nextStarred = getThreadNextStarState(thread.thread);
+      for (const threadEmail of thread.thread) {
+        await api.setStar(threadEmail.id, nextStarred);
+      }
       const response = await api.getThread(emailId!);
       setThread(response);
-      notify(thread.email.is_starred ? "Star removed" : "Starred");
+      notify(nextStarred ? "Starred" : "Star removed");
       await refreshMailbox();
     });
   };
 
   const handleApplyLabel = async (label: Label) => {
     if (!thread) return;
-    const email = thread.email;
-    const hasLabel = email.labels.includes(label.name) || email.labels.includes(label.name.toLowerCase());
-    const action = hasLabel ? "remove" : "add";
-    await api.applyEmailLabel(email.id, label.name, action);
+    const action = isThreadLabelApplied(thread.thread, label.name) ? "remove" : "add";
+    for (const threadEmail of thread.thread) {
+      await api.applyEmailLabel(threadEmail.id, label.name, action);
+    }
     const response = await api.getThread(emailId!);
     setThread(response);
     setLabelMenuOpen(false);
@@ -266,7 +283,10 @@ export function ThreadPage() {
                           const name = newLabelName.trim();
                           if (!name || !thread) return;
                           await api.createLabel({ name, color: "#1a73e8" });
-                          await api.applyEmailLabel(thread.email.id, name, "add");
+                          // Apply to all emails in thread
+                          for (const threadEmail of thread.thread) {
+                            await api.applyEmailLabel(threadEmail.id, name, "add");
+                          }
                           await refreshMailbox();
                           const response = await api.getThread(emailId!);
                           setThread(response);
@@ -293,7 +313,9 @@ export function ThreadPage() {
                   <>
                     <div className="gmail-label-menu__title">Label as:</div>
                     {availableLabels.map((label) => {
-                      const isApplied = thread?.email.labels.includes(label.name) || thread?.email.labels.includes(label.name.toLowerCase());
+                      const isApplied = thread
+                        ? isThreadLabelApplied(thread.thread, label.name)
+                        : false;
                       return (
                         <button
                           key={label.id}

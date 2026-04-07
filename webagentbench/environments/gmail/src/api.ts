@@ -24,6 +24,8 @@ export function createGmailApi(request: RequestFn) {
       request("emails/mark-all-read", { method: "POST" }),
     toggleStar: (emailId: string) =>
       request(`emails/${emailId}/star`, { method: "POST" }),
+    setStar: (emailId: string, is_starred: boolean) =>
+      request(`emails/${emailId}/star`, { method: "POST", body: { is_starred } }),
     archive: (emailId: string) =>
       request(`emails/${emailId}/archive`, { method: "POST" }),
     deleteEmail: (emailId: string) =>
