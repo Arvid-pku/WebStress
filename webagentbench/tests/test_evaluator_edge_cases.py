@@ -15,6 +15,7 @@ from webagentbench.backend.models.gmail import (
     Label,
 )
 from webagentbench.tasks._evaluator import _compute_collateral, evaluate
+from webagentbench.tasks._registry import get_task
 from webagentbench.tasks._schema import Check, EvalConfig, NegativeCheck
 
 
@@ -145,6 +146,188 @@ def test_all_checks_pass_no_negatives_gives_full_score() -> None:
     assert result["score"] == pytest.approx(1.0)
     assert result["success"] is True
     assert result["final_score"] == pytest.approx(1.0)
+
+
+def test_recipient_checks_accept_display_name_wrapped_addresses() -> None:
+    """Recipient equality checks should pass after canonicalizing Name <email> inputs."""
+    state = _empty_state()
+    state.send_email(
+        to=["Ravi Menon <SOFIA.BROOKS@ATLAS.DEV>"],
+        subject="Atlas decision",
+        body="Forwarding the final decision on Project Atlas.",
+    )
+    task = _task_with_checks(
+        checks=[
+            Check(
+                expr="any(m.to == ['sofia.brooks@atlas.dev'] for m in state.sent)",
+                desc="Exact recipient match survives display-name formatting",
+            )
+        ],
+    )
+
+    result = evaluate(task, server_state=state, targets={}, trajectory=[])
+
+    assert result["success"] is True
+    assert result["checks"][0]["passed"] is True
+
+
+def test_thread_detective_blank_reply_does_not_pass_via_quoted_history() -> None:
+    result = evaluate(
+        get_task("gmail_thread_detective"),
+        server_state=SimpleNamespace(
+            sent=[
+                SimpleNamespace(
+                    to=["sofia.rivera@vertexlab.io"],
+                    body=(
+                        "\n\nOn 3/2/2026, 3:20:00 AM, Sofia Rivera wrote:\n"
+                        "11:00 AM still works for me if the calendar is clear."
+                    ),
+                    in_reply_to="email_123",
+                    thread_id="thread_456",
+                )
+            ]
+        ),
+        targets={
+            "sender_email": "sofia.rivera@vertexlab.io",
+            "correct_time": "11:00 AM",
+            "wrong_times": ["4:00 PM", "2:30 PM"],
+            "most_recent_thread_id": "thread_456",
+        },
+        trajectory=[],
+    )
+
+    assert result["success"] is False
+    assert any(
+        check["desc"] == "Reply contains the correct non-conflicting time in authored text"
+        and check["passed"] is False
+        for check in result["checks"]
+    )
+
+
+def test_data_compilation_requires_one_consolidated_summary_email() -> None:
+    result = evaluate(
+        get_task("gmail_data_compilation"),
+        server_state=SimpleNamespace(
+            sent=[
+                SimpleNamespace(
+                    to=["cfo@example.com"],
+                    cc=["a@example.com", "b@example.com", "c@example.com"],
+                    subject="Q1 Budget Summary",
+                    body="Ops 100, Sales 200",
+                ),
+                SimpleNamespace(
+                    to=["cfo@example.com"],
+                    cc=["a@example.com", "b@example.com", "c@example.com"],
+                    subject="Q1 Budget Summary",
+                    body="Finance 300",
+                ),
+            ]
+        ),
+        targets={
+            "exec_email": "cfo@example.com",
+            "dept_emails": ["a@example.com", "b@example.com", "c@example.com"],
+            "number_a": "100",
+            "number_b": "200",
+            "number_c": "300",
+            "dept_a_dept": "Ops",
+            "dept_b_dept": "Sales",
+            "dept_c_dept": "Finance",
+            "wrong_numbers": ["999", "888"],
+        },
+        trajectory=[],
+    )
+
+    assert result["success"] is False
+    assert any(
+        check["desc"] == "Single summary email sent to exec with all CCs, department names, and numbers"
+        and check["passed"] is False
+        for check in result["checks"]
+    )
+
+
+def test_meeting_negotiation_requires_one_confirmation_email() -> None:
+    result = evaluate(
+        get_task("gmail_meeting_negotiation"),
+        server_state=SimpleNamespace(
+            sent=[
+                SimpleNamespace(
+                    to=["organizer@example.com"],
+                    cc=["a@example.com", "b@example.com", "c@example.com", "d@example.com", "e@example.com"],
+                    body="Everyone is included here.",
+                    in_reply_to=None,
+                ),
+                SimpleNamespace(
+                    to=["organizer@example.com"],
+                    cc=[],
+                    body="Let's use Tuesday 2 PM in Cedar Room.",
+                    in_reply_to=None,
+                ),
+            ]
+        ),
+        targets={
+            "organizer_email": "organizer@example.com",
+            "attendee_emails": [
+                "a@example.com",
+                "b@example.com",
+                "c@example.com",
+                "d@example.com",
+                "e@example.com",
+            ],
+            "correct_time": "Tuesday 2 PM",
+            "room_name": "Cedar Room",
+        },
+        trajectory=[],
+    )
+
+    assert result["success"] is False
+    assert any(
+        check["desc"] == "Single confirmation email sent to organizer with all attendees CC'd, correct time, and room name"
+        and check["passed"] is False
+        for check in result["checks"]
+    )
+
+
+def test_budget_reconciliation_requires_both_corrections_in_one_reply() -> None:
+    emails = {
+        "dept_1": SimpleNamespace(is_starred=True, labels=["Budget Verified"]),
+        "dept_2": SimpleNamespace(is_starred=True, labels=["Budget Verified"]),
+        "dept_3": SimpleNamespace(is_starred=True, labels=["Budget Verified"]),
+        "summary": SimpleNamespace(is_starred=False, labels=["Budget Verified"]),
+    }
+    result = evaluate(
+        get_task("gmail_budget_reconciliation"),
+        server_state=SimpleNamespace(
+            sent=[
+                SimpleNamespace(
+                    to=["author@example.com"],
+                    body="The correct first number is 120.",
+                    in_reply_to="summary",
+                ),
+                SimpleNamespace(
+                    to=["author@example.com"],
+                    body="The correct second number is 340.",
+                    in_reply_to="summary",
+                ),
+            ],
+            get_email=lambda eid: emails[eid],
+        ),
+        targets={
+            "summary_author_email": "author@example.com",
+            "summary_id": "summary",
+            "dept_ids": ["dept_1", "dept_2", "dept_3"],
+            "all_budget_ids": ["dept_1", "dept_2", "dept_3", "summary"],
+            "correct_value_1": "120",
+            "correct_value_2": "340",
+        },
+        trajectory=[],
+    )
+
+    assert result["success"] is False
+    assert any(
+        check["desc"] == "Single threaded reply to the summary author includes both corrections"
+        and check["passed"] is False
+        for check in result["checks"]
+    )
 
 
 def test_no_eval_config_returns_zero() -> None:

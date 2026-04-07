@@ -9,6 +9,8 @@ Checks every task YAML and variant YAML for:
   6. Variant response_body schema validity (fake responses must match real API)
   7. Variant base_task_id validity (must reference an existing task)
   8. Eval expression attribute validity (only real model fields used)
+  9. Instruction ambiguity guardrails for open-ended qualitative wording
+ 10. Forward-task identity grounding when a task asks to forward one specific email
 """
 
 from __future__ import annotations
@@ -63,6 +65,11 @@ def _collect_eval_exprs(task: dict) -> list[tuple[str, str, str]]:
         expr = neg["expr"] if isinstance(neg, dict) else str(neg)
         items.append((tid, "neg_check", expr))
     return items
+
+
+def _instruction_text(task: dict[str, Any]) -> str:
+    """Return the user-visible instruction text for a task."""
+    return task.get("instruction_template", "") or task.get("instruction", "") or ""
 
 
 ALL_TASKS = _load_all_tasks()
@@ -155,6 +162,38 @@ def test_no_answer_leakage_in_instructions() -> None:
     assert not violations, "\n".join(violations)
 
 
+def test_instruction_templates_avoid_open_ended_qualifiers() -> None:
+    """Instructions should be objectively executable, not judgment-based.
+
+    These phrases invite subjective interpretation and weaken benchmark
+    reproducibility. Keep the blocked list intentionally small and high-signal.
+    """
+    blocked_patterns = [
+        r"\bappropriate\b",
+        r"\breasonable\b",
+        r"\bbest judgment\b",
+        r"\buse your judgment\b",
+        r"\buse your judgement\b",
+        r"\bas needed\b",
+        r"\bif needed\b",
+        r"\bwhichever\b",
+        r"\betc\.\b",
+        r"\band so on\b",
+        r"\bsuitable\b",
+        r"\bproper\b",
+    ]
+    violations: list[str] = []
+    for tid, task in ALL_TASKS.items():
+        instr = _instruction_text(task)
+        lower_instr = instr.lower()
+        for pattern in blocked_patterns:
+            if re.search(pattern, lower_instr):
+                violations.append(
+                    f"[{tid}] instruction contains open-ended qualifier matching /{pattern}/"
+                )
+    assert not violations, "\n".join(violations)
+
+
 # ── 4. Actor name determinism ────────────────────────────────────────────
 
 def test_actors_referenced_in_instructions_have_explicit_names() -> None:
@@ -189,6 +228,27 @@ def test_actors_referenced_in_instructions_have_explicit_names() -> None:
     assert not violations, "\n".join(violations)
 
 
+def test_check_descriptions_are_present_and_unique_per_task() -> None:
+    """Each check description should uniquely describe one auditable criterion."""
+    violations: list[str] = []
+    for tid, task in ALL_TASKS.items():
+        ev = task.get("eval") or {}
+        descs: list[str] = []
+        for phase in ("checks", "negative_checks"):
+            for item in ev.get(phase) or []:
+                desc = (item.get("desc") if isinstance(item, dict) else "") or ""
+                desc = desc.strip()
+                if not desc:
+                    violations.append(f"[{tid}] {phase} contains a check with empty desc")
+                    continue
+                descs.append(desc)
+        seen: set[str] = set()
+        duplicates = sorted({desc for desc in descs if desc in seen or seen.add(desc)})
+        for desc in duplicates:
+            violations.append(f"[{tid}] duplicate check desc: {desc!r}")
+    assert not violations, "\n".join(violations)
+
+
 # ── 5. Target reference integrity ────────────────────────────────────────
 
 def test_all_target_refs_in_eval_are_defined() -> None:
@@ -208,6 +268,35 @@ def test_all_target_refs_in_eval_are_defined() -> None:
                         f"[{tid}] eval references {{target.{ref}}} "
                         f"but targets only defines: {sorted(target_keys)}"
                     )
+    assert not violations, "\n".join(violations)
+
+
+def test_single_email_forward_tasks_check_original_email_identity() -> None:
+    """Forwarding one specific email must be graded against that source email.
+
+    Matching only on recipient or subject is too weak: the agent could send a new
+    email or forward the wrong message and still score. When a task exposes a
+    single concrete source email via ``target_email_id`` and asks the agent to
+    forward that email, at least one positive check must assert
+    ``forwarded_from_id == {target.target_email_id}``.
+    """
+    violations: list[str] = []
+    for tid, task in ALL_TASKS.items():
+        instr = _instruction_text(task).lower()
+        targets = ((task.get("seed") or {}).get("targets") or {})
+        if "target_email_id" not in targets:
+            continue
+        if "forward it to" not in instr and "forward this email" not in instr and "forward the email" not in instr:
+            continue
+        positive_exprs = [
+            expr for expr_tid, kind, expr in _collect_eval_exprs(task)
+            if expr_tid == tid and kind == "check"
+        ]
+        if not any("forwarded_from_id" in expr and "{target.target_email_id}" in expr for expr in positive_exprs):
+            violations.append(
+                f"[{tid}] single-email forward task lacks a positive check grounded on "
+                "forwarded_from_id == {target.target_email_id}"
+            )
     assert not violations, "\n".join(violations)
 
 
@@ -398,6 +487,70 @@ def test_eval_expressions_use_valid_email_attributes() -> None:
                 violations.append(
                     f"[{tid}] {kind}: .{attr} — "
                     f"'{attr}' is not an Email field (valid: {sorted(a for a in _VALID_EMAIL_ATTRS if a.startswith('is_'))})"
+                )
+    assert not violations, "\n".join(violations)
+
+
+# ── 8b. Eval uses valid FilterRule attributes ───────────────────────────
+
+def test_eval_expressions_use_valid_filter_attributes() -> None:
+    """Filter attribute references in eval must match FilterRule model fields.
+
+    Catches bugs like ``.sender`` (should be ``.from_addresses``) or
+    ``.labels`` (should be ``.add_labels``) on filter rule objects.
+    """
+    violations: list[str] = []
+    # Identify the loop variable name used for filter iteration.
+    # Patterns: ``for r in state.filters``, ``for f in state.filters``,
+    # ``for rule in state.filters``
+    filter_loop_re = re.compile(r"\bfor\s+(\w+)\s+in\s+state\.filters\b")
+    for tid, kind, expr in ALL_EXPRS:
+        for loop_m in filter_loop_re.finditer(expr):
+            var = loop_m.group(1)
+            # Find all attribute accesses on this loop variable
+            attr_re = re.compile(rf"\b{re.escape(var)}\.(\w+)")
+            for attr_m in attr_re.finditer(expr):
+                attr = attr_m.group(1)
+                # Skip string method calls that could appear in chained exprs
+                if attr in ("lower", "upper", "strip", "split", "startswith",
+                            "endswith", "join"):
+                    continue
+                if attr not in _VALID_FILTER_ATTRS:
+                    violations.append(
+                        f"[{tid}] {kind}: {var}.{attr} — "
+                        f"'{attr}' is not a FilterRule field "
+                        f"(valid: {sorted(_VALID_FILTER_ATTRS)})"
+                    )
+    assert not violations, "\n".join(violations)
+
+
+# ── 8c. state.get_email() return attributes ─────────────────────────────
+
+def test_eval_expressions_use_valid_get_email_attributes() -> None:
+    """Attributes accessed on state.get_email(...) must match Email model fields.
+
+    Catches bugs like ``.is_deleted`` (should be ``.deleted``) or
+    ``.sender`` (should be ``.from_addr``) on the returned Email object.
+    """
+    violations: list[str] = []
+    # Match state.get_email(<anything>).ATTR — the call may contain nested
+    # parens so we match greedily up to the closing paren followed by a dot.
+    get_email_attr_re = re.compile(
+        r"state\.get_email\([^)]+\)\.(\w+)"
+    )
+    for tid, kind, expr in ALL_EXPRS:
+        for m in get_email_attr_re.finditer(expr):
+            attr = m.group(1)
+            # Skip None-check patterns like ``state.get_email(x) is not None``
+            # (no dot access) and string methods on string fields
+            if attr in ("lower", "upper", "strip", "split", "startswith",
+                        "endswith"):
+                continue
+            if attr not in _VALID_EMAIL_ATTRS:
+                violations.append(
+                    f"[{tid}] {kind}: state.get_email(...).{attr} — "
+                    f"'{attr}' is not an Email field "
+                    f"(valid: {sorted(_VALID_EMAIL_ATTRS)})"
                 )
     assert not violations, "\n".join(violations)
 

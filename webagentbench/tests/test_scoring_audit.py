@@ -27,6 +27,11 @@ import yaml
 
 TASKS_DIR = Path(__file__).parent.parent / "tasks" / "gmail"
 TARGET_REF_RE = re.compile(r"\{target\.([^}]+)\}")
+TEXT_TARGET_RE_PATTERNS = (
+    re.compile(r"'\{target\.([^}]+)\}'\s+in\s+[me]\.(?:body|subject)"),
+    re.compile(r"[me]\.(?:body|subject)[^\n]*startswith\('\{target\.([^}]+)\}'\)"),
+    re.compile(r"[me]\.(?:body|subject)[^\n]*endswith\('\{target\.([^}]+)\}'\)"),
+)
 
 
 def _is_text_match_expr(expr: str) -> bool:
@@ -35,6 +40,14 @@ def _is_text_match_expr(expr: str) -> bool:
         or re.search(r"[me]\.(?:body|subject)[^\n]*startswith\(", expr)
         or re.search(r"[me]\.(?:body|subject)[^\n]*endswith\(", expr)
     )
+
+
+def _hidden_target_refs_in_text_match(expr: str) -> set[str]:
+    """Return target refs used specifically in body/subject text assertions."""
+    refs: set[str] = set()
+    for pattern in TEXT_TARGET_RE_PATTERNS:
+        refs.update(pattern.findall(expr))
+    return refs
 
 
 def _classify_checks(task: dict[str, Any]) -> dict[str, int]:
@@ -59,9 +72,11 @@ def _classify_checks(task: dict[str, Any]) -> dict[str, int]:
         ) and "in m.body" not in expr and "in e.body" not in expr:
             counts["structural"] += 1
         elif _is_text_match_expr(expr):
-            # Substring check — is the string given in the instruction?
+            # Substring check — only hidden target refs used in the actual text
+            # assertion count as composed-text brittleness. Hidden targets used
+            # only for routing or identity grounding are structural.
             hidden_target_refs = {
-                ref for ref in TARGET_REF_RE.findall(expr)
+                ref for ref in _hidden_target_refs_in_text_match(expr)
                 if ref not in target_refs_in_instruction
             }
             if hidden_target_refs:
@@ -138,6 +153,30 @@ def test_composed_text_checks_are_documented() -> None:
         "Easy tasks should not have composed-text checks:\n"
         + "\n".join(violations)
     )
+
+
+def test_composed_text_checks_do_not_stand_alone() -> None:
+    """Tasks with hidden composed-text checks also need non-text grounding.
+
+    This preserves acceptance for materially correct outputs with harmless
+    formatting variation. A task may use composed-text checks, but they must not
+    be the only grading signal.
+    """
+    violations: list[str] = []
+    for f in sorted(TASKS_DIR.glob("*.yaml")):
+        data = yaml.safe_load(f.read_text())
+        if not data or "eval" not in data:
+            continue
+        counts = _classify_checks(data)
+        if counts["composed"] <= 0:
+            continue
+        grounded = counts["structural"] + counts["count"] + counts["exact_given"] + counts["keyword"]
+        if grounded == 0:
+            violations.append(
+                f"[{data['task_id']}] has composed-text checks but no structural/count/"
+                "keyword/exact-given grounding"
+            )
+    assert not violations, "\n".join(violations)
 
 
 def test_print_scoring_summary() -> None:
