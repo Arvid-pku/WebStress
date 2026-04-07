@@ -512,6 +512,227 @@ class TestBuildTrajectoryStep:
 
 
 # =========================================================================
+# NEW ACTIONS: scroll_left/right, send_keys, wait, go_forward
+# =========================================================================
+
+
+class TestNewActionsParsing:
+    """Test parsing of newly-added actions via structured JSON."""
+
+    # --- send_keys ---
+
+    def test_parse_send_keys_tab(self):
+        raw = json.dumps({"thinking": "", "memory": "", "next_goal": "",
+                          "action": [{"send_keys": {"keys": "Tab"}}]})
+        result = parse_agent_output(raw)
+        assert result["action"] == [{"send_keys": {"keys": "Tab"}}]
+
+    def test_parse_send_keys_combo(self):
+        raw = json.dumps({"thinking": "", "memory": "", "next_goal": "",
+                          "action": [{"send_keys": {"keys": "ctrl+a"}}]})
+        result = parse_agent_output(raw)
+        assert result["action"][0]["send_keys"]["keys"] == "ctrl+a"
+
+    # --- wait ---
+
+    def test_parse_wait(self):
+        raw = json.dumps({"thinking": "", "memory": "", "next_goal": "",
+                          "action": [{"wait": {"seconds": 2}}]})
+        result = parse_agent_output(raw)
+        assert result["action"] == [{"wait": {"seconds": 2}}]
+
+    # --- go_forward ---
+
+    def test_parse_go_forward(self):
+        raw = json.dumps({"thinking": "", "memory": "", "next_goal": "",
+                          "action": [{"go_forward": {}}]})
+        result = parse_agent_output(raw)
+        assert result["action"] == [{"go_forward": {}}]
+
+    # --- scroll_left/right ---
+
+    def test_parse_scroll_left(self):
+        raw = json.dumps({"thinking": "", "memory": "", "next_goal": "",
+                          "action": [{"scroll_left": {"amount": 300}}]})
+        result = parse_agent_output(raw)
+        assert result["action"] == [{"scroll_left": {"amount": 300}}]
+
+    def test_parse_scroll_right_with_index(self):
+        raw = json.dumps({"thinking": "", "memory": "", "next_goal": "",
+                          "action": [{"scroll_right": {"index": 5, "amount": 300}}]})
+        result = parse_agent_output(raw)
+        payload = result["action"][0]["scroll_right"]
+        assert payload["index"] == 5
+        assert payload["amount"] == 300
+
+
+class TestNewActionsPlainText:
+    """Test plain-text fallback parsing for new actions."""
+
+    def test_send_keys_plain(self):
+        result = parse_agent_output("send_keys Tab")
+        assert result["action"] == [{"send_keys": {"keys": "Tab"}}]
+
+    def test_send_keys_combo_plain(self):
+        result = parse_agent_output("send_keys ctrl+a")
+        assert result["action"] == [{"send_keys": {"keys": "ctrl+a"}}]
+
+    def test_send_keys_default_enter(self):
+        result = parse_agent_output("send_keys")
+        assert result["action"] == [{"send_keys": {"keys": "Enter"}}]
+
+    def test_wait_plain(self):
+        result = parse_agent_output("wait 3")
+        assert result["action"] == [{"wait": {"seconds": 3.0}}]
+
+    def test_wait_default(self):
+        result = parse_agent_output("wait")
+        assert result["action"] == [{"wait": {"seconds": 2.0}}]
+
+    def test_wait_capped_at_5(self):
+        result = parse_agent_output("wait 30")
+        assert result["action"][0]["wait"]["seconds"] <= 5
+
+    def test_wait_non_numeric(self):
+        result = parse_agent_output("wait a bit")
+        assert result["action"] == [{"wait": {"seconds": 2.0}}]
+
+    def test_go_forward_plain(self):
+        result = parse_agent_output("go_forward")
+        assert result["action"] == [{"go_forward": {}}]
+
+    def test_scroll_left_plain(self):
+        result = parse_agent_output("scroll_left")
+        assert result["action"] == [{"scroll_left": {"amount": 300}}]
+
+    def test_scroll_right_plain(self):
+        result = parse_agent_output("scroll_right")
+        assert result["action"] == [{"scroll_right": {"amount": 300}}]
+
+    def test_scroll_right_with_index_plain(self):
+        result = parse_agent_output("scroll_right 12")
+        payload = result["action"][0]["scroll_right"]
+        assert payload["index"] == 12
+        assert payload["amount"] == 300
+
+    def test_scroll_left_with_index_plain(self):
+        result = parse_agent_output("scroll_left 7")
+        payload = result["action"][0]["scroll_left"]
+        assert payload["index"] == 7
+
+    def test_scroll_direction_via_verb(self):
+        """scroll up/down still work via the base 'scroll' verb."""
+        result_up = parse_agent_output("scroll up")
+        result_down = parse_agent_output("scroll down")
+        assert "scroll_up" in result_up["action"][0]
+        assert "scroll_down" in result_down["action"][0]
+
+
+class TestNewActionsTrajectoryFormat:
+    """Test trajectory format conversion for new actions."""
+
+    def test_scroll_left_trajectory(self):
+        result = action_to_trajectory_format({"scroll_left": {"amount": 300}})
+        assert result == {"action": "scroll", "direction": "left"}
+
+    def test_scroll_right_trajectory(self):
+        result = action_to_trajectory_format({"scroll_right": {"amount": 300}})
+        assert result == {"action": "scroll", "direction": "right"}
+
+    def test_scroll_right_with_index_trajectory(self):
+        result = action_to_trajectory_format({"scroll_right": {"index": 12, "amount": 300}})
+        assert result == {"action": "scroll", "direction": "right", "ref": "12"}
+
+    def test_send_keys_trajectory(self):
+        result = action_to_trajectory_format({"send_keys": {"keys": "Escape"}})
+        assert result == {"action": "press", "key": "Escape"}
+
+    def test_send_keys_combo_trajectory(self):
+        result = action_to_trajectory_format({"send_keys": {"keys": "ctrl+a"}})
+        assert result == {"action": "press", "key": "ctrl+a"}
+
+    def test_wait_trajectory(self):
+        result = action_to_trajectory_format({"wait": {"seconds": 2}})
+        assert result == {"action": "wait"}
+
+    def test_go_forward_trajectory(self):
+        result = action_to_trajectory_format({"go_forward": {}})
+        assert result == {"action": "forward"}
+
+
+class TestNewActionsBuildStep:
+    """Test build_trajectory_step with new action types."""
+
+    @staticmethod
+    def _dom():
+        return {5: ("div", {"aria-label": "Contact table"}, "")}
+
+    def test_send_keys_step(self):
+        step = build_trajectory_step(
+            step_num=1, thinking="Press Tab to next field", memory="",
+            actions=[{"send_keys": {"keys": "Tab"}}],
+            dom_elements={}, url="http://localhost/env/gmail/compose",
+            status="success", elapsed=0.3,
+        )
+        assert step["action"] == {"action": "press", "key": "Tab"}
+
+    def test_wait_step(self):
+        step = build_trajectory_step(
+            step_num=1, thinking="Wait for page load", memory="",
+            actions=[{"wait": {"seconds": 2}}],
+            dom_elements={}, url="http://localhost/env/gmail/inbox",
+            status="success", elapsed=2.0,
+        )
+        assert step["action"] == {"action": "wait"}
+
+    def test_scroll_right_with_index_step(self):
+        step = build_trajectory_step(
+            step_num=1, thinking="Scroll table right", memory="",
+            actions=[{"scroll_right": {"index": 5, "amount": 300}}],
+            dom_elements=self._dom(),
+            url="http://localhost/env/gmail/labels",
+            status="success", elapsed=0.3,
+        )
+        assert step["action"] == {"action": "scroll", "direction": "right", "ref": "5"}
+        # Scroll with index resolves targets from the DOM element
+        assert step["targets"]["role"] == "div"
+
+    def test_go_forward_step(self):
+        step = build_trajectory_step(
+            step_num=1, thinking="Go forward", memory="",
+            actions=[{"go_forward": {}}],
+            dom_elements={}, url="http://localhost/env/gmail/inbox",
+            status="success", elapsed=0.5,
+        )
+        assert step["action"] == {"action": "forward"}
+
+
+class TestSystemPromptActions:
+    """Verify the system prompt documents all supported actions."""
+
+    def test_all_action_types_in_prompt(self):
+        from webagentbench.browseruse_eval import SYSTEM_PROMPT_TEMPLATE
+        expected = [
+            "click", "input_text", "select_option", "send_keys",
+            "scroll_down", "scroll_up", "scroll_left", "scroll_right",
+            "wait", "go_back", "go_forward", "done",
+        ]
+        for action in expected:
+            assert action in SYSTEM_PROMPT_TEMPLATE, f"'{action}' missing from system prompt"
+
+    def test_send_keys_examples_in_prompt(self):
+        from webagentbench.browseruse_eval import SYSTEM_PROMPT_TEMPLATE
+        assert "Tab" in SYSTEM_PROMPT_TEMPLATE
+        assert "Escape" in SYSTEM_PROMPT_TEMPLATE
+        assert "ctrl+a" in SYSTEM_PROMPT_TEMPLATE
+
+    def test_scroll_index_documented(self):
+        from webagentbench.browseruse_eval import SYSTEM_PROMPT_TEMPLATE
+        assert "index" in SYSTEM_PROMPT_TEMPLATE
+        assert "container" in SYSTEM_PROMPT_TEMPLATE
+
+
+# =========================================================================
 # Additional tests from PR review (Gap fixes)
 # =========================================================================
 
