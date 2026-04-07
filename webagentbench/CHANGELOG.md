@@ -13,7 +13,7 @@ Unless noted otherwise, older page-benchmark sections are historical notes rathe
 
 - rewrote `README.md` to describe the current Gmail environment benchmark instead of the retired 15-page benchmark line
 - replaced broken local-path document references with repo-local docs
-- added `share_docs/GMAIL_TASK_GENERATION_STANDARD.md` for current Gmail task authoring guidance
+- added `share_docs/TASK_GENERATION_STANDARD.md` as the repo-wide task authoring and grading standard
 - added `share_docs/PAST_IMPLEMENTATIONS.md` to separate active benchmark scope from historical page-benchmark notes
 - added `results/webagentbench/README.md` so result/artifact pointers resolve inside this checkout
 - clarified in docs that current Gmail evaluation is primarily outcome-validated via server state, with optional client `benchmark_state` checks where needed

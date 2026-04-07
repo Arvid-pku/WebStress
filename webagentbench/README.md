@@ -21,7 +21,16 @@ Current Gmail tasks are primarily outcome-validated:
 
 ## Task Authoring
 
-For the current Gmail task authoring standard, see [share_docs/GMAIL_TASK_GENERATION_STANDARD.md](share_docs/GMAIL_TASK_GENERATION_STANDARD.md).
+The normative task-quality bar for this repo is [share_docs/TASK_GENERATION_STANDARD.md](share_docs/TASK_GENERATION_STANDARD.md).
+
+For new environments, start from [share_docs/TASK_ENVIRONMENT_SUPPLEMENT_TEMPLATE.md](share_docs/TASK_ENVIRONMENT_SUPPLEMENT_TEMPLATE.md) and keep the resulting supplement subordinate to the repo-wide standard.
+
+Use that document as the authoritative standard for:
+
+- objective, non-equivocal task instructions
+- robust, outcome-grounded grading
+- format-tolerant evaluation for tasks with multiple valid correct outputs
+- decoy and negative-check coverage
 
 Core implementation and validation files:
 

@@ -22,8 +22,11 @@ Usage:
 """
 
 import json
+import logging
 from typing import Optional
 from .format import SYSTEM_PROMPT
+
+logger = logging.getLogger(__name__)
 
 
 def export_conversations(
@@ -152,6 +155,13 @@ def _extract_wab(result: dict) -> tuple[list[dict], dict]:
 
     if not messages:
         # Fallback: reconstruct from trajectory (lossy — no observation trees)
+        task_id = _wab_task_id(result)
+        logger.warning(
+            "WAB result '%s' has no saved messages — falling back to lossy "
+            "trajectory reconstruction (observation trees will be missing). "
+            "Data exported this way is NOT suitable for SFT training.",
+            task_id,
+        )
         messages = _reconstruct_from_trajectory(result)
 
     evaluation = result.get("evaluation", {})
