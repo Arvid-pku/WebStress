@@ -1,0 +1,87 @@
+task_id: reddit_messaging_workflow
+title: Full Messaging Workflow
+instruction_template: 'Complete this messaging workflow:
+
+
+  1. Go to Messages. Mark all messages as read.
+
+
+  2. Find the message from u/{target.reply_from} with subject "{target.reply_subject}". Reply with exactly: "{target.reply_body}"
+
+
+  3. Delete the message from u/{target.delete_from} with subject "{target.delete_subject}".
+
+
+  4. Compose a new message to u/{target.new_to} with subject "{target.new_subject}" and body exactly: "{target.new_body}"
+
+
+  5. Go to Settings and disable email notifications for private messages.
+
+
+  Do not delete any other messages.'
+difficulty: hard
+time_limit_seconds: 480
+expected_steps: 35
+primary_primitives:
+- planning
+- state_tracking
+- grounding
+start_path: /feed
+seed:
+  distractors: 5
+  actors: {}
+  steps:
+  - use: target_message
+    params:
+      from_user: NeuralNexus
+      subject: Collaboration on ML benchmark
+      body: Would you be interested in contributing test cases?
+      is_read: false
+    outputs:
+    - reply_msg_id
+    - reply_msg_subject
+    - reply_msg_from
+  - use: target_message
+    params:
+      from_user: HerrMilkmann
+      subject: 'URGENT: Account verification needed'
+      body: Click this link to verify your account immediately.
+      is_read: false
+    outputs:
+    - delete_msg_id
+    - delete_msg_subject
+    - delete_msg_from
+  targets:
+    reply_from: '{output.reply_msg_from}'
+    reply_subject: '{output.reply_msg_subject}'
+    reply_msg_id: '{output.reply_msg_id}'
+    reply_body: Absolutely! I have experience with evaluation frameworks. Let me know how to get started.
+    delete_from: '{output.delete_msg_from}'
+    delete_subject: '{output.delete_msg_subject}'
+    delete_msg_id: '{output.delete_msg_id}'
+    new_to: ByteRunner
+    new_subject: Open source maintainer meetup
+    new_body: A few of us are organizing a virtual meetup for open source maintainers. Would you like to join? It is scheduled
+      for next Saturday at 3pm EST.
+eval:
+  source: server_state
+  checks:
+  - expr: state.unread_message_count() == 0
+    desc: All messages marked read
+  - expr: any(m.to_user == '{target.reply_from}' and m.body == "Absolutely! I have experience with evaluation frameworks.
+      Let me know how to get started." for m in state.sent_messages)
+    desc: Reply sent with exact text
+  - expr: not any(m.id == '{target.delete_msg_id}' for m in state.messages)
+    desc: Spam message deleted
+  - expr: any(m.to_user == "ByteRunner" and m.subject == "Open source maintainer meetup" for m in state.sent_messages)
+    desc: New message sent to ByteRunner
+  - expr: not state.settings.email_messages
+    desc: Email messages notifications disabled
+  negative_checks:
+  - expr: not any(m.id == '{target.reply_msg_id}' for m in state.messages) == False
+    desc: Reply target message was not deleted
+    penalty: 0.3
+  - expr: len(state.messages) >= 4
+    desc: Non-spam messages preserved
+    penalty: 0.25
+env_id: reddit

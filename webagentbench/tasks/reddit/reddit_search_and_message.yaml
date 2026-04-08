@@ -1,0 +1,44 @@
+task_id: reddit_search_and_message
+env_id: reddit
+title: Search for Post and Message Author
+instruction_template: 'Search for posts about "renewable energy". Find the post titled "{target.post_title}" in r/{target.subreddit_name}
+  by u/{target.post_author}. Send a private message to u/{target.post_author} with subject "{target.msg_subject}" and body
+  exactly: "{target.msg_body}" Do not send messages to anyone else.'
+difficulty: medium
+time_limit_seconds: 240
+expected_steps: 15
+primary_primitives:
+- exploration
+- grounding
+start_path: /feed
+seed:
+  distractors: 6
+  actors: {}
+  steps:
+  - use: target_post
+    params:
+      subreddit: worldnews
+      title: Germany achieves 100% renewable energy for an entire week for the first time
+      body: Wind and solar output exceeded demand throughout the seven-day period.
+      author: NebulaDrifter
+      score: 34000
+    outputs:
+    - post_id
+    - post_title
+    - subreddit_name
+  targets:
+    post_title: '{output.post_title}'
+    subreddit_name: '{output.subreddit_name}'
+    post_author: NebulaDrifter
+    msg_subject: Your renewable energy post
+    msg_body: Great post about Germany's renewable milestone! Do you have a link to the original source data?
+eval:
+  source: server_state
+  checks:
+  - expr: any(m.to_user == "NebulaDrifter" and m.subject == "Your renewable energy post" and m.body == "Great post about Germany's
+      renewable milestone! Do you have a link to the original source data?" for m in state.sent_messages)
+    desc: Exact message sent to correct user
+  negative_checks:
+  - expr: sum(1 for m in state.sent_messages if m.from_user == state.owner_username) <= 3
+    desc: No messages to other users
+    penalty: 0.2

@@ -1,0 +1,45 @@
+task_id: reddit_privacy_overhaul
+env_id: reddit
+title: Privacy Settings Overhaul
+instruction_template: 'Go to Settings and make the following changes: 1. Disable "Show online status". 2. Disable "Allow followers".
+  3. Disable "Show active communities in profile". 4. Disable all email notification settings (comment replies, post replies,
+  mentions, messages, and digest). Do not change display or content settings.'
+difficulty: medium
+time_limit_seconds: 240
+expected_steps: 15
+primary_primitives:
+- grounding
+- state_tracking
+start_path: /feed
+seed:
+  distractors: 0
+  actors: {}
+  steps: []
+  targets: {}
+eval:
+  source: server_state
+  checks:
+  - expr: not state.settings.show_online_status
+    desc: Show online status disabled
+  - expr: not state.settings.allow_followers
+    desc: Allow followers disabled
+  - expr: not state.settings.show_active_communities
+    desc: Show active communities disabled
+  - expr: not state.settings.email_comment_reply
+    desc: Email comment reply disabled
+  - expr: not state.settings.email_post_reply
+    desc: Email post reply disabled
+  - expr: not state.settings.email_mentions
+    desc: Email mentions disabled
+  - expr: not state.settings.email_messages
+    desc: Email messages disabled
+  negative_checks:
+  - expr: state.settings.theme == 'light'
+    desc: Theme not changed
+    penalty: 0.15
+  - expr: state.settings.default_feed_sort == 'hot'
+    desc: Feed sort not changed
+    penalty: 0.15
+  - expr: state.settings.show_nsfw == False
+    desc: NSFW setting not changed
+    penalty: 0.15

@@ -1,0 +1,35 @@
+task_id: reddit_post_with_flair
+env_id: reddit
+title: Create a Post with Flair
+instruction_template: 'Go to r/technology and create a new text post with the title exactly: "{target.post_title}" and body
+  exactly: "{target.post_body}". Set the flair to "Discussion". Do not create posts in any other subreddit.'
+difficulty: medium
+time_limit_seconds: 180
+expected_steps: 12
+primary_primitives:
+- grounding
+secondary_primitives:
+- exploration
+start_path: /feed
+seed:
+  distractors: 4
+  actors: {}
+  steps: []
+  targets:
+    post_title: Is Moore's Law finally dead? What replaces it?
+    post_body: With chip manufacturers hitting physical limits at 2nm, what paradigm will drive computing forward? Chiplets?
+      Photonics? Quantum?
+eval:
+  source: server_state
+  checks:
+  - expr: any(p.subreddit_name == "technology" and p.title == "Is Moore's Law finally dead? What replaces it?" and p.author_name
+      == state.owner_username for p in state.posts)
+    desc: Post created in r/technology with exact title
+  - expr: any(p.subreddit_name == "technology" and p.flair_text == "Discussion" and p.author_name == state.owner_username
+      for p in state.posts)
+    desc: Post has Discussion flair
+  negative_checks:
+  - expr: not any(p.author_name == state.owner_username and p.subreddit_name not in ('technology', 'Python', 'personalfinance')
+      for p in state.posts)
+    desc: No posts in wrong subreddits
+    penalty: 0.2

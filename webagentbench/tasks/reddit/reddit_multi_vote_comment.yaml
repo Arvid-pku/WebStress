@@ -1,0 +1,83 @@
+task_id: reddit_multi_vote_comment
+env_id: reddit
+title: Multi-Post Voting and Commenting
+instruction_template: 'Complete these engagement tasks:
+
+
+  1. In r/gaming, find "{target.game_title}" and upvote it.
+
+  2. In r/movies, find "{target.movie_title}" and downvote it.
+
+  3. In r/todayilearned, find "{target.til_title}" and add a comment with exactly: "{target.til_comment}"
+
+  4. Save the r/todayilearned post.
+
+
+  Do not vote on or save any other posts.'
+difficulty: hard
+time_limit_seconds: 480
+expected_steps: 38
+primary_primitives:
+- planning
+- grounding
+- state_tracking
+start_path: /feed
+seed:
+  distractors: 8
+  actors: {}
+  steps:
+  - use: target_post
+    params:
+      subreddit: gaming
+      title: Steam Deck 2 announced with OLED display and 30% more battery life
+      body: Pre-orders start next month.
+      score: 45000
+    outputs:
+    - game_id
+    - game_title
+    - game_sub
+  - use: target_post
+    params:
+      subreddit: movies
+      title: 'Unpopular opinion: The Marvel formula is creatively bankrupt and needs to end'
+      body: Hot take.
+      score: 1200
+    outputs:
+    - movie_id
+    - movie_title
+    - movie_sub
+  - use: target_post
+    params:
+      subreddit: todayilearned
+      title: TIL that honey badgers are immune to most snake venom and regularly eat cobras
+      body: They literally do not care.
+      score: 32000
+    outputs:
+    - til_id
+    - til_title
+    - til_sub
+  targets:
+    game_title: '{output.game_title}'
+    game_id: '{output.game_id}'
+    movie_title: '{output.movie_title}'
+    movie_id: '{output.movie_id}'
+    til_title: '{output.til_title}'
+    til_id: '{output.til_id}'
+    til_comment: The honey badger truly does not care. They have incredibly thick skin that most predators cannot penetrate.
+eval:
+  source: server_state
+  checks:
+  - expr: state.get_post('{target.game_id}').vote_direction == 1
+    desc: Gaming post upvoted
+  - expr: state.get_post('{target.movie_id}').vote_direction == -1
+    desc: Movie post downvoted
+  - expr: any(c.post_id == '{target.til_id}' and "thick skin" in c.body and c.author_name == state.owner_username for c in
+      state.comments)
+    desc: TIL comment posted
+  - expr: '''{target.til_id}'' in state.saved_post_ids'
+    desc: TIL post saved
+  negative_checks:
+  - expr: sum(1 for p in state.posts if p.vote_direction != 0 and p.id not in ('{target.game_id}', '{target.movie_id}')) ==
+      0
+    desc: No other posts voted on
+    penalty: 0.2

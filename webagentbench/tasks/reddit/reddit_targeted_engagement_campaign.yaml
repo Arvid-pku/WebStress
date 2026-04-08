@@ -1,0 +1,89 @@
+task_id: reddit_targeted_engagement_campaign
+title: Targeted Cross-Sub Engagement
+instruction_template: '1. In r/technology, find "{target.tech_title}" and upvote it.
+
+  2. In r/gaming, find "{target.game_title}" and save it.
+
+  3. In r/science, find "{target.sci_title}" and comment with exactly: "{target.sci_comment}"
+
+  4. Send a message to u/{target.msg_to} with subject "{target.msg_subject}" and body exactly: "{target.msg_body}"
+
+  5. Go to Settings, set theme to "dark".
+
+
+  Do not vote on posts in r/gaming or r/science.'
+difficulty: expert
+time_limit_seconds: 540
+expected_steps: 40
+primary_primitives:
+- planning
+- grounding
+- state_tracking
+- exploration
+seed:
+  distractors: 8
+  actors: {}
+  steps:
+  - use: target_post
+    params:
+      subreddit: technology
+      title: Apple open-sources its entire Swift compiler toolchain
+      body: Including LLVM backend and standard library.
+      score: 67000
+    outputs:
+    - tech_id
+    - tech_title
+    - tech_sub
+  - use: target_post
+    params:
+      subreddit: gaming
+      title: Hollow Knight Silksong finally gets a release date after 6 years
+      body: February 2027.
+      score: 92000
+    outputs:
+    - game_id
+    - game_title
+    - game_sub
+  - use: target_post
+    params:
+      subreddit: science
+      title: First successful pig-to-human kidney transplant patient reaches one year milestone
+      body: The patient reports normal kidney function.
+      score: 41000
+    outputs:
+    - sci_id
+    - sci_title
+    - sci_sub
+  targets:
+    tech_title: '{output.tech_title}'
+    tech_id: '{output.tech_id}'
+    game_title: '{output.game_title}'
+    game_id: '{output.game_id}'
+    sci_title: '{output.sci_title}'
+    sci_id: '{output.sci_id}'
+    sci_comment: A remarkable achievement. The immunosuppression protocol they developed could revolutionize organ transplantation.
+    msg_to: NebulaDrifter
+    msg_subject: Xenotransplantation breakthrough
+    msg_body: Did you see the kidney transplant milestone post in r/science? The one-year survival is groundbreaking.
+eval:
+  source: server_state
+  checks:
+  - expr: state.get_post('{target.tech_id}').vote_direction == 1
+    desc: Tech post upvoted
+  - expr: '''{target.game_id}'' in state.saved_post_ids'
+    desc: Gaming post saved
+  - expr: any(c.post_id == '{target.sci_id}' and "immunosuppression protocol" in c.body for c in state.comments)
+    desc: Science comment
+  - expr: any(m.to_user == "NebulaDrifter" and "kidney transplant" in m.body for m in state.sent_messages)
+    desc: Message sent
+  - expr: state.settings.theme == 'dark'
+    desc: Theme dark
+  negative_checks:
+  - expr: state.get_post('{target.game_id}').vote_direction == 0
+    desc: Gaming post not voted
+    penalty: 0.15
+  - expr: state.get_post('{target.sci_id}').vote_direction == 0
+    desc: Science post not voted
+    penalty: 0.15
+env_id: reddit
+start_path: /feed

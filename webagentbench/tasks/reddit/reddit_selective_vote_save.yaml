@@ -1,0 +1,97 @@
+task_id: reddit_selective_vote_save
+title: Selective Voting and Saving
+instruction_template: '1. In r/worldnews, find "{target.up_title}" and upvote it.
+
+  2. In r/technology, find "{target.down_title}" and downvote it.
+
+  3. In r/science, find "{target.save_title}" and save it (do not vote on it).
+
+  4. In r/gaming, find "{target.comment_title}" and comment with exactly: "{target.comment_text}"
+
+  5. Mark all messages as read.
+
+  6. Set comment sort to "top".'
+difficulty: expert
+time_limit_seconds: 480
+expected_steps: 38
+primary_primitives:
+- grounding
+- state_tracking
+- planning
+- exploration
+seed:
+  distractors: 8
+  actors: {}
+  steps:
+  - use: target_post
+    params:
+      subreddit: worldnews
+      title: EU passes landmark right to disconnect law for all member states
+      body: Employers cannot contact workers outside hours.
+      score: 63000
+    outputs:
+    - up_id
+    - up_title
+    - up_sub
+  - use: target_post
+    params:
+      subreddit: technology
+      title: Startup raised $100M to build AI that replaces software engineers
+      body: Bold claims with no public demo.
+      score: 3400
+    outputs:
+    - down_id
+    - down_title
+    - down_sub
+  - use: target_post
+    params:
+      subreddit: science
+      title: Ancient DNA reveals Vikings were far more diverse than previously thought
+      body: Published in Nature.
+      score: 29000
+    outputs:
+    - save_id
+    - save_title
+    - save_sub
+  - use: target_post
+    params:
+      subreddit: gaming
+      title: After 500 hours I finally 100% completed Elden Ring DLC and I have thoughts
+      body: What a journey.
+      author: PixelNomad
+      score: 18000
+    outputs:
+    - comment_id
+    - comment_title
+    - comment_sub
+  targets:
+    up_title: '{output.up_title}'
+    up_id: '{output.up_id}'
+    down_title: '{output.down_title}'
+    down_id: '{output.down_id}'
+    save_title: '{output.save_title}'
+    save_id: '{output.save_id}'
+    comment_title: '{output.comment_title}'
+    comment_id: '{output.comment_id}'
+    comment_text: 500 hours is dedication. The Consort Radahn fight alone took me 40 attempts.
+eval:
+  source: server_state
+  checks:
+  - expr: state.get_post('{target.up_id}').vote_direction == 1
+    desc: EU post upvoted
+  - expr: state.get_post('{target.down_id}').vote_direction == -1
+    desc: AI startup post downvoted
+  - expr: '''{target.save_id}'' in state.saved_post_ids'
+    desc: Viking post saved
+  - expr: any(c.post_id == '{target.comment_id}' and "Consort Radahn" in c.body for c in state.comments)
+    desc: Elden Ring comment
+  - expr: state.unread_message_count() == 0
+    desc: Messages read
+  - expr: state.settings.default_comment_sort == 'top'
+    desc: Comment sort top
+  negative_checks:
+  - expr: state.get_post('{target.save_id}').vote_direction == 0
+    desc: Viking post NOT voted
+    penalty: 0.15
+env_id: reddit
+start_path: /feed

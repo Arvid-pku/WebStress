@@ -4,9 +4,10 @@ from fastapi import FastAPI
 
 from .amazon import router as amazon_router
 from .gmail import router as gmail_router
+from .reddit import router as reddit_router
 from .robinhood import router as robinhood_router
 
-ENVIRONMENT_ROUTERS = [amazon_router, gmail_router, robinhood_router]
+ENVIRONMENT_ROUTERS = [amazon_router, gmail_router, reddit_router, robinhood_router]
 
 
 def mount_environment_routes(app: FastAPI) -> None:

@@ -1,0 +1,83 @@
+task_id: reddit_notification_driven_workflow
+title: Notification-Driven Multi-Step Workflow
+instruction_template: '1. Mark all notifications as read.
+
+  2. Mark all messages as read.
+
+  3. Navigate to r/{target.sub1} and find "{target.post1_title}". Upvote and save it.
+
+  4. Navigate to r/{target.sub2} and find "{target.post2_title}". Comment with exactly: "{target.comment_text}"
+
+  5. Unsubscribe from r/{target.leave_sub}.
+
+  6. Set theme to "dark".'
+difficulty: expert
+time_limit_seconds: 480
+expected_steps: 38
+primary_primitives:
+- state_tracking
+- planning
+- grounding
+- exploration
+seed:
+  distractors: 8
+  actors: {}
+  steps:
+  - use: target_post
+    params:
+      subreddit: worldnews
+      title: WHO declares new pandemic preparedness treaty ratified by 140 nations
+      body: The treaty establishes equitable vaccine distribution.
+      score: 52000
+    outputs:
+    - post1_id
+    - post1_title
+    - post1_sub
+  - use: target_post
+    params:
+      subreddit: todayilearned
+      title: TIL that crows can recognize human faces and hold grudges for years
+      body: Research from University of Washington.
+      score: 37000
+    outputs:
+    - post2_id
+    - post2_title
+    - post2_sub
+  - use: subscription_state
+    params:
+      subscribe:
+      - memes
+    outputs:
+    - subscriptions
+  targets:
+    sub1: '{output.post1_sub}'
+    post1_title: '{output.post1_title}'
+    post1_id: '{output.post1_id}'
+    sub2: '{output.post2_sub}'
+    post2_title: '{output.post2_title}'
+    post2_id: '{output.post2_id}'
+    comment_text: Corvids in general are incredibly intelligent. New Caledonian crows even craft and use tools.
+    leave_sub: memes
+eval:
+  source: server_state
+  checks:
+  - expr: state.unread_notification_count() == 0
+    desc: Notifications cleared
+  - expr: state.unread_message_count() == 0
+    desc: Messages read
+  - expr: state.get_post('{target.post1_id}').vote_direction == 1
+    desc: WHO post upvoted
+  - expr: '''{target.post1_id}'' in state.saved_post_ids'
+    desc: WHO post saved
+  - expr: any(c.post_id == '{target.post2_id}' and "New Caledonian crows" in c.body for c in state.comments)
+    desc: TIL comment
+  - expr: any(s.name == 'memes' and not s.is_subscribed for s in state.subreddits)
+    desc: Left r/memes
+  - expr: state.settings.theme == 'dark'
+    desc: Theme dark
+  negative_checks:
+  - expr: state.get_post('{target.post2_id}').vote_direction == 0
+    desc: TIL post not voted
+    penalty: 0.1
+env_id: reddit
+start_path: /feed

@@ -1,0 +1,103 @@
+task_id: reddit_search_and_engage
+env_id: reddit
+title: Search, Save, and Respond
+instruction_template: >
+  Use the search feature to find posts about "Cloudflare". From the search
+  results, find the post titled "{target.target_post_title}" in
+  r/technology. Save that post.
+
+  Then open that post and leave a top-level comment with exactly:
+  "{target.comment_text}"
+
+  Next, navigate to r/programming and find the post titled
+  "{target.message_post_title}" by u/{target.message_post_author}. Send a
+  private message to u/{target.message_post_author} with subject
+  "{target.message_subject}" and body exactly:
+  "{target.message_body}"
+
+  Do not save any other posts. Do not send messages to anyone else.
+difficulty: medium
+time_limit_seconds: 360
+expected_steps: 28
+primary_primitives:
+  - exploration
+  - grounding
+  - planning
+secondary_primitives:
+  - state_tracking
+start_path: /feed
+seed:
+  distractors: 8
+  actors: {}
+  steps:
+    # The post to search for, save, and comment on
+    - use: target_post
+      params:
+        subreddit: technology
+        title: "Cloudflare Launches Free AI Bot Detection for All Websites"
+        body: "Cloudflare announced a new free tier for its AI bot detection product, making it available to all websites on their platform."
+        author: TripleShotPls
+        score: 15230
+        flair_text: "AI"
+      outputs:
+        - search_post_id
+        - search_post_title
+        - search_subreddit_name
+    # The programming post whose author we message
+    - use: target_post
+      params:
+        subreddit: programming
+        title: "Zero-downtime Postgres migrations with lock timeouts and retry logic"
+        body: "After years of painful migrations, I wrote a library that handles advisory locks, statement timeouts, and automatic retry. Here's how it works."
+        author: ByteRunner
+        score: 4800
+      outputs:
+        - msg_post_id
+        - msg_post_title
+        - msg_subreddit_name
+    - use: decoy_posts
+      params:
+        subreddit: technology
+        count: 3
+        title_pattern: "Cloudflare reports {topic} for Q4"
+        score_range: [1000, 10000]
+      outputs:
+        - decoy_post_ids
+  targets:
+    target_post_title: "Cloudflare Launches Free AI Bot Detection for All Websites"
+    target_post_id: "{output.search_post_id}"
+    comment_text: "This is huge for small site owners who can't afford enterprise bot protection. Great move by Cloudflare."
+    message_post_title: "{output.msg_post_title}"
+    message_post_author: "ByteRunner"
+    message_subject: "Great Postgres migrations post"
+    message_body: "Hey, loved your post about zero-downtime migrations. The advisory lock approach is elegant. Would you consider open-sourcing the library?"
+    decoy_post_ids: "{output.decoy_post_ids}"
+eval:
+  source: server_state
+  checks:
+    - expr: >
+        any(p.title == 'Cloudflare Launches Free AI Bot Detection for All Websites'
+        and p.id in state.saved_post_ids for p in state.posts)
+      desc: Cloudflare post was saved
+    - expr: >
+        any(c.post_id == '{target.target_post_id}' and
+        c.body == "This is huge for small site owners who can't afford enterprise bot protection. Great move by Cloudflare." and
+        c.author_name == state.owner_username
+        for c in state.comments)
+      desc: Exact comment posted on target post
+    - expr: >
+        any(m.to_user == 'ByteRunner' and
+        m.subject == 'Great Postgres migrations post' and
+        m.body == "Hey, loved your post about zero-downtime migrations. The advisory lock approach is elegant. Would you consider open-sourcing the library?"
+        for m in state.sent_messages)
+      desc: Exact message sent to ByteRunner
+  negative_checks:
+    - expr: >
+        not any(pid in state.saved_post_ids for pid in {target.decoy_post_ids})
+      desc: No decoy posts were saved
+      penalty: 0.2
+    - expr: >
+        sum(1 for m in state.sent_messages
+        if m.from_user == state.owner_username) <= 3
+      desc: No excessive messages sent
+      penalty: 0.15

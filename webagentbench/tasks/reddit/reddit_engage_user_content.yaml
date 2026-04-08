@@ -1,0 +1,43 @@
+task_id: reddit_engage_user_content
+env_id: reddit
+title: Find and Engage with User Content
+instruction_template: Visit u/{target.target_user}'s profile page. Find their post titled "{target.user_post_title}". Upvote
+  that post and save it. Do not vote on or save any other posts.
+difficulty: medium
+time_limit_seconds: 180
+expected_steps: 12
+primary_primitives:
+- exploration
+- grounding
+start_path: /feed
+seed:
+  distractors: 5
+  actors: {}
+  steps:
+  - use: target_post
+    params:
+      subreddit: gaming
+      title: I recreated the entire Zelda overworld in Minecraft and it took 14 months
+      body: Album link in comments. Every dungeon is fully explorable.
+      author: PhotonWave
+      score: 55000
+      flair_text: OC
+    outputs:
+    - post_id
+    - post_title
+    - subreddit_name
+  targets:
+    target_user: PhotonWave
+    user_post_title: '{output.post_title}'
+    post_id: '{output.post_id}'
+eval:
+  source: server_state
+  checks:
+  - expr: state.get_post('{target.post_id}').vote_direction == 1
+    desc: Post upvoted
+  - expr: state.get_post('{target.post_id}').is_saved
+    desc: Post saved
+  negative_checks:
+  - expr: sum(1 for p in state.posts if p.vote_direction != 0 and p.id != '{target.post_id}') == 0
+    desc: No other posts voted on
+    penalty: 0.2

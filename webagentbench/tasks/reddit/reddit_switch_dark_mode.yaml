@@ -1,0 +1,30 @@
+task_id: reddit_switch_dark_mode
+env_id: reddit
+title: Switch to Dark Mode
+instruction_template: Go to Settings and switch the theme to "dark". Do not change any other settings.
+difficulty: easy
+time_limit_seconds: 60
+expected_steps: 4
+primary_primitives:
+- grounding
+start_path: /feed
+seed:
+  distractors: 0
+  actors: {}
+  steps: []
+  targets: {}
+eval:
+  source: server_state
+  checks:
+  - expr: state.settings.theme == 'dark'
+    desc: Theme changed to dark
+  negative_checks:
+  - expr: state.settings.default_feed_sort == 'hot'
+    desc: Feed sort unchanged
+    penalty: 0.15
+  - expr: state.settings.compact_view == False
+    desc: Compact view unchanged
+    penalty: 0.15
+  - expr: state.settings.show_online_status == True
+    desc: Privacy settings unchanged
+    penalty: 0.15

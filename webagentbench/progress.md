@@ -1,48 +1,50 @@
 # Progress Log
 
-## Session: 2026-04-06
+## Session: 2026-04-08
 
-### Phase 1: Requirements & Discovery
-- **Status:** complete
-- **Started:** 2026-04-06
-- Actions taken:
-  - Enumerated Amazon-related files across backend, frontend, tasks, and variants.
-  - Checked git status and diff summary to understand local scope.
-  - Read the `agent-browser` and `planning-with-files` skill instructions.
-  - Ran session catchup and captured unsynced prior-session context.
-- Files created/modified:
-  - task_plan.md (created, updated)
-  - findings.md (created, updated)
-  - progress.md (created, updated)
-
-### Phase 2: Code Inspection
+### Phase 1: Discovery & Triage
 - **Status:** complete
 - Actions taken:
-  - Read Amazon backend model, routes, seed runner, and seed builders.
-  - Read Amazon frontend API/types layer and key pages: search, product detail, checkout, wishlist, account, returns.
-  - Read representative Amazon task YAMLs and evaluator implementation.
+  - Inspected Reddit router, shell, and click targets.
+  - Confirmed most internal navigation is client-side and isolated true document navigations.
+  - Identified the shell `notify` identity churn as the main repeated refetch trigger.
+  - Ran Reddit build and typecheck to establish a baseline.
+  - Rewrote planning files from the prior Amazon task to the current Reddit task.
 - Files created/modified:
   - task_plan.md
   - findings.md
   - progress.md
+  - environments/reddit/src/Shell.tsx
 
-### Phase 3: Behavioral Validation
+### Phase 2: Implementation
 - **Status:** complete
 - Actions taken:
-  - Ran `pnpm -C environments --filter @webagentbench/amazon typecheck` and captured the `ProductVariant.id` failures.
-  - Ran `pnpm -C environments build` and confirmed the workspace build still only targets shared, gmail, and robinhood.
-  - Executed direct Amazon route/model validation via `.venv/bin/python` and `SessionManager`.
-  - Swept all Amazon tasks for session-creation failures and evaluator errors.
+  - Stabilized `notify` and `dismissToast` in the Reddit shell with `useCallback`.
+  - Memoized the Reddit layout context value to prevent effect retriggers from provider churn.
+  - Removed `React.StrictMode` from the Reddit entrypoint so dev navigation matches production behavior more closely.
+  - Tightened the frontend profile typing contract and fixed the existing compile failure.
+  - Passed post preview state through navigation so common feed-to-post transitions render immediately while the full post payload loads.
+  - Fixed stale search results on empty queries, wired spoiler state into post creation, avoided in-place sidebar sorting, and made link-like controls keyboard-accessible.
+  - Made link hostname rendering resilient to invalid user-entered URLs.
 - Files created/modified:
-  - task_plan.md
-  - findings.md
-  - progress.md
+  - environments/reddit/src/Shell.tsx
+  - environments/reddit/src/main.tsx
+  - environments/reddit/src/api.ts
+  - environments/reddit/src/utils.ts
+  - environments/reddit/src/components/PostCard.tsx
+  - environments/reddit/src/components/CommentThread.tsx
+  - environments/reddit/src/components/RightSidebar.tsx
+  - environments/reddit/src/pages/Post.tsx
+  - environments/reddit/src/pages/Profile.tsx
+  - environments/reddit/src/pages/Search.tsx
+  - environments/reddit/src/pages/Submit.tsx
+  - environments/reddit/src/pages/Notifications.tsx
 
-### Phase 4: Synthesis
-- **Status:** in_progress
+### Phase 3: Verification
+- **Status:** complete
 - Actions taken:
-  - Ranked findings into benchmark-blocking, user-visible frontend, and design debt buckets.
-  - Gathered exact file/line references for the final review.
+  - Re-ran Reddit frontend typecheck after the implementation fixes.
+  - Re-ran Reddit production build after the implementation fixes.
 - Files created/modified:
   - task_plan.md
   - findings.md
@@ -51,65 +53,46 @@
 ## Test Results
 | Test | Input | Expected | Actual | Status |
 |------|-------|----------|--------|--------|
-| Session catchup | `python3 .../session-catchup.py <repo>` | Recover prior context if any | Prior session context found; no planning files existed | ✓ |
-| Amazon frontend typecheck | `pnpm -C environments --filter @webagentbench/amazon typecheck` | Clean compile | Failed on `ProductVariant.id` in `ProductDetail.tsx` | ✗ |
-| Workspace build | `pnpm -C environments build` | Build all active envs | Built shared/gmail/robinhood only; Amazon omitted from script | ✗ |
-| Amazon task session sweep | direct `.venv/bin/python` route calls | All task sessions should seed | 12 Amazon tasks failed during session creation | ✗ |
-| Amazon evaluator sweep | direct `.venv/bin/python` route calls | Seeded tasks should evaluate without schema errors | 5 seeded tasks produced evaluator exceptions on untouched state | ✗ |
-| Promo route validation | direct `.venv/bin/python` route calls | Applying promo should change cart totals | Promo usage incremented but `applied_promo_code` stayed `None`; totals unchanged | ✗ |
+| Session catchup | `python3 .../session-catchup.py <repo>` | Recover prior unsynced context | Prior Reddit debugging context found; no planning-file updates existed | ✓ |
+| Reddit build (baseline) | `pnpm -C environments --filter @webagentbench/reddit build` | Clean production build | Passed | ✓ |
+| Reddit typecheck (baseline) | `pnpm -C environments --filter @webagentbench/reddit typecheck` | Clean compile | Failed only in `src/pages/Profile.tsx` on `unknown` render values | ✗ |
+| Reddit typecheck (post-fix) | `pnpm -C environments --filter @webagentbench/reddit typecheck` | Clean compile | Passed | ✓ |
+| Reddit build (post-fix) | `pnpm -C environments --filter @webagentbench/reddit build` | Clean production build | Passed | ✓ |
+| Reddit typecheck (settings pass) | `pnpm -C environments --filter @webagentbench/reddit typecheck` | Clean compile after wiring settings | Passed | ✓ |
+| Reddit build (settings pass) | `pnpm -C environments --filter @webagentbench/reddit build` | Clean production build after wiring settings | Passed | ✓ |
 
 ## Error Log
 | Timestamp | Error | Attempt | Resolution |
 |-----------|-------|---------|------------|
-| 2026-04-06 | Existing dirty worktree / prior-session context | 1 | Continue in audit-only mode and avoid implementation edits |
-| 2026-04-06 | `fastapi.testclient` unavailable because `httpx` is missing in `.venv` | 1 | Use direct route-function validation |
-| 2026-04-06 | Sandbox denied binding localhost port for full browser repro | 1 | Continue with direct route/model validation |
+| 2026-04-08 | Planning files still pointed at an older Amazon task | 1 | Rewrote planning files for Reddit |
+| 2026-04-08 | Reddit typecheck fails in `Profile.tsx` | 1 | Resolved by tightening API/page typing to `UserProfile` |
 
 ## 5-Question Reboot Check
 | Question | Answer |
 |----------|--------|
 | Where am I? | Phase 4 |
-| Where am I going? | Final delivery of ranked findings and design recommendations |
-| What's the goal? | Audit the Amazon environment and related benchmark for bugs and design issues |
-| What have I learned? | The biggest defects are benchmark-seeding/evaluator drift and frontend/backend contract drift |
-| What have I done? | Scoped the repo, inspected the implementation, ran targeted validation, and quantified failing tasks/checks |
+| Where am I going? | Deliver the completed Reddit environment quality pass to the user |
+| What's the goal? | Make the Reddit environment stable and benchmark-friendly |
+| What have I learned? | The repeated flashing was mostly caused by shell/provider instability plus a few real UI bugs |
+| What have I done? | Traced navigation, shipped the scoped fixes, and re-ran targeted verification |
 
-### Phase 5: Implementation & Verification
+### Phase 4: Settings Wiring
 - **Status:** complete
 - Actions taken:
-  - Patched the Amazon seed runner to resolve aliased builder outputs instead of silently dropping them.
-  - Fixed broken Amazon evaluator/task expressions and added server-state tracking for viewed order details.
-  - Realigned Amazon frontend types, API wrappers, and pages with backend payloads for wishlist, account, settings, returns, payment methods, product variants, search sorting, and promo handling.
-  - Added Amazon regression coverage in `tests/test_amazon_seed_integrity.py`.
-  - Re-ran Amazon task seeding/evaluation sweeps, frontend typecheck, direct promo/order/account probes, and the frontend workspace build.
+  - Moved Reddit settings into shell-owned live state and exposed refresh/update functions through layout context.
+  - Wired live settings into feed/post/profile/search/saved behavior for default sorts, compact view, NSFW filtering/blurring, external-link targets, theme, reduced motion, online badge, and visible communities.
+  - Updated the settings page to operate on the shared shell state instead of maintaining a separate copy.
+  - Re-ran Reddit typecheck and build after the settings pass.
 - Files created/modified:
-  - backend/models/amazon.py
-  - backend/routes/amazon.py
-  - backend/seeders/amazon.py
-  - environments/amazon/src/api.ts
-  - environments/amazon/src/components/Navbar.tsx
-  - environments/amazon/src/pages/Account.tsx
-  - environments/amazon/src/pages/Checkout.tsx
-  - environments/amazon/src/pages/ProductDetail.tsx
-  - environments/amazon/src/pages/ReturnForm.tsx
-  - environments/amazon/src/pages/Search.tsx
-  - environments/amazon/src/pages/Settings.tsx
-  - environments/amazon/src/pages/Wishlist.tsx
-  - environments/amazon/src/types.ts
-  - environments/package.json
-  - README.md
-  - tasks/amazon/*.yaml (targeted fixes)
-  - tests/test_amazon_seed_integrity.py
-
-## Updated Test Results
-| Test | Input | Expected | Actual | Status |
-|------|-------|----------|--------|--------|
-| Amazon task session sweep | direct `.venv/bin/python` route calls | All task sessions should seed | 40/40 seeded successfully | ✓ |
-| Amazon evaluator sweep | direct `.venv/bin/python` route calls | Seeded tasks should evaluate without schema errors | 0 evaluation expression errors | ✓ |
-| Amazon frontend typecheck | `pnpm -C environments --filter @webagentbench/amazon typecheck` | Clean compile | Passed | ✓ |
-| Promo route validation | direct `.venv/bin/python` route calls | Applying/clearing promo should update totals and checkout | Discount applied, cleared, and persisted on order correctly | ✓ |
-| Order detail tracking | direct `.venv/bin/python` route calls | Viewing an order should be observable in server state | `viewed_order_ids` updated on order detail fetch | ✓ |
-| Workspace build | `pnpm -C environments build` | Build all active envs | Shared, Amazon, Gmail, Robinhood all built successfully | ✓ |
-
-## Residual Gaps
-- `pytest` is not installed in the local `.venv`, so the new regression test file was validated via equivalent direct Python execution rather than the pytest runner.
+  - environments/reddit/src/context.ts
+  - environments/reddit/src/utils.ts
+  - environments/reddit/src/Shell.tsx
+  - environments/reddit/src/components/PostCard.tsx
+  - environments/reddit/src/pages/Feed.tsx
+  - environments/reddit/src/pages/Subreddit.tsx
+  - environments/reddit/src/pages/Post.tsx
+  - environments/reddit/src/pages/Search.tsx
+  - environments/reddit/src/pages/Saved.tsx
+  - environments/reddit/src/pages/Profile.tsx
+  - environments/reddit/src/pages/Settings.tsx
+  - environments/reddit/src/reddit.css

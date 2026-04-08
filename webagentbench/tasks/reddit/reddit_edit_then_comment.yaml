@@ -1,0 +1,66 @@
+task_id: reddit_edit_then_comment
+env_id: reddit
+title: Edit Own Post Then Comment Elsewhere
+instruction_template: 'Find your post titled "{target.edit_post_title}" in r/{target.edit_sub} and edit its body to exactly:
+  "{target.new_body}" Then navigate to r/{target.comment_sub} and find the post titled "{target.comment_post_title}". Add
+  a top-level comment with exactly: "{target.comment_text}"'
+difficulty: medium
+time_limit_seconds: 300
+expected_steps: 18
+primary_primitives:
+- planning
+- grounding
+secondary_primitives:
+- state_tracking
+start_path: /feed
+seed:
+  distractors: 6
+  actors: {}
+  steps:
+  - use: owner_post
+    params:
+      subreddit: Python
+      title: Released my first pip package today - a CLI tool for JSON schema validation
+      body: Still in beta. Looking for early adopters.
+      score: 890
+    outputs:
+    - edit_post_id
+    - edit_post_title
+  - use: target_post
+    params:
+      subreddit: programming
+      title: Why every developer should learn to read assembly output
+      body: Understanding what the compiler produces makes you a better programmer.
+      author: DeepDiver
+      score: 6700
+    outputs:
+    - comment_post_id
+    - comment_post_title
+    - comment_sub
+  targets:
+    edit_post_id: '{output.edit_post_id}'
+    edit_post_title: '{output.edit_post_title}'
+    edit_sub: Python
+    new_body: 'Version 1.0 is now stable! Added support for JSON Schema Draft 2020-12 and YAML input. Install with: pip install
+      json-schema-cli'
+    comment_post_id: '{output.comment_post_id}'
+    comment_post_title: '{output.comment_post_title}'
+    comment_sub: '{output.comment_sub}'
+    comment_text: Completely agree. Once I started reading compiler output, I finally understood why certain patterns are
+      faster than others.
+eval:
+  source: server_state
+  checks:
+  - expr: 'state.get_post(''{target.edit_post_id}'').body == ''Version 1.0 is now stable! Added support for JSON Schema Draft
+      2020-12 and YAML input. Install with: pip install json-schema-cli'''
+    desc: Post body updated to exact text
+  - expr: state.get_post('{target.edit_post_id}').is_edited
+    desc: Post marked as edited
+  - expr: any(c.post_id == '{target.comment_post_id}' and c.body == "Completely agree. Once I started reading compiler output,
+      I finally understood why certain patterns are faster than others." and c.author_name == state.owner_username for c in
+      state.comments)
+    desc: Exact comment posted on assembly post
+  negative_checks:
+  - expr: not state.get_post('{target.edit_post_id}').is_removed
+    desc: Edited post was not deleted
+    penalty: 0.5

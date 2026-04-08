@@ -1,0 +1,41 @@
+task_id: reddit_subscribe_subreddit
+env_id: reddit
+title: Subscribe to a Subreddit
+instruction_template: >
+  Navigate to r/{target.subreddit_name} and join the community by clicking
+  the Join button. Do not unsubscribe from any communities you are currently
+  subscribed to.
+difficulty: easy
+time_limit_seconds: 90
+expected_steps: 4
+primary_primitives:
+  - grounding
+start_path: /feed
+seed:
+  distractors: 3
+  actors: {}
+  steps:
+    - use: subscription_state
+      params:
+        unsubscribe:
+          - Piracy
+      outputs:
+        - subscriptions
+  targets:
+    subreddit_name: "Piracy"
+    initial_subscriptions: "{output.subscriptions}"
+eval:
+  source: server_state
+  checks:
+    - expr: >
+        any(s.name == 'Piracy' and s.is_subscribed for s in state.subreddits)
+      desc: User is subscribed to r/Piracy
+  negative_checks:
+    - expr: >
+        len(state.subscriptions) >= len({target.initial_subscriptions})
+      desc: No existing subscriptions were removed
+      penalty: 0.3
+    - expr: >
+        all(sid in state.subscriptions for sid in {target.initial_subscriptions})
+      desc: Every initially subscribed subreddit is still subscribed
+      penalty: 0.3

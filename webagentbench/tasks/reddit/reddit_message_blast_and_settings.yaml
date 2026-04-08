@@ -1,0 +1,52 @@
+task_id: reddit_message_blast_and_settings
+title: Multi-Recipient Messaging
+instruction_template: '1. Send a message to u/NeuralNexus with subject "ML meetup" and body exactly: "{target.msg_body}"
+
+  2. Send the same message to u/ByteRunner.
+
+  3. Send the same message to u/DataWizard42.
+
+  4. Mark all notifications as read.
+
+  5. Go to Settings: set theme to "dark", disable "Show active communities", set feed sort to "new".
+
+
+  Do not send messages to anyone else.'
+difficulty: expert
+time_limit_seconds: 480
+expected_steps: 38
+primary_primitives:
+- planning
+- grounding
+- state_tracking
+- patience
+seed:
+  distractors: 8
+  actors: {}
+  steps: []
+  targets:
+    msg_body: Organizing a virtual meetup for ML practitioners next Friday at 7pm EST. Topics include fine-tuning techniques
+      and deployment best practices. RSVP by replying to this message.
+eval:
+  source: server_state
+  checks:
+  - expr: any(m.to_user == "NeuralNexus" and m.subject == "ML meetup" for m in state.sent_messages)
+    desc: Msg to NeuralNexus
+  - expr: any(m.to_user == "ByteRunner" and m.subject == "ML meetup" for m in state.sent_messages)
+    desc: Msg to ByteRunner
+  - expr: any(m.to_user == "DataWizard42" and m.subject == "ML meetup" for m in state.sent_messages)
+    desc: Msg to DataWizard42
+  - expr: state.unread_notification_count() == 0
+    desc: Notifications read
+  - expr: state.settings.theme == 'dark'
+    desc: Theme dark
+  - expr: not state.settings.show_active_communities
+    desc: Active communities hidden
+  - expr: state.settings.default_feed_sort == 'new'
+    desc: Feed sort new
+  negative_checks:
+  - expr: sum(1 for m in state.sent_messages if m.from_user == state.owner_username and m.subject == 'ML meetup') <= 3
+    desc: Exactly 3 messages sent
+    penalty: 0.2
+env_id: reddit
+start_path: /feed

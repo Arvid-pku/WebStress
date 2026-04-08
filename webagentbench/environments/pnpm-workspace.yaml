@@ -2,5 +2,6 @@ packages:
   - "shared"
   - "amazon"
   - "gmail"
+  - "reddit"
   - "robinhood"
   - "demo-site"

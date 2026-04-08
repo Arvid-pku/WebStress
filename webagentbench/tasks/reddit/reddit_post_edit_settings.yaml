@@ -1,0 +1,61 @@
+task_id: reddit_post_edit_settings
+env_id: reddit
+title: Create Post, Edit, and Update Settings
+instruction_template: '1. Create a text post in r/MachineLearning with title exactly: "{target.post_title}" and body exactly:
+  "{target.post_body}"
+
+
+  2. After creating the post, edit its body to exactly: "{target.edited_body}"
+
+
+  3. Go to Settings. Set theme to "dark" and default comment sort to "new".
+
+
+  4. Subscribe to r/{target.join_sub} if not already subscribed.
+
+
+  Do not create posts in other subreddits.'
+difficulty: hard
+time_limit_seconds: 480
+expected_steps: 38
+primary_primitives:
+- planning
+- grounding
+- state_tracking
+start_path: /feed
+seed:
+  distractors: 8
+  actors: {}
+  steps:
+  - use: subscription_state
+    params:
+      unsubscribe:
+      - Piracy
+    outputs:
+    - subscriptions
+  targets:
+    post_title: 'Scaling Laws for Neural Machine Translation: An Empirical Study'
+    post_body: Draft - will update with results.
+    edited_body: We find that translation quality scales predictably with model size, dataset size, and compute budget. Full
+      paper and code linked in comments.
+    join_sub: Piracy
+eval:
+  source: server_state
+  checks:
+  - expr: 'any(p.subreddit_name == "MachineLearning" and p.title == "Scaling Laws for Neural Machine Translation: An Empirical
+      Study" and p.author_name == state.owner_username for p in state.posts)'
+    desc: Post created in r/ML
+  - expr: 'any(p.title == "Scaling Laws for Neural Machine Translation: An Empirical Study" and p.is_edited and "scales predictably"
+      in p.body for p in state.posts)'
+    desc: Post was edited with updated body
+  - expr: state.settings.theme == 'dark'
+    desc: Theme dark
+  - expr: state.settings.default_comment_sort == 'new'
+    desc: Comment sort new
+  - expr: any(s.name == 'Piracy' and s.is_subscribed for s in state.subreddits)
+    desc: Subscribed to r/Piracy
+  negative_checks:
+  - expr: not any(p.author_name == state.owner_username and p.subreddit_name not in ('MachineLearning', 'technology', 'Python',
+      'personalfinance') for p in state.posts)
+    desc: No posts in wrong subs
+    penalty: 0.2

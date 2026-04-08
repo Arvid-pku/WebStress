@@ -1,0 +1,92 @@
+task_id: reddit_saved_audit_cleanup
+title: Audit and Clean Saved Posts
+instruction_template: '1. Go to your Saved page. Unsave any posts from r/memes.
+
+
+  2. Navigate to r/technology and find "{target.save_title}". Save it.
+
+
+  3. Navigate to r/science and find "{target.save2_title}". Save it and upvote it.
+
+
+  4. Go to Settings and set default feed sort to "top" and comment sort to "new".
+
+
+  5. Send a message to u/{target.msg_to} with subject "{target.msg_subject}" and body exactly: "{target.msg_body}"
+
+
+  Do not unsave posts from other subreddits.'
+difficulty: expert
+time_limit_seconds: 480
+expected_steps: 38
+primary_primitives:
+- state_tracking
+- planning
+- grounding
+- verification
+seed:
+  distractors: 8
+  actors: {}
+  steps:
+  - use: filler_posts
+    params:
+      subreddit: memes
+      count: 2
+    outputs:
+    - meme_ids
+  - use: saved_posts
+    params:
+      post_ids: '{output.meme_ids}'
+    outputs:
+    - saved_post_ids
+  - use: target_post
+    params:
+      subreddit: technology
+      title: Intel unveils 18A process node with backside power delivery
+      body: The company says it has regained process leadership.
+      score: 22000
+    outputs:
+    - save1_id
+    - save1_title
+    - save1_sub
+  - use: target_post
+    params:
+      subreddit: science
+      title: New study shows daily 20-minute walks reduce all-cause mortality by 33%
+      body: Published in The Lancet.
+      score: 45000
+    outputs:
+    - save2_id
+    - save2_title
+    - save2_sub
+  targets:
+    save_title: '{output.save1_title}'
+    save1_id: '{output.save1_id}'
+    save2_title: '{output.save2_title}'
+    save2_id: '{output.save2_id}'
+    msg_to: NeuralNexus
+    msg_subject: Health and tech roundup
+    msg_body: Found two great posts today - one on Intel 18A and one on walking and longevity. Check them out!
+eval:
+  source: server_state
+  checks:
+  - expr: not any(p.subreddit_name == 'memes' and p.id in state.saved_post_ids for p in state.posts)
+    desc: Memes posts unsaved
+  - expr: '''{target.save1_id}'' in state.saved_post_ids'
+    desc: Intel post saved
+  - expr: '''{target.save2_id}'' in state.saved_post_ids'
+    desc: Walking post saved
+  - expr: state.get_post('{target.save2_id}').vote_direction == 1
+    desc: Walking post upvoted
+  - expr: state.settings.default_feed_sort == 'top'
+    desc: Feed sort top
+  - expr: state.settings.default_comment_sort == 'new'
+    desc: Comment sort new
+  - expr: any(m.to_user == "NeuralNexus" and "Intel 18A" in m.body for m in state.sent_messages)
+    desc: Message sent
+  negative_checks:
+  - expr: state.get_post('{target.save1_id}').vote_direction == 0
+    desc: Intel post not voted on
+    penalty: 0.1
+env_id: reddit
+start_path: /feed

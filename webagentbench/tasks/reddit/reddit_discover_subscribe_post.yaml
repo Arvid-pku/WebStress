@@ -1,0 +1,71 @@
+task_id: reddit_discover_subscribe_post
+env_id: reddit
+title: Discover Community and Create Content
+instruction_template: 'Search for communities about "machine learning". Find r/MachineLearning and subscribe to it.
+
+
+  Then create a text post in r/MachineLearning with title exactly: "{target.post_title}" and body exactly: "{target.post_body}"
+
+
+  Next, navigate to r/{target.comment_sub} and find the post "{target.comment_post_title}". Add a comment with exactly: "{target.comment_text}"
+
+
+  Finally, save that post.
+
+
+  Do not subscribe to any other communities.'
+difficulty: hard
+time_limit_seconds: 480
+expected_steps: 38
+primary_primitives:
+- exploration
+- planning
+- grounding
+start_path: /feed
+seed:
+  distractors: 8
+  actors: {}
+  steps:
+  - use: subscription_state
+    params:
+      unsubscribe:
+      - MachineLearning
+    outputs:
+    - subscriptions
+  - use: target_post
+    params:
+      subreddit: Python
+      title: 'FastAPI vs Django REST Framework: a real-world performance comparison'
+      body: I benchmarked both frameworks on identical hardware.
+      author: ByteRunner
+      score: 6200
+    outputs:
+    - comment_post_id
+    - comment_post_title
+    - comment_sub
+  targets:
+    post_title: 'Understanding LoRA: A practical guide to parameter-efficient fine-tuning'
+    post_body: I wrote a tutorial that walks through LoRA from first principles with working code examples. Feedback welcome!
+    comment_sub: '{output.comment_sub}'
+    comment_post_title: '{output.comment_post_title}'
+    comment_post_id: '{output.comment_post_id}'
+    comment_text: Great benchmarks! Have you tried running these with uvicorn workers scaled to match the Django process count?
+      That would make the comparison fairer.
+    initial_subscriptions: '{output.subscriptions}'
+eval:
+  source: server_state
+  checks:
+  - expr: any(s.name == 'MachineLearning' and s.is_subscribed for s in state.subreddits)
+    desc: Subscribed to r/ML
+  - expr: 'any(p.subreddit_name == "MachineLearning" and p.title == "Understanding LoRA: A practical guide to parameter-efficient
+      fine-tuning" and p.author_name == state.owner_username for p in state.posts)'
+    desc: Post created in r/ML
+  - expr: any(c.post_id == '{target.comment_post_id}' and "uvicorn workers" in c.body and c.author_name == state.owner_username
+      for c in state.comments)
+    desc: Comment on FastAPI post
+  - expr: '''{target.comment_post_id}'' in state.saved_post_ids'
+    desc: FastAPI post saved
+  negative_checks:
+  - expr: all(sid in state.subscriptions for sid in {target.initial_subscriptions})
+    desc: Existing subs preserved
+    penalty: 0.2

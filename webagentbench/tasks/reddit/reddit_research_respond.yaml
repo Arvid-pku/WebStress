@@ -1,0 +1,81 @@
+task_id: reddit_research_respond
+env_id: reddit
+title: Research Topic and Respond
+instruction_template: 'Research and respond to content about space:
+
+
+  1. Search for "Mars" and find the post titled "{target.search_title}" in r/{target.search_sub}. Save it.
+
+
+  2. Open that post and leave a comment with exactly: "{target.search_comment}"
+
+
+  3. Navigate to r/{target.msg_sub} and find the post by u/{target.msg_author} titled "{target.msg_post_title}". Send a message
+  to u/{target.msg_author} with subject "{target.msg_subject}" and body exactly: "{target.msg_body}"
+
+
+  4. Go to Settings and set default feed sort to "new".
+
+
+  Do not save other posts.'
+difficulty: hard
+time_limit_seconds: 480
+expected_steps: 38
+primary_primitives:
+- exploration
+- planning
+- grounding
+start_path: /feed
+seed:
+  distractors: 8
+  actors: {}
+  steps:
+  - use: target_post
+    params:
+      subreddit: space
+      title: NASA confirms Mars soil samples contain organic molecules consistent with ancient microbial life
+      body: The Perseverance rover's latest analysis shows compelling evidence.
+      author: NebulaDrifter
+      score: 78000
+    outputs:
+    - search_id
+    - search_title
+    - search_sub
+  - use: target_post
+    params:
+      subreddit: science
+      title: Breakthrough in quantum error correction achieves 99.9% fidelity across 100 qubits
+      body: Published in Nature Physics.
+      author: PhotonWave
+      score: 15000
+    outputs:
+    - msg_post_id
+    - msg_post_title
+    - msg_sub
+  targets:
+    search_title: '{output.search_title}'
+    search_sub: '{output.search_sub}'
+    search_id: '{output.search_id}'
+    search_comment: If confirmed, this would be the most significant discovery in human history. I wonder how they ruled out
+      contamination from the rover itself.
+    msg_sub: '{output.msg_sub}'
+    msg_author: PhotonWave
+    msg_post_title: '{output.msg_post_title}'
+    msg_subject: Question about quantum error correction
+    msg_body: Fascinating paper! Is the 99.9% fidelity sustained or peak? And does it scale beyond 100 qubits?
+eval:
+  source: server_state
+  checks:
+  - expr: '''{target.search_id}'' in state.saved_post_ids'
+    desc: Mars post saved
+  - expr: any(c.post_id == '{target.search_id}' and "most significant discovery" in c.body and c.author_name == state.owner_username
+      for c in state.comments)
+    desc: Comment on Mars post
+  - expr: any(m.to_user == "PhotonWave" and m.subject == "Question about quantum error correction" for m in state.sent_messages)
+    desc: Message sent to PhotonWave
+  - expr: state.settings.default_feed_sort == 'new'
+    desc: Feed sort changed
+  negative_checks:
+  - expr: sum(1 for pid in state.saved_post_ids if pid != '{target.search_id}') <= 4
+    desc: No extra posts saved
+    penalty: 0.15

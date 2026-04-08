@@ -1,0 +1,107 @@
+task_id: reddit_content_curation
+title: Cross-Subreddit Content Curation
+instruction_template: 'Complete this content curation workflow:
+
+
+  1. Search for posts about "artificial intelligence". Save the post titled "{target.save_title}" from r/technology.
+
+
+  2. Navigate to r/{target.comment_sub} and find the post titled "{target.comment_post_title}" by u/{target.comment_author}.
+  Upvote it and add a top-level comment with exactly: "{target.comment_text}"
+
+
+  3. Subscribe to r/{target.join_sub} (you are not currently a member).
+
+
+  4. Create a new text post in r/{target.join_sub} with title exactly: "{target.new_title}" and body exactly: "{target.new_body}"
+
+
+  Do not save any other posts. Do not comment on any other posts.'
+difficulty: hard
+time_limit_seconds: 480
+expected_steps: 35
+primary_primitives:
+- planning
+- exploration
+- grounding
+secondary_primitives:
+- state_tracking
+start_path: /feed
+seed:
+  distractors: 10
+  actors: {}
+  steps:
+  - use: target_post
+    params:
+      subreddit: technology
+      title: OpenAI releases GPT-5 with native multimodal reasoning at no extra cost
+      body: The new model handles text, images, audio, and video natively.
+      score: 42000
+      flair_text: AI
+    outputs:
+    - save_id
+    - save_title
+    - save_sub
+  - use: target_post
+    params:
+      subreddit: MachineLearning
+      title: Why transformer alternatives keep failing to scale
+      body: A deep dive into why Mamba, RWKV, and other architectures haven't displaced transformers.
+      author: NeuralNexus
+      score: 8900
+    outputs:
+    - comment_post_id
+    - comment_post_title
+    - comment_sub
+  - use: subscription_state
+    params:
+      unsubscribe:
+      - Piracy
+    outputs:
+    - subscriptions
+  - use: decoy_posts
+    params:
+      subreddit: technology
+      count: 3
+      title_pattern: OpenAI announces {topic} for enterprise
+    outputs:
+    - decoy_post_ids
+  targets:
+    save_title: '{output.save_title}'
+    save_id: '{output.save_id}'
+    comment_sub: '{output.comment_sub}'
+    comment_post_title: '{output.comment_post_title}'
+    comment_post_id: '{output.comment_post_id}'
+    comment_author: NeuralNexus
+    comment_text: The fundamental issue is hardware co-design. Transformers won because GPUs are optimized for dense matrix
+      multiplication, which attention maps to perfectly.
+    join_sub: Piracy
+    new_title: Legal streaming alternatives that actually have good catalogs in 2026
+    new_body: I compiled a list of streaming services with the best price-to-content ratio. Surprisingly, some free ad-supported
+      services have caught up to paid ones.
+    decoy_post_ids: '{output.decoy_post_ids}'
+    initial_subscriptions: '{output.subscriptions}'
+eval:
+  source: server_state
+  checks:
+  - expr: '''{target.save_id}'' in state.saved_post_ids'
+    desc: GPT-5 post saved
+  - expr: state.get_post('{target.comment_post_id}').vote_direction == 1
+    desc: ML post upvoted
+  - expr: any(c.post_id == '{target.comment_post_id}' and c.body == "The fundamental issue is hardware co-design. Transformers
+      won because GPUs are optimized for dense matrix multiplication, which attention maps to perfectly." and c.author_name
+      == state.owner_username for c in state.comments)
+    desc: Exact comment on ML post
+  - expr: any(s.name == 'Piracy' and s.is_subscribed for s in state.subreddits)
+    desc: Subscribed to r/Piracy
+  - expr: any(p.subreddit_name == "Piracy" and p.title == "Legal streaming alternatives that actually have good catalogs in
+      2026" and p.author_name == state.owner_username for p in state.posts)
+    desc: Post created in r/Piracy with exact title
+  negative_checks:
+  - expr: not any(pid in state.saved_post_ids for pid in {target.decoy_post_ids})
+    desc: Decoy posts not saved
+    penalty: 0.2
+  - expr: all(sid in state.subscriptions for sid in {target.initial_subscriptions})
+    desc: Existing subscriptions preserved
+    penalty: 0.2
+env_id: reddit

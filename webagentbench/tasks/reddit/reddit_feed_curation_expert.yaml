@@ -1,0 +1,98 @@
+task_id: reddit_feed_curation_expert
+title: Feed Curation and Quality Control
+instruction_template: '1. Hide the post "{target.hide_title}" in r/{target.hide_sub} (it is off-topic).
+
+  2. In r/science find "{target.sci_title}". Upvote, save, and comment: "{target.sci_comment}"
+
+  3. In r/programming find "{target.prog_title}". Save it (do not vote).
+
+  4. Send message to u/{target.msg_to} subject "{target.msg_sub}" body: "{target.msg_body}"
+
+  5. Mark all notifications read. Set feed sort to "top".
+
+
+  Do not hide other posts.'
+difficulty: expert
+time_limit_seconds: 480
+expected_steps: 38
+primary_primitives:
+- grounding
+- state_tracking
+- planning
+- exploration
+seed:
+  distractors: 8
+  actors: {}
+  steps:
+  - use: target_post
+    params:
+      subreddit: science
+      title: Engineered probiotic bacteria can detect and treat inflammatory bowel disease in mice
+      body: Published in Nature Biotechnology.
+      score: 19000
+    outputs:
+    - sci_id
+    - sci_title
+    - sci_sub
+  - use: target_post
+    params:
+      subreddit: programming
+      title: A visual guide to SSH tunneling and port forwarding
+      body: Diagrams that finally made it click for me.
+      author: SilentObserver
+      score: 7600
+    outputs:
+    - prog_id
+    - prog_title
+    - prog_sub
+  - use: target_post
+    params:
+      subreddit: technology
+      title: My cat walked across my keyboard and somehow deployed to production
+      body: True story.
+      score: 52000
+    outputs:
+    - hide_id
+    - hide_title
+    - hide_sub
+  targets:
+    hide_title: '{output.hide_title}'
+    hide_id: '{output.hide_id}'
+    hide_sub: '{output.hide_sub}'
+    sci_title: '{output.sci_title}'
+    sci_id: '{output.sci_id}'
+    prog_title: '{output.prog_title}'
+    prog_id: '{output.prog_id}'
+    sci_comment: The targeted delivery mechanism is elegant. If this translates to human trials, it could replace systemic
+      immunosuppressants.
+    msg_to: SilentObserver
+    msg_sub: Your SSH tunneling guide
+    msg_body: Best SSH explanation I have ever seen. Would you mind if I reference it in a training doc I am writing?
+eval:
+  source: server_state
+  checks:
+  - expr: state.get_post('{target.hide_id}').is_hidden
+    desc: Off-topic post hidden
+  - expr: state.get_post('{target.sci_id}').vote_direction == 1
+    desc: Science post upvoted
+  - expr: '''{target.sci_id}'' in state.saved_post_ids'
+    desc: Science post saved
+  - expr: any(c.post_id == '{target.sci_id}' and "targeted delivery" in c.body for c in state.comments)
+    desc: Science comment
+  - expr: '''{target.prog_id}'' in state.saved_post_ids'
+    desc: Prog post saved
+  - expr: any(m.to_user == "SilentObserver" and "SSH" in m.body for m in state.sent_messages)
+    desc: Message sent
+  - expr: state.unread_notification_count() == 0
+    desc: Notifications cleared
+  - expr: state.settings.default_feed_sort == 'top'
+    desc: Feed sort top
+  negative_checks:
+  - expr: state.get_post('{target.prog_id}').vote_direction == 0
+    desc: Prog post not voted
+    penalty: 0.15
+  - expr: len(state.hidden_post_ids) <= 1
+    desc: Only one post hidden
+    penalty: 0.2
+env_id: reddit
+start_path: /feed

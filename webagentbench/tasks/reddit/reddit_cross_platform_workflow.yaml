@@ -1,0 +1,90 @@
+task_id: reddit_cross_platform_workflow
+env_id: reddit
+title: Cross-Platform Research Workflow
+instruction_template: 'Complete this research workflow:
+
+
+  1. Search for "database". Find and save the post "{target.search_title}" in r/{target.search_sub}.
+
+
+  2. Open that post and add a comment with exactly: "{target.search_comment}"
+
+
+  3. Navigate to r/{target.create_sub} and create a new post with title exactly: "{target.create_title}" and body exactly:
+  "{target.create_body}"
+
+
+  4. Go to Messages and compose a message to u/{target.msg_to} with subject "{target.msg_subject}" and body exactly: "{target.msg_body}"
+
+
+  5. Subscribe to r/{target.join_sub}.
+
+
+  Do not save any other posts.'
+difficulty: hard
+time_limit_seconds: 480
+expected_steps: 38
+primary_primitives:
+- exploration
+- planning
+- grounding
+- state_tracking
+start_path: /feed
+seed:
+  distractors: 8
+  actors: {}
+  steps:
+  - use: target_post
+    params:
+      subreddit: programming
+      title: SQLite is the most deployed database in the world and nobody talks about it
+      body: It runs on every smartphone, every browser, and most embedded systems.
+      author: drunksandman
+      score: 9200
+    outputs:
+    - search_id
+    - search_title
+    - search_sub
+  - use: subscription_state
+    params:
+      unsubscribe:
+      - Piracy
+    outputs:
+    - subscriptions
+  targets:
+    search_title: '{output.search_title}'
+    search_sub: '{output.search_sub}'
+    search_id: '{output.search_id}'
+    search_comment: SQLite is a masterpiece of engineering. The test suite alone has over 100 million test cases.
+    create_sub: Python
+    create_title: 'Building a local-first app with SQLite and Python: lessons learned'
+    create_body: After building three production apps with SQLite as the primary database, here are the patterns that worked
+      and the pitfalls to avoid.
+    msg_to: drunksandman
+    msg_subject: Your SQLite post
+    msg_body: Great post about SQLite! I have been using it extensively in my Python projects. Would you be open to co-authoring
+      a blog post about SQLite best practices?
+    join_sub: Piracy
+    initial_subscriptions: '{output.subscriptions}'
+eval:
+  source: server_state
+  checks:
+  - expr: '''{target.search_id}'' in state.saved_post_ids'
+    desc: SQLite post saved
+  - expr: any(c.post_id == '{target.search_id}' and "100 million test cases" in c.body and c.author_name == state.owner_username
+      for c in state.comments)
+    desc: Comment on SQLite post
+  - expr: 'any(p.subreddit_name == "Python" and p.title == "Building a local-first app with SQLite and Python: lessons learned"
+      and p.author_name == state.owner_username for p in state.posts)'
+    desc: Python post created
+  - expr: any(m.to_user == "drunksandman" and m.subject == "Your SQLite post" for m in state.sent_messages)
+    desc: Message sent
+  - expr: any(s.name == 'Piracy' and s.is_subscribed for s in state.subreddits)
+    desc: Subscribed to r/Piracy
+  negative_checks:
+  - expr: sum(1 for pid in state.saved_post_ids if pid != '{target.search_id}') <= 4
+    desc: No extra posts saved
+    penalty: 0.15
+  - expr: all(sid in state.subscriptions for sid in {target.initial_subscriptions})
+    desc: Existing subs preserved
+    penalty: 0.2

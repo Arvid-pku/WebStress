@@ -1,0 +1,32 @@
+task_id: reddit_unsubscribe
+env_id: reddit
+title: Unsubscribe from a Subreddit
+instruction_template: Navigate to r/memes and leave the community by clicking the Joined/Leave button. Do not subscribe to
+  or unsubscribe from any other communities.
+difficulty: easy
+time_limit_seconds: 90
+expected_steps: 4
+primary_primitives:
+- grounding
+start_path: /feed
+seed:
+  distractors: 2
+  actors: {}
+  steps:
+  - use: subscription_state
+    params:
+      subscribe:
+      - memes
+    outputs:
+    - subscriptions
+  targets:
+    initial_subscriptions: '{output.subscriptions}'
+eval:
+  source: server_state
+  checks:
+  - expr: any(s.name == 'memes' and not s.is_subscribed for s in state.subreddits)
+    desc: Unsubscribed from r/memes
+  negative_checks:
+  - expr: sum(1 for s in state.subreddits if s.is_subscribed) >= len({target.initial_subscriptions}) - 1
+    desc: No other subreddits were unsubscribed
+    penalty: 0.3

@@ -1,0 +1,91 @@
+task_id: reddit_full_inbox_management
+title: Full Inbox Lifecycle Management
+instruction_template: '1. Mark all notifications as read.
+
+  2. Go to Messages. Mark all as read.
+
+  3. Reply to u/{target.reply1_from} (subject "{target.reply1_sub}") with exactly: "{target.reply1_body}"
+
+  4. Reply to u/{target.reply2_from} (subject "{target.reply2_sub}") with exactly: "{target.reply2_body}"
+
+  5. Delete the message with subject "{target.delete_sub}".
+
+  6. Compose new message to u/{target.new_to} subject "{target.new_subject}" body exactly: "{target.new_body}"
+
+  7. Go to Settings: disable email for messages and mentions. Set theme to "dark".
+
+
+  Do not delete other messages.'
+difficulty: frontier
+time_limit_seconds: 720
+expected_steps: 55
+primary_primitives:
+- planning
+- state_tracking
+- grounding
+- patience
+- verification
+seed:
+  distractors: 10
+  actors: {}
+  steps:
+  - use: target_message
+    params:
+      from_user: PhotonWave
+      subject: Photo walk Saturday?
+      body: Want to join?
+      is_read: false
+    outputs:
+    - r1_id
+    - r1_sub
+    - r1_from
+  - use: target_message
+    params:
+      from_user: NeuralNexus
+      subject: Paper review request
+      body: Can you review my draft?
+      is_read: false
+    outputs:
+    - r2_id
+    - r2_sub
+    - r2_from
+  - use: target_message
+    params:
+      from_user: ryushin6
+      subject: URGENT account compromised!!!
+      body: Click link immediately.
+      is_read: false
+    outputs:
+    - del_id
+    - del_sub
+    - del_from
+  targets:
+    reply1_from: '{output.r1_from}'
+    reply1_sub: '{output.r1_sub}'
+    reply1_body: Sounds great! I will bring my 50mm lens. What time?
+    reply2_from: '{output.r2_from}'
+    reply2_sub: '{output.r2_sub}'
+    reply2_body: Happy to review it. Send me the PDF and I will have comments by Wednesday.
+    delete_sub: '{output.del_sub}'
+    delete_id: '{output.del_id}'
+    new_to: ByteRunner
+    new_subject: Weekend coding session
+    new_body: Want to pair program on the database migration library this weekend? I have some ideas for the retry logic.
+eval:
+  source: server_state
+  checks:
+  - expr: any(m.to_user == '{target.new_to}' for m in state.sent_messages)
+    desc: New message sent
+  - expr: any(m.to_user == '{target.reply1_from}' for m in state.sent_messages)
+    desc: Reply 1 sent
+  - expr: any(m.to_user == '{target.reply2_from}' for m in state.sent_messages)
+    desc: Reply 2 sent
+  - expr: not any(m.id == '{target.delete_id}' for m in state.messages)
+    desc: Spam deleted
+  - expr: state.settings.theme == 'dark'
+    desc: Theme dark
+  - expr: state.unread_notification_count() == 0
+    desc: Notifications cleared
+  negative_checks: []
+env_id: reddit
+start_path: /feed

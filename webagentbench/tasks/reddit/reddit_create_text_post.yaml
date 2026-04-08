@@ -1,0 +1,31 @@
+task_id: reddit_create_text_post
+env_id: reddit
+title: Create a Text Post
+instruction_template: 'Go to r/Python and create a new text post with the title exactly: "What are the best Python libraries
+  for data validation in 2026?" and body exactly: "I have been using Pydantic but wondering if there are better alternatives.
+  What do you all recommend?"'
+difficulty: easy
+time_limit_seconds: 120
+expected_steps: 7
+primary_primitives:
+- grounding
+start_path: /feed
+seed:
+  distractors: 3
+  actors: {}
+  steps: []
+  targets: {}
+eval:
+  source: server_state
+  checks:
+  - expr: any(p.subreddit_name == "Python" and p.title == "What are the best Python libraries for data validation in 2026?"
+      and p.author_name == state.owner_username for p in state.posts)
+    desc: Post created with exact title in r/Python
+  - expr: any(p.subreddit_name == "Python" and p.body == "I have been using Pydantic but wondering if there are better alternatives.
+      What do you all recommend?" and p.author_name == state.owner_username for p in state.posts)
+    desc: Post has exact body text
+  negative_checks:
+  - expr: not any(p.author_name == state.owner_username and p.subreddit_name != 'Python' and p.subreddit_name not in ('technology',
+      'personalfinance') for p in state.posts)
+    desc: No posts in wrong subreddits
+    penalty: 0.2

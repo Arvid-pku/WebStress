@@ -1,0 +1,65 @@
+task_id: reddit_full_profile_engagement
+env_id: reddit
+title: Full Profile-Driven Engagement
+instruction_template: 'Visit u/{target.target_user}''s profile. Find their post titled "{target.user_post_title}" in r/{target.user_post_sub}.
+
+
+  1. Upvote that post.
+
+  2. Add a comment with exactly: "{target.comment_text}"
+
+  3. Save the post.
+
+  4. Send a message to u/{target.target_user} with subject "{target.msg_subject}" and body exactly: "{target.msg_body}"
+
+
+  Do not interact with any other user''s content.'
+difficulty: hard
+time_limit_seconds: 480
+expected_steps: 38
+primary_primitives:
+- exploration
+- grounding
+- planning
+start_path: /feed
+seed:
+  distractors: 8
+  actors: {}
+  steps:
+  - use: target_post
+    params:
+      subreddit: photography
+      title: I spent 3 years photographing every species of bird in Central Park
+      body: 'Final count: 284 species. Full gallery in comments.'
+      author: PhotonWave
+      score: 67000
+      flair_text: OC
+    outputs:
+    - post_id
+    - post_title
+    - subreddit_name
+  targets:
+    target_user: PhotonWave
+    user_post_title: '{output.post_title}'
+    user_post_sub: '{output.subreddit_name}'
+    post_id: '{output.post_id}'
+    comment_text: This is an incredible achievement. 284 species in a single urban park is remarkable. How did you handle
+      the seasonal migrants?
+    msg_subject: Your Central Park bird photography
+    msg_body: Stunning work! Would you consider licensing some images for a nature conservation newsletter I edit?
+eval:
+  source: server_state
+  checks:
+  - expr: state.get_post('{target.post_id}').vote_direction == 1
+    desc: Post upvoted
+  - expr: any(c.post_id == '{target.post_id}' and "284 species" in c.body and c.author_name == state.owner_username for c
+      in state.comments)
+    desc: Comment posted
+  - expr: '''{target.post_id}'' in state.saved_post_ids'
+    desc: Post saved
+  - expr: any(m.to_user == "PhotonWave" and m.subject == "Your Central Park bird photography" for m in state.sent_messages)
+    desc: Message sent
+  negative_checks:
+  - expr: sum(1 for m in state.sent_messages if m.from_user == state.owner_username) <= 3
+    desc: No extra messages
+    penalty: 0.15

@@ -1,0 +1,93 @@
+task_id: reddit_curate_and_engage
+env_id: reddit
+title: Curate Feed and Engage
+instruction_template: '1. Hide the post titled "{target.hide_title}" in r/{target.hide_sub}.
+
+
+  2. Save the post titled "{target.save_title}" in r/{target.save_sub}.
+
+
+  3. Upvote the post titled "{target.upvote_title}" in r/{target.upvote_sub}.
+
+
+  4. Add a comment on that upvoted post with exactly: "{target.comment_text}"
+
+
+  5. Go to Settings and enable compact view.
+
+
+  Do not hide, save, or vote on any other posts.'
+difficulty: hard
+time_limit_seconds: 480
+expected_steps: 38
+primary_primitives:
+- planning
+- grounding
+- state_tracking
+start_path: /feed
+seed:
+  distractors: 8
+  actors: {}
+  steps:
+  - use: target_post
+    params:
+      subreddit: mildlyinfuriating
+      title: My neighbor parks their car across two spots every single day
+      body: I have asked nicely three times.
+      score: 42000
+    outputs:
+    - hide_id
+    - hide_title
+    - hide_sub
+  - use: target_post
+    params:
+      subreddit: dataisbeautiful
+      title: I tracked every dollar I spent for 5 years and visualized it
+      body: Interactive charts in comments.
+      score: 31000
+      flair_text: OC
+    outputs:
+    - save_id
+    - save_title
+    - save_sub
+  - use: target_post
+    params:
+      subreddit: explainlikeimfive
+      title: 'ELI5: Why does time seem to speed up as you get older?'
+      body: ''
+      author: ThreadReader
+      score: 18000
+    outputs:
+    - upvote_id
+    - upvote_title
+    - upvote_sub
+  targets:
+    hide_title: '{output.hide_title}'
+    hide_id: '{output.hide_id}'
+    hide_sub: '{output.hide_sub}'
+    save_title: '{output.save_title}'
+    save_id: '{output.save_id}'
+    save_sub: '{output.save_sub}'
+    upvote_title: '{output.upvote_title}'
+    upvote_id: '{output.upvote_id}'
+    upvote_sub: '{output.upvote_sub}'
+    comment_text: It is because each year becomes a smaller fraction of your total life experience. When you are 5, a year
+      is 20% of your life. When you are 50, it is only 2%.
+eval:
+  source: server_state
+  checks:
+  - expr: state.get_post('{target.hide_id}').is_hidden
+    desc: Mildlyinfuriating post hidden
+  - expr: '''{target.save_id}'' in state.saved_post_ids'
+    desc: DataIsBeautiful post saved
+  - expr: state.get_post('{target.upvote_id}').vote_direction == 1
+    desc: ELI5 post upvoted
+  - expr: any(c.post_id == '{target.upvote_id}' and "smaller fraction" in c.body and c.author_name == state.owner_username
+      for c in state.comments)
+    desc: Comment on ELI5 post
+  - expr: state.settings.compact_view
+    desc: Compact view enabled
+  negative_checks:
+  - expr: len(state.hidden_post_ids) <= 1
+    desc: At most one post hidden
+    penalty: 0.2

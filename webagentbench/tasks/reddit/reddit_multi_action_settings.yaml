@@ -1,0 +1,77 @@
+task_id: reddit_multi_action_settings
+title: Multi-Action with Full Settings Update
+instruction_template: '1. Subscribe to r/Piracy.
+
+  2. Unsubscribe from r/memes.
+
+  3. Create a post in r/Python: title "{target.post_title}" body "{target.post_body}".
+
+  4. In r/worldnews find "{target.wn_title}". Upvote it.
+
+  5. Block u/CryptoSkeptic.
+
+  6. Settings: theme "dark", compact view on, disable show online status and allow followers, set feed sort "new" and comment
+  sort "top".
+
+
+  Do not unsubscribe from anything else.'
+difficulty: expert
+time_limit_seconds: 540
+expected_steps: 40
+primary_primitives:
+- planning
+- grounding
+- state_tracking
+- verification
+seed:
+  distractors: 8
+  actors: {}
+  steps:
+  - use: subscription_state
+    params:
+      unsubscribe:
+      - Piracy
+      subscribe:
+      - memes
+    outputs:
+    - subscriptions
+  - use: target_post
+    params:
+      subreddit: worldnews
+      title: India becomes the third country to successfully land a rover on Mars
+      body: Mangalyaan 3 touched down in Jezero Crater.
+      score: 73000
+    outputs:
+    - wn_id
+    - wn_title
+    - wn_sub
+  targets:
+    post_title: 'Comprehensive guide to Python packaging in 2026: pyproject.toml, uv, and hatch'
+    post_body: The Python packaging landscape has finally stabilized. Here is everything you need to know.
+    wn_title: '{output.wn_title}'
+    wn_id: '{output.wn_id}'
+    initial_subscriptions: '{output.subscriptions}'
+eval:
+  source: server_state
+  checks:
+  - expr: any(s.name == 'Piracy' and s.is_subscribed for s in state.subreddits)
+    desc: Joined Piracy
+  - expr: any(s.name == 'memes' and not s.is_subscribed for s in state.subreddits)
+    desc: Left memes
+  - expr: any(p.subreddit_name == "Python" and "packaging" in p.title and p.author_name == state.owner_username for p in state.posts)
+    desc: Python post created
+  - expr: state.get_post('{target.wn_id}').vote_direction == 1
+    desc: WN post upvoted
+  - expr: '''CryptoSkeptic'' in state.blocked_users'
+    desc: User blocked
+  - expr: state.settings.theme == 'dark' and state.settings.compact_view and not state.settings.show_online_status and not
+      state.settings.allow_followers
+    desc: Settings updated
+  - expr: state.settings.default_feed_sort == 'new' and state.settings.default_comment_sort == 'top'
+    desc: Sort settings updated
+  negative_checks:
+  - expr: any(s.name == 'technology' and s.is_subscribed for s in state.subreddits)
+    desc: r/technology still subscribed
+    penalty: 0.2
+env_id: reddit
+start_path: /feed

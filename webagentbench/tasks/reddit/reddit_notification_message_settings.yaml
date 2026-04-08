@@ -1,0 +1,74 @@
+task_id: reddit_notification_message_settings
+env_id: reddit
+title: Notifications, Messages, and Settings
+instruction_template: '1. Mark all notifications as read.
+
+
+  2. Go to Messages. Reply to the message from u/{target.reply_from} (subject: "{target.reply_subject}") with exactly: "{target.reply_body}"
+
+
+  3. Delete the message from u/{target.delete_from} with subject "{target.delete_subject}".
+
+
+  4. Go to Settings. Disable all email notifications. Set theme to "dark".
+
+
+  Do not delete any other messages.'
+difficulty: hard
+time_limit_seconds: 480
+expected_steps: 38
+primary_primitives:
+- planning
+- state_tracking
+- grounding
+start_path: /feed
+seed:
+  distractors: 8
+  actors: {}
+  steps:
+  - use: target_message
+    params:
+      from_user: DigitalSage
+      subject: Your Python package
+      body: Is it compatible with Python 3.12?
+      is_read: false
+    outputs:
+    - reply_msg_id
+    - reply_msg_subject
+    - reply_msg_from
+  - use: target_message
+    params:
+      from_user: ryushin6
+      subject: FREE crypto giveaway!!!
+      body: Send 1 BTC to receive 10 BTC back!
+      is_read: false
+    outputs:
+    - delete_msg_id
+    - delete_msg_subject
+    - delete_msg_from
+  targets:
+    reply_from: '{output.reply_msg_from}'
+    reply_subject: '{output.reply_msg_subject}'
+    reply_body: Yes, fully compatible with Python 3.12 and 3.13. Let me know if you hit any issues.
+    delete_from: '{output.delete_msg_from}'
+    delete_subject: '{output.delete_msg_subject}'
+    delete_msg_id: '{output.delete_msg_id}'
+eval:
+  source: server_state
+  checks:
+  - expr: state.unread_notification_count() == 0
+    desc: All notifications read
+  - expr: any(m.to_user == '{target.reply_from}' and m.body == "Yes, fully compatible with Python 3.12 and 3.13. Let me know
+      if you hit any issues." for m in state.sent_messages)
+    desc: Exact reply sent
+  - expr: not any(m.id == '{target.delete_msg_id}' for m in state.messages)
+    desc: Spam deleted
+  - expr: not state.settings.email_comment_reply and not state.settings.email_post_reply and not state.settings.email_mentions
+      and not state.settings.email_messages and not state.settings.email_digest
+    desc: All email notifications disabled
+  - expr: state.settings.theme == 'dark'
+    desc: Theme dark
+  negative_checks:
+  - expr: len(state.messages) >= 4
+    desc: Non-spam messages preserved
+    penalty: 0.25

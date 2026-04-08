@@ -1,0 +1,38 @@
+task_id: reddit_save_from_feed
+env_id: reddit
+title: Save a Post from Your Feed
+instruction_template: Find the post titled "{target.post_title}" in your home feed and save it. Do not save any other posts.
+difficulty: easy
+time_limit_seconds: 90
+expected_steps: 4
+primary_primitives:
+- grounding
+start_path: /feed
+seed:
+  distractors: 5
+  actors: {}
+  steps:
+  - use: target_post
+    params:
+      subreddit: movies
+      title: Denis Villeneuve says Dune Messiah will be his final Dune film
+      body: In a new interview, the director confirmed this will complete his vision for the franchise.
+      score: 31200
+    outputs:
+    - post_id
+    - post_title
+    - subreddit_name
+  targets:
+    post_id: '{output.post_id}'
+    post_title: '{output.post_title}'
+eval:
+  source: server_state
+  checks:
+  - expr: '''{target.post_id}'' in state.saved_post_ids'
+    desc: Target post was saved
+  - expr: state.get_post('{target.post_id}').is_saved
+    desc: Post is_saved flag is True
+  negative_checks:
+  - expr: sum(1 for pid in state.saved_post_ids if pid != '{target.post_id}') <= 4
+    desc: No extra posts saved beyond baseline
+    penalty: 0.2

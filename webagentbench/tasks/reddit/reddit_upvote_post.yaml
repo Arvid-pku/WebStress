@@ -1,0 +1,49 @@
+task_id: reddit_upvote_post
+env_id: reddit
+title: Upvote a Specific Post
+instruction_template: >
+  Navigate to r/{target.subreddit_name} and find the post titled
+  "{target.post_title}". Upvote that post. Do not vote on any other posts.
+difficulty: easy
+time_limit_seconds: 90
+expected_steps: 5
+primary_primitives:
+  - grounding
+start_path: /feed
+seed:
+  distractors: 5
+  actors: {}
+  steps:
+    - use: target_post
+      params:
+        subreddit: technology
+        title: "FCC Votes 3-2 to Reinstate Net Neutrality Rules Nationwide"
+        body: "The Federal Communications Commission voted along party lines to restore net neutrality protections that were repealed in 2017."
+        score: 18340
+        flair_text: "Net Neutrality"
+      outputs:
+        - post_id
+        - post_title
+        - subreddit_name
+    - use: decoy_posts
+      params:
+        subreddit: technology
+        count: 3
+        title_pattern: "FCC announces {topic} regarding broadband"
+        score_range: [5000, 12000]
+      outputs:
+        - decoy_post_ids
+  targets:
+    post_id: "{output.post_id}"
+    post_title: "{output.post_title}"
+    subreddit_name: "{output.subreddit_name}"
+    decoy_post_ids: "{output.decoy_post_ids}"
+eval:
+  source: server_state
+  checks:
+    - expr: "state.get_post('{target.post_id}').vote_direction == 1"
+      desc: Target post was upvoted
+  negative_checks:
+    - expr: "all(state.get_post(did).vote_direction == 0 for did in {target.decoy_post_ids})"
+      desc: Decoy posts were not voted on
+      penalty: 0.3

@@ -1,0 +1,29 @@
+task_id: reddit_compose_message
+env_id: reddit
+title: Compose a New Message
+instruction_template: 'Go to Messages and compose a new message to u/QuantumPanda with subject "Question about your AskReddit
+  post" and body exactly: "Hey, I found your recent post really interesting. Could you share the source for that claim about
+  honey?" Do not reply to any existing messages.'
+difficulty: easy
+time_limit_seconds: 120
+expected_steps: 7
+primary_primitives:
+- grounding
+start_path: /feed
+seed:
+  distractors: 2
+  actors: {}
+  steps: []
+  targets: {}
+eval:
+  source: server_state
+  checks:
+  - expr: any(m.to_user == "QuantumPanda" and m.subject == "Question about your AskReddit post" for m in state.sent_messages)
+    desc: Message sent to correct user with correct subject
+  - expr: any(m.to_user == "QuantumPanda" and m.body == "Hey, I found your recent post really interesting. Could you share
+      the source for that claim about honey?" for m in state.sent_messages)
+    desc: Message has exact body text
+  negative_checks:
+  - expr: sum(1 for m in state.sent_messages if m.from_user == state.owner_username) <= 3
+    desc: No excessive messages sent
+    penalty: 0.2

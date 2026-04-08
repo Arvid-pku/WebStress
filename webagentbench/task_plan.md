@@ -1,60 +1,52 @@
-# Task Plan: Amazon Environment and Benchmark Review
+# Task Plan: Reddit Environment Quality Pass
 
 ## Goal
-Audit the local Amazon environment and its related benchmark definitions for concrete bugs, behavioral inconsistencies, and design issues, then report findings with file-level evidence.
+Make the local Reddit benchmark environment feel stable and production-ready by fixing repeated navigation flicker, obvious interaction bugs, and compile/runtime rough edges.
 
 ## Current Phase
-Phase 5
+Phase 4
 
 ## Phases
-### Phase 1: Requirements & Discovery
-- [x] Understand user intent
-- [x] Identify constraints and requirements
-- [x] Document findings in findings.md
+### Phase 1: Discovery & Triage
+- [x] Reproduce the likely navigation issue from code inspection
+- [x] Identify the main rerender/refetch causes
+- [x] Record findings in findings.md
 - **Status:** complete
 
-### Phase 2: Code Inspection
-- [x] Inspect backend models, routes, and seeders
-- [x] Inspect frontend pages, types, and API integration
-- [x] Inspect tasks and injected benchmark variants
+### Phase 2: Implementation
+- [x] Stabilize route/navigation behavior
+- [x] Fix obvious correctness bugs and type issues
+- [x] Improve keyboard/interaction quality for pseudo-links and controls
 - **Status:** complete
 
-### Phase 3: Behavioral Validation
-- [x] Run targeted tests or local checks where available
-- [x] Use browser automation for high-value flow validation if needed
-- [x] Capture mismatches between implementation and task expectations
+### Phase 3: Verification
+- [x] Run targeted Reddit typecheck/build
+- [x] Confirm remaining risks and document them
 - **Status:** complete
 
-### Phase 4: Synthesis
-- [x] Rank findings by severity
-- [x] Distinguish implementation bugs from design debt
-- [x] Cross-reference findings with file locations
-- **Status:** complete
-
-### Phase 5: Delivery
-- [x] Deliver implementation summary to user
-- [x] Note residual risks and unverified areas
+### Phase 4: Delivery
+- [x] Summarize changes with file references
+- [x] Call out residual design debt separately from fixed issues
 - **Status:** complete
 
 ## Key Questions
-1. Do backend state transitions match the benchmark task semantics?
-2. Does the frontend expose the actions and information that benchmark tasks require?
-3. Are the task YAMLs, variants, and seeded data internally consistent?
+1. Why does a single click cause multiple visible flashes?
+2. Which fixes materially improve the benchmark environment without overreaching into unrelated refactors?
+3. Does the Reddit frontend build and typecheck cleanly after the fixes?
 
 ## Decisions Made
 | Decision | Rationale |
 |----------|-----------|
-| Review current uncommitted Amazon changes as the target | The Amazon environment appears to be newly added and is the subject of the user's request |
-| Prioritize code review over broad browser exploration | Most benchmark/design defects are visible in state models, routes, and task definitions |
-| Use direct route/model execution for validation | Sandbox denied binding a local server port, and the local venv lacks `httpx` for `TestClient` |
+| Treat the local untracked Reddit environment as the target implementation | The worktree shows Reddit is actively being added and is the direct subject of the request |
+| Prioritize route stability and interaction correctness over visual redesign | The main complaint is environment usability, not styling |
+| Keep changes scoped to Reddit unless a shared change is clearly necessary | Avoid unintended regressions in other benchmark environments |
 
 ## Errors Encountered
 | Error | Attempt | Resolution |
 |-------|---------|------------|
-| Existing dirty worktree and unsynced prior-session context | 1 | Treat current state as review target; avoid modifying implementation files during the audit |
-| Local venv missing `httpx`, so `fastapi.testclient` is unavailable | 1 | Call route functions directly with `SessionManager` |
-| Sandbox denied binding a localhost port for full browser reproduction | 1 | Continue with direct route/model validation instead of server-backed browser automation |
+| Previous unsynced Reddit debugging context existed without planning-file updates | 1 | Ran session catchup, read current files, and resumed from the live code state |
+| Reddit frontend typecheck currently fails in `src/pages/Profile.tsx` on `unknown` values rendered as React nodes | 1 | Fixed by tightening the frontend API and page state typing |
 
 ## Notes
-- Do not revert unrelated local changes.
-- Direct validation already surfaced benchmark-blocking issues without editing implementation files.
+- Do not revert unrelated worktree changes.
+- Reddit typecheck and build now pass after the scoped quality fixes.

@@ -1,0 +1,121 @@
+task_id: reddit_comment_chain_analysis
+title: Thread Analysis and Multi-Response
+instruction_template: '1. Navigate to r/{target.sub} and open "{target.post_title}".
+
+
+  2. Upvote the post.
+
+
+  3. Add a top-level comment with exactly: "{target.top_comment}"
+
+
+  4. Reply to u/{target.reply1_author}''s comment mentioning "{target.reply1_hint}" with exactly: "{target.reply1_text}"
+
+
+  5. Reply to u/{target.reply2_author}''s comment mentioning "{target.reply2_hint}" with exactly: "{target.reply2_text}"
+
+
+  6. Save u/{target.save_author}''s comment that mentions "{target.save_hint}".
+
+
+  Do not downvote anything.'
+difficulty: expert
+time_limit_seconds: 540
+expected_steps: 40
+primary_primitives:
+- exploration
+- grounding
+- state_tracking
+- planning
+seed:
+  distractors: 8
+  actors: {}
+  steps:
+  - use: target_post
+    params:
+      subreddit: programming
+      title: 'Hot take: microservices are a mistake for 95% of companies'
+      body: Monoliths are simpler, faster, and cheaper to maintain.
+      author: LogicLoom
+      score: 11000
+    outputs:
+    - post_id
+    - post_title
+    - subreddit_name
+  - use: target_comment
+    params:
+      post_id: '{output.post_id}'
+      body: Disagree. At scale, a monolith becomes an unmaintainable ball of mud. The real issue is teams adopting microservices
+        too early.
+      author: CompileError
+      score: 3800
+    outputs:
+    - reply1_id
+    - reply1_body
+  - use: target_comment
+    params:
+      post_id: '{output.post_id}'
+      body: The best architecture is the one your team can actually operate. Most small teams cannot handle the operational
+        overhead of Kubernetes and service meshes.
+      author: DeepDiver
+      score: 2900
+    outputs:
+    - reply2_id
+    - reply2_body
+  - use: target_comment
+    params:
+      post_id: '{output.post_id}'
+      body: Shopify runs a massive Rails monolith and they seem to be doing fine. Sometimes boring technology is the right
+        choice.
+      author: BinaryBard
+      score: 5100
+    outputs:
+    - save_id
+    - save_body
+  - use: comment_thread
+    params:
+      post_id: '{output.post_id}'
+      depth: 2
+      comments_per_level: 3
+    outputs:
+    - comment_ids
+    - thread_depth
+  targets:
+    sub: '{output.subreddit_name}'
+    post_title: '{output.post_title}'
+    post_id: '{output.post_id}'
+    top_comment: The real answer is that it depends on your team size, deployment frequency, and domain complexity. There
+      is no universal right answer.
+    reply1_author: CompileError
+    reply1_hint: unmaintainable ball of mud
+    reply1_id: '{output.reply1_id}'
+    reply1_text: Agreed on the timing point. The issue is organizational, not technical. Conway's Law applies here.
+    reply2_author: DeepDiver
+    reply2_hint: operational overhead of Kubernetes
+    reply2_id: '{output.reply2_id}'
+    reply2_text: This is the key insight. Most teams underestimate the ops burden by an order of magnitude.
+    save_author: BinaryBard
+    save_hint: Shopify
+    save_id: '{output.save_id}'
+eval:
+  source: server_state
+  checks:
+  - expr: state.get_post('{target.post_id}').vote_direction == 1
+    desc: Post upvoted
+  - expr: any(c.post_id == '{target.post_id}' and c.parent_id is None and "depends on your team size" in c.body and c.author_name
+      == state.owner_username for c in state.comments)
+    desc: Top-level comment
+  - expr: any(c.parent_id == '{target.reply1_id}' and "Conway's Law" in c.body and c.author_name == state.owner_username for
+      c in state.comments)
+    desc: Reply to CompileError
+  - expr: any(c.parent_id == '{target.reply2_id}' and "ops burden" in c.body and c.author_name == state.owner_username for
+      c in state.comments)
+    desc: Reply to DeepDiver
+  - expr: '''{target.save_id}'' in state.saved_comment_ids'
+    desc: BinaryBard comment saved
+  negative_checks:
+  - expr: not any(p.vote_direction == -1 for p in state.posts)
+    desc: Nothing downvoted
+    penalty: 0.15
+env_id: reddit
+start_path: /feed

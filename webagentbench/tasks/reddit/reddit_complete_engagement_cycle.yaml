@@ -1,0 +1,132 @@
+task_id: reddit_complete_engagement_cycle
+title: Complete Community Engagement Cycle
+instruction_template: '1. Subscribe to r/{target.join_sub}.
+
+  2. Create post in r/{target.join_sub}: title "{target.post_title}" body "{target.post_body}".
+
+  3. In r/{target.vote_sub} find "{target.vote_title}". Upvote it.
+
+  4. In r/{target.save_sub} find "{target.save_title}". Save it.
+
+  5. In r/{target.comment_sub} find "{target.comment_title}". Comment: "{target.comment_text}" and reply to u/{target.reply_author}''s
+  comment about "{target.reply_hint}": "{target.reply_text}"
+
+  6. Send message to u/{target.msg_to} subject "{target.msg_sub}" body: "{target.msg_body}"
+
+  7. Mark all notifications read. Set theme "dark", comment sort "new".
+
+
+  Do not downvote. Do not unsubscribe.'
+difficulty: frontier
+time_limit_seconds: 720
+expected_steps: 55
+primary_primitives:
+- planning
+- grounding
+- state_tracking
+- exploration
+- verification
+- patience
+seed:
+  distractors: 10
+  actors: {}
+  steps:
+  - use: subscription_state
+    params:
+      unsubscribe:
+      - MachineLearning
+    outputs:
+    - subscriptions
+  - use: target_post
+    params:
+      subreddit: worldnews
+      title: Pacific island nations form alliance to sue major oil companies for climate damages
+      body: The coalition seeks $100B in reparations.
+      score: 62000
+    outputs:
+    - vote_id
+    - vote_title
+    - vote_sub
+  - use: target_post
+    params:
+      subreddit: todayilearned
+      title: TIL the Great Wall of China is not visible from space but city lights are
+      body: Common myth debunked by astronauts.
+      score: 41000
+    outputs:
+    - save_id
+    - save_title
+    - save_sub
+  - use: target_post
+    params:
+      subreddit: programming
+      title: 'The hidden costs of technical debt: a 5-year retrospective'
+      body: We tracked every hour spent on legacy code.
+      author: LogicLoom
+      score: 9400
+    outputs:
+    - comment_id
+    - comment_title
+    - comment_sub
+  - use: target_comment
+    params:
+      post_id: '{output.comment_id}'
+      body: We estimated technical debt costs us 40% of our sprint velocity. The compound interest metaphor is perfect.
+      author: CompileError
+      score: 1800
+    outputs:
+    - reply_comment_id
+    - reply_comment_body
+  targets:
+    join_sub: MachineLearning
+    post_title: Practical guide to building RAG systems that actually work
+    post_body: After building 12 production RAG systems, here are the patterns that work and the antipatterns that waste your
+      time.
+    vote_sub: '{output.vote_sub}'
+    vote_title: '{output.vote_title}'
+    vote_id: '{output.vote_id}'
+    save_sub: '{output.save_sub}'
+    save_title: '{output.save_title}'
+    save_id: '{output.save_id}'
+    comment_sub: '{output.comment_sub}'
+    comment_title: '{output.comment_title}'
+    comment_id: '{output.comment_id}'
+    comment_text: This resonates deeply. We had a similar experience where tech debt from year 1 decisions compounded until
+      it consumed half our engineering bandwidth.
+    reply_author: CompileError
+    reply_hint: sprint velocity
+    reply_id: '{output.reply_comment_id}'
+    reply_text: 40% is horrifying but believable. The worst part is that this cost is invisible in most sprint metrics until
+      it is too late.
+    msg_to: LogicLoom
+    msg_sub: Your tech debt retrospective
+    msg_body: Incredible post. Would you be willing to share the tracking spreadsheet template you used? I want to implement
+      the same system at my company.
+    initial_subscriptions: '{output.subscriptions}'
+eval:
+  source: server_state
+  checks:
+  - expr: any(c.post_id == '{target.comment_id}' and c.author_name == state.owner_username for c in state.comments)
+    desc: Comment posted
+  - expr: any(p.title == '{target.post_title}' and p.author_name == state.owner_username for p in state.posts)
+    desc: Post created
+  - expr: any(s.name == '{target.join_sub}' and s.is_subscribed for s in state.subreddits)
+    desc: Subscribed
+  - expr: any(m.to_user == '{target.msg_to}' for m in state.sent_messages)
+    desc: Message sent
+  - expr: state.get_post('{target.vote_id}').vote_direction == 1
+    desc: Post upvoted
+  - expr: '''{target.save_id}'' in state.saved_post_ids'
+    desc: Post saved
+  - expr: any(c.parent_id == '{target.reply_id}' and c.author_name == state.owner_username for c in state.comments)
+    desc: Reply posted
+  - expr: state.settings.theme == 'dark'
+    desc: Theme dark
+  - expr: state.unread_notification_count() == 0
+    desc: Notifications cleared
+  negative_checks:
+  - expr: all(sid in state.subscriptions for sid in {target.initial_subscriptions})
+    desc: Existing subs preserved
+    penalty: 0.2
+env_id: reddit
+start_path: /feed

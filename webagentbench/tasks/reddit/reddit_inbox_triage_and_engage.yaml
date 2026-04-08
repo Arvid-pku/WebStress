@@ -1,0 +1,90 @@
+task_id: reddit_inbox_triage_and_engage
+title: Inbox Triage and Targeted Engagement
+instruction_template: '1. Mark all notifications as read.
+
+  2. Go to Messages. Read all unread messages. Reply to u/{target.reply_from} (subject: "{target.reply_subject}") with exactly:
+  "{target.reply_body}"
+
+  3. Delete the message with subject "{target.delete_subject}".
+
+  4. Navigate to r/{target.sub} and find "{target.post_title}". Upvote it and comment with exactly: "{target.comment_text}"
+
+  5. Save that post.
+
+
+  Do not delete other messages.'
+difficulty: expert
+time_limit_seconds: 540
+expected_steps: 40
+primary_primitives:
+- planning
+- state_tracking
+- grounding
+- exploration
+seed:
+  distractors: 8
+  actors: {}
+  steps:
+  - use: target_message
+    params:
+      from_user: PhotonWave
+      subject: Photography meetup this weekend
+      body: Want to join us for a photo walk in downtown?
+      is_read: false
+    outputs:
+    - reply_msg_id
+    - reply_msg_subject
+    - reply_msg_from
+  - use: target_message
+    params:
+      from_user: ryushin6
+      subject: You won a prize! Click now!
+      body: Totally real prize.
+      is_read: false
+    outputs:
+    - delete_msg_id
+    - delete_msg_subject
+    - delete_msg_from
+  - use: target_post
+    params:
+      subreddit: photography
+      title: 'Beginner''s guide to manual exposure: the exposure triangle explained'
+      body: ISO, aperture, shutter speed.
+      author: PhotonWave
+      score: 8900
+    outputs:
+    - post_id
+    - post_title
+    - subreddit_name
+  targets:
+    reply_from: '{output.reply_msg_from}'
+    reply_subject: '{output.reply_msg_subject}'
+    reply_body: Count me in! What time and where should we meet?
+    delete_subject: '{output.delete_msg_subject}'
+    delete_msg_id: '{output.delete_msg_id}'
+    sub: '{output.subreddit_name}'
+    post_title: '{output.post_title}'
+    post_id: '{output.post_id}'
+    comment_text: This is a great explainer. The relationship between ISO and noise is something beginners always struggle
+      with.
+eval:
+  source: server_state
+  checks:
+  - expr: state.unread_notification_count() == 0
+    desc: Notifications cleared
+  - expr: any(m.to_user == '{target.reply_from}' and "Count me in" in m.body for m in state.sent_messages)
+    desc: Reply sent
+  - expr: not any(m.id == '{target.delete_msg_id}' for m in state.messages)
+    desc: Spam deleted
+  - expr: state.get_post('{target.post_id}').vote_direction == 1
+    desc: Post upvoted
+  - expr: '''{target.post_id}'' in state.saved_post_ids'
+    desc: Post saved
+  - expr: any(c.post_id == '{target.post_id}' and "ISO and noise" in c.body for c in state.comments)
+    desc: Comment posted
+  negative_checks:
+  - expr: len(state.messages) >= 4
+    desc: Non-spam preserved
+    penalty: 0.25
+env_id: reddit
+start_path: /feed

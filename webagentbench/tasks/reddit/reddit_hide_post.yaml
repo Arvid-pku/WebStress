@@ -1,0 +1,40 @@
+task_id: reddit_hide_post
+env_id: reddit
+title: Hide a Post from Feed
+instruction_template: Find the post titled "{target.post_title}" in r/{target.subreddit_name} and hide it. Do not hide any
+  other posts.
+difficulty: easy
+time_limit_seconds: 90
+expected_steps: 5
+primary_primitives:
+- grounding
+start_path: /feed
+seed:
+  distractors: 4
+  actors: {}
+  steps:
+  - use: target_post
+    params:
+      subreddit: funny
+      title: My cat learned to open the fridge and now she judges everything I eat
+      body: She just sits there, staring at my leftovers with pure disappointment.
+      score: 45000
+    outputs:
+    - post_id
+    - post_title
+    - subreddit_name
+  targets:
+    post_id: '{output.post_id}'
+    post_title: '{output.post_title}'
+    subreddit_name: '{output.subreddit_name}'
+eval:
+  source: server_state
+  checks:
+  - expr: state.get_post('{target.post_id}').is_hidden
+    desc: Target post is hidden
+  - expr: '''{target.post_id}'' in state.hidden_post_ids'
+    desc: Post ID in hidden list
+  negative_checks:
+  - expr: len(state.hidden_post_ids) <= 1
+    desc: At most one post was hidden
+    penalty: 0.2

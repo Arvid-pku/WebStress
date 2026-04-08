@@ -1,0 +1,62 @@
+task_id: reddit_downvote_comment
+env_id: reddit
+title: Downvote a Specific Comment
+instruction_template: Navigate to r/{target.subreddit_name} and open the post titled "{target.post_title}". Find the comment
+  by u/{target.comment_author} that says "{target.comment_snippet}". Downvote that comment. Do not vote on any other comments
+  or on the post itself.
+difficulty: easy
+time_limit_seconds: 120
+expected_steps: 7
+primary_primitives:
+- grounding
+start_path: /feed
+seed:
+  distractors: 4
+  actors: {}
+  steps:
+  - use: target_post
+    params:
+      subreddit: AskReddit
+      title: What hill will you die on that most people disagree with?
+      body: ''
+      author: QuantumPanda
+      score: 28000
+    outputs:
+    - post_id
+    - post_title
+    - subreddit_name
+  - use: target_comment
+    params:
+      post_id: '{output.post_id}'
+      body: Putting ketchup on a well-done steak is perfectly acceptable and I refuse to apologize for it.
+      author: CryptoSkeptic
+      score: 3400
+    outputs:
+    - comment_id
+    - comment_body
+  - use: comment_thread
+    params:
+      post_id: '{output.post_id}'
+      depth: 1
+      comments_per_level: 3
+    outputs:
+    - comment_ids
+  targets:
+    subreddit_name: '{output.subreddit_name}'
+    post_title: '{output.post_title}'
+    post_id: '{output.post_id}'
+    comment_id: '{output.comment_id}'
+    comment_author: CryptoSkeptic
+    comment_snippet: Putting ketchup on a well-done steak
+eval:
+  source: server_state
+  checks:
+  - expr: state.get_comment('{target.comment_id}').vote_direction == -1
+    desc: Target comment was downvoted
+  negative_checks:
+  - expr: state.get_post('{target.post_id}').vote_direction == 0
+    desc: Post itself was not voted on
+    penalty: 0.25
+  - expr: all(state.get_comment(cid).vote_direction == 0 for cid in {target.comment_ids} if cid != '{target.comment_id}')
+    desc: Other comments were not voted on
+    penalty: 0.2

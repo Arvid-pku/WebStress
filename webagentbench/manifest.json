@@ -24,6 +24,12 @@
       "title": "Simulated Amazon",
       "base_url": "/env/amazon",
       "description": "Amazon-style shopping benchmark with product search, cart, checkout, and order management."
+    },
+    {
+      "env_id": "reddit",
+      "title": "Simulated Reddit",
+      "base_url": "/env/reddit",
+      "description": "Reddit-style social platform benchmark with feeds, subreddits, posts, threaded comments, voting, messaging, and user profiles."
     }
   ]
 }

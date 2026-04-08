@@ -1,0 +1,58 @@
+task_id: reddit_reply_to_message
+env_id: reddit
+title: Reply to an Inbox Message
+instruction_template: >
+  Go to your Messages inbox. Find the unread message from u/{target.from_user}
+  with subject "{target.message_subject}". Mark it as read, then send a reply
+  to u/{target.from_user} with subject "Re: {target.message_subject}" and body
+  exactly: "Thanks for reaching out! I'd love to discuss this further."
+  Do not reply to any other messages.
+difficulty: easy
+time_limit_seconds: 120
+expected_steps: 8
+primary_primitives:
+  - grounding
+start_path: /feed
+seed:
+  distractors: 3
+  actors: {}
+  steps:
+    - use: target_message
+      params:
+        from_user: DataWizard42
+        subject: "Collaboration on open-source project"
+        body: "Hi! I saw your recent post about your CLI tool and I'm working on something similar. Would you be interested in collaborating?"
+        is_read: false
+      outputs:
+        - message_id
+        - message_subject
+        - from_user
+    - use: decoy_messages
+      params:
+        count: 2
+        subject_pattern: "Re: {topic}"
+      outputs:
+        - decoy_message_ids
+  targets:
+    message_id: "{output.message_id}"
+    message_subject: "{output.message_subject}"
+    from_user: "{output.from_user}"
+eval:
+  source: server_state
+  checks:
+    - expr: "state.get_message('{target.message_id}').is_read"
+      desc: Target message was marked as read
+    - expr: >
+        any(m.to_user == '{target.from_user}' and
+        m.body == "Thanks for reaching out! I'd love to discuss this further."
+        for m in state.sent_messages)
+      desc: Reply sent with exact required body
+    - expr: >
+        any(m.to_user == '{target.from_user}' and
+        m.subject == "Re: {target.message_subject}"
+        for m in state.sent_messages)
+      desc: Reply has correct subject line
+  negative_checks:
+    - expr: "len(state.sent_messages) <= 3"
+      desc: No excessive replies sent
+      penalty: 0.2

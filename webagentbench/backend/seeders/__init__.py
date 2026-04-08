@@ -14,6 +14,7 @@ from webagentbench.tasks._schema import TaskDefinition
 
 from .amazon import AmazonSeedRunner
 from .gmail import GmailSeedRunner
+from .reddit import RedditSeedRunner
 from .robinhood import RobinhoodSeedRunner
 
 
@@ -34,8 +35,9 @@ class SeedRunner(Protocol):
 SEEDER_REGISTRY: dict[str, SeedRunner] = {
     "amazon": AmazonSeedRunner(),
     "gmail": GmailSeedRunner(),
+    "reddit": RedditSeedRunner(),
     "robinhood": RobinhoodSeedRunner(),
 }
 
 
-__all__ = ["AmazonSeedRunner", "GmailSeedRunner", "RobinhoodSeedRunner", "SeedRunner", "SEEDER_REGISTRY"]
+__all__ = ["AmazonSeedRunner", "GmailSeedRunner", "RedditSeedRunner", "RobinhoodSeedRunner", "SeedRunner", "SEEDER_REGISTRY"]

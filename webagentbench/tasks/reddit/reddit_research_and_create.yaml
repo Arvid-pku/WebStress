@@ -1,0 +1,97 @@
+task_id: reddit_research_and_create
+title: Research Across Subs and Create Content
+instruction_template: '1. Search for "quantum computing". Find and save "{target.search_title}" in r/{target.search_sub}.
+
+  2. Navigate to r/{target.comment_sub} and find "{target.comment_title}". Comment with exactly: "{target.comment_text}"
+
+  3. Create a post in r/Python title exactly: "{target.post_title}" body exactly: "{target.post_body}"
+
+  4. Subscribe to r/{target.join_sub}.
+
+  5. Send message to u/{target.msg_to} subject "{target.msg_subject}" body exactly: "{target.msg_body}"
+
+  6. Mark all notifications as read. Set theme to "dark" and feed sort to "new".
+
+
+  Do not save other posts.'
+difficulty: frontier
+time_limit_seconds: 720
+expected_steps: 55
+primary_primitives:
+- exploration
+- planning
+- grounding
+- state_tracking
+- patience
+seed:
+  distractors: 10
+  actors: {}
+  steps:
+  - use: target_post
+    params:
+      subreddit: technology
+      title: Google achieves quantum error correction below the fault-tolerant threshold
+      body: Willow processor demonstrates exponential error suppression.
+      score: 38000
+    outputs:
+    - search_id
+    - search_title
+    - search_sub
+  - use: target_post
+    params:
+      subreddit: science
+      title: Quantum computers simulate molecular interactions impossible for classical machines
+      body: Implications for drug discovery.
+      author: PhotonWave
+      score: 21000
+    outputs:
+    - comment_id
+    - comment_title
+    - comment_sub
+  - use: subscription_state
+    params:
+      unsubscribe:
+      - Piracy
+    outputs:
+    - subscriptions
+  targets:
+    search_title: '{output.search_title}'
+    search_sub: '{output.search_sub}'
+    search_id: '{output.search_id}'
+    comment_sub: '{output.comment_sub}'
+    comment_title: '{output.comment_title}'
+    comment_id: '{output.comment_id}'
+    comment_text: The drug discovery implications are enormous. Classical simulation of protein folding is exponentially hard
+      in the number of atoms.
+    post_title: Building a quantum circuit simulator in Python with NumPy
+    post_body: I wrote a minimal quantum simulator that handles up to 20 qubits using sparse matrix operations. Code and benchmarks
+      in comments.
+    join_sub: Piracy
+    msg_to: PhotonWave
+    msg_subject: Quantum simulation post
+    msg_body: Loved your post about molecular simulation. I built a quantum circuit simulator in Python - would you be interested
+      in testing it on real chemistry problems?
+    initial_subscriptions: '{output.subscriptions}'
+eval:
+  source: server_state
+  checks:
+  - expr: '''{target.search_id}'' in state.saved_post_ids'
+    desc: Search result saved
+  - expr: any(c.post_id == '{target.comment_id}' and c.author_name == state.owner_username for c in state.comments)
+    desc: Comment posted
+  - expr: any(p.title == '{target.post_title}' and p.author_name == state.owner_username for p in state.posts)
+    desc: Post created
+  - expr: any(s.name == '{target.join_sub}' and s.is_subscribed for s in state.subreddits)
+    desc: Subscribed
+  - expr: any(m.to_user == '{target.msg_to}' for m in state.sent_messages)
+    desc: Message sent
+  - expr: state.settings.theme == 'dark'
+    desc: Theme dark
+  - expr: state.unread_notification_count() == 0
+    desc: Notifications cleared
+  negative_checks:
+  - expr: all(sid in state.subscriptions for sid in {target.initial_subscriptions})
+    desc: Existing subs preserved
+    penalty: 0.2
+env_id: reddit
+start_path: /feed

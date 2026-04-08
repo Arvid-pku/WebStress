@@ -1,0 +1,82 @@
+task_id: reddit_content_management
+title: Content and Feed Management
+instruction_template: '1. Hide the post "{target.hide_title}" in r/{target.hide_sub}.
+
+  2. Unsave any saved posts from r/memes.
+
+  3. Save "{target.save_title}" in r/{target.save_sub}.
+
+  4. Create a text post in r/programming with title exactly: "{target.create_title}" and body exactly: "{target.create_body}"
+
+  5. Set default feed sort to "new" and enable compact view.'
+difficulty: expert
+time_limit_seconds: 480
+expected_steps: 38
+primary_primitives:
+- state_tracking
+- planning
+- grounding
+- verification
+seed:
+  distractors: 8
+  actors: {}
+  steps:
+  - use: target_post
+    params:
+      subreddit: funny
+      title: 'POV: You try to cancel a subscription in 2026'
+      body: 15 steps to click unsubscribe.
+      score: 71000
+    outputs:
+    - hide_id
+    - hide_title
+    - hide_sub
+  - use: filler_posts
+    params:
+      subreddit: memes
+      count: 2
+    outputs:
+    - meme_ids
+  - use: saved_posts
+    params:
+      post_ids: '{output.meme_ids}'
+    outputs:
+    - saved_ids
+  - use: target_post
+    params:
+      subreddit: science
+      title: Researchers create room-temperature superconductor that actually replicates
+      body: Three independent labs confirmed the results.
+      score: 95000
+    outputs:
+    - save_id
+    - save_title
+    - save_sub
+  targets:
+    hide_title: '{output.hide_title}'
+    hide_id: '{output.hide_id}'
+    hide_sub: '{output.hide_sub}'
+    save_title: '{output.save_title}'
+    save_id: '{output.save_id}'
+    save_sub: '{output.save_sub}'
+    create_title: Why I stopped using ORMs and went back to raw SQL
+    create_body: After 5 years of fighting with ORMs, I found that well-structured raw SQL with a thin query builder is simpler
+      and more performant.
+eval:
+  source: server_state
+  checks:
+  - expr: state.get_post('{target.hide_id}').is_hidden
+    desc: Post hidden
+  - expr: not any(p.subreddit_name == 'memes' and p.id in state.saved_post_ids for p in state.posts)
+    desc: Memes unsaved
+  - expr: '''{target.save_id}'' in state.saved_post_ids'
+    desc: Science post saved
+  - expr: any(p.subreddit_name == "programming" and "ORMs" in p.title and p.author_name == state.owner_username for p in state.posts)
+    desc: Programming post created
+  - expr: state.settings.default_feed_sort == 'new'
+    desc: Feed sort new
+  - expr: state.settings.compact_view
+    desc: Compact view on
+  negative_checks: []
+env_id: reddit
+start_path: /feed

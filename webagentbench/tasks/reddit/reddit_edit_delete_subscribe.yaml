@@ -1,0 +1,84 @@
+task_id: reddit_edit_delete_subscribe
+title: Edit, Delete, and Subscribe
+instruction_template: '1. Find your post "{target.edit_title}" in r/{target.edit_sub}. Edit body to exactly: "{target.edit_body}"
+
+  2. Find your comment on "{target.del_post_title}" in r/{target.del_sub} that says "{target.del_hint}". Delete it.
+
+  3. Subscribe to r/{target.join_sub}.
+
+  4. Set default comment sort to "new".
+
+
+  Do not delete any posts.'
+difficulty: expert
+time_limit_seconds: 480
+expected_steps: 38
+primary_primitives:
+- grounding
+- state_tracking
+- planning
+- verification
+seed:
+  distractors: 8
+  actors: {}
+  steps:
+  - use: owner_post
+    params:
+      subreddit: Python
+      title: My experience migrating from Flask to FastAPI
+      body: Initial draft.
+      score: 2100
+    outputs:
+    - edit_id
+    - edit_title
+  - use: target_post
+    params:
+      subreddit: technology
+      title: Google announces Gemini 3.0 with native code execution
+      body: The model can run code in a sandbox.
+      score: 55000
+    outputs:
+    - del_post_id
+    - del_post_title
+    - del_sub
+  - use: owner_comment
+    params:
+      post_id: '{output.del_post_id}'
+      body: This seems overhyped. I will wait for independent benchmarks before getting excited.
+      score: 80
+    outputs:
+    - del_comment_id
+  - use: subscription_state
+    params:
+      unsubscribe:
+      - Piracy
+    outputs:
+    - subscriptions
+  targets:
+    edit_title: '{output.edit_title}'
+    edit_sub: Python
+    edit_id: '{output.edit_id}'
+    edit_body: After 6 months with FastAPI, I can confirm the async performance gains are real. Migration guide and benchmarks
+      in the follow-up post.
+    del_post_title: '{output.del_post_title}'
+    del_sub: '{output.del_sub}'
+    del_comment_id: '{output.del_comment_id}'
+    del_hint: overhyped
+    join_sub: Piracy
+eval:
+  source: server_state
+  checks:
+  - expr: '''After 6 months'' in state.get_post(''{target.edit_id}'').body'
+    desc: Post edited
+  - expr: state.get_comment('{target.del_comment_id}').is_removed
+    desc: Comment deleted
+  - expr: any(s.name == 'Piracy' and s.is_subscribed for s in state.subreddits)
+    desc: Subscribed
+  - expr: state.settings.default_comment_sort == 'new'
+    desc: Comment sort new
+  negative_checks:
+  - expr: not state.get_post('{target.edit_id}').is_removed
+    desc: Post not deleted
+    penalty: 0.5
+env_id: reddit
+start_path: /feed

@@ -1,0 +1,138 @@
+task_id: reddit_full_community_manager
+title: Full Community Manager Workflow
+instruction_template: '1. Subscribe to r/{target.join1} and r/{target.join2}.
+
+  2. Create a post in r/{target.join1} with title exactly: "{target.post1_title}" and body exactly: "{target.post1_body}"
+
+  3. In r/AskReddit, find "{target.ask_title}". Upvote it and comment with exactly: "{target.ask_comment}"
+
+  4. Reply to u/{target.reply_author}''s comment on that post (the one mentioning "{target.reply_hint}") with exactly: "{target.reply_text}"
+
+  5. Send messages to u/{target.msg1_to} and u/{target.msg2_to} with subject "{target.msg_subject}" and body exactly: "{target.msg_body}"
+
+  6. Mark all notifications as read.
+
+  7. Go to Settings: theme "dark", comment sort "new", disable email for comment replies and mentions.
+
+
+  Do not downvote anything. Do not unsubscribe from any communities.'
+difficulty: frontier
+time_limit_seconds: 720
+expected_steps: 55
+primary_primitives:
+- planning
+- grounding
+- state_tracking
+- exploration
+- patience
+- verification
+seed:
+  distractors: 12
+  actors: {}
+  steps:
+  - use: subscription_state
+    params:
+      unsubscribe:
+      - MachineLearning
+      - Piracy
+    outputs:
+    - subscriptions
+  - use: target_post
+    params:
+      subreddit: AskReddit
+      title: What is the most useful skill you learned that school never taught you?
+      body: ''
+      author: ThreadReader
+      score: 51000
+    outputs:
+    - ask_id
+    - ask_title
+    - ask_sub
+  - use: target_comment
+    params:
+      post_id: '{output.ask_id}'
+      body: How to do taxes. I graduated with a degree in engineering and had no idea what a W-2 was.
+      author: MidnightCoder
+      score: 7200
+    outputs:
+    - reply_id
+    - reply_body
+  - use: comment_thread
+    params:
+      post_id: '{output.ask_id}'
+      depth: 2
+      comments_per_level: 3
+    outputs:
+    - comment_ids
+    - thread_depth
+  - use: decoy_posts
+    params:
+      subreddit: AskReddit
+      count: 3
+      title_pattern: What is the most useful {topic} you learned?
+    outputs:
+    - decoy_ids
+  targets:
+    join1: MachineLearning
+    join2: Piracy
+    post1_title: 'State of open-source LLMs in April 2026: a comprehensive comparison'
+    post1_body: I benchmarked 15 open-source models across 8 tasks. Llama 4 and Mistral Large 3 lead in most categories, but
+      smaller models like Phi-4 punch above their weight.
+    ask_title: '{output.ask_title}'
+    ask_id: '{output.ask_id}'
+    ask_comment: Negotiation. Learning to negotiate salary, rent, and contracts has probably saved me $50,000 over the past
+      decade.
+    reply_author: MidnightCoder
+    reply_hint: taxes
+    reply_id: '{output.reply_id}'
+    reply_text: Same here. I wish schools taught basic financial literacy instead of making us memorize the quadratic formula.
+    msg1_to: NeuralNexus
+    msg2_to: DataWizard42
+    msg_subject: New LLM benchmark posted
+    msg_body: Just published an open-source LLM comparison in r/MachineLearning. Would love your feedback on the methodology.
+    decoy_ids: '{output.decoy_ids}'
+    initial_subscriptions: '{output.subscriptions}'
+eval:
+  source: server_state
+  checks:
+  - expr: any(s.name == 'MachineLearning' and s.is_subscribed for s in state.subreddits)
+    desc: Joined ML
+  - expr: any(s.name == 'Piracy' and s.is_subscribed for s in state.subreddits)
+    desc: Joined Piracy
+  - expr: any(p.subreddit_name == "MachineLearning" and "open-source LLMs" in p.title and p.author_name == state.owner_username
+      for p in state.posts)
+    desc: ML post created
+  - expr: state.get_post('{target.ask_id}').vote_direction == 1
+    desc: AskReddit post upvoted
+  - expr: any(c.post_id == '{target.ask_id}' and "Negotiation" in c.body and c.parent_id is None and c.author_name == state.owner_username
+      for c in state.comments)
+    desc: Top comment on AskReddit
+  - expr: any(c.parent_id == '{target.reply_id}' and "financial literacy" in c.body and c.author_name == state.owner_username
+      for c in state.comments)
+    desc: Reply to MidnightCoder
+  - expr: any(m.to_user == "NeuralNexus" and "LLM benchmark" in m.body for m in state.sent_messages)
+    desc: Msg to NeuralNexus
+  - expr: any(m.to_user == "DataWizard42" and "LLM benchmark" in m.body for m in state.sent_messages)
+    desc: Msg to DataWizard42
+  - expr: state.unread_notification_count() == 0
+    desc: Notifications cleared
+  - expr: state.settings.theme == 'dark'
+    desc: Theme dark
+  - expr: state.settings.default_comment_sort == 'new'
+    desc: Comment sort new
+  - expr: not state.settings.email_comment_reply
+    desc: Email comment reply off
+  - expr: not state.settings.email_mentions
+    desc: Email mentions off
+  negative_checks:
+  - expr: not any(p.vote_direction == -1 for p in state.posts)
+    desc: Nothing downvoted
+    penalty: 0.15
+  - expr: all(sid in state.subscriptions for sid in {target.initial_subscriptions})
+    desc: Existing subs preserved
+    penalty: 0.2
+  - expr: not any(state.get_post(did).vote_direction != 0 for did in {target.decoy_ids})
+    desc: Decoys not voted
+    penalty: 0.15
+env_id: reddit
+start_path: /feed
