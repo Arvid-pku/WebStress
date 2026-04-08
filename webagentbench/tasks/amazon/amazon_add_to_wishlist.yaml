@@ -1,0 +1,54 @@
+task_id: amazon_add_to_wishlist
+env_id: amazon
+title: Add a Product to Wishlist
+instruction_template: >
+  Find the product "{target.product_name}" and add it to your wishlist.
+difficulty: easy
+time_limit_seconds: 120
+expected_steps: 7
+primary_primitives:
+- grounding
+start_path: /
+seed:
+  distractors: 6
+  actors: {}
+  steps:
+  - use: featured_product
+    params:
+      name: Noise Cancelling Headphones
+      brand: AudioPeak
+      category: Electronics
+      price: 149.99
+      rating: 4.6
+      features:
+      - Active noise cancellation
+      - 40-hour battery life
+      - Foldable design
+      - Built-in microphone
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id
+    - product_name
+    - product_price
+  - use: product_catalog
+    params:
+      category: Electronics
+      count: 5
+      price_range:
+      - 50.0
+      - 250.0
+    outputs:
+    - product_ids
+  targets:
+    product_name: '{output.product_name}'
+    product_id: '{output.product_id}'
+eval:
+  source: server_state
+  checks:
+  - expr: any(pid == '{target.product_id}' for pid in state.wishlist)
+    desc: Target product is in the wishlist
+  negative_checks:
+  - expr: len(state.cart_items) == 0
+    desc: No items were accidentally added to cart instead of wishlist
+    penalty: 0.15

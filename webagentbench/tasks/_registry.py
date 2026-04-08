@@ -59,10 +59,12 @@ def _validate_builder_references(
     imports while still catching missing builders at startup.
     """
     from ._seed_builders import BUILDER_REGISTRY
+    from ._seed_builders_amazon import AMAZON_BUILDER_REGISTRY
     from ._seed_builders_robinhood import ROBINHOOD_BUILDER_REGISTRY
 
     # Combine registries so each task validates against its own env's builders
     combined_registries: dict[str, dict] = {
+        "amazon": AMAZON_BUILDER_REGISTRY,
         "gmail": BUILDER_REGISTRY,
         "robinhood": ROBINHOOD_BUILDER_REGISTRY,
     }

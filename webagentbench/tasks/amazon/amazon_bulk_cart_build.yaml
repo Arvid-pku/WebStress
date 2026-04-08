@@ -1,0 +1,135 @@
+task_id: amazon_bulk_cart_build
+env_id: amazon
+title: Add Multiple Products to Cart with Specific Quantities
+instruction_template: >
+  Add the following products to your cart with the specified quantities -
+  "{target.product_1}" (quantity 2), "{target.product_2}" (quantity 1),
+  "{target.product_3}" (quantity 3), and "{target.product_4}" (quantity 1).
+  Then proceed to checkout using the shipping address for Jordan Parker at 742 Evergreen Terrace and the Visa card ending in 4242.
+difficulty: medium
+time_limit_seconds: 300
+expected_steps: 25
+primary_primitives:
+- planning
+- grounding
+- state_tracking
+start_path: /
+seed:
+  distractors: 10
+  actors: {}
+  steps:
+  - use: featured_product
+    params:
+      name: USB-C Charging Cable 6ft
+      brand: Anker
+      category: Electronics
+      price: 12.99
+      rating: 4.6
+      features:
+      - Fast charging
+      - Nylon braided
+      - 6-foot length
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_1
+    - product_name_1
+    - product_price_1
+  - use: featured_product
+    params:
+      name: Wireless Bluetooth Mouse
+      brand: Logitech
+      category: Electronics
+      price: 29.99
+      rating: 4.5
+      features:
+      - Ergonomic design
+      - Silent clicks
+      - USB receiver included
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_2
+    - product_name_2
+    - product_price_2
+  - use: featured_product
+    params:
+      name: Screen Cleaning Kit
+      brand: WHOOSH
+      category: Electronics
+      price: 9.99
+      rating: 4.4
+      features:
+      - Safe for all screens
+      - Microfiber cloth included
+      - Streak-free formula
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_3
+    - product_name_3
+    - product_price_3
+  - use: featured_product
+    params:
+      name: Laptop Cooling Pad
+      brand: Havit
+      category: Electronics
+      price: 35.99
+      rating: 4.3
+      features:
+      - 3 quiet fans
+      - Adjustable height
+      - LED lighting
+      - USB powered
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_4
+    - product_name_4
+    - product_price_4
+  - use: product_catalog
+    params:
+      category: Electronics
+      count: 10
+      price_range:
+      - 5.0
+      - 100.0
+    outputs:
+    - product_ids
+  targets:
+    product_1: '{output.product_name_1}'
+    product_2: '{output.product_name_2}'
+    product_3: '{output.product_name_3}'
+    product_4: '{output.product_name_4}'
+    pid_1: '{output.product_id_1}'
+    pid_2: '{output.product_id_2}'
+    pid_3: '{output.product_id_3}'
+    pid_4: '{output.product_id_4}'
+eval:
+  source: server_state
+  checks:
+  - expr: any(not o.id.startswith('order_initial_') for o in state.orders)
+    desc: A new order was placed
+  - expr: >
+      any(any(item.product_id == '{target.pid_1}' and item.quantity == 2
+      for item in order.items) for order in state.orders if not order.id.startswith('order_initial_'))
+    desc: USB-C Cable ordered with quantity 2
+  - expr: >
+      any(any(item.product_id == '{target.pid_2}' and item.quantity == 1
+      for item in order.items) for order in state.orders if not order.id.startswith('order_initial_'))
+    desc: Wireless Mouse ordered with quantity 1
+  - expr: >
+      any(any(item.product_id == '{target.pid_3}' and item.quantity == 3
+      for item in order.items) for order in state.orders if not order.id.startswith('order_initial_'))
+    desc: Screen Cleaning Kit ordered with quantity 3
+  - expr: >
+      any(any(item.product_id == '{target.pid_4}' and item.quantity == 1
+      for item in order.items) for order in state.orders if not order.id.startswith('order_initial_'))
+    desc: Laptop Cooling Pad ordered with quantity 1
+  negative_checks:
+  - expr: sum(1 for o in state.orders if not o.id.startswith('order_initial_')) <= 1
+    desc: Only one new order placed
+    penalty: 0.15
+  - expr: len(state.cart_items) == 0
+    desc: Cart is empty after checkout
+    penalty: 0.1

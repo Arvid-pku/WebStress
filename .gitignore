@@ -79,3 +79,4 @@ training_data.jsonl
 .vercel
 webagentbench/trajectories/*
 webagentbench/.codex
+webagentbench/.playwright-mcp/*

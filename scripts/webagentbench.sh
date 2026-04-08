@@ -3,7 +3,7 @@ set -eo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 ENV_DIR="$ROOT/webagentbench/environments"
-BACKEND_PORT=8080
+BACKEND_PORT="${WEBAGENTBENCH_PORT:-8080}"
 OPEN_BROWSER=true
 MODE="dev"
 PIDS=()
@@ -12,7 +12,7 @@ SELECTED_ENVS=()
 usage() {
   cat <<'EOF'
 Usage:
-  ./scripts/webagentbench.sh dev [--env ENV_ID] [--no-open]
+  ./scripts/webagentbench.sh dev [--env ENV_ID] [--port PORT] [--no-open]
   ./scripts/webagentbench.sh build
 
 Modes:
@@ -21,6 +21,7 @@ Modes:
 
 Options:
   --env ENV_ID   Start only the specified frontend in dev mode. Repeatable.
+  --port PORT    Backend port (default: 8080). Also settable via WEBAGENTBENCH_PORT.
   --no-open      Do not open the browser automatically.
 
 If no subcommand is provided, the script defaults to dev mode.
@@ -34,8 +35,8 @@ all_dev_envs() {
 
 env_port() {
   case "$1" in
-    gmail) echo "4173" ;;
-    robinhood) echo "4174" ;;
+    gmail) echo "$((BACKEND_PORT + 1))" ;;
+    robinhood) echo "$((BACKEND_PORT + 2))" ;;
     *) return 1 ;;
   esac
 }
@@ -51,26 +52,16 @@ env_base_url() {
 }
 
 start_env_dev_server() {
-  case "$1" in
-    gmail)
-      (
-        cd "$ENV_DIR"
-        pnpm dev:gmail 2>&1 | sed 's/^/  [frontend:gmail] /'
-      ) &
-      PIDS+=($!)
-      ;;
-    robinhood)
-      (
-        cd "$ENV_DIR"
-        pnpm dev:robinhood 2>&1 | sed 's/^/  [frontend:robinhood] /'
-      ) &
-      PIDS+=($!)
-      ;;
-    *)
-      echo "ERROR: unsupported dev frontend: $1" >&2
-      exit 1
-      ;;
-  esac
+  local env_id="$1"
+  local port
+  port="$(env_port "$env_id")"
+  (
+    cd "$ENV_DIR"
+    export VITE_SERVER_PORT="$port"
+    export VITE_BACKEND_PORT="$BACKEND_PORT"
+    pnpm "dev:${env_id}" 2>&1 | sed "s/^/  [frontend:${env_id}] /"
+  ) &
+  PIDS+=($!)
 }
 
 if [ $# -gt 0 ]; then
@@ -95,6 +86,15 @@ while [ $# -gt 0 ]; do
         exit 1
       fi
       SELECTED_ENVS+=("$2")
+      shift 2
+      ;;
+    --port)
+      if [ $# -lt 2 ]; then
+        echo "ERROR: --port requires a value" >&2
+        usage
+        exit 1
+      fi
+      BACKEND_PORT="$2"
       shift 2
       ;;
     --no-open)

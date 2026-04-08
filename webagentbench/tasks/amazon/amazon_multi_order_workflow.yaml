@@ -1,0 +1,148 @@
+task_id: amazon_multi_order_workflow
+env_id: amazon
+title: Place Two Separate Category Orders
+instruction_template: >
+  Place two separate orders. Order 1 should contain the electronics items
+  "{target.elec1_name}" and "{target.elec2_name}". Order 2 should contain the
+  books "{target.book1_name}" and "{target.book2_name}". Use the shipping
+  address for Jordan Parker at 742 Evergreen Terrace and the Visa card ending
+  in 4242 for both orders. Make sure these are two distinct
+  orders, not one combined order.
+difficulty: hard
+time_limit_seconds: 480
+expected_steps: 40
+primary_primitives:
+- planning
+- state_tracking
+- verification
+- patience
+start_path: /
+seed:
+  distractors: 18
+  actors: {}
+  steps:
+  - use: featured_product
+    params:
+      name: Smart Home Hub Gen 3
+      brand: Amazon
+      category: Electronics
+      price: 99.99
+      rating: 4.5
+      features:
+      - Zigbee compatible
+      - Voice control
+      - Matter support
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_e1
+    - product_name_e1
+    - product_price_e1
+  - use: featured_product
+    params:
+      name: Wireless Charging Pad Duo
+      brand: Samsung
+      category: Electronics
+      price: 49.99
+      rating: 4.3
+      features:
+      - Dual device charging
+      - Qi compatible
+      - LED indicator
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_e2
+    - product_name_e2
+    - product_price_e2
+  - use: featured_product
+    params:
+      name: Clean Code Handbook
+      brand: Prentice Hall
+      category: Books
+      price: 39.99
+      rating: 4.7
+      features:
+      - Paperback
+      - 464 pages
+      - Programming classic
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_b1
+    - product_name_b1
+    - product_price_b1
+  - use: featured_product
+    params:
+      name: Designing Data-Intensive Applications
+      brand: OReilly Media
+      category: Books
+      price: 44.99
+      rating: 4.9
+      features:
+      - Paperback
+      - 616 pages
+      - Distributed systems
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_b2
+    - product_name_b2
+    - product_price_b2
+  - use: product_catalog
+    params:
+      category: Electronics
+      count: 8
+      price_range:
+      - 20.0
+      - 200.0
+    outputs:
+    - catalog_elec
+  - use: product_catalog
+    params:
+      category: Books
+      count: 8
+      price_range:
+      - 10.0
+      - 60.0
+    outputs:
+    - catalog_books
+  targets:
+    elec1_name: Smart Home Hub Gen 3
+    elec1_id: '{output.product_id_e1}'
+    elec2_name: Wireless Charging Pad Duo
+    elec2_id: '{output.product_id_e2}'
+    book1_name: Clean Code Handbook
+    book1_id: '{output.product_id_b1}'
+    book2_name: Designing Data-Intensive Applications
+    book2_id: '{output.product_id_b2}'
+eval:
+  source: server_state
+  checks:
+  - expr: sum(1 for o in state.orders if not o.id.startswith('order_initial_')) >= 2
+    desc: At least two new orders were placed
+  - expr: >
+      any(any(item.product_id == '{target.elec1_id}' for item in order.items)
+      and any(item.product_id == '{target.elec2_id}' for item in order.items)
+      for order in state.orders if not order.id.startswith('order_initial_'))
+    desc: One order contains both electronics items
+  - expr: >
+      any(any(item.product_id == '{target.book1_id}' for item in order.items)
+      and any(item.product_id == '{target.book2_id}' for item in order.items)
+      for order in state.orders if not order.id.startswith('order_initial_'))
+    desc: One order contains both books
+  - expr: >
+      not any(
+      (any(item.product_id == '{target.elec1_id}' for item in order.items) or
+      any(item.product_id == '{target.elec2_id}' for item in order.items)) and
+      (any(item.product_id == '{target.book1_id}' for item in order.items) or
+      any(item.product_id == '{target.book2_id}' for item in order.items))
+      for order in state.orders if not order.id.startswith('order_initial_'))
+    desc: No order contains both electronics and books items
+  negative_checks:
+  - expr: sum(1 for o in state.orders if not o.id.startswith('order_initial_')) <= 2
+    desc: No more than 2 new orders placed
+    penalty: 0.15
+  - expr: len(state.cart_items) == 0
+    desc: Cart is empty after both checkouts
+    penalty: 0.1

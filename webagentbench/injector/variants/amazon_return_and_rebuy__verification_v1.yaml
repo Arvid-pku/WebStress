@@ -1,0 +1,20 @@
+variant_id: amazon_return_and_rebuy__verification_v1
+base_task_id: amazon_return_and_rebuy
+target_primitive: verification
+description: >
+  The first return request and the first cart add each silently fail.
+  The agent must verify both the return initiation and the new purchase
+  were actually processed.
+injections:
+  - layer: network
+    params:
+      url_pattern: "**/api/env/amazon/returns"
+      action: silent_fail
+      fail_count: 1
+      methods: ["POST"]
+  - layer: network
+    params:
+      url_pattern: "**/api/env/amazon/cart/add"
+      action: silent_fail
+      fail_count: 1
+      methods: ["POST"]

@@ -1,0 +1,185 @@
+task_id: amazon_precision_cart_rebuild
+env_id: amazon
+title: Rebuild Cart with Precise Removals, Quantity Changes, and New Products
+instruction_template: >
+  Rebuild your shopping cart with these precise changes:
+  1. Remove these items: 'Cotton Bath Towel Set', 'Yoga Strap Set', and
+  'Vitamin D3 Supplement'.
+  2. Change the quantity of 'Wireless Mouse Pro' to 3.
+  3. Change the quantity of 'Glass Food Containers' to 2.
+  4. Search for '{target.new_1}' and add 1 to your cart.
+  5. Search for '{target.new_2}' and add 1 to your cart.
+  6. Complete checkout.
+difficulty: frontier
+time_limit_seconds: 480
+expected_steps: 45
+primary_primitives:
+- planning
+- state_tracking
+- grounding
+- verification
+- patience
+secondary_primitives:
+- exploration
+start_path: /cart
+seed:
+  distractors: 20
+  actors: {}
+  steps:
+  - use: checkout_ready
+    params:
+      items:
+      - name: Wireless Mouse Pro
+        price: 29.99
+        quantity: 1
+        brand: Wavefront
+        category: Electronics
+      - name: Bamboo Notebook Stand
+        price: 24.99
+        quantity: 1
+        brand: EcoDesk
+        category: Office Supplies
+      - name: Cotton Bath Towel Set
+        price: 34.99
+        quantity: 1
+        brand: NestWell
+        category: Home & Kitchen
+      - name: Running Headband 3-Pack
+        price: 12.99
+        quantity: 1
+        brand: FitEdge
+        category: Clothing
+      - name: Glass Food Containers
+        price: 27.99
+        quantity: 1
+        brand: PureVessel
+        category: Home & Kitchen
+      - name: Yoga Strap Set
+        price: 9.99
+        quantity: 1
+        brand: IronPeak
+        category: Sports & Outdoors
+      - name: LED Book Light
+        price: 14.99
+        quantity: 1
+        brand: LuminDesk
+        category: Office Supplies
+      - name: Vitamin D3 Supplement
+        price: 16.99
+        quantity: 1
+        brand: VitaBloom
+        category: Health & Beauty
+    outputs:
+    - cart_item_ids
+    - address_id
+    - payment_id
+    - expected_total
+  - use: featured_product
+    params:
+      name: Mechanical Keyboard Compact
+      brand: TechNova
+      category: Electronics
+      price: 54.99
+      rating: 4.7
+      features:
+      - Cherry MX switches
+      - RGB backlighting
+      - Compact 75% layout
+      - USB-C detachable cable
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_new1
+    - product_name_new1
+    - product_price_new1
+  - use: featured_product
+    params:
+      name: Memory Foam Wrist Rest
+      brand: PosturePlus
+      category: Office Supplies
+      price: 19.99
+      rating: 4.5
+      features:
+      - Ergonomic design
+      - Cooling gel layer
+      - Non-slip base
+      - Machine washable cover
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_new2
+    - product_name_new2
+    - product_price_new2
+  - use: product_catalog
+    params:
+      category: Electronics
+      count: 8
+      price_range:
+      - 15.0
+      - 70.0
+    outputs:
+    - catalog_electronics
+  targets:
+    new_1: '{output.product_name_new1}'
+    new_pid_1: '{output.product_id_new1}'
+    new_2: '{output.product_name_new2}'
+    new_pid_2: '{output.product_id_new2}'
+eval:
+  source: server_state
+  checks:
+  - expr: any(not o.id.startswith('order_initial_') for o in state.orders)
+    desc: An order was placed
+  - expr: >
+      any(any(item.product_name == 'Wireless Mouse Pro' and item.quantity == 3
+      for item in o.items) for o in state.orders if not o.id.startswith('order_initial_'))
+    desc: Wireless Mouse Pro quantity is 3
+  - expr: >
+      any(any(item.product_name == 'Glass Food Containers' and item.quantity == 2
+      for item in o.items) for o in state.orders if not o.id.startswith('order_initial_'))
+    desc: Glass Food Containers quantity is 2
+  - expr: >
+      any(any(item.product_name == 'Bamboo Notebook Stand' for item in o.items)
+      for o in state.orders if not o.id.startswith('order_initial_'))
+    desc: Bamboo Notebook Stand kept
+  - expr: >
+      any(any(item.product_name == 'Running Headband 3-Pack' for item in o.items)
+      for o in state.orders if not o.id.startswith('order_initial_'))
+    desc: Running Headband kept
+  - expr: >
+      any(any(item.product_name == 'LED Book Light' for item in o.items)
+      for o in state.orders if not o.id.startswith('order_initial_'))
+    desc: LED Book Light kept
+  - expr: >
+      any(any(item.product_id == '{target.new_pid_1}' for item in o.items)
+      for o in state.orders if not o.id.startswith('order_initial_'))
+    desc: New product 1 added
+  - expr: >
+      any(any(item.product_id == '{target.new_pid_2}' for item in o.items)
+      for o in state.orders if not o.id.startswith('order_initial_'))
+    desc: New product 2 added
+  - expr: len(state.cart_items) == 0
+    desc: Cart empty after checkout
+  negative_checks:
+  - expr: >
+      not any(any(item.product_name == 'Cotton Bath Towel Set' for item in o.items)
+      for o in state.orders if not o.id.startswith('order_initial_'))
+    desc: Cotton Bath Towel Set removed
+    penalty: 0.15
+  - expr: >
+      not any(any(item.product_name == 'Yoga Strap Set' for item in o.items)
+      for o in state.orders if not o.id.startswith('order_initial_'))
+    desc: Yoga Strap Set removed
+    penalty: 0.15
+  - expr: >
+      not any(any(item.product_name == 'Vitamin D3 Supplement' for item in o.items)
+      for o in state.orders if not o.id.startswith('order_initial_'))
+    desc: Vitamin D3 Supplement removed
+    penalty: 0.15
+  - expr: sum(1 for o in state.orders if not o.id.startswith('order_initial_')) <= 1
+    desc: Only one order placed
+    penalty: 0.1
+  - expr: >
+      not any(any(item.product_name == 'Wireless Mouse Pro' and item.quantity != 3
+      for item in o.items) for o in state.orders if not o.id.startswith('order_initial_'))
+    desc: Mouse quantity is exactly 3
+    penalty: 0.15

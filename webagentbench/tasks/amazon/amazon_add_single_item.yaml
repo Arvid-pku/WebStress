@@ -1,0 +1,58 @@
+task_id: amazon_add_single_item
+env_id: amazon
+title: Add a Single Item to Cart
+instruction_template: >
+  Find the product "{target.product_name}" and add exactly 1 to your
+  shopping cart.
+difficulty: easy
+time_limit_seconds: 120
+expected_steps: 7
+primary_primitives:
+- grounding
+start_path: /
+seed:
+  distractors: 6
+  actors: {}
+  steps:
+  - use: featured_product
+    params:
+      name: Classic Leather Wallet
+      brand: TimberCraft
+      category: Electronics
+      price: 34.99
+      rating: 4.4
+      features:
+      - Genuine leather
+      - RFID blocking
+      - Slim bifold design
+      - 8 card slots
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id
+    - product_name
+    - product_price
+  - use: product_catalog
+    params:
+      category: Electronics
+      count: 5
+      price_range:
+      - 15.0
+      - 80.0
+    outputs:
+    - product_ids
+  targets:
+    product_name: '{output.product_name}'
+    product_id: '{output.product_id}'
+eval:
+  source: server_state
+  checks:
+  - expr: any(item.product_id == '{target.product_id}' for item in state.cart_items)
+    desc: Target product is in cart
+  - expr: any(item.product_id == '{target.product_id}' and item.quantity == 1 for
+      item in state.cart_items)
+    desc: Product quantity is exactly 1
+  negative_checks:
+  - expr: len(state.cart_items) <= 1
+    desc: No extra items added to cart
+    penalty: 0.15

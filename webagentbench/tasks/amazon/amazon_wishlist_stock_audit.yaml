@@ -1,0 +1,194 @@
+task_id: amazon_wishlist_stock_audit
+env_id: amazon
+title: Purchase In-Stock Wishlist Items and Remove Out-of-Stock
+instruction_template: >
+  Go to your wishlist and review all items. Check which items are currently in
+  stock. Purchase all in-stock wishlist items in a single order. Remove every
+  out-of-stock item from your wishlist.
+difficulty: expert
+time_limit_seconds: 420
+expected_steps: 35
+primary_primitives:
+- state_tracking
+- planning
+- grounding
+- verification
+secondary_primitives:
+- exploration
+start_path: /wishlist
+seed:
+  distractors: 18
+  actors: {}
+  steps:
+  - use: featured_product
+    params:
+      name: Wireless Charging Pad
+      brand: ChargeMax
+      category: Electronics
+      price: 29.99
+      rating: 4.5
+      features:
+      - Qi compatible
+      - LED indicator
+      - Non-slip surface
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_in1
+    - product_name_in1
+    - product_price_in1
+  - use: featured_product
+    params:
+      name: Yoga Resistance Band Set
+      brand: Endurafit
+      category: Sports & Outdoors
+      price: 19.99
+      rating: 4.4
+      features:
+      - 5 resistance levels
+      - Latex-free
+      - Carry bag included
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_in2
+    - product_name_in2
+    - product_price_in2
+  - use: featured_product
+    params:
+      name: Bamboo Cutting Board Set
+      brand: CedarCraft
+      category: Home & Kitchen
+      price: 34.99
+      rating: 4.6
+      features:
+      - 3-piece set
+      - Juice grooves
+      - Antimicrobial
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_in3
+    - product_name_in3
+    - product_price_in3
+  - use: featured_product
+    params:
+      name: Smart Fitness Watch
+      brand: TechNova
+      category: Electronics
+      price: 89.99
+      rating: 4.3
+      features:
+      - Heart rate monitor
+      - GPS tracking
+      - 7-day battery
+      variants: []
+      in_stock: false
+    outputs:
+    - product_id_out1
+    - product_name_out1
+    - product_price_out1
+  - use: featured_product
+    params:
+      name: Leather Messenger Bag
+      brand: UrbanStride
+      category: Clothing
+      price: 64.99
+      rating: 4.2
+      features:
+      - Genuine leather
+      - Padded laptop sleeve
+      - Adjustable strap
+      variants: []
+      in_stock: false
+    outputs:
+    - product_id_out2
+    - product_name_out2
+    - product_price_out2
+  - use: featured_product
+    params:
+      name: Portable Camping Stove
+      brand: WildPath
+      category: Sports & Outdoors
+      price: 49.99
+      rating: 4.1
+      features:
+      - Butane powered
+      - Windproof design
+      - Carrying case included
+      variants: []
+      in_stock: false
+    outputs:
+    - product_id_out3
+    - product_name_out3
+    - product_price_out3
+  - use: wishlist_items
+    params:
+      product_ids:
+      - '{output.product_id_in1}'
+      - '{output.product_id_in2}'
+      - '{output.product_id_in3}'
+      - '{output.product_id_out1}'
+      - '{output.product_id_out2}'
+      - '{output.product_id_out3}'
+    outputs: []
+  - use: product_catalog
+    params:
+      category: Electronics
+      count: 10
+      price_range:
+      - 15.0
+      - 100.0
+    outputs:
+    - catalog_electronics
+  targets:
+    in1: '{output.product_id_in1}'
+    in2: '{output.product_id_in2}'
+    in3: '{output.product_id_in3}'
+    out1: '{output.product_id_out1}'
+    out2: '{output.product_id_out2}'
+    out3: '{output.product_id_out3}'
+eval:
+  source: server_state
+  checks:
+  - expr: any(not o.id.startswith('order_initial_') for o in state.orders)
+    desc: An order was placed
+  - expr: >
+      any(any(item.product_id == '{target.in1}' for item in o.items)
+      for o in state.orders if not o.id.startswith('order_initial_'))
+    desc: In-stock item 1 purchased
+  - expr: >
+      any(any(item.product_id == '{target.in2}' for item in o.items)
+      for o in state.orders if not o.id.startswith('order_initial_'))
+    desc: In-stock item 2 purchased
+  - expr: >
+      any(any(item.product_id == '{target.in3}' for item in o.items)
+      for o in state.orders if not o.id.startswith('order_initial_'))
+    desc: In-stock item 3 purchased
+  - expr: "'{target.out1}' not in state.wishlist"
+    desc: Out-of-stock item 1 removed from wishlist
+  - expr: "'{target.out2}' not in state.wishlist"
+    desc: Out-of-stock item 2 removed from wishlist
+  - expr: "'{target.out3}' not in state.wishlist"
+    desc: Out-of-stock item 3 removed from wishlist
+  - expr: len(state.cart_items) == 0
+    desc: Cart empty after checkout
+  negative_checks:
+  - expr: >
+      not any(any(item.product_id == '{target.out1}' for item in o.items)
+      for o in state.orders if not o.id.startswith('order_initial_'))
+    desc: Out-of-stock item 1 was not purchased
+    penalty: 0.15
+  - expr: >
+      not any(any(item.product_id == '{target.out2}' for item in o.items)
+      for o in state.orders if not o.id.startswith('order_initial_'))
+    desc: Out-of-stock item 2 was not purchased
+    penalty: 0.15
+  - expr: >
+      not any(any(item.product_id == '{target.out3}' for item in o.items)
+      for o in state.orders if not o.id.startswith('order_initial_'))
+    desc: Out-of-stock item 3 was not purchased
+    penalty: 0.15
+  - expr: sum(1 for o in state.orders if not o.id.startswith('order_initial_')) <= 1
+    desc: Only one order was placed
+    penalty: 0.1

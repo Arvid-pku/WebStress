@@ -1,0 +1,55 @@
+task_id: amazon_browse_category
+env_id: amazon
+title: Browse Category and Add Cheapest Item
+instruction_template: >
+  Browse the Electronics category, find the cheapest item available,
+  and add it to your cart.
+difficulty: easy
+time_limit_seconds: 150
+expected_steps: 10
+primary_primitives:
+- grounding
+- exploration
+start_path: /
+seed:
+  distractors: 8
+  actors: {}
+  steps:
+  - use: featured_product
+    params:
+      name: USB-C Charging Cable 6ft
+      brand: CableTech
+      category: Electronics
+      price: 7.99
+      rating: 4.3
+      features:
+      - Fast charging support
+      - Braided nylon cable
+      - 6 foot length
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id
+    - product_name
+    - product_price
+  - use: product_catalog
+    params:
+      category: Electronics
+      count: 6
+      price_range:
+      - 15.0
+      - 200.0
+    outputs:
+    - product_ids
+  targets:
+    cheapest_id: '{output.product_id}'
+    cheapest_name: '{output.product_name}'
+eval:
+  source: server_state
+  checks:
+  - expr: any(item.product_id == '{target.cheapest_id}' for item in state.cart_items)
+    desc: The cheapest product from Electronics category is in the cart
+  negative_checks:
+  - expr: len(state.cart_items) <= 1
+    desc: Only the cheapest item was added
+    penalty: 0.15

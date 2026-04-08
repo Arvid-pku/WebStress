@@ -1,0 +1,25 @@
+variant_id: amazon_order_management_suite__planning_v1
+base_task_id: amazon_order_management_suite
+target_primitive: planning
+description: >
+  The first search returns empty results and the orders endpoint is
+  delayed by 2 seconds. The agent must re-plan its order management
+  strategy when initial lookups fail or are slow.
+injections:
+  - layer: network
+    params:
+      url_pattern: "**/api/env/amazon/search**"
+      action: stale_data
+      stale_body:
+        items: []
+        total: 0
+        page: 1
+        page_size: 25
+        pages: 0
+        query: ""
+      stale_count: 1
+  - layer: network
+    params:
+      url_pattern: "**/api/env/amazon/orders**"
+      action: delay
+      delay_ms: 2000

@@ -1,0 +1,15 @@
+variant_id: amazon_wishlist_curation__backtracking_v1
+base_task_id: amazon_wishlist_curation
+target_primitive: backtracking
+description: >
+  The first two wishlist add attempts return 503 Service Unavailable.
+  The agent must detect the failures, backtrack, and retry adding items
+  to the wishlist.
+injections:
+  - layer: network
+    params:
+      url_pattern: "**/api/env/amazon/wishlist/**"
+      action: error_then_success
+      error_status: 503
+      error_count: 2
+      methods: ["POST"]

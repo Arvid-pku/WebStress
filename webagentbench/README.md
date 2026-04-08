@@ -69,10 +69,11 @@ Frontend workspace:
 ```bash
 pnpm -C environments build
 pnpm -C environments test
+pnpm -C environments dev:amazon
 pnpm -C environments dev:gmail
 ```
 
-The built Gmail bundle is written to `static/envs/gmail/`. The FastAPI app marks the environment unavailable when the bundle is missing or stale relative to `environments/gmail/src/` and `environments/shared/src/`.
+The built bundles are written to `static/envs/<env>/`. The FastAPI app marks an environment unavailable when its bundle is missing or stale relative to `environments/<env>/src/` and `environments/shared/src/`.
 
 ## Results And Artifacts
 

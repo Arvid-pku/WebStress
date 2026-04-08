@@ -7,6 +7,7 @@ from collections.abc import Callable
 from typing import Any
 
 from .models.base import AuditEntry, BaseEnvState
+from .models.amazon import AmazonState
 from .models.gmail import GmailState
 from .models.robinhood import RobinhoodState
 from .seeder import FakeDataGenerator, derive_seed
@@ -14,6 +15,7 @@ from .seeders import SEEDER_REGISTRY
 
 
 STATE_TYPES: dict[str, type[BaseEnvState]] = {
+    "amazon": AmazonState,
     "gmail": GmailState,
     "robinhood": RobinhoodState,
 }

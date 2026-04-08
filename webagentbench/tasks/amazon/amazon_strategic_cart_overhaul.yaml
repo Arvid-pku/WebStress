@@ -1,0 +1,164 @@
+task_id: amazon_strategic_cart_overhaul
+env_id: amazon
+title: Remove Expensive Cart Items and Add Budget Alternatives
+instruction_template: >
+  Your shopping cart needs optimization. Review all items currently in your cart
+  and remove every item that costs more than $50.00 per unit. Then search for
+  '{target.alt_product_1}' and add 1 to your cart. Also search for
+  '{target.alt_product_2}' and add 1 to your cart. Finally, complete checkout
+  using the address and payment method already on file.
+difficulty: expert
+time_limit_seconds: 420
+expected_steps: 38
+primary_primitives:
+- planning
+- state_tracking
+- grounding
+- verification
+- exploration
+start_path: /cart
+seed:
+  distractors: 20
+  actors: {}
+  steps:
+  - use: checkout_ready
+    params:
+      items:
+      - name: Premium Noise-Cancelling Headphones
+        price: 149.99
+        quantity: 1
+        brand: AudioMax
+        category: Electronics
+      - name: Smart Home Security Camera
+        price: 79.99
+        quantity: 1
+        brand: SecureView
+        category: Electronics
+      - name: Ergonomic Standing Desk Mat
+        price: 89.99
+        quantity: 1
+        brand: ComfortPro
+        category: Office Supplies
+      - name: USB-C Charging Cable 3-Pack
+        price: 12.99
+        quantity: 1
+        brand: SwiftCharge
+        category: Electronics
+      - name: Stainless Steel Water Bottle
+        price: 24.99
+        quantity: 1
+        brand: HydroLife
+        category: Sports & Outdoors
+      - name: Cotton Crew Socks 6-Pack
+        price: 18.99
+        quantity: 1
+        brand: ComfortFit
+        category: Clothing
+    outputs:
+    - cart_item_ids
+    - address_id
+    - payment_id
+    - expected_total
+  - use: featured_product
+    params:
+      name: Compact Bluetooth Speaker
+      brand: SoundWave
+      category: Electronics
+      price: 34.99
+      rating: 4.5
+      features:
+      - Portable design
+      - 12-hour battery
+      - IPX7 waterproof
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_alt1
+    - product_name_alt1
+    - product_price_alt1
+  - use: featured_product
+    params:
+      name: Bamboo Desk Organizer
+      brand: EcoDesk
+      category: Office Supplies
+      price: 22.99
+      rating: 4.3
+      features:
+      - Sustainable bamboo
+      - 5-compartment design
+      - Easy assembly
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_alt2
+    - product_name_alt2
+    - product_price_alt2
+  - use: product_catalog
+    params:
+      category: Electronics
+      count: 8
+      price_range:
+      - 15.0
+      - 60.0
+    outputs:
+    - catalog_electronics
+  - use: product_catalog
+    params:
+      category: Office Supplies
+      count: 5
+      price_range:
+      - 10.0
+      - 40.0
+    outputs:
+    - catalog_office
+  targets:
+    alt_product_1: '{output.product_name_alt1}'
+    alt_product_2: '{output.product_name_alt2}'
+    alt_id_1: '{output.product_id_alt1}'
+    alt_id_2: '{output.product_id_alt2}'
+eval:
+  source: server_state
+  checks:
+  - expr: any(not o.id.startswith('order_initial_') for o in state.orders)
+    desc: An order was placed
+  - expr: >
+      any(any(item.product_id == '{target.alt_id_1}' for item in o.items)
+      for o in state.orders if not o.id.startswith('order_initial_'))
+    desc: Alternative product 1 is in the order
+  - expr: >
+      any(any(item.product_id == '{target.alt_id_2}' for item in o.items)
+      for o in state.orders if not o.id.startswith('order_initial_'))
+    desc: Alternative product 2 is in the order
+  - expr: >
+      any(any(item.product_name == 'USB-C Charging Cable 3-Pack' for item in o.items)
+      for o in state.orders if not o.id.startswith('order_initial_'))
+    desc: Budget item USB-C cable kept in order
+  - expr: >
+      any(any(item.product_name == 'Stainless Steel Water Bottle' for item in o.items)
+      for o in state.orders if not o.id.startswith('order_initial_'))
+    desc: Budget item water bottle kept in order
+  - expr: >
+      any(any(item.product_name == 'Cotton Crew Socks 6-Pack' for item in o.items)
+      for o in state.orders if not o.id.startswith('order_initial_'))
+    desc: Budget item socks kept in order
+  - expr: len(state.cart_items) == 0
+    desc: Cart is empty after checkout
+  negative_checks:
+  - expr: >
+      not any(any(item.product_name == 'Premium Noise-Cancelling Headphones' for item in o.items)
+      for o in state.orders if not o.id.startswith('order_initial_'))
+    desc: Expensive headphones were not included in order
+    penalty: 0.15
+  - expr: >
+      not any(any(item.product_name == 'Smart Home Security Camera' for item in o.items)
+      for o in state.orders if not o.id.startswith('order_initial_'))
+    desc: Expensive security camera was not included in order
+    penalty: 0.15
+  - expr: >
+      not any(any(item.product_name == 'Ergonomic Standing Desk Mat' for item in o.items)
+      for o in state.orders if not o.id.startswith('order_initial_'))
+    desc: Expensive desk mat was not included in order
+    penalty: 0.15
+  - expr: sum(1 for o in state.orders if not o.id.startswith('order_initial_')) <= 1
+    desc: Only one order was placed
+    penalty: 0.1

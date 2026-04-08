@@ -1,0 +1,170 @@
+task_id: amazon_account_overhaul_and_shop
+env_id: amazon
+title: Configure Account Settings and Complete Multi-Product Purchase
+instruction_template: >
+  Set up your account and complete a purchase:
+  1. Add a new address: Alex Chen, 100 Oak Boulevard, Austin, TX 73301.
+  2. Add a second address: Morgan Blake, 55 Pine Court, Denver, CO 80201.
+  3. Set the Austin address as your default shipping address.
+  4. Enable one-click ordering and two-factor authentication in your account settings.
+  5. Search for '{target.p1}', '{target.p2}', and '{target.p3}', add all three to
+  your cart, and complete checkout shipping to your default address.
+difficulty: frontier
+time_limit_seconds: 540
+expected_steps: 48
+primary_primitives:
+- planning
+- state_tracking
+- verification
+- exploration
+- patience
+secondary_primitives:
+- grounding
+start_path: /
+seed:
+  distractors: 18
+  actors: {}
+  steps:
+  - use: featured_product
+    params:
+      name: Noise-Cancelling Headphone Stand
+      brand: AudioMax
+      category: Electronics
+      price: 29.99
+      rating: 4.5
+      features:
+      - Aluminum construction
+      - Cable management
+      - Non-slip base
+      - Universal fit
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_acct1
+    - product_name_acct1
+    - product_price_acct1
+  - use: featured_product
+    params:
+      name: Organic Cotton Bath Towel Set
+      brand: NestWell
+      category: Home & Kitchen
+      price: 44.99
+      rating: 4.6
+      features:
+      - 100% organic cotton
+      - 6-piece set
+      - Quick-dry technology
+      - OEKO-TEX certified
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_acct2
+    - product_name_acct2
+    - product_price_acct2
+  - use: featured_product
+    params:
+      name: Daily Planner Journal
+      brand: GridLine
+      category: Office Supplies
+      price: 18.99
+      rating: 4.4
+      features:
+      - 12-month undated
+      - Lay-flat binding
+      - Vegan leather cover
+      - Ribbon bookmark
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_acct3
+    - product_name_acct3
+    - product_price_acct3
+  - use: product_catalog
+    params:
+      category: Electronics
+      count: 8
+      price_range:
+      - 15.0
+      - 70.0
+    outputs:
+    - catalog_electronics
+  - use: product_catalog
+    params:
+      category: Home & Kitchen
+      count: 6
+      price_range:
+      - 15.0
+      - 60.0
+    outputs:
+    - catalog_home
+  targets:
+    p1: '{output.product_name_acct1}'
+    product_id_acct1: '{output.product_id_acct1}'
+    p2: '{output.product_name_acct2}'
+    product_id_acct2: '{output.product_id_acct2}'
+    p3: '{output.product_name_acct3}'
+    product_id_acct3: '{output.product_id_acct3}'
+    addr1_name: Alex Chen
+    addr1_street: 100 Oak Boulevard
+    addr1_city: Austin
+    addr1_state: TX
+    addr1_zip: '73301'
+    addr2_name: Morgan Blake
+    addr2_street: 55 Pine Court
+    addr2_city: Denver
+    addr2_state: CO
+    addr2_zip: '80201'
+eval:
+  source: server_state
+  checks:
+  - expr: >
+      any(a.full_name == 'Alex Chen' and a.city == 'Austin' and a.state == 'TX'
+      for a in state.addresses)
+    desc: Austin address added
+  - expr: >
+      any(a.full_name == 'Morgan Blake' and a.city == 'Denver' and a.state == 'CO'
+      for a in state.addresses)
+    desc: Denver address added
+  - expr: >
+      any(a.full_name == 'Alex Chen' and a.city == 'Austin' and a.is_default
+      for a in state.addresses)
+    desc: Austin address set as default
+  - expr: state.settings.one_click_enabled == True
+    desc: One-click ordering enabled
+  - expr: state.settings.two_factor_enabled == True
+    desc: Two-factor authentication enabled
+  - expr: any(not o.id.startswith('order_initial_') for o in state.orders)
+    desc: An order was placed
+  - expr: >
+      any(any(item.product_id == '{target.product_id_acct1}' for item in o.items)
+      for o in state.orders if not o.id.startswith('order_initial_'))
+    desc: Product 1 purchased
+  - expr: >
+      any(any(item.product_id == '{target.product_id_acct2}' for item in o.items)
+      for o in state.orders if not o.id.startswith('order_initial_'))
+    desc: Product 2 purchased
+  - expr: >
+      any(any(item.product_id == '{target.product_id_acct3}' for item in o.items)
+      for o in state.orders if not o.id.startswith('order_initial_'))
+    desc: Product 3 purchased
+  - expr: >
+      any(o.shipping_address_id == next((a.id for a in state.addresses
+      if a.full_name == 'Alex Chen' and a.city == 'Austin'), '')
+      for o in state.orders if not o.id.startswith('order_initial_'))
+    desc: Order shipped to Austin address
+  negative_checks:
+  - expr: not any(a.full_name == 'Morgan Blake' and a.is_default for a in state.addresses)
+    desc: Denver address is not default
+    penalty: 0.15
+  - expr: sum(1 for o in state.orders if not o.id.startswith('order_initial_')) <= 1
+    desc: Only one order placed
+    penalty: 0.1
+  - expr: >
+      not any(o.shipping_address_id == next((a.id for a in state.addresses
+      if a.full_name == 'Morgan Blake'), '')
+      for o in state.orders if not o.id.startswith('order_initial_'))
+    desc: Order not shipped to Denver address
+    penalty: 0.15
+  - expr: len(state.cart_items) == 0
+    desc: Cart empty after checkout
+    penalty: 0.1

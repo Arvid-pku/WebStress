@@ -1,0 +1,183 @@
+task_id: amazon_wishlist_curation
+env_id: amazon
+title: Curate Wishlist and Buy Remaining Items
+instruction_template: >
+  Curate your wishlist by adding 5 products from different categories, then
+  optimize it. Add "{target.prod1_name}" (Electronics, ${target.prod1_price}),
+  "{target.prod2_name}" (Books, ${target.prod2_price}),
+  "{target.prod3_name}" (Home & Kitchen, ${target.prod3_price}),
+  "{target.prod4_name}" (Sports & Outdoors, ${target.prod4_price}), and
+  "{target.prod5_name}" (Office Supplies, ${target.prod5_price}) to your
+  wishlist. Then remove the 2 most expensive items from the wishlist. Finally,
+  buy the remaining 3 items using the shipping address for Jordan Parker at 742 Evergreen Terrace and the Visa card ending in 4242.
+difficulty: hard
+time_limit_seconds: 480
+expected_steps: 40
+primary_primitives:
+- planning
+- state_tracking
+- verification
+- exploration
+start_path: /
+seed:
+  distractors: 17
+  actors: {}
+  steps:
+  - use: featured_product
+    params:
+      name: Smart Watch Fitness Tracker
+      brand: Garmin
+      category: Electronics
+      price: 199.99
+      rating: 4.5
+      features:
+      - GPS tracking
+      - Heart rate monitor
+      - 7-day battery
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_1
+    - product_name_1
+    - product_price_1
+  - use: featured_product
+    params:
+      name: Atomic Habits Hardcover
+      brand: Penguin Random House
+      category: Books
+      price: 16.99
+      rating: 4.8
+      features:
+      - Hardcover
+      - 320 pages
+      - New York Times Bestseller
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_2
+    - product_name_2
+    - product_price_2
+  - use: featured_product
+    params:
+      name: Air Purifier HEPA Filter
+      brand: Dyson
+      category: Home & Kitchen
+      price: 249.99
+      rating: 4.6
+      features:
+      - HEPA H13 filter
+      - Covers 400 sq ft
+      - Auto mode
+      - Quiet operation
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_3
+    - product_name_3
+    - product_price_3
+  - use: featured_product
+    params:
+      name: Foam Roller Recovery Set
+      brand: TriggerPoint
+      category: Sports & Outdoors
+      price: 34.99
+      rating: 4.4
+      features:
+      - Multi-density foam
+      - Includes massage ball
+      - Travel friendly
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_4
+    - product_name_4
+    - product_price_4
+  - use: featured_product
+    params:
+      name: Desk Organizer Bamboo
+      brand: MobileVision
+      category: Office Supplies
+      price: 27.99
+      rating: 4.2
+      features:
+      - Multiple compartments
+      - Sustainable bamboo
+      - Phone holder slot
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_5
+    - product_name_5
+    - product_price_5
+  - use: product_catalog
+    params:
+      category: Electronics
+      count: 8
+      price_range:
+      - 20.0
+      - 300.0
+    outputs:
+    - catalog_elec
+  - use: product_catalog
+    params:
+      category: Home & Kitchen
+      count: 6
+      price_range:
+      - 15.0
+      - 300.0
+    outputs:
+    - catalog_home
+  targets:
+    prod1_name: Smart Watch Fitness Tracker
+    prod1_id: '{output.product_id_1}'
+    prod1_price: '199.99'
+    prod2_name: Atomic Habits Hardcover
+    prod2_id: '{output.product_id_2}'
+    prod2_price: '16.99'
+    prod3_name: Air Purifier HEPA Filter
+    prod3_id: '{output.product_id_3}'
+    prod3_price: '249.99'
+    prod4_name: Foam Roller Recovery Set
+    prod4_id: '{output.product_id_4}'
+    prod4_price: '34.99'
+    prod5_name: Desk Organizer Bamboo
+    prod5_id: '{output.product_id_5}'
+    prod5_price: '27.99'
+eval:
+  source: server_state
+  checks:
+  - expr: any(not o.id.startswith('order_initial_') for o in state.orders)
+    desc: A new order was placed
+  - expr: >
+      any(any(item.product_id == '{target.prod2_id}' for item in order.items)
+      for order in state.orders if not order.id.startswith('order_initial_'))
+    desc: Atomic Habits (cheapest) was purchased
+  - expr: >
+      any(any(item.product_id == '{target.prod4_id}' for item in order.items)
+      for order in state.orders if not order.id.startswith('order_initial_'))
+    desc: Foam Roller Recovery Set was purchased
+  - expr: >
+      any(any(item.product_id == '{target.prod5_id}' for item in order.items)
+      for order in state.orders if not order.id.startswith('order_initial_'))
+    desc: Desk Organizer Bamboo was purchased
+  - expr: >
+      not any(any(item.product_id == '{target.prod1_id}' for item in order.items)
+      for order in state.orders if not order.id.startswith('order_initial_'))
+    desc: Smart Watch (expensive) was NOT purchased
+  - expr: >
+      not any(any(item.product_id == '{target.prod3_id}' for item in order.items)
+      for order in state.orders if not order.id.startswith('order_initial_'))
+    desc: Air Purifier (most expensive) was NOT purchased
+  negative_checks:
+  - expr: len(state.cart_items) == 0
+    desc: Cart is empty after checkout
+    penalty: 0.1
+  - expr: sum(1 for o in state.orders if not o.id.startswith('order_initial_')) <= 1
+    desc: All remaining items purchased in a single new order
+    penalty: 0.15
+  - expr: >
+      len([pid for pid in state.wishlist]) >= 2 or
+      any('{target.prod1_id}' == pid for pid in state.wishlist) or
+      any('{target.prod3_id}' == pid for pid in state.wishlist)
+    desc: Expensive items remain on wishlist (wishlist was used in the workflow)
+    penalty: 0.2

@@ -1,0 +1,70 @@
+task_id: amazon_deal_hunter
+env_id: amazon
+title: Find and Buy the Best Deal
+instruction_template: >
+  Browse products and find items that are on sale (where the list price is higher
+  than the current price). Among all products on sale, find the one with the
+  biggest discount percentage and buy it. Add it to your cart and complete
+  checkout using the shipping address for Jordan Parker at 742 Evergreen Terrace and the Visa card ending in 4242.
+difficulty: hard
+time_limit_seconds: 420
+expected_steps: 30
+primary_primitives:
+- exploration
+- planning
+- verification
+- state_tracking
+start_path: /
+seed:
+  distractors: 18
+  actors: {}
+  steps:
+  - use: featured_product
+    params:
+      name: Resistance Bands Set Pro
+      brand: Fit Simplify
+      category: Sports & Outdoors
+      price: 12.99
+      list_price: 29.99
+      rating: 4.3
+      review_count: 2400
+      features:
+      - 5 resistance levels
+      - Carrying bag included
+      - Natural latex construction
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id
+    - product_name
+    - product_price
+    - product_list_price
+  targets:
+    deal_product: Resistance Bands Set Pro
+    deal_product_id: '{output.product_id}'
+    list_price: '{output.product_list_price}'
+    sale_price: '{output.product_price}'
+eval:
+  source: server_state
+  checks:
+  - expr: any(not o.id.startswith('order_initial_') for o in state.orders)
+    desc: A new order was placed
+  - expr: >
+      any(any(item.product_id == '{target.deal_product_id}' for item in order.items)
+      for order in state.orders if not order.id.startswith('order_initial_'))
+    desc: The best deal product was purchased
+  - expr: any(order.status == 'confirmed' and any(item.product_id == '{target.deal_product_id}' for item in order.items) for order in state.orders if not order.id.startswith('order_initial_'))
+    desc: Order containing the target product is confirmed
+  negative_checks:
+  - expr: len(state.cart_items) == 0
+    desc: Cart is empty after checkout
+    penalty: 0.1
+  - expr: >
+      all(len(order.items) <= 1 for order in state.orders if not order.id.startswith('order_initial_'))
+    desc: Only the deal product was purchased, not extras
+    penalty: 0.15
+  - expr: >
+      all(any(item.product_id == '{target.deal_product_id}' for item in order.items)
+      for order in state.orders if not order.id.startswith('order_initial_'))
+    desc: Purchased product matches the target deal product
+    penalty: 0.3

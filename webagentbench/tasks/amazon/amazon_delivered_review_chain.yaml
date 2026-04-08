@@ -1,0 +1,158 @@
+task_id: amazon_delivered_review_chain
+env_id: amazon
+title: Review Delivered Products and Reorder a Favorite
+instruction_template: >
+  Review your delivered orders. For '{target.product_1}', write a 5-star review
+  with the title '{target.review_title_1}'. For '{target.product_2}', write a
+  3-star review with the title '{target.review_title_2}'. Then find
+  '{target.product_reorder}' and place a new order for it.
+difficulty: expert
+time_limit_seconds: 420
+expected_steps: 40
+primary_primitives:
+- exploration
+- state_tracking
+- verification
+- patience
+secondary_primitives:
+- planning
+start_path: /orders
+seed:
+  distractors: 18
+  actors: {}
+  steps:
+  - use: featured_product
+    params:
+      name: Noise-Isolating Earbuds Pro
+      brand: SoundCore
+      category: Electronics
+      price: 49.99
+      rating: 4.5
+      features:
+      - Active noise isolation
+      - 8-hour battery
+      - IPX5 water resistance
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_r1
+    - product_name_r1
+    - product_price_r1
+  - use: featured_product
+    params:
+      name: Stainless Steel French Press
+      brand: Hearthway
+      category: Home & Kitchen
+      price: 32.99
+      rating: 4.4
+      features:
+      - 34 oz capacity
+      - Double-wall insulation
+      - Stainless steel filter
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_r2
+    - product_name_r2
+    - product_price_r2
+  - use: featured_product
+    params:
+      name: Trail Running Shoes
+      brand: SummitForge
+      category: Sports & Outdoors
+      price: 74.99
+      rating: 4.6
+      features:
+      - Vibram outsole
+      - Gore-Tex waterproof
+      - Cushioned midsole
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_reorder
+    - product_name_reorder
+    - product_price_reorder
+  - use: existing_order
+    params:
+      product_ids:
+      - '{output.product_id_r1}'
+      status: delivered
+      days_ago: 14
+    outputs:
+    - order_id_1
+  - use: existing_order
+    params:
+      product_ids:
+      - '{output.product_id_r2}'
+      status: delivered
+      days_ago: 10
+    outputs:
+    - order_id_2
+  - use: existing_order
+    params:
+      product_ids:
+      - '{output.product_id_reorder}'
+      status: delivered
+      days_ago: 7
+    outputs:
+    - order_id_3
+  - use: product_catalog
+    params:
+      category: Electronics
+      count: 8
+      price_range:
+      - 20.0
+      - 80.0
+    outputs:
+    - catalog_electronics
+  targets:
+    product_1: '{output.product_name_r1}'
+    review_pid_1: '{output.product_id_r1}'
+    product_2: '{output.product_name_r2}'
+    review_pid_2: '{output.product_id_r2}'
+    product_reorder: '{output.product_name_reorder}'
+    product_id_reorder: '{output.product_id_reorder}'
+    review_title_1: Impressive Sound Quality
+    review_title_2: Solid Kitchen Essential
+eval:
+  source: server_state
+  checks:
+  - expr: >
+      any(r.product_id == '{target.review_pid_1}' and r.rating == 5
+      and r.title == '{target.review_title_1}' for r in state.reviews)
+    desc: 5-star review with correct title for product 1
+  - expr: >
+      any(r.product_id == '{target.review_pid_2}' and r.rating == 3
+      and r.title == '{target.review_title_2}' for r in state.reviews)
+    desc: 3-star review with correct title for product 2
+  - expr: any(not o.id.startswith('order_initial_') for o in state.orders)
+    desc: A new order was placed
+  - expr: >
+      any(any(item.product_id == '{target.product_id_reorder}' for item in o.items)
+      for o in state.orders if not o.id.startswith('order_initial_'))
+    desc: Reorder product is in the new order
+  - expr: >
+      any(o.status == 'confirmed' for o in state.orders
+      if not o.id.startswith('order_initial_'))
+    desc: New order is confirmed
+  - expr: len(state.cart_items) == 0
+    desc: Cart empty after checkout
+  - expr: >
+      sum(1 for r in state.reviews if r.product_id == '{target.review_pid_1}') >= 1
+    desc: At least one review exists for product 1
+  negative_checks:
+  - expr: >
+      not any(r.product_id == '{target.review_pid_1}' and r.rating != 5
+      for r in state.reviews if r.title == '{target.review_title_1}')
+    desc: Review for product 1 has correct rating
+    penalty: 0.15
+  - expr: >
+      not any(r.product_id == '{target.review_pid_2}' and r.rating != 3
+      for r in state.reviews if r.title == '{target.review_title_2}')
+    desc: Review for product 2 has correct rating
+    penalty: 0.15
+  - expr: >
+      not any(any(item.product_id == '{target.review_pid_1}' for item in o.items)
+      for o in state.orders if not o.id.startswith('order_initial_'))
+    desc: Product 1 was not reordered (only reviewed)
+    penalty: 0.1

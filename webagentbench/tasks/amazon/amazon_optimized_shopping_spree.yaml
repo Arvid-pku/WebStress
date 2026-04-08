@@ -1,0 +1,186 @@
+task_id: amazon_optimized_shopping_spree
+env_id: amazon
+title: Buy 5 Items from 5 Categories Under $500
+instruction_template: >
+  Find and purchase exactly 5 items, each from a different category, with each
+  item having a rating of at least 4.0. Your total order must stay under $500.
+  The five categories to shop from are: Electronics, Books, Home & Kitchen,
+  Sports & Outdoors, and Office Supplies. Add one item from each category to
+  your cart, verify the total is under $500, then complete checkout using the
+  shipping address for Jordan Parker at 742 Evergreen Terrace and the Visa card ending in 4242.
+difficulty: hard
+time_limit_seconds: 420
+expected_steps: 35
+primary_primitives:
+- planning
+- state_tracking
+- verification
+- exploration
+start_path: /
+seed:
+  distractors: 18
+  actors: {}
+  steps:
+  - use: featured_product
+    params:
+      name: Wireless Noise-Cancelling Headphones
+      brand: Sony
+      category: Electronics
+      price: 129.99
+      rating: 4.7
+      features:
+      - Active noise cancellation
+      - 30-hour battery life
+      - Bluetooth 5.2
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id
+    - product_name
+    - product_price
+  - use: featured_product
+    params:
+      name: The Art of Problem Solving
+      brand: Princeton Press
+      category: Books
+      price: 18.99
+      rating: 4.5
+      features:
+      - Hardcover edition
+      - 400 pages
+      - Bestseller
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_2
+    - product_name_2
+    - product_price_2
+  - use: featured_product
+    params:
+      name: Stainless Steel Cookware Set
+      brand: Cuisinart
+      category: Home & Kitchen
+      price: 89.99
+      rating: 4.3
+      features:
+      - 10-piece set
+      - Dishwasher safe
+      - Oven safe to 500F
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_3
+    - product_name_3
+    - product_price_3
+  - use: featured_product
+    params:
+      name: Yoga Mat Premium Non-Slip
+      brand: Manduka
+      category: Sports & Outdoors
+      price: 54.99
+      rating: 4.6
+      features:
+      - 6mm thick
+      - Non-slip surface
+      - Eco-friendly material
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_4
+    - product_name_4
+    - product_price_4
+  - use: featured_product
+    params:
+      name: Ergonomic Standing Desk Converter
+      brand: FlexiSpot
+      category: Office Supplies
+      price: 159.99
+      rating: 4.4
+      features:
+      - Height adjustable
+      - Dual monitor support
+      - Gas spring lift
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_5
+    - product_name_5
+    - product_price_5
+  - use: product_catalog
+    params:
+      category: Electronics
+      count: 8
+      price_range:
+      - 50.0
+      - 500.0
+    outputs:
+    - catalog_electronics
+  - use: product_catalog
+    params:
+      category: Books
+      count: 6
+      price_range:
+      - 5.0
+      - 50.0
+    outputs:
+    - catalog_books
+  - use: product_catalog
+    params:
+      category: Home & Kitchen
+      count: 6
+      price_range:
+      - 20.0
+      - 200.0
+    outputs:
+    - catalog_home
+  targets:
+    elec_id: '{output.product_id}'
+    book_id: '{output.product_id_2}'
+    home_id: '{output.product_id_3}'
+    sport_id: '{output.product_id_4}'
+    office_id: '{output.product_id_5}'
+eval:
+  source: server_state
+  checks:
+  - expr: any(not o.id.startswith('order_initial_') for o in state.orders)
+    desc: A new order was placed
+  - expr: >
+      any(len(order.items) >= 5 for order in state.orders if not order.id.startswith('order_initial_'))
+    desc: A new order contains at least 5 items
+  - expr: >
+      any(any(item.product_id == '{target.elec_id}' for item in order.items)
+      for order in state.orders if not order.id.startswith('order_initial_'))
+    desc: Electronics item is in the order
+  - expr: >
+      any(any(item.product_id == '{target.book_id}' for item in order.items)
+      for order in state.orders if not order.id.startswith('order_initial_'))
+    desc: Books item is in the order
+  - expr: >
+      any(any(item.product_id == '{target.home_id}' for item in order.items)
+      for order in state.orders if not order.id.startswith('order_initial_'))
+    desc: Home & Kitchen item is in the order
+  - expr: >
+      any(any(item.product_id == '{target.sport_id}' for item in order.items)
+      for order in state.orders if not order.id.startswith('order_initial_'))
+    desc: Sports & Outdoors item is in the order
+  - expr: >
+      any(any(item.product_id == '{target.office_id}' for item in order.items)
+      for order in state.orders if not order.id.startswith('order_initial_'))
+    desc: Office Supplies item is in the order
+  - expr: >
+      any(order.total < 500.0 for order in state.orders
+      if not order.id.startswith('order_initial_') and len(order.items) >= 5)
+    desc: Order total is under $500
+  negative_checks:
+  - expr: sum(1 for o in state.orders if not o.id.startswith('order_initial_')) <= 1
+    desc: Only one new order placed for all items
+    penalty: 0.15
+  - expr: len(state.cart_items) == 0
+    desc: Cart is empty after checkout
+    penalty: 0.1
+  - expr: >
+      any(len(set(next((p.category for p in state.products if p.id == item.product_id), "unknown")
+      for item in order.items)) >= 5
+      for order in state.orders if not order.id.startswith('order_initial_') and len(order.items) >= 5)
+    desc: Items are from 5 distinct categories
+    penalty: 0.2

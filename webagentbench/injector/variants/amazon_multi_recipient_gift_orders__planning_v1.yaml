@@ -1,0 +1,26 @@
+variant_id: amazon_multi_recipient_gift_orders__planning_v1
+base_task_id: amazon_multi_recipient_gift_orders
+target_primitive: planning
+description: >
+  Address creation fails on first attempt with a 503 error. Search returns
+  empty results on the first 2 queries. The agent must re-plan around
+  transient failures and retry operations that do not succeed initially.
+injections:
+  - layer: network
+    params:
+      url_pattern: "**/api/env/amazon/addresses"
+      action: error_then_success
+      methods: ["POST"]
+      error_status: 503
+      error_count: 1
+  - layer: network
+    params:
+      url_pattern: "**/api/env/amazon/search?*"
+      action: stale_data
+      methods: ["GET"]
+      stale_count: 2
+      stale_body:
+        products: []
+        total: 0
+        page: 1
+        page_size: 20

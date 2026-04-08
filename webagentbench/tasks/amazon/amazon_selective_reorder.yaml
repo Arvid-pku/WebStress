@@ -1,0 +1,158 @@
+task_id: amazon_selective_reorder
+env_id: amazon
+title: Reorder Specific Products from Past Orders
+instruction_template: >
+  Check your order history. Find the delivered order for '{target.name_1}'
+  and the delivered order for '{target.name_3}'. Reorder both products in a
+  single new order.
+difficulty: expert
+time_limit_seconds: 400
+expected_steps: 35
+primary_primitives:
+- exploration
+- state_tracking
+- planning
+- verification
+secondary_primitives:
+- patience
+start_path: /orders
+seed:
+  distractors: 20
+  actors: {}
+  steps:
+  - use: featured_product
+    params:
+      name: Aromatherapy Essential Oil Set
+      brand: NaturVive
+      category: Health & Beauty
+      price: 27.99
+      rating: 4.5
+      features:
+      - 8 essential oils
+      - Therapeutic grade
+      - Gift box included
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_sel1
+    - product_name_sel1
+    - product_price_sel1
+  - use: featured_product
+    params:
+      name: Mechanical Pencil Set
+      brand: GridLine
+      category: Office Supplies
+      price: 15.99
+      rating: 4.3
+      features:
+      - 0.5mm and 0.7mm
+      - Metal barrel
+      - Eraser refills included
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_sel2
+    - product_name_sel2
+    - product_price_sel2
+  - use: featured_product
+    params:
+      name: Wireless Earbuds Sport
+      brand: SoundCore
+      category: Electronics
+      price: 39.99
+      rating: 4.7
+      features:
+      - IPX7 waterproof
+      - 8-hour battery
+      - Secure ear hooks
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_sel3
+    - product_name_sel3
+    - product_price_sel3
+  - use: existing_order
+    params:
+      product_ids:
+      - '{output.product_id_sel1}'
+      status: delivered
+      days_ago: 21
+    outputs:
+    - order_id_sel1
+  - use: existing_order
+    params:
+      product_ids:
+      - '{output.product_id_sel2}'
+      status: delivered
+      days_ago: 14
+    outputs:
+    - order_id_sel2
+  - use: existing_order
+    params:
+      product_ids:
+      - '{output.product_id_sel3}'
+      status: delivered
+      days_ago: 7
+    outputs:
+    - order_id_sel3
+  - use: product_catalog
+    params:
+      category: Electronics
+      count: 8
+      price_range:
+      - 15.0
+      - 80.0
+    outputs:
+    - catalog_electronics
+  targets:
+    name_1: '{output.product_name_sel1}'
+    product_id_sel1: '{output.product_id_sel1}'
+    name_3: '{output.product_name_sel3}'
+    product_id_sel3: '{output.product_id_sel3}'
+    product_id_sel2: '{output.product_id_sel2}'
+    order_id_sel1: '{output.order_id_sel1}'
+    order_id_sel3: '{output.order_id_sel3}'
+eval:
+  source: server_state
+  checks:
+  - expr: any(not o.id.startswith('order_initial_') for o in state.orders)
+    desc: A new order was placed
+  - expr: >
+      any(any(item.product_id == '{target.product_id_sel1}' for item in o.items)
+      for o in state.orders if not o.id.startswith('order_initial_'))
+    desc: Product 1 reordered
+  - expr: >
+      any(any(item.product_id == '{target.product_id_sel3}' for item in o.items)
+      for o in state.orders if not o.id.startswith('order_initial_'))
+    desc: Product 3 reordered
+  - expr: >
+      any(any(item.product_id == '{target.product_id_sel1}' for item in o.items)
+      and any(item.product_id == '{target.product_id_sel3}' for item in o.items)
+      for o in state.orders if not o.id.startswith('order_initial_'))
+    desc: Both products are in the same order
+  - expr: >
+      any(o.status == 'confirmed' for o in state.orders
+      if not o.id.startswith('order_initial_'))
+    desc: New order confirmed
+  - expr: len(state.cart_items) == 0
+    desc: Cart empty after checkout
+  - expr: >
+      '{target.order_id_sel1}' in state.viewed_order_ids
+      or '{target.order_id_sel3}' in state.viewed_order_ids
+    desc: Agent viewed at least one of the target orders
+  negative_checks:
+  - expr: >
+      not any(any(item.product_id == '{target.product_id_sel2}' for item in o.items)
+      for o in state.orders if not o.id.startswith('order_initial_'))
+    desc: Product 2 was NOT reordered
+    penalty: 0.2
+  - expr: >
+      sum(1 for o in state.orders if not o.id.startswith('order_initial_')) <= 1
+    desc: Only one new order placed
+    penalty: 0.1
+  - expr: >
+      not any(any(item.product_id not in ['{target.product_id_sel1}', '{target.product_id_sel3}']
+      for item in o.items) for o in state.orders
+      if not o.id.startswith('order_initial_'))
+    desc: No extra products in the order
+    penalty: 0.15

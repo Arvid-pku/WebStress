@@ -1,0 +1,57 @@
+task_id: amazon_checkout_with_new_address
+env_id: amazon
+title: Checkout with a New Shipping Address
+instruction_template: >
+  You have items in your cart. Add a new shipping address
+  with name "{target.recipient_name}", street "{target.street}",
+  city "{target.city}", state "{target.state_code}", ZIP "{target.zip}".
+  Then complete the checkout using this new address and the Visa card ending in 4242.
+difficulty: medium
+time_limit_seconds: 300
+expected_steps: 25
+primary_primitives:
+- planning
+- grounding
+- verification
+start_path: /cart
+seed:
+  distractors: 5
+  actors: {}
+  steps:
+  - use: checkout_ready
+    params:
+      items:
+      - name: Wireless Mouse
+        price: 29.99
+        quantity: 1
+      - name: USB-C Hub
+        price: 45.99
+        quantity: 1
+    outputs:
+    - cart_item_ids
+    - address_id
+    - payment_id
+    - expected_total
+  targets:
+    recipient_name: Sam Rivera
+    street: 100 Main Street
+    city: Austin
+    state_code: TX
+    zip: '78701'
+eval:
+  source: server_state
+  checks:
+  - expr: any(not o.id.startswith('order_initial_') for o in state.orders)
+    desc: A new order was placed
+  - expr: "any(addr.full_name == 'Sam Rivera' and addr.street_address == '100 Main Street' and addr.city == 'Austin' and addr.state == 'TX' and addr.zip_code == '78701' for addr in state.addresses)"
+    desc: New address added with all correct fields
+  - expr: >
+      any(
+        any(addr.full_name == 'Sam Rivera' and addr.id == order.shipping_address_id for addr in state.addresses)
+        for order in state.orders if not order.id.startswith('order_initial_')
+      )
+    desc: New order uses the newly added address (Sam Rivera)
+  negative_checks:
+  - expr: len(state.cart_items) == 0
+    desc: Cart is empty after checkout
+    penalty: 0.1

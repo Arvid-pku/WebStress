@@ -1,0 +1,55 @@
+task_id: amazon_add_new_address
+env_id: amazon
+title: Add a New Shipping Address
+instruction_template: >
+  Go to your account settings and add a new shipping address with
+  name "{target.full_name}", street "{target.street}", city
+  "{target.city}", state "{target.state_code}", and ZIP code
+  "{target.zip}".
+difficulty: easy
+time_limit_seconds: 150
+expected_steps: 10
+primary_primitives:
+- grounding
+- planning
+start_path: /
+seed:
+  distractors: 5
+  actors: {}
+  steps:
+  - use: checkout_ready
+    params:
+      items:
+      - name: Placeholder Notebook
+        price: 9.99
+        quantity: 1
+    outputs:
+    - cart_item_ids
+    - address_id
+    - payment_id
+    - expected_total
+  targets:
+    full_name: Jordan Lee
+    street: 742 Evergreen Terrace
+    city: Portland
+    state_code: OR
+    zip: '97201'
+eval:
+  source: server_state
+  checks:
+  - expr: any(addr.full_name == 'Jordan Lee' for addr in state.addresses)
+    desc: New address with correct name exists
+  - expr: any('742 Evergreen' in addr.street_address and addr.full_name == 'Jordan Lee'
+      for addr in state.addresses)
+    desc: Street address matches
+  - expr: any(addr.full_name == 'Jordan Lee' and addr.city == 'Portland' for addr in
+      state.addresses)
+    desc: City matches
+  - expr: any(addr.state == 'OR' for addr in state.addresses if addr.full_name == 'Jordan Lee')
+    desc: Address has correct state (OR)
+  - expr: any(addr.zip_code == '97201' for addr in state.addresses if addr.full_name == 'Jordan Lee')
+    desc: Address has correct ZIP code
+  negative_checks:
+  - expr: sum(1 for o in state.orders if not o.id.startswith('order_initial_')) == 0
+    desc: No new order was accidentally placed
+    penalty: 0.15

@@ -1,0 +1,223 @@
+task_id: amazon_order_audit_correction
+env_id: amazon
+title: Audit Orders Then Cancel, Return, Reorder, and Review
+instruction_template: >
+  Audit and correct your order history:
+  1. Review all your recent orders and find the pending order for
+  '{target.pend_name}'. Cancel it.
+  2. Find the delivered order for '{target.del2_name}' and return it with
+  reason 'changed_mind'.
+  3. Find '{target.del3_name}' in your order history and reorder it.
+  4. Write a 5-star review for 'Ceramic Mug Set 4-Pack' with the title
+  '{target.review_title}'.
+difficulty: frontier
+time_limit_seconds: 540
+expected_steps: 48
+primary_primitives:
+- exploration
+- state_tracking
+- planning
+- verification
+- patience
+- backtracking
+secondary_primitives: []
+start_path: /orders
+seed:
+  distractors: 20
+  actors: {}
+  steps:
+  - use: featured_product
+    params:
+      name: Smart Power Strip 6-Outlet
+      brand: VoltEdge
+      category: Electronics
+      price: 24.99
+      rating: 4.3
+      features:
+      - 6 AC outlets
+      - 3 USB ports
+      - Surge protection
+      - Voice assistant compatible
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_pend
+    - product_name_pend
+    - product_price_pend
+  - use: featured_product
+    params:
+      name: Wireless Trackpad Pro
+      brand: TechNova
+      category: Electronics
+      price: 49.99
+      rating: 4.4
+      features:
+      - Multi-touch gestures
+      - Rechargeable battery
+      - Glass surface
+      - USB-C connectivity
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_ship
+    - product_name_ship
+    - product_price_ship
+  - use: featured_product
+    params:
+      name: Ceramic Mug Set 4-Pack
+      brand: Hearthway
+      category: Home & Kitchen
+      price: 22.99
+      rating: 4.5
+      features:
+      - Handcrafted ceramic
+      - 12 oz capacity each
+      - Microwave safe
+      - Dishwasher safe
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_del1
+    - product_name_del1
+    - product_price_del1
+  - use: featured_product
+    params:
+      name: Cotton Throw Blanket
+      brand: CedarCraft
+      category: Home & Kitchen
+      price: 38.99
+      rating: 4.6
+      features:
+      - 100% organic cotton
+      - 50x60 inch size
+      - Machine washable
+      - Herringbone weave
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_del2
+    - product_name_del2
+    - product_price_del2
+  - use: featured_product
+    params:
+      name: Stainless Steel Tumbler
+      brand: HydroLife
+      category: Sports & Outdoors
+      price: 18.99
+      rating: 4.2
+      features:
+      - 20 oz capacity
+      - Double-wall vacuum insulated
+      - Spill-proof lid
+      - BPA-free
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_del3
+    - product_name_del3
+    - product_price_del3
+  - use: existing_order
+    params:
+      product_ids:
+      - '{output.product_id_pend}'
+      status: pending
+      days_ago: 1
+    outputs:
+    - order_id_pend
+  - use: existing_order
+    params:
+      product_ids:
+      - '{output.product_id_ship}'
+      status: shipped
+      days_ago: 3
+    outputs:
+    - order_id_ship
+  - use: existing_order
+    params:
+      product_ids:
+      - '{output.product_id_del1}'
+      status: delivered
+      days_ago: 7
+    outputs:
+    - order_id_del1
+  - use: existing_order
+    params:
+      product_ids:
+      - '{output.product_id_del2}'
+      status: delivered
+      days_ago: 14
+    outputs:
+    - order_id_del2
+  - use: existing_order
+    params:
+      product_ids:
+      - '{output.product_id_del3}'
+      status: delivered
+      days_ago: 21
+    outputs:
+    - order_id_del3
+  - use: product_catalog
+    params:
+      category: Electronics
+      count: 8
+      price_range:
+      - 15.0
+      - 60.0
+    outputs:
+    - catalog_electronics
+  targets:
+    pend_name: '{output.product_name_pend}'
+    order_id_pend: '{output.order_id_pend}'
+    del2_name: '{output.product_name_del2}'
+    del2_pid: '{output.product_id_del2}'
+    order_id_del2: '{output.order_id_del2}'
+    del3_name: '{output.product_name_del3}'
+    del3_pid: '{output.product_id_del3}'
+    review_title: Perfect Everyday Mug Set
+    del1_pid: '{output.product_id_del1}'
+eval:
+  source: server_state
+  checks:
+  - expr: >
+      any(o.id == '{target.order_id_pend}' and o.status == 'cancelled'
+      for o in state.orders if not o.id.startswith('order_initial_'))
+    desc: Pending order cancelled
+  - expr: >
+      any(r.order_id == '{target.order_id_del2}' and r.reason == 'changed_mind'
+      for r in state.returns)
+    desc: Return filed for delivered order 2
+  - expr: any(not o.id.startswith('order_initial_') for o in state.orders)
+    desc: A new order placed
+  - expr: >
+      any(any(item.product_id == '{target.del3_pid}' for item in o.items)
+      for o in state.orders if not o.id.startswith('order_initial_'))
+    desc: Product from order 3 reordered
+  - expr: >
+      any(r.product_id == '{target.del1_pid}' and r.rating == 5
+      and r.title == '{target.review_title}' for r in state.reviews)
+    desc: 5-star review for Ceramic Mug Set
+  - expr: >
+      any(o.status == 'confirmed' for o in state.orders
+      if not o.id.startswith('order_initial_'))
+    desc: Reorder is confirmed
+  - expr: len(state.cart_items) == 0
+    desc: Cart empty
+  - expr: "'{target.order_id_pend}' in state.viewed_order_ids"
+    desc: Agent viewed the pending order
+  negative_checks:
+  - expr: not any(r.product_id == '{target.del3_pid}' for r in state.returns)
+    desc: Reordered product was not returned
+    penalty: 0.15
+  - expr: >
+      not any(o.id == '{target.order_id_pend}' and o.status != 'cancelled'
+      for o in state.orders if not o.id.startswith('order_initial_'))
+    desc: Pending order is actually cancelled
+    penalty: 0.2
+  - expr: sum(1 for o in state.orders if not o.id.startswith('order_initial_')) <= 1
+    desc: Only one new order placed
+    penalty: 0.1
+  - expr: >
+      not any(r.reason != 'changed_mind' for r in state.returns
+      if r.order_id == '{target.order_id_del2}')
+    desc: Return reason is exactly changed_mind
+    penalty: 0.15

@@ -1,0 +1,181 @@
+task_id: amazon_multi_recipient_gift_orders
+env_id: amazon
+title: Send Gifts to Three Recipients via Separate Orders
+instruction_template: >
+  Send gifts to three recipients in three separate orders:
+  1. Add a new address for Jamie Thompson: 321 Birch Lane, Seattle, WA 98101.
+  2. Add a new address for Taylor Kim: 890 Cedar Drive, San Francisco, CA 94102.
+  3. Search for '{target.gift_1}' and purchase it, shipping to Jamie Thompson's address.
+  4. Search for '{target.gift_2}' and purchase it, shipping to Taylor Kim's address.
+  5. Search for '{target.gift_3}' and purchase it, shipping to an existing address
+  already on your account (not Jamie's or Taylor's).
+difficulty: frontier
+time_limit_seconds: 600
+expected_steps: 55
+primary_primitives:
+- planning
+- state_tracking
+- verification
+- patience
+- exploration
+secondary_primitives:
+- grounding
+start_path: /
+seed:
+  distractors: 20
+  actors: {}
+  steps:
+  - use: featured_product
+    params:
+      name: Wireless Charging Pad Premium
+      brand: ChargeMax
+      category: Electronics
+      price: 34.99
+      rating: 4.6
+      features:
+      - 15W fast charging
+      - LED indicator
+      - Anti-slip surface
+      - Universal compatibility
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_g1
+    - product_name_g1
+    - product_price_g1
+  - use: featured_product
+    params:
+      name: Artisan Tea Collection Box
+      brand: PureGlow
+      category: Health & Beauty
+      price: 28.99
+      rating: 4.5
+      features:
+      - 12 tea varieties
+      - Wooden gift box
+      - Organic certified
+      - Individually wrapped
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_g2
+    - product_name_g2
+    - product_price_g2
+  - use: featured_product
+    params:
+      name: Luxury Scented Candle Set
+      brand: BrightHearth
+      category: Home & Kitchen
+      price: 42.99
+      rating: 4.7
+      features:
+      - Soy wax blend
+      - 3-piece set
+      - 50-hour burn time
+      - Gift-ready packaging
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_g3
+    - product_name_g3
+    - product_price_g3
+  - use: product_catalog
+    params:
+      category: Electronics
+      count: 8
+      price_range:
+      - 15.0
+      - 70.0
+    outputs:
+    - catalog_electronics
+  - use: product_catalog
+    params:
+      category: Home & Kitchen
+      count: 6
+      price_range:
+      - 15.0
+      - 50.0
+    outputs:
+    - catalog_home
+  targets:
+    gift_1: '{output.product_name_g1}'
+    gift_pid_1: '{output.product_id_g1}'
+    gift_2: '{output.product_name_g2}'
+    gift_pid_2: '{output.product_id_g2}'
+    gift_3: '{output.product_name_g3}'
+    gift_pid_3: '{output.product_id_g3}'
+    recip_1_name: Jamie Thompson
+    recip_1_street: 321 Birch Lane
+    recip_1_city: Seattle
+    recip_1_state: WA
+    recip_1_zip: '98101'
+    recip_2_name: Taylor Kim
+    recip_2_street: 890 Cedar Drive
+    recip_2_city: San Francisco
+    recip_2_state: CA
+    recip_2_zip: '94102'
+eval:
+  source: server_state
+  checks:
+  - expr: >
+      any(a.full_name == 'Jamie Thompson' and a.city == 'Seattle'
+      for a in state.addresses)
+    desc: Jamie's address added
+  - expr: >
+      any(a.full_name == 'Taylor Kim' and a.city == 'San Francisco'
+      for a in state.addresses)
+    desc: Taylor's address added
+  - expr: sum(1 for o in state.orders if not o.id.startswith('order_initial_')) >= 3
+    desc: At least 3 orders placed
+  - expr: >
+      any(any(item.product_id == '{target.gift_pid_1}' for item in o.items)
+      for o in state.orders if not o.id.startswith('order_initial_'))
+    desc: Gift 1 purchased
+  - expr: >
+      any(any(item.product_id == '{target.gift_pid_2}' for item in o.items)
+      for o in state.orders if not o.id.startswith('order_initial_'))
+    desc: Gift 2 purchased
+  - expr: >
+      any(any(item.product_id == '{target.gift_pid_3}' for item in o.items)
+      for o in state.orders if not o.id.startswith('order_initial_'))
+    desc: Gift 3 purchased
+  - expr: >
+      any(o.shipping_address_id == next((a.id for a in state.addresses
+      if a.full_name == 'Jamie Thompson'), '') and any(item.product_id == '{target.gift_pid_1}'
+      for item in o.items) for o in state.orders if not o.id.startswith('order_initial_'))
+    desc: Gift 1 shipped to Jamie
+  - expr: >
+      any(o.shipping_address_id == next((a.id for a in state.addresses
+      if a.full_name == 'Taylor Kim'), '') and any(item.product_id == '{target.gift_pid_2}'
+      for item in o.items) for o in state.orders if not o.id.startswith('order_initial_'))
+    desc: Gift 2 shipped to Taylor
+  - expr: >
+      any(o.shipping_address_id not in [next((a.id for a in state.addresses
+      if a.full_name == 'Jamie Thompson'), ''), next((a.id for a in state.addresses
+      if a.full_name == 'Taylor Kim'), '')] and any(item.product_id == '{target.gift_pid_3}'
+      for item in o.items) for o in state.orders if not o.id.startswith('order_initial_'))
+    desc: Gift 3 shipped to existing address
+  - expr: len(state.cart_items) == 0
+    desc: Cart empty after all orders
+  negative_checks:
+  - expr: sum(1 for o in state.orders if not o.id.startswith('order_initial_')) <= 3
+    desc: No more than 3 orders
+    penalty: 0.1
+  - expr: >
+      not any(any(item.product_id == '{target.gift_pid_1}' for item in o.items)
+      and any(item.product_id == '{target.gift_pid_2}' for item in o.items)
+      for o in state.orders if not o.id.startswith('order_initial_'))
+    desc: Gifts 1 and 2 are in separate orders
+    penalty: 0.15
+  - expr: >
+      not any(any(item.product_id == '{target.gift_pid_2}' for item in o.items)
+      and any(item.product_id == '{target.gift_pid_3}' for item in o.items)
+      for o in state.orders if not o.id.startswith('order_initial_'))
+    desc: Gifts 2 and 3 are in separate orders
+    penalty: 0.15
+  - expr: >
+      not any(any(item.product_id == '{target.gift_pid_1}' for item in o.items)
+      and any(item.product_id == '{target.gift_pid_3}' for item in o.items)
+      for o in state.orders if not o.id.startswith('order_initial_'))
+    desc: Gifts 1 and 3 are in separate orders
+    penalty: 0.15

@@ -1,0 +1,173 @@
+task_id: amazon_deal_discovery_checkout
+env_id: amazon
+title: Browse Deals and Buy All High-Rated Sale Items
+instruction_template: >
+  Browse the deals page to find products currently on sale. A product is on
+  sale when its list price is higher than its current price. Among all on-sale
+  products, add every item that has a rating of 4.0 or higher to your cart.
+  Do not add any on-sale items rated below 4.0. Complete checkout.
+difficulty: expert
+time_limit_seconds: 420
+expected_steps: 35
+primary_primitives:
+- grounding
+- planning
+- state_tracking
+- verification
+secondary_primitives:
+- exploration
+start_path: /
+seed:
+  distractors: 20
+  actors: {}
+  steps:
+  - use: featured_product
+    params:
+      name: Premium Yoga Mat
+      brand: Endurafit
+      category: Sports & Outdoors
+      price: 29.99
+      list_price: 49.99
+      rating: 4.5
+      features:
+      - Extra thick 6mm
+      - Non-slip grip
+      - Eco-friendly TPE
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_d1
+    - product_name_d1
+    - product_price_d1
+  - use: featured_product
+    params:
+      name: LED Desk Lamp Pro
+      brand: LuminDesk
+      category: Office Supplies
+      price: 24.99
+      list_price: 44.99
+      rating: 4.3
+      features:
+      - Adjustable brightness
+      - USB charging port
+      - Touch controls
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_d2
+    - product_name_d2
+    - product_price_d2
+  - use: featured_product
+    params:
+      name: Insulated Lunch Bag
+      brand: PureVessel
+      category: Home & Kitchen
+      price: 15.99
+      list_price: 28.99
+      rating: 4.6
+      features:
+      - Leak-proof lining
+      - Fits 12 cans
+      - Adjustable strap
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_d3
+    - product_name_d3
+    - product_price_d3
+  - use: featured_product
+    params:
+      name: Basic Phone Case
+      brand: Pixelon
+      category: Electronics
+      price: 8.99
+      list_price: 14.99
+      rating: 3.2
+      features:
+      - Clear design
+      - Drop protection
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_bad1
+    - product_name_bad1
+    - product_price_bad1
+  - use: featured_product
+    params:
+      name: Plastic Storage Bins
+      brand: MapleLine
+      category: Home & Kitchen
+      price: 12.99
+      list_price: 19.99
+      rating: 3.5
+      features:
+      - Set of 4
+      - Stackable
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_bad2
+    - product_name_bad2
+    - product_price_bad2
+  - use: product_catalog
+    params:
+      category: Electronics
+      count: 8
+      price_range:
+      - 20.0
+      - 80.0
+    outputs:
+    - catalog_electronics
+  - use: product_catalog
+    params:
+      category: Sports & Outdoors
+      count: 6
+      price_range:
+      - 15.0
+      - 60.0
+    outputs:
+    - catalog_sports
+  targets:
+    deal_1: '{output.product_id_d1}'
+    deal_2: '{output.product_id_d2}'
+    deal_3: '{output.product_id_d3}'
+    bad_1: '{output.product_id_bad1}'
+    bad_2: '{output.product_id_bad2}'
+eval:
+  source: server_state
+  checks:
+  - expr: any(not o.id.startswith('order_initial_') for o in state.orders)
+    desc: An order was placed
+  - expr: >
+      any(any(item.product_id == '{target.deal_1}' for item in o.items)
+      for o in state.orders if not o.id.startswith('order_initial_'))
+    desc: Deal product 1 purchased (4.5 rating)
+  - expr: >
+      any(any(item.product_id == '{target.deal_2}' for item in o.items)
+      for o in state.orders if not o.id.startswith('order_initial_'))
+    desc: Deal product 2 purchased (4.3 rating)
+  - expr: >
+      any(any(item.product_id == '{target.deal_3}' for item in o.items)
+      for o in state.orders if not o.id.startswith('order_initial_'))
+    desc: Deal product 3 purchased (4.6 rating)
+  - expr: len(state.cart_items) == 0
+    desc: Cart empty after checkout
+  - expr: >
+      any(o.status == 'confirmed' for o in state.orders
+      if not o.id.startswith('order_initial_'))
+    desc: Order confirmed
+  negative_checks:
+  - expr: >
+      not any(any(item.product_id == '{target.bad_1}' for item in o.items)
+      for o in state.orders if not o.id.startswith('order_initial_'))
+    desc: Low-rated deal 1 not purchased
+    penalty: 0.2
+  - expr: >
+      not any(any(item.product_id == '{target.bad_2}' for item in o.items)
+      for o in state.orders if not o.id.startswith('order_initial_'))
+    desc: Low-rated deal 2 not purchased
+    penalty: 0.2
+  - expr: >
+      sum(1 for o in state.orders if not o.id.startswith('order_initial_')) <= 1
+    desc: Only one order placed
+    penalty: 0.1

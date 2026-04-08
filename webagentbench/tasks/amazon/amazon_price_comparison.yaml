@@ -1,0 +1,122 @@
+task_id: amazon_price_comparison
+env_id: amazon
+title: Compare Products and Buy Best Value in Price Range
+instruction_template: >
+  Search for products in the "{target.category}" category. Compare at least 3
+  products and purchase the one that is priced between $50 and $100 and has the
+  highest customer rating. Use the shipping address for Jordan Parker at 742 Evergreen Terrace and the Visa card ending in 4242.
+difficulty: medium
+time_limit_seconds: 300
+expected_steps: 23
+primary_primitives:
+- planning
+- verification
+- state_tracking
+start_path: /
+seed:
+  distractors: 12
+  actors: {}
+  steps:
+  - use: featured_product
+    params:
+      name: Premium Silicone Kitchen Mat
+      brand: HomeStyle
+      category: Home & Kitchen
+      price: 74.99
+      rating: 4.95
+      features:
+      - Heat resistant to 450F
+      - Non-slip surface
+      - Easy to clean
+      - BPA free
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id
+    - product_name
+    - product_price
+  - use: featured_product
+    params:
+      name: Bamboo Spice Rack Organizer
+      brand: KitchenPro
+      category: Home & Kitchen
+      price: 59.99
+      rating: 4.2
+      features:
+      - 3-tier design
+      - Expandable width
+      - Natural bamboo
+      - Non-slip feet
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_decoy1
+    - product_name_decoy1
+    - product_price_decoy1
+  - use: featured_product
+    params:
+      name: Stainless Steel Utensil Holder
+      brand: CookEase
+      category: Home & Kitchen
+      price: 64.99
+      rating: 4.0
+      features:
+      - Large capacity
+      - Weighted base
+      - Rust resistant
+      - Modern design
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_decoy2
+    - product_name_decoy2
+    - product_price_decoy2
+  - use: featured_product
+    params:
+      name: Glass Food Storage Set 12-Piece
+      brand: FreshKeep
+      category: Home & Kitchen
+      price: 89.99
+      rating: 3.8
+      features:
+      - Borosilicate glass
+      - Snap-lock lids
+      - Microwave safe
+      - Stackable design
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_decoy3
+    - product_name_decoy3
+    - product_price_decoy3
+  targets:
+    category: Home & Kitchen
+    best_value_id: '{output.product_id}'
+    best_value_name: '{output.product_name}'
+eval:
+  source: server_state
+  checks:
+  - expr: any(not o.id.startswith('order_initial_') for o in state.orders)
+    desc: A new order was placed
+  - expr: >
+      any(any(item.product_id == '{target.best_value_id}' for item in order.items)
+      for order in state.orders if not order.id.startswith('order_initial_'))
+    desc: Purchased the highest-rated product in the $50-$100 range
+  - expr: >
+      any(any(50 <= item.unit_price <= 100 for item in order.items)
+      for order in state.orders if not order.id.startswith('order_initial_'))
+    desc: Purchased product is in the $50-$100 price range
+  - expr: any(order.status == 'confirmed' and any(item.product_id == '{target.best_value_id}' for item in order.items) for order in state.orders if not order.id.startswith('order_initial_'))
+    desc: Order containing the target product is confirmed
+  negative_checks:
+  - expr: sum(1 for o in state.orders if not o.id.startswith('order_initial_')) <= 1
+    desc: Only one new order placed
+    penalty: 0.15
+  - expr: >
+      all(any(item.product_id == '{target.best_value_id}' for item in order.items)
+      for order in state.orders if not order.id.startswith('order_initial_'))
+    desc: Purchased product matches the target best-value product
+    penalty: 0.3
+  - expr: len(state.cart_items) == 0
+    desc: Cart is empty after checkout
+    penalty: 0.1

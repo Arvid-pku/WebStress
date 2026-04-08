@@ -1,0 +1,131 @@
+task_id: amazon_wishlist_budget_buy
+env_id: amazon
+title: Buy Wishlist Items Under Budget
+instruction_template: >
+  Go to your wishlist, move all items to your cart, then remove any items
+  that cost over $100 each. Complete the checkout for the remaining items
+  using the shipping address for Jordan Parker at 742 Evergreen Terrace and the Visa card ending in 4242.
+difficulty: medium
+time_limit_seconds: 280
+expected_steps: 20
+primary_primitives:
+- planning
+- state_tracking
+- verification
+start_path: /wishlist
+seed:
+  distractors: 10
+  actors: {}
+  steps:
+  - use: featured_product
+    params:
+      name: Mechanical Keyboard
+      brand: Keychron
+      category: Electronics
+      price: 149.99
+      rating: 4.6
+      features:
+      - Hot-swappable switches
+      - RGB backlight
+      - Wireless Bluetooth
+      - Aluminum frame
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_expensive
+    - product_name_expensive
+    - product_price_expensive
+  - use: featured_product
+    params:
+      name: Desk Cable Organizer
+      brand: JOTO
+      category: Office Supplies
+      price: 14.99
+      rating: 4.3
+      features:
+      - Neoprene sleeve
+      - Holds up to 8 cables
+      - Zipper closure
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_cheap1
+    - product_name_cheap1
+    - product_price_cheap1
+  - use: featured_product
+    params:
+      name: LED Desk Lamp
+      brand: TaoTronics
+      category: Office Supplies
+      price: 45.99
+      rating: 4.5
+      features:
+      - 5 color modes
+      - USB charging port
+      - Memory function
+      - Touch control
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_cheap2
+    - product_name_cheap2
+    - product_price_cheap2
+  - use: featured_product
+    params:
+      name: Premium Webcam 1080p
+      brand: Logitech
+      category: Electronics
+      price: 129.99
+      rating: 4.7
+      features:
+      - Full HD 1080p
+      - Built-in microphone
+      - Auto light correction
+      - Privacy cover
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_expensive2
+    - product_name_expensive2
+    - product_price_expensive2
+  - use: wishlist_items
+    params:
+      product_ids:
+      - '{output.product_id_expensive}'
+      - '{output.product_id_cheap1}'
+      - '{output.product_id_cheap2}'
+      - '{output.product_id_expensive2}'
+    outputs: []
+  targets:
+    expensive_id_1: '{output.product_id_expensive}'
+    expensive_id_2: '{output.product_id_expensive2}'
+    cheap_id_1: '{output.product_id_cheap1}'
+    cheap_id_2: '{output.product_id_cheap2}'
+eval:
+  source: server_state
+  checks:
+  - expr: any(not o.id.startswith('order_initial_') for o in state.orders)
+    desc: A new order was placed
+  - expr: >
+      not any(any(item.product_id == '{target.expensive_id_1}' for item in order.items)
+      for order in state.orders if not order.id.startswith('order_initial_'))
+    desc: Expensive Mechanical Keyboard was not purchased
+  - expr: >
+      not any(any(item.product_id == '{target.expensive_id_2}' for item in order.items)
+      for order in state.orders if not order.id.startswith('order_initial_'))
+    desc: Expensive Premium Webcam was not purchased
+  - expr: >
+      any(any(item.product_id == '{target.cheap_id_1}' for item in order.items)
+      for order in state.orders if not order.id.startswith('order_initial_'))
+    desc: Desk Cable Organizer was purchased
+  - expr: >
+      any(any(item.product_id == '{target.cheap_id_2}' for item in order.items)
+      for order in state.orders if not order.id.startswith('order_initial_'))
+    desc: LED Desk Lamp was purchased
+  negative_checks:
+  - expr: sum(1 for o in state.orders if not o.id.startswith('order_initial_')) <= 1
+    desc: Only one new order placed
+    penalty: 0.15
+  - expr: len(state.cart_items) == 0
+    desc: Cart is empty after checkout
+    penalty: 0.1

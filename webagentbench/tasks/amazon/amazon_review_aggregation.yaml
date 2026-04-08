@@ -1,0 +1,111 @@
+task_id: amazon_review_aggregation
+env_id: amazon
+title: Write Reviews for 3 Products
+instruction_template: >
+  Write reviews for three different products. For "{target.product1_name}",
+  give a 5-star rating with the title "Absolutely perfect". For
+  "{target.product2_name}", give a 3-star rating with the title
+  "Decent but has flaws". For "{target.product3_name}", give a 4-star rating
+  with the title "Great value purchase". Each review body should be at least
+  one sentence describing your experience.
+difficulty: hard
+time_limit_seconds: 360
+expected_steps: 30
+primary_primitives:
+- planning
+- grounding
+- state_tracking
+- patience
+start_path: /
+seed:
+  distractors: 15
+  actors: {}
+  steps:
+  - use: product_with_reviews
+    params:
+      product_name: Premium Bluetooth Speaker
+      category: Electronics
+      price: 79.99
+      reviews:
+      - rating: 4
+        title: Good sound quality
+        body: Impressive bass and clear highs for the price.
+    outputs:
+    - product_id
+    - review_ids
+  - use: product_with_reviews
+    params:
+      product_name: Ceramic Plant Pot Set
+      category: Home & Kitchen
+      price: 34.99
+      reviews:
+      - rating: 5
+        title: Beautiful pots
+        body: These look amazing on my windowsill.
+    outputs:
+    - product_id_2
+    - review_ids_2
+  - use: product_with_reviews
+    params:
+      product_name: Running Shoes Ultra Lite
+      category: Sports & Outdoors
+      price: 119.99
+      reviews:
+      - rating: 4
+        title: Comfortable fit
+        body: Great for long distance runs.
+      - rating: 2
+        title: Wore out quickly
+        body: Sole started peeling after 3 months.
+    outputs:
+    - product_id_3
+    - review_ids_3
+  - use: product_catalog
+    params:
+      category: Electronics
+      count: 8
+      price_range:
+      - 20.0
+      - 200.0
+    outputs:
+    - catalog_ids
+  - use: product_catalog
+    params:
+      category: Home & Kitchen
+      count: 6
+      price_range:
+      - 10.0
+      - 100.0
+    outputs:
+    - catalog_home
+  targets:
+    product1_name: Premium Bluetooth Speaker
+    product1_id: '{output.product_id}'
+    product2_name: Ceramic Plant Pot Set
+    product2_id: '{output.product_id_2}'
+    product3_name: Running Shoes Ultra Lite
+    product3_id: '{output.product_id_3}'
+eval:
+  source: server_state
+  checks:
+  - expr: >
+      any(r.product_id == '{target.product1_id}' and r.rating == 5
+      and 'Absolutely perfect' in r.title for r in state.reviews)
+    desc: 5-star review with correct title for Product 1
+  - expr: >
+      any(r.product_id == '{target.product2_id}' and r.rating == 3
+      and 'Decent but has flaws' in r.title for r in state.reviews)
+    desc: 3-star review with correct title for Product 2
+  - expr: >
+      any(r.product_id == '{target.product3_id}' and r.rating == 4
+      and 'Great value purchase' in r.title for r in state.reviews)
+    desc: 4-star review with correct title for Product 3
+  negative_checks:
+  - expr: >
+      sum(1 for r in state.reviews if r.author_name == state.owner_name) <= 3
+    desc: No more than 3 reviews written by the user
+    penalty: 0.2
+  - expr: >
+      all(len(r.body) > 10 for r in state.reviews if r.author_name == state.owner_name)
+    desc: All review bodies have meaningful content
+    penalty: 0.1

@@ -1,0 +1,22 @@
+variant_id: amazon_cross_category_value_hunt__grounding_v1
+base_task_id: amazon_cross_category_value_hunt
+target_primitive: grounding
+description: >
+  Product search returns empty results on the first query per category,
+  forcing the agent to retry searches and not assume a category is empty
+  based on a single failed response.
+injections:
+  - layer: network
+    params:
+      url_pattern: "**/api/env/amazon/products?*"
+      action: stale_data
+      methods: ["GET"]
+      stale_count: 3
+      stale_body: {"products": [], "total": 0, "page": 1, "page_size": 20}
+  - layer: network
+    params:
+      url_pattern: "**/api/env/amazon/search?*"
+      action: stale_data
+      methods: ["GET"]
+      stale_count: 3
+      stale_body: {"products": [], "total": 0, "page": 1, "page_size": 20}

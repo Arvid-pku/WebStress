@@ -1,0 +1,149 @@
+task_id: amazon_cascading_return_replace
+env_id: amazon
+title: Return Items from Multiple Orders and Buy Replacement
+instruction_template: >
+  You need to process two returns and buy a replacement. First, return
+  '{target.ret_product_1}' from your order with the reason 'defective'. Second,
+  return '{target.ret_product_2}' from your other delivered order with the reason
+  'wrong_item'. Finally, search for '{target.replace_name}' and purchase it as
+  a replacement.
+difficulty: expert
+time_limit_seconds: 420
+expected_steps: 38
+primary_primitives:
+- planning
+- state_tracking
+- backtracking
+- verification
+secondary_primitives:
+- exploration
+start_path: /orders
+seed:
+  distractors: 18
+  actors: {}
+  steps:
+  - use: featured_product
+    params:
+      name: Bluetooth Keyboard Compact
+      brand: Wavefront
+      category: Electronics
+      price: 44.99
+      rating: 4.3
+      features:
+      - Slim profile
+      - Multi-device pairing
+      - 6-month battery
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_ret1
+    - product_name_ret1
+    - product_price_ret1
+  - use: featured_product
+    params:
+      name: Memory Foam Pillow
+      brand: NestWell
+      category: Home & Kitchen
+      price: 39.99
+      rating: 4.2
+      features:
+      - Cooling gel layer
+      - Hypoallergenic cover
+      - CertiPUR-US certified
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_ret2
+    - product_name_ret2
+    - product_price_ret2
+  - use: featured_product
+    params:
+      name: Ergonomic Wireless Keyboard
+      brand: TechNova
+      category: Electronics
+      price: 59.99
+      rating: 4.7
+      features:
+      - Split key design
+      - Cushioned palm rest
+      - 2.4GHz and Bluetooth
+      - Backlit keys
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_replace
+    - product_name_replace
+    - product_price_replace
+  - use: existing_order
+    params:
+      product_ids:
+      - '{output.product_id_ret1}'
+      status: delivered
+      days_ago: 5
+    outputs:
+    - order_id_ret1
+  - use: existing_order
+    params:
+      product_ids:
+      - '{output.product_id_ret2}'
+      status: delivered
+      days_ago: 8
+    outputs:
+    - order_id_ret2
+  - use: product_catalog
+    params:
+      category: Electronics
+      count: 10
+      price_range:
+      - 20.0
+      - 80.0
+    outputs:
+    - catalog_electronics
+  targets:
+    ret_product_1: '{output.product_name_ret1}'
+    ret_pid_1: '{output.product_id_ret1}'
+    order_1: '{output.order_id_ret1}'
+    ret_product_2: '{output.product_name_ret2}'
+    ret_pid_2: '{output.product_id_ret2}'
+    order_2: '{output.order_id_ret2}'
+    replace_name: '{output.product_name_replace}'
+    replace_pid: '{output.product_id_replace}'
+eval:
+  source: server_state
+  checks:
+  - expr: >
+      any(r.order_id == '{target.order_1}' and r.reason == 'defective'
+      for r in state.returns)
+    desc: Return filed for order 1 with reason defective
+  - expr: >
+      any(r.order_id == '{target.order_2}' and r.reason == 'wrong_item'
+      for r in state.returns)
+    desc: Return filed for order 2 with reason wrong_item
+  - expr: any(not o.id.startswith('order_initial_') for o in state.orders)
+    desc: A new order was placed
+  - expr: >
+      any(any(item.product_id == '{target.replace_pid}' for item in o.items)
+      for o in state.orders if not o.id.startswith('order_initial_'))
+    desc: Replacement product purchased
+  - expr: >
+      any(o.status == 'confirmed' for o in state.orders
+      if not o.id.startswith('order_initial_'))
+    desc: Replacement order confirmed
+  - expr: len(state.cart_items) == 0
+    desc: Cart empty after checkout
+  - expr: len(state.returns) >= 2
+    desc: At least two returns were filed
+  negative_checks:
+  - expr: >
+      not any(r.reason != 'defective' for r in state.returns
+      if r.order_id == '{target.order_1}')
+    desc: Order 1 return has correct reason
+    penalty: 0.15
+  - expr: >
+      not any(r.reason != 'wrong_item' for r in state.returns
+      if r.order_id == '{target.order_2}')
+    desc: Order 2 return has correct reason
+    penalty: 0.15
+  - expr: sum(1 for o in state.orders if not o.id.startswith('order_initial_')) <= 1
+    desc: Only one replacement order placed
+    penalty: 0.1

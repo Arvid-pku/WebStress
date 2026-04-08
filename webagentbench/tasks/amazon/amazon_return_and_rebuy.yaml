@@ -1,0 +1,103 @@
+task_id: amazon_return_and_rebuy
+env_id: amazon
+title: Return an Item and Buy a Replacement
+instruction_template: >
+  You have a past order containing "{target.return_product}". Initiate a return
+  for that item with the reason "wrong_item". Then find and purchase a
+  replacement product "{target.replacement_name}" from the same category
+  ({target.category}). Complete checkout for the replacement using the shipping
+  address for Jordan Parker at 742 Evergreen Terrace and the Visa card ending in 4242.
+difficulty: hard
+time_limit_seconds: 420
+expected_steps: 30
+primary_primitives:
+- planning
+- state_tracking
+- verification
+- backtracking
+start_path: /
+seed:
+  distractors: 16
+  actors: {}
+  steps:
+  - use: featured_product
+    params:
+      name: USB-C Docking Station
+      brand: CalDigit
+      category: Electronics
+      price: 89.99
+      rating: 4.2
+      features:
+      - 10 ports
+      - 4K HDMI output
+      - 100W power delivery
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_ordered
+    - product_name_ordered
+    - product_price_ordered
+  - use: featured_product
+    params:
+      name: Thunderbolt 4 Hub Pro
+      brand: Anker
+      category: Electronics
+      price: 109.99
+      rating: 4.7
+      features:
+      - 12 ports
+      - Dual 4K display
+      - 120W power delivery
+      - Thunderbolt 4 compatible
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id_replacement
+    - product_name_replacement
+    - product_price_replacement
+  - use: existing_order
+    params:
+      product_ids:
+      - '{output.product_id_ordered}'
+      status: delivered
+      days_ago: 5
+    outputs:
+    - order_id
+  - use: product_catalog
+    params:
+      category: Electronics
+      count: 10
+      price_range:
+      - 30.0
+      - 200.0
+    outputs:
+    - catalog_ids
+  targets:
+    return_product: USB-C Docking Station
+    return_product_id: '{output.product_id_ordered}'
+    replacement_name: Thunderbolt 4 Hub Pro
+    replacement_id: '{output.product_id_replacement}'
+    original_order_id: '{output.order_id}'
+    category: Electronics
+eval:
+  source: server_state
+  checks:
+  - expr: >
+      any(r.order_id == '{target.original_order_id}' and r.reason == 'wrong_item'
+      for r in state.returns)
+    desc: Return was initiated for the original order with reason wrong_item
+  - expr: >
+      any(r.product_id == '{target.return_product_id}' for r in state.returns)
+    desc: The correct product was returned
+  - expr: >
+      any(any(item.product_id == '{target.replacement_id}' for item in order.items)
+      for order in state.orders if order.id != '{target.original_order_id}' and not order.id.startswith('order_initial_'))
+    desc: Replacement product was purchased in a new order
+  negative_checks:
+  - expr: len(state.cart_items) == 0
+    desc: Cart is empty after checkout
+    penalty: 0.1
+  - expr: >
+      sum(1 for r in state.returns if r.order_id == '{target.original_order_id}') <= 1
+    desc: Only one return initiated for the original order
+    penalty: 0.15

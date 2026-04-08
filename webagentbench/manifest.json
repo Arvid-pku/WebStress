@@ -18,6 +18,12 @@
       "title": "Simulated Robinhood",
       "base_url": "/env/robinhood",
       "description": "Faithful Robinhood brokerage clone with portfolio, trading, options, transfers, and tax center."
+    },
+    {
+      "env_id": "amazon",
+      "title": "Simulated Amazon",
+      "base_url": "/env/amazon",
+      "description": "Amazon-style shopping benchmark with product search, cart, checkout, and order management."
     }
   ]
 }

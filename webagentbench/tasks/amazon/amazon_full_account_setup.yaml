@@ -1,0 +1,98 @@
+task_id: amazon_full_account_setup
+env_id: amazon
+title: Full Account Setup and First Purchase
+instruction_template: >
+  Set up your account fully and make a purchase. First, add two new shipping
+  addresses: (1) name "Home" at "200 Pine St, Seattle, WA 98101" and (2) name
+  "Office" at "800 Corporate Blvd, Bellevue, WA 98004". Then add a new payment
+  method (credit card). Update your account settings to enable one-click ordering
+  and turn on deal-alert emails. Finally, purchase "{target.product_name}"
+  using the "Office" address and the new payment method.
+difficulty: hard
+time_limit_seconds: 480
+expected_steps: 40
+primary_primitives:
+- planning
+- state_tracking
+- verification
+- patience
+start_path: /
+seed:
+  distractors: 16
+  actors: {}
+  steps:
+  - use: featured_product
+    params:
+      name: UltraWide Monitor 34-inch
+      brand: LG
+      category: Electronics
+      price: 449.99
+      rating: 4.6
+      features:
+      - 3440x1440 resolution
+      - USB-C connectivity
+      - HDR10 support
+      - 160Hz refresh rate
+      variants: []
+      in_stock: true
+    outputs:
+    - product_id
+    - product_name
+    - product_price
+  - use: product_catalog
+    params:
+      category: Electronics
+      count: 10
+      price_range:
+      - 100.0
+      - 600.0
+    outputs:
+    - catalog_ids
+  - use: product_catalog
+    params:
+      category: Office Supplies
+      count: 6
+      price_range:
+      - 10.0
+      - 100.0
+    outputs:
+    - catalog_office
+  targets:
+    product_name: UltraWide Monitor 34-inch
+    product_id: '{output.product_id}'
+eval:
+  source: server_state
+  checks:
+  - expr: >
+      any('200 Pine' in addr.street_address and addr.city == 'Seattle'
+      and addr.state == 'WA' for addr in state.addresses)
+    desc: Home address added with correct details
+  - expr: >
+      any('800 Corporate' in addr.street_address and addr.city == 'Bellevue'
+      and addr.state == 'WA' for addr in state.addresses)
+    desc: Office address added with correct details
+  - expr: len(state.payment_methods) >= 4
+    desc: A new payment method was added (3 pre-loaded + at least 1 new)
+  - expr: state.settings.one_click_enabled == True
+    desc: One-click ordering is enabled
+  - expr: state.settings.deal_alerts_email == True
+    desc: Deal-alert emails are turned on
+  - expr: any(not o.id.startswith('order_initial_') for o in state.orders)
+    desc: A new order was placed
+  - expr: >
+      any(any(item.product_id == '{target.product_id}' for item in order.items)
+      for order in state.orders if not order.id.startswith('order_initial_'))
+    desc: Target product was purchased
+  - expr: >
+      any(any('800 Corporate' in addr.street_address for addr in state.addresses
+      if addr.id == order.shipping_address_id)
+      for order in state.orders if not order.id.startswith('order_initial_'))
+    desc: Order shipped to the Office address
+  - expr: >
+      any(order.payment_method_id not in ('pm_1', 'pm_2', 'pm_3') for order in state.orders
+      if not order.id.startswith('order_initial_') and any(item.product_id == '{target.product_id}' for item in order.items))
+    desc: Order uses the new payment method, not any pre-loaded one
+  negative_checks:
+  - expr: len(state.cart_items) == 0
+    desc: Cart is empty after checkout
+    penalty: 0.1

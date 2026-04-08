@@ -154,6 +154,10 @@ def test_no_answer_leakage_in_instructions() -> None:
             # Skip template references — those are not literal values
             if tval.startswith("{"):
                 continue
+            # Skip very short values (1-2 chars) — too prone to false-positive
+            # substring matches (e.g., '2' matching inside '4242')
+            if len(tval) <= 2:
+                continue
             if tval in instr:
                 violations.append(
                     f"[{tid}] literal target '{tkey}' = '{tval}' "
@@ -448,11 +452,15 @@ _VALID_SETTINGS_ATTRS = {
     "display_theme", "default_order_type", "reinvest_dividends",
     "extended_hours_enabled", "biometric_login", "two_factor_method",
     "notification_prefs",
+    # Amazon settings fields
+    "prime_member", "one_click_enabled", "email_notifications",
+    "deal_alerts_email", "order_updates_email", "two_factor_enabled",
+    "gift_card_balance", "currency", "default_address_id", "default_payment_id",
 }
 
 
 def test_eval_expressions_use_valid_settings_attributes() -> None:
-    """Settings attribute references in eval must match GmailSettings fields."""
+    """Settings attribute references in eval must match known settings fields."""
     violations: list[str] = []
     settings_attr_re = re.compile(r"state\.settings\.(\w+)")
     for tid, kind, expr in ALL_EXPRS:
@@ -461,7 +469,7 @@ def test_eval_expressions_use_valid_settings_attributes() -> None:
             if attr not in _VALID_SETTINGS_ATTRS:
                 violations.append(
                     f"[{tid}] {kind}: state.settings.{attr} — "
-                    f"'{attr}' is not a GmailSettings field"
+                    f"'{attr}' is not a known settings field"
                 )
     assert not violations, "\n".join(violations)
 
@@ -587,4 +595,23 @@ def test_report_all_unnamed_actors() -> None:
                                 f"[{tid}] actor '{akey}' has no explicit name "
                                 f"but is referenced in eval via {{target.{tkey}}}"
                             )
+    assert not violations, "\n".join(violations)
+
+
+def test_amazon_order_evals_filter_initial_orders() -> None:
+    """Amazon eval expressions that iterate over state.orders must exclude
+    seeded 'order_initial_*' orders so pre-populated history does not
+    contaminate pass/fail checks."""
+    violations: list[str] = []
+    # Matches patterns like "for o in state.orders" or "for order in state.orders"
+    order_iter_re = re.compile(r"for\s+\w+\s+in\s+state\.orders")
+    initial_filter_re = re.compile(r"order_initial_")
+    for tid, kind, expr in ALL_EXPRS:
+        if not tid.startswith("amazon_"):
+            continue
+        if order_iter_re.search(expr) and not initial_filter_re.search(expr):
+            violations.append(
+                f"[{tid}] {kind}: iterates state.orders without filtering "
+                f"'order_initial_*' — seeded history may contaminate checks"
+            )
     assert not violations, "\n".join(violations)

@@ -1,19 +1,23 @@
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
+const serverPort = Number(process.env.VITE_SERVER_PORT) || 4174;
+const backendUrl = `http://127.0.0.1:${process.env.VITE_BACKEND_PORT || 8080}`;
+
 export default defineConfig({
   plugins: [react()],
   base: "/env/robinhood/",
   optimizeDeps: { exclude: ["@webagentbench/shared", "@webagentbench/robinhood"] },
   build: { outDir: "../../static/envs/robinhood", emptyOutDir: true },
   server: {
-    port: 4174,
+    port: serverPort,
+    strictPort: true,
     host: "127.0.0.1",
     proxy: {
-      "/api": "http://127.0.0.1:8080",
-      "/manifest": "http://127.0.0.1:8080",
-      "/static": "http://127.0.0.1:8080",
-      "/launch": "http://127.0.0.1:8080",
+      "/api": backendUrl,
+      "/manifest": backendUrl,
+      "/static": backendUrl,
+      "/launch": backendUrl,
     },
   },
 });
