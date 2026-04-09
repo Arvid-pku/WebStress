@@ -632,7 +632,7 @@ def mark_read(
         session_manager, body.session_id,
         "gmail.email.read",
         {"email_id": email_id, "is_read": body.is_read},
-        lambda s: state.mark_read(email_id, body.is_read),
+        lambda s: s.mark_read(email_id, body.is_read),
     )
     return {"email": _serialize_email(state, result)}
 
@@ -642,15 +642,20 @@ def mark_all_read(
     body: SessionScopedRequest,
     session_manager: SessionManager = Depends(get_session_manager),
 ) -> dict[str, Any]:
-    state = _gmail_state(session_manager, body.session_id)
-    count = 0
-    for email in state.emails:
-        if not email.is_read:
-            email.is_read = True
-            count += 1
-    if count:
-        state.touch()
-        _audit(session_manager, body.session_id, "gmail.email.mark_all_read", {"count": count})
+    def _do_mark_all_read(s: GmailState) -> int:
+        count = 0
+        for email in s.emails:
+            if not email.is_read:
+                email.is_read = True
+                count += 1
+        return count
+
+    count = _mutate(
+        session_manager, body.session_id,
+        "gmail.email.mark_all_read",
+        {"session_id": body.session_id},
+        _do_mark_all_read,
+    )
     return {"marked": count}
 
 
@@ -665,7 +670,7 @@ def toggle_star(
         session_manager, body.session_id,
         "gmail.email.star",
         {"email_id": email_id, "is_starred": body.is_starred},
-        lambda s: state.toggle_star(email_id, body.is_starred),
+        lambda s: s.toggle_star(email_id, body.is_starred),
     )
     return {"email": _serialize_email(state, result)}
 
@@ -681,7 +686,7 @@ def label_email(
         session_manager, body.session_id,
         "gmail.email.label",
         {"email_id": email_id, "label": body.label, "action": body.action},
-        lambda s: state.apply_label(email_id, body.label, body.action),
+        lambda s: s.apply_label(email_id, body.label, body.action),
     )
     return {"email": _serialize_email(state, result)}
 
@@ -697,7 +702,7 @@ def archive_email(
         session_manager, body.session_id,
         "gmail.email.archive",
         {"email_id": email_id},
-        lambda s: state.archive_email(email_id),
+        lambda s: s.archive_email(email_id),
     )
     return {"email": _serialize_email(state, result)}
 
@@ -713,7 +718,7 @@ def delete_email(
         session_manager, body.session_id,
         "gmail.email.delete",
         {"email_id": email_id},
-        lambda s: state.delete_email(email_id),
+        lambda s: s.delete_email(email_id),
     )
     return {"email": result.model_dump(mode="json")}
 
@@ -729,7 +734,7 @@ def restore_email(
         session_manager, body.session_id,
         "gmail.email.restore",
         {"email_id": email_id},
-        lambda s: state.restore_email(email_id),
+        lambda s: s.restore_email(email_id),
     )
     return {"email": _serialize_email(state, result)}
 
@@ -745,7 +750,7 @@ def forward_email(
         session_manager, body.session_id,
         "gmail.email.forward",
         {"email_id": email_id, "to": body.to},
-        lambda s: state.forward_email(
+        lambda s: s.forward_email(
             email_id, to=body.to, cc=body.cc, bcc=body.bcc, body=body.body,
         ),
     )
@@ -763,7 +768,7 @@ def send_email(
         session_manager, body.session_id,
         "gmail.send",
         {"to": body.to, "subject": body.subject, "in_reply_to": body.in_reply_to},
-        lambda s: state.send_email(
+        lambda s: s.send_email(
             subject=body.subject, body=body.body, to=body.to, cc=body.cc,
             bcc=body.bcc, thread_id=body.thread_id,
             in_reply_to=body.in_reply_to, attachments=attachments,
@@ -788,7 +793,7 @@ def create_label(
         session_manager, body.session_id,
         "gmail.label.create",
         {"name": body.name, "color": body.color},
-        lambda s: state.ensure_label(
+        lambda s: s.ensure_label(
             body.name, body.color,
             show_in_label_list=body.show_in_label_list,
             show_in_message_list=body.show_in_message_list,
@@ -809,7 +814,7 @@ def update_label(
         session_manager, body.session_id,
         "gmail.label.update",
         {"label_id": label_id},
-        lambda s: state.update_label(
+        lambda s: s.update_label(
             label_id, name=body.name,
             show_in_label_list=body.show_in_label_list,
             show_in_message_list=body.show_in_message_list,
@@ -830,7 +835,7 @@ def delete_label(
         session_manager, session_id,
         "gmail.label.delete",
         {"label_id": label_id},
-        lambda s: state.remove_label(label_id),
+        lambda s: s.remove_label(label_id),
     )
     return {"label": result.model_dump(mode="json")}
 
@@ -867,7 +872,7 @@ def create_filter(
         session_manager, body.session_id,
         "gmail.filter.create",
         {"name": body.name, "query": body.query},
-        lambda s: state.create_filter(rule),
+        lambda s: s.create_filter(rule),
     )
     return {"filter": result.model_dump(mode="json")}
 
@@ -883,7 +888,7 @@ def delete_filter(
         session_manager, session_id,
         "gmail.filter.delete",
         {"filter_id": filter_id},
-        lambda s: state.remove_filter(filter_id),
+        lambda s: s.remove_filter(filter_id),
     )
     return {"filter": result.model_dump(mode="json")}
 
@@ -927,7 +932,7 @@ def create_contact(
         session_manager, body.session_id,
         "gmail.contact.create",
         {"email": body.email},
-        lambda s: state.add_contact(contact),
+        lambda s: s.add_contact(contact),
     )
     return {"contact": result.model_dump(mode="json")}
 
@@ -944,7 +949,7 @@ def update_contact(
         session_manager, body.session_id,
         "gmail.contact.update",
         {"contact_id": contact_id, **updates},
-        lambda s: state.update_contact(contact_id, **updates),
+        lambda s: s.update_contact(contact_id, **updates),
     )
     return {"contact": result.model_dump(mode="json")}
 
@@ -960,7 +965,7 @@ def delete_contact(
         session_manager, session_id,
         "gmail.contact.delete",
         {"contact_id": contact_id},
-        lambda s: state.remove_contact(contact_id),
+        lambda s: s.remove_contact(contact_id),
     )
     return {"contact": result.model_dump(mode="json")}
 

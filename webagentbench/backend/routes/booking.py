@@ -282,17 +282,36 @@ async def create_session(
     state = _booking_state(sm, session_id)
 
     # Apply degradation if requested
-    degradation = body.degradation
-    if body.variant_filename:
-        from ...injector.variants import load_variant
-        degradation = load_variant(body.variant_filename)
+    degradation = dict(body.degradation) if body.degradation else None
+    if body.variant_filename and not degradation:
+        # Reject path traversal attempts in variant filenames
+        if "/" in body.variant_filename or "\\" in body.variant_filename or ".." in body.variant_filename:
+            raise HTTPException(status_code=400, detail="Invalid variant filename")
+        from pathlib import Path
+        import yaml as _yaml
+
+        variant_path = Path(__file__).parent.parent.parent / "injector" / "variants" / body.variant_filename
+        if not variant_path.exists():
+            raise HTTPException(status_code=404, detail=f"Unknown degradation variant: {body.variant_filename}")
+        variant_data = _yaml.safe_load(variant_path.read_text()) or {}
+        degradation = {
+            "variant_filename": body.variant_filename,
+            **variant_data,
+        }
 
     if degradation:
         rendered = _render_degradation_params(degradation, targets)
         state._degradation = rendered
-        # Apply seed-time injections
-        from ...injector.applicator import apply_seed_injections
-        apply_seed_injections(state, rendered.get("injections", []))
+        from ...injector.seed import apply_seed_injection
+        from ...injector.server import apply_server_injection
+        for inj in rendered.get("injections", []):
+            params = inj.get("params", {})
+            if inj.get("layer") == "seed":
+                apply_seed_injection(state, params)
+            elif inj.get("layer") == "server":
+                apply_server_injection(state, params)
+        from ...injector.middleware import register_session_degradation
+        register_session_degradation(session_id, rendered.get("injections", []))
 
     # Capture initial snapshot for collateral detection
     if hasattr(state, "state_snapshot"):
@@ -305,10 +324,12 @@ async def create_session(
     return {
         "session_id": session_id,
         "task_id": task_id,
-        "instruction": instruction,
         "seed": actual_seed,
         "start_path": task.start_path or "/",
-        "targets": targets,
+        "resolved_targets": targets,
+        "title": task.title,
+        "instruction": instruction,
+        "degradation_active": bool(degradation),
     }
 
 
@@ -332,8 +353,10 @@ async def delete_session(
     session_id: str,
     sm: SessionManager = Depends(get_session_manager),
 ):
+    from ...injector.middleware import unregister_session_degradation
+    unregister_session_degradation(session_id)
     sm.destroy(session_id)
-    return {"ok": True}
+    return {"ok": True, "session_id": session_id}
 
 
 # ---------------------------------------------------------------------------

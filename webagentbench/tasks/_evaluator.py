@@ -1,11 +1,14 @@
-"""Expression-based evaluation engine for WebAgentBench Gmail tasks.
+"""Expression-based evaluation engine for WebAgentBench tasks.
 
 Evaluates server-state check expressions defined in task YAML files against
-the actual :class:`GmailState` at the end of an agent session.
+a **read-only snapshot** of the environment state at the end of an agent
+session.  The snapshot is built once, before any check runs, so that
+individual checks cannot mutate the evidence they verify.
 """
 
 from __future__ import annotations
 
+import ast
 from decimal import Decimal
 import re
 from typing import Any
@@ -97,15 +100,190 @@ _SAFE_BUILTINS: dict[str, Any] = {
 }
 
 
+class _ReadOnlyProxy:
+    """Recursively wraps an object to block attribute writes and expose
+    read-only attribute/item access.  Method calls that are *known safe*
+    (pure getters on Pydantic models) are forwarded; everything else is
+    read-only by default.
+    """
+
+    __slots__ = ("_obj",)
+
+    def __init__(self, obj: Any) -> None:
+        object.__setattr__(self, "_obj", obj)
+
+    def __getattr__(self, name: str) -> Any:
+        value = getattr(object.__getattribute__(self, "_obj"), name)
+        return _wrap_readonly(value)
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        raise AttributeError("state is read-only during evaluation")
+
+    def __getitem__(self, key: Any) -> Any:
+        return _wrap_readonly(object.__getattribute__(self, "_obj")[key])
+
+    def __len__(self) -> int:
+        return len(object.__getattribute__(self, "_obj"))
+
+    def __iter__(self):
+        for item in object.__getattribute__(self, "_obj"):
+            yield _wrap_readonly(item)
+
+    def __contains__(self, item: Any) -> bool:
+        return item in object.__getattribute__(self, "_obj")
+
+    def __eq__(self, other: Any) -> bool:
+        raw = object.__getattribute__(self, "_obj")
+        if isinstance(other, _ReadOnlyProxy):
+            other = object.__getattribute__(other, "_obj")
+        return raw == other
+
+    def __ne__(self, other: Any) -> bool:
+        return not self.__eq__(other)
+
+    def __hash__(self) -> int:
+        return hash(object.__getattribute__(self, "_obj"))
+
+    def __bool__(self) -> bool:
+        return bool(object.__getattribute__(self, "_obj"))
+
+    def __call__(self, *args: Any, **kwargs: Any) -> Any:
+        result = object.__getattribute__(self, "_obj")(*args, **kwargs)
+        return _wrap_readonly(result)
+
+    def __repr__(self) -> str:
+        return repr(object.__getattribute__(self, "_obj"))
+
+    def __str__(self) -> str:
+        return str(object.__getattribute__(self, "_obj"))
+
+    # Comparison operators for sorting/ordering
+    def __lt__(self, other: Any) -> bool:
+        raw = object.__getattribute__(self, "_obj")
+        if isinstance(other, _ReadOnlyProxy):
+            other = object.__getattribute__(other, "_obj")
+        return raw < other
+
+    def __le__(self, other: Any) -> bool:
+        raw = object.__getattribute__(self, "_obj")
+        if isinstance(other, _ReadOnlyProxy):
+            other = object.__getattribute__(other, "_obj")
+        return raw <= other
+
+    def __gt__(self, other: Any) -> bool:
+        raw = object.__getattribute__(self, "_obj")
+        if isinstance(other, _ReadOnlyProxy):
+            other = object.__getattribute__(other, "_obj")
+        return raw > other
+
+    def __ge__(self, other: Any) -> bool:
+        raw = object.__getattribute__(self, "_obj")
+        if isinstance(other, _ReadOnlyProxy):
+            other = object.__getattribute__(other, "_obj")
+        return raw >= other
+
+    # Arithmetic operators for Decimal/numeric fields
+    def __add__(self, other: Any):
+        raw = object.__getattribute__(self, "_obj")
+        if isinstance(other, _ReadOnlyProxy):
+            other = object.__getattribute__(other, "_obj")
+        return raw + other
+
+    def __radd__(self, other: Any):
+        raw = object.__getattribute__(self, "_obj")
+        if isinstance(other, _ReadOnlyProxy):
+            other = object.__getattribute__(other, "_obj")
+        return other + raw
+
+    def __sub__(self, other: Any):
+        raw = object.__getattribute__(self, "_obj")
+        if isinstance(other, _ReadOnlyProxy):
+            other = object.__getattribute__(other, "_obj")
+        return raw - other
+
+    def __rsub__(self, other: Any):
+        raw = object.__getattribute__(self, "_obj")
+        if isinstance(other, _ReadOnlyProxy):
+            other = object.__getattribute__(other, "_obj")
+        return other - raw
+
+    def __mul__(self, other: Any):
+        raw = object.__getattribute__(self, "_obj")
+        if isinstance(other, _ReadOnlyProxy):
+            other = object.__getattribute__(other, "_obj")
+        return raw * other
+
+    def __rmul__(self, other: Any):
+        raw = object.__getattribute__(self, "_obj")
+        if isinstance(other, _ReadOnlyProxy):
+            other = object.__getattribute__(other, "_obj")
+        return other * raw
+
+    def __truediv__(self, other: Any):
+        raw = object.__getattribute__(self, "_obj")
+        if isinstance(other, _ReadOnlyProxy):
+            other = object.__getattribute__(other, "_obj")
+        return raw / other
+
+    def __mod__(self, other: Any):
+        raw = object.__getattribute__(self, "_obj")
+        if isinstance(other, _ReadOnlyProxy):
+            other = object.__getattribute__(other, "_obj")
+        return raw % other
+
+
+def _wrap_readonly(value: Any) -> Any:
+    """Wrap compound objects in a read-only proxy; pass through primitives."""
+    if value is None or isinstance(value, (bool, int, float, str, Decimal, bytes)):
+        return value
+    if isinstance(value, _ReadOnlyProxy):
+        return value
+    return _ReadOnlyProxy(value)
+
+
+# --------------- AST validation ---------------
+
+_FORBIDDEN_DUNDER = frozenset({
+    "__class__", "__bases__", "__subclasses__", "__mro__",
+    "__import__", "__globals__", "__code__", "__builtins__",
+    "__dict__", "__init__", "__new__", "__del__",
+    "__getattribute__", "__setattr__", "__delattr__",
+})
+
+
+def _validate_ast(expr_source: str) -> str | None:
+    """Return an error string if *expr_source* uses forbidden patterns, else None."""
+    try:
+        tree = ast.parse(expr_source, mode="eval")
+    except SyntaxError as exc:
+        return f"SyntaxError: {exc}"
+
+    for node in ast.walk(tree):
+        # Block dunder attribute access
+        if isinstance(node, ast.Attribute) and node.attr.startswith("__"):
+            if node.attr in _FORBIDDEN_DUNDER:
+                return f"Forbidden attribute access: {node.attr}"
+    return None
+
+
 def _eval_expr(expr: str, state: Any, targets: dict[str, Any]) -> tuple[bool, str | None]:
     """Compile and evaluate a single check expression.
+
+    The *state* object is wrapped in a read-only proxy so that check
+    expressions cannot mutate the evidence they are verifying.
 
     Returns ``(passed, error_string_or_None)``.
     """
     substituted = _substitute_targets(expr, targets)
+
+    # AST pre-validation
+    ast_error = _validate_ast(substituted)
+    if ast_error is not None:
+        return (False, ast_error)
+
     namespace: dict[str, Any] = {
         "__builtins__": _SAFE_BUILTINS,
-        "state": state,
+        "state": _wrap_readonly(state),
         "target": _DotDict(targets),
     }
     try:
@@ -281,6 +459,14 @@ def evaluate(
     negative_checks: list[Any] = getattr(eval_config, "negative_checks", None) or []
 
     # ------------------------------------------------------------------
+    # Create an isolated copy of the state for evaluation so that
+    # check expressions cannot mutate the live state (even via method
+    # calls like state.touch()).
+    # ------------------------------------------------------------------
+    from copy import deepcopy
+    eval_state = deepcopy(server_state)
+
+    # ------------------------------------------------------------------
     # Evaluate positive checks
     # ------------------------------------------------------------------
     check_results: list[dict[str, Any]] = []
@@ -288,7 +474,7 @@ def evaluate(
     for check in checks:
         expr = check.expr
         desc = check.desc
-        passed, error = _eval_expr(expr, server_state, targets)
+        passed, error = _eval_expr(expr, eval_state, targets)
         if passed:
             passed_count += 1
         check_results.append({
@@ -310,7 +496,7 @@ def evaluate(
         expr = neg.expr
         desc = neg.desc
         penalty = float(neg.penalty)
-        passed, error = _eval_expr(expr, server_state, targets)
+        passed, error = _eval_expr(expr, eval_state, targets)
         # Only apply penalty if the expression evaluated cleanly and failed.
         # If it crashed (e.g. IndexError on empty state.sent), the check is
         # not applicable — don't penalise the agent for something that can't

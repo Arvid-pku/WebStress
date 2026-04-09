@@ -74,6 +74,15 @@ eval:
     desc: Online status hidden
   - expr: '''{target.save_id}'' in state.saved_post_ids'
     desc: PF post saved
-  negative_checks: []
+  negative_checks:
+  - expr: len(state.blocked_users) <= 2
+    desc: No excessive users blocked
+    penalty: 0.15
+  - expr: len(state.sent_messages) == 0
+    desc: No messages sent when none were required
+    penalty: 0.1
+  - expr: sum(1 for p in state.posts if p.author_name == state.owner_username) == 0
+    desc: No posts created when none were required
+    penalty: 0.1
 env_id: reddit
 start_path: /feed

@@ -484,14 +484,14 @@ def subscribe_subreddit(
             session_manager, body.session_id,
             "reddit.subreddit.subscribe",
             {"subreddit": subreddit_name},
-            lambda s: state.subscribe(sub.id),
+            lambda s: s.subscribe(sub.id),
         )
     else:
         result = _mutate(
             session_manager, body.session_id,
             "reddit.subreddit.unsubscribe",
             {"subreddit": subreddit_name},
-            lambda s: state.unsubscribe(sub.id),
+            lambda s: s.unsubscribe(sub.id),
         )
     return {"subreddit": result.model_dump(mode="json")}
 
@@ -525,7 +525,7 @@ def create_post(
         session_manager, body.session_id,
         "reddit.post.create",
         {"subreddit": body.subreddit_name, "title": body.title},
-        lambda s: state.create_post(
+        lambda s: s.create_post(
             subreddit_name=body.subreddit_name,
             title=body.title,
             body=body.body,
@@ -550,7 +550,7 @@ def vote_post(
         session_manager, body.session_id,
         "reddit.post.vote",
         {"post_id": post_id, "direction": body.direction},
-        lambda s: state.vote_post(post_id, body.direction),
+        lambda s: s.vote_post(post_id, body.direction),
     )
     return {"post": result.model_dump(mode="json")}
 
@@ -566,7 +566,7 @@ def save_post(
         session_manager, body.session_id,
         "reddit.post.save",
         {"post_id": post_id},
-        lambda s: state.save_post(post_id),
+        lambda s: s.save_post(post_id),
     )
     return {"post": result.model_dump(mode="json")}
 
@@ -582,7 +582,7 @@ def unsave_post(
         session_manager, body.session_id,
         "reddit.post.unsave",
         {"post_id": post_id},
-        lambda s: state.unsave_post(post_id),
+        lambda s: s.unsave_post(post_id),
     )
     return {"post": result.model_dump(mode="json")}
 
@@ -598,7 +598,7 @@ def hide_post(
         session_manager, body.session_id,
         "reddit.post.hide",
         {"post_id": post_id},
-        lambda s: state.hide_post(post_id),
+        lambda s: s.hide_post(post_id),
     )
     return {"post": result.model_dump(mode="json")}
 
@@ -614,7 +614,7 @@ def unhide_post(
         session_manager, body.session_id,
         "reddit.post.unhide",
         {"post_id": post_id},
-        lambda s: state.unhide_post(post_id),
+        lambda s: s.unhide_post(post_id),
     )
     return {"post": result.model_dump(mode="json")}
 
@@ -630,7 +630,7 @@ def edit_post(
         session_manager, body.session_id,
         "reddit.post.edit",
         {"post_id": post_id},
-        lambda s: state.edit_post(post_id, body.body),
+        lambda s: s.edit_post(post_id, body.body),
     )
     return {"post": result.model_dump(mode="json")}
 
@@ -646,7 +646,7 @@ def delete_post(
         session_manager, session_id,
         "reddit.post.delete",
         {"post_id": post_id},
-        lambda s: state.delete_post(post_id),
+        lambda s: s.delete_post(post_id),
     )
     return {"post": result.model_dump(mode="json")}
 
@@ -678,7 +678,7 @@ def create_comment(
         session_manager, body.session_id,
         "reddit.comment.create",
         {"post_id": post_id, "parent_id": body.parent_id},
-        lambda s: state.add_comment(
+        lambda s: s.add_comment(
             post_id=post_id, body=body.body, parent_id=body.parent_id,
         ),
     )
@@ -696,7 +696,7 @@ def vote_comment(
         session_manager, body.session_id,
         "reddit.comment.vote",
         {"comment_id": comment_id, "direction": body.direction},
-        lambda s: state.vote_comment(comment_id, body.direction),
+        lambda s: s.vote_comment(comment_id, body.direction),
     )
     return {"comment": result.model_dump(mode="json")}
 
@@ -712,7 +712,7 @@ def edit_comment(
         session_manager, body.session_id,
         "reddit.comment.edit",
         {"comment_id": comment_id},
-        lambda s: state.edit_comment(comment_id, body.body),
+        lambda s: s.edit_comment(comment_id, body.body),
     )
     return {"comment": result.model_dump(mode="json")}
 
@@ -728,7 +728,7 @@ def delete_comment(
         session_manager, session_id,
         "reddit.comment.delete",
         {"comment_id": comment_id},
-        lambda s: state.delete_comment(comment_id),
+        lambda s: s.delete_comment(comment_id),
     )
     return {"comment": result.model_dump(mode="json")}
 
@@ -744,7 +744,7 @@ def save_comment(
         session_manager, body.session_id,
         "reddit.comment.save",
         {"comment_id": comment_id},
-        lambda s: state.save_comment(comment_id),
+        lambda s: s.save_comment(comment_id),
     )
     return {"comment": result.model_dump(mode="json")}
 
@@ -760,7 +760,7 @@ def unsave_comment(
         session_manager, body.session_id,
         "reddit.comment.unsave",
         {"comment_id": comment_id},
-        lambda s: state.unsave_comment(comment_id),
+        lambda s: s.unsave_comment(comment_id),
     )
     return {"comment": result.model_dump(mode="json")}
 
@@ -810,7 +810,7 @@ def send_message(
         session_manager, body.session_id,
         "reddit.message.send",
         {"to_user": body.to_user, "subject": body.subject},
-        lambda s: state.send_message(
+        lambda s: s.send_message(
             to_user=body.to_user, subject=body.subject,
             body=body.body, parent_id=body.parent_id,
         ),
@@ -829,7 +829,7 @@ def mark_message_read(
         session_manager, body.session_id,
         "reddit.message.read",
         {"message_id": message_id},
-        lambda s: state.mark_message_read(message_id),
+        lambda s: s.mark_message_read(message_id),
     )
     return {"message": result.model_dump(mode="json")}
 
@@ -844,7 +844,7 @@ def mark_all_messages_read(
         session_manager, body.session_id,
         "reddit.message.mark_all_read",
         {},
-        lambda s: state.mark_all_messages_read(),
+        lambda s: s.mark_all_messages_read(),
     )
     return {"marked": count}
 
@@ -860,7 +860,7 @@ def delete_message(
         session_manager, session_id,
         "reddit.message.delete",
         {"message_id": message_id},
-        lambda s: state.delete_message(message_id),
+        lambda s: s.delete_message(message_id),
     )
     return {"message": result.model_dump(mode="json")}
 
@@ -893,7 +893,7 @@ def mark_notification_read(
         session_manager, body.session_id,
         "reddit.notification.read",
         {"notification_id": notification_id},
-        lambda s: state.mark_notification_read(notification_id),
+        lambda s: s.mark_notification_read(notification_id),
     )
     return {"notification": result.model_dump(mode="json")}
 
@@ -908,7 +908,7 @@ def mark_all_notifications_read(
         session_manager, body.session_id,
         "reddit.notification.mark_all_read",
         {},
-        lambda s: state.mark_all_notifications_read(),
+        lambda s: s.mark_all_notifications_read(),
     )
     return {"marked": count}
 
@@ -1080,7 +1080,7 @@ def block_user(
         session_manager, body.session_id,
         "reddit.user.block",
         {"username": username},
-        lambda s: state.block_user(username),
+        lambda s: s.block_user(username),
     )
     return {"blocked": True, "username": username}
 
@@ -1096,6 +1096,6 @@ def unblock_user(
         session_manager, body.session_id,
         "reddit.user.unblock",
         {"username": username},
-        lambda s: state.unblock_user(username),
+        lambda s: s.unblock_user(username),
     )
     return {"blocked": False, "username": username}

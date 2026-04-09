@@ -62,6 +62,34 @@ class SessionManager:
                 )
                 state._price_engine = PriceEngine(config=tconfig, seed=actual_seed)
 
+                # Sync seeded stock quotes to trajectory tick-0 prices so the
+                # initial prices visible to the agent match the task description
+                # and trajectory start, rather than the randomly seeded values.
+                from decimal import Decimal as _Dec
+                for stock in state.stocks:
+                    if stock.symbol in tconfig.stocks:
+                        tick0_price = state._price_engine.price_at_tick(stock.symbol, 0)
+                        stock.price = tick0_price
+                        stock.bid = tick0_price - _Dec("0.01")
+                        stock.ask = tick0_price + _Dec("0.01")
+                        stock.day_change = tick0_price - stock.previous_close
+                        stock.day_change_pct = (
+                            _Dec(str(round(float(stock.day_change) / float(stock.previous_close) * 100, 2)))
+                            if stock.previous_close != 0 else _Dec("0")
+                        )
+                # Also sync positions that hold trajectory stocks
+                for pos in state.positions:
+                    if pos.symbol in tconfig.stocks:
+                        tick0_price = state._price_engine.price_at_tick(pos.symbol, 0)
+                        pos.current_price = tick0_price
+                        cost_total = pos.avg_cost_basis * pos.quantity
+                        market_total = tick0_price * pos.quantity
+                        pos.total_return = market_total - cost_total
+                        pos.total_return_pct = (
+                            _Dec(str(round(float(pos.total_return) / float(cost_total) * 100, 2)))
+                            if cost_total != 0 else _Dec("0")
+                        )
+
         session_id = f"{env_id}_{task_id}_{uuid.uuid4().hex[:10]}"
         with self._lock:
             self._sessions[session_id] = state

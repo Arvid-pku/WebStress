@@ -1,55 +1,56 @@
-# Task Plan: Booking Environment Audit
+# Task Plan: Benchmark Design Audit
 
 ## Goal
-Check whether the new `booking` environment is benchmark-ready by reviewing the implementation, verifying live browser behavior, and identifying whether it can support challenging tasks rather than only shallow CRUD flows.
+Review the current benchmark design across task generation, evaluation, environments, and runtime behavior to identify unreasonable assumptions, buggy grading logic, or benchmark choices that could distort agent comparisons.
 
 ## Current Phase
 Phase 4
 
 ## Phases
-### Phase 1: Discovery
-- [x] Read benchmark/task docs relevant to environment quality and task design
-- [x] Inspect the `booking` backend, frontend, seed data, and existing tasks
-- [x] Record concrete findings in `findings.md`
+### Phase 1: Contract Review
+- [x] Read the benchmark docs, schema, registry, evaluator, and benchmark entrypoints
+- [x] Extract the intended guarantees: determinism, realism, task difficulty, grading, and safety boundaries
+- [x] Record initial concerns in `findings.md`
 - **Status:** complete
 
-### Phase 2: Live Validation
-- [x] Run targeted build and backend validation for `booking`
-- [x] Exercise the environment in a browser and note broken or weak flows
-- [x] Record failures, friction points, and realism gaps
+### Phase 2: Corpus Sampling
+- [x] Inspect representative tasks, seed builders, and tests across Booking, Gmail, Amazon, Reddit, and Robinhood
+- [x] Look for always-pass graders, underspecified targets, impossible actions, or duplicated task templates
+- [x] Record cross-environment patterns in `findings.md`
 - **Status:** complete
 
-### Phase 3: Task Difficulty Assessment
-- [x] Evaluate whether current state supports multi-step, stateful, and deceptive tasks
-- [x] Propose benchmark-worthy task patterns grounded in observed behavior
-- [x] Separate true blockers from optional improvements
+### Phase 3: Runtime Validation
+- [x] Run targeted local checks for evaluator behavior and task determinism
+- [x] Exercise selected browser flows where the benchmark depends on client-side instrumentation or fragile UI behavior
+- [x] Separate benchmark-design bugs from isolated environment implementation bugs
 - **Status:** complete
 
 ### Phase 4: Delivery
-- [x] Summarize defects and risks with file references
-- [x] Report verification performed and residual testing gaps
-- [x] Recommend next changes needed before large-scale task authoring
+- [x] Summarize prioritized findings with file references
+- [x] Distinguish hard bugs, design risks, and improvement advice
+- [x] Note verification performed and remaining gaps
 - **Status:** complete
 
 ## Key Questions
-1. Does the `booking` environment behave reliably enough to benchmark agents?
-2. Which flows are complete, which are stubbed, and which are misleadingly partial?
-3. Can the current state support genuinely challenging tasks without task prompts papering over product gaps?
+1. Are task instructions, seeded state, and grader logic aligned tightly enough for reliable scoring?
+2. Does the benchmark reward real task completion, or can agents exploit shortcuts, client-state leaks, or evaluator loopholes?
+3. Are the environments and task corpus balanced and realistic enough to support meaningful comparisons?
 
 ## Decisions Made
 | Decision | Rationale |
 |----------|-----------|
-| Audit both code and live behavior | Benchmark quality depends on runtime behavior, not just implementation shape |
-| Treat task design as downstream of environment capability | Challenging tasks only matter if the UI/backend actually support them |
-| Preserve unrelated worktree changes | The repo already has in-flight changes outside this audit |
+| Audit the benchmark at the repo level instead of a single environment | The user asked about the current benchmark design overall |
+| Combine static inspection with targeted runtime checks | Benchmark issues often hide in grading contracts and UI instrumentation |
+| Treat environment bugs separately from benchmark-design bugs | Some defects hurt UX, but only a subset invalidates the benchmark |
 
 ## Errors Encountered
 | Error | Attempt | Resolution |
 |-------|---------|------------|
-| Planning files still described an older Reddit task | 1 | Rewrote planning files for the current `booking` audit |
-| Fresh Booking task YAMLs were not visible to the old `--no-reload` server process | 1 | Validated task registration and session creation on a fresh server at `127.0.0.1:8091` |
+| Existing planning files described a previous Booking-only audit | 1 | Replaced them with a repo-wide benchmark review plan |
+| `tests/test_benchmark_integrity.py` could not collect in the local `uv` environment | 1 | Continued with the remaining integrity subset; the local environment is missing `playwright` |
 
 ## Notes
-- User referenced `shared_doc/`, but the repo path is `share_docs/`.
-- Need to verify both seeded data richness and UI affordances before judging task difficulty.
-- The previously identified Booking benchmark-layer defects have been rechecked after follow-up fixes; the remaining red tests are outside Booking.
+- Preserve unrelated worktree changes in `app.py` and `manifest.json`.
+- Focus on benchmark validity first: determinism, grading robustness, task reasonableness, and exploit resistance.
+- Browser validation confirmed Booking action-log grading works live for `booking_view_reservation`.
+- Browser validation confirmed `gmail_search_and_star` now succeeds on pure outcome grading without any client-event requirement.

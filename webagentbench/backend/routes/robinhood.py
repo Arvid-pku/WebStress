@@ -216,6 +216,9 @@ def create_session(
 
     degradation = dict(body.degradation) if body.degradation else None
     if body.variant_filename and not degradation:
+        # Reject path traversal attempts in variant filenames
+        if "/" in body.variant_filename or "\\" in body.variant_filename or ".." in body.variant_filename:
+            raise HTTPException(status_code=400, detail="Invalid variant filename")
         if body.variant_filename.startswith("__auto__"):
             remainder = body.variant_filename[len("__auto__"):]
             sep_pos = remainder.rfind("__")
@@ -302,8 +305,10 @@ def create_session(
     if degradation:
         from ...injector.middleware import register_session_degradation
         register_session_degradation(session_id, degradation.get("injections", []))
-        if hasattr(state, "state_snapshot"):
-            state._initial_snapshot = state.state_snapshot()
+
+    # Capture baseline snapshot for collateral-damage detection (always, not just degraded sessions)
+    if hasattr(state, "state_snapshot"):
+        state._initial_snapshot = state.state_snapshot()
 
     instruction = render_template(
         task.instruction_template or task.instruction or "", resolved_targets
