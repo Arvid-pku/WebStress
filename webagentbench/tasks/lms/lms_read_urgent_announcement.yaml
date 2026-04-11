@@ -1,0 +1,56 @@
+task_id: lms_read_urgent_announcement
+env_id: lms
+title: Read Urgent Announcement
+instruction_template: >-
+  Find and mark the urgent announcement as read.
+difficulty: easy
+time_limit_seconds: 120
+expected_steps: 4
+primary_primitives:
+  - grounding
+start_path: /courses
+
+seed:
+  distractors: 0
+  steps:
+    - use: student_profile
+      params: {}
+      outputs:
+        - student_id
+    - use: course_catalog
+      params:
+        count: 3
+      outputs:
+        - course_ids
+    - use: enrollment_set
+      params: {}
+      outputs:
+        - enrollment_ids
+    - use: announcements_feed
+      params:
+        count: 6
+        unread_count: 3
+        urgent_count: 1
+      outputs:
+        - announcement_ids
+        - unread_announcement_ids
+        - urgent_announcement_id
+  targets:
+    urgent_announcement_id: '{output.urgent_announcement_id}'
+    unread_announcement_ids: '{output.unread_announcement_ids}'
+
+eval:
+  source: server_state
+  checks:
+    - expr: >-
+        state.get_announcement('{target.urgent_announcement_id}').is_read == True
+      desc: Urgent announcement is marked as read
+    - expr: >-
+        state.get_announcement('{target.urgent_announcement_id}').priority == 'urgent'
+      desc: The marked announcement was indeed the urgent one
+  negative_checks:
+    - expr: >-
+        sum(1 for a in state.announcements if a.is_read and a.priority != 'urgent') <=
+        sum(1 for a in state.announcements if a.priority != 'urgent' and a.id not in []) + 1
+      desc: Non-urgent unread announcements were not excessively marked as read
+      penalty: 0.15

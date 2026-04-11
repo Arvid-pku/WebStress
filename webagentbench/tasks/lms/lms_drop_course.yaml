@@ -1,0 +1,49 @@
+task_id: lms_drop_course
+env_id: lms
+title: Drop a Course Before Deadline
+instruction_template: >-
+  Drop the course {target.course_code} before the drop deadline.
+difficulty: easy
+time_limit_seconds: 90
+expected_steps: 4
+primary_primitives:
+  - grounding
+start_path: /courses
+
+seed:
+  distractors: 0
+  steps:
+    - use: student_profile
+      params: {}
+      outputs:
+        - student_id
+    - use: course_catalog
+      params:
+        count: 3
+        must_include: ["CS101", "MATH201"]
+      outputs:
+        - course_ids
+        - course_codes
+    - use: enrollment_set
+      params: {}
+      outputs:
+        - enrollment_ids
+  targets:
+    course_code: '{output.course_code}'
+    target_course_id: '{output.target_course_id}'
+
+eval:
+  source: server_state
+  checks:
+    - expr: >-
+        state.get_enrollment_for_course('{target.target_course_id}') is not None and
+        state.get_enrollment_for_course('{target.target_course_id}').status == 'dropped'
+      desc: Target course enrollment status is dropped
+    - expr: >-
+        any(e.action == 'lms.course.drop' for e in state.audit_log)
+      desc: A course drop action was logged
+  negative_checks:
+    - expr: >-
+        sum(1 for e in state.enrollments if e.status == 'dropped') <= 1
+      desc: Only one course was dropped (not multiple)
+      penalty: 0.3

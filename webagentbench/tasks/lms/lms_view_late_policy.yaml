@@ -1,0 +1,52 @@
+task_id: lms_view_late_policy
+env_id: lms
+title: View Course Late Policy
+instruction_template: >-
+  Navigate to the syllabus for {target.course_code} and report the late policy
+  details to your advisor by sending a message. Include the penalty per day
+  and maximum late days in your message.
+difficulty: easy
+time_limit_seconds: 120
+expected_steps: 5
+primary_primitives:
+  - grounding
+start_path: /courses
+
+seed:
+  distractors: 0
+  steps:
+    - use: student_profile
+      params: {}
+      outputs:
+        - student_id
+        - advisor_name
+    - use: course_catalog
+      params:
+        count: 3
+        vary_late_policies: true
+      outputs:
+        - course_ids
+        - course_code
+        - target_course_id
+    - use: enrollment_set
+      params: {}
+      outputs:
+        - enrollment_ids
+  targets:
+    course_code: '{output.course_code}'
+    target_course_id: '{output.target_course_id}'
+
+eval:
+  source: server_state
+  checks:
+    - expr: len(state.sent_messages) >= 1
+      desc: Student sent at least one message
+    - expr: >-
+        any(str(state.get_course('{target.target_course_id}').syllabus.late_policy.penalty_per_day) in m.get('body', '')
+            and str(state.get_course('{target.target_course_id}').syllabus.late_policy.max_late_days) in m.get('body', '')
+            for m in state.sent_messages)
+      desc: Message body contains penalty per day and max late days
+  negative_checks:
+    - expr: len(state.sent_messages) <= 2
+      desc: Student did not send excessive messages
+      penalty: 0.1
