@@ -16,6 +16,7 @@ from ..models.amazon import (
     ReturnRequest as ReturnRequestModel, PromoCode, ProductQuestion,
     ProductAnswer, GiftCard, Notification,
 )
+from ..security import build_public_session_summary, has_controller_access, require_controller_access
 from ..state import SessionManager
 from ...task_rendering import render_template
 
@@ -348,7 +349,7 @@ def list_variants() -> list[dict[str, Any]]:
 
 
 @router.post("/session")
-def create_session(body: SessionCreateRequest, session_manager: SessionManager = Depends(get_session_manager)) -> dict[str, Any]:
+def create_session(body: SessionCreateRequest, request: Request = None, session_manager: SessionManager = Depends(get_session_manager)) -> dict[str, Any]:
     task = get_task(body.task_id)
     if task.env_id != "amazon":
         raise HTTPException(status_code=404, detail=f"Unknown Amazon task_id: {body.task_id}")
@@ -457,16 +458,20 @@ def create_session(body: SessionCreateRequest, session_manager: SessionManager =
     instruction = render_template(
         task.instruction_template or task.instruction or "", resolved_targets
     )
-    return {
+    resp: dict[str, Any] = {
         "session_id": session_id,
         "task_id": body.task_id,
         "seed": actual_seed,
         "start_path": task.start_path or "/",
-        "resolved_targets": resolved_targets,
         "title": task.title,
         "instruction": instruction,
         "degradation_active": bool(degradation),
     }
+    # Only include resolved_targets for privileged callers (harness/tests).
+    # Agents in the browser must not see raw target values.
+    if request is not None and has_controller_access(request):
+        resp["resolved_targets"] = resolved_targets
+    return resp
 
 
 @router.get("/session/{session_id}")
@@ -475,11 +480,31 @@ def get_session(session_id: str, session_manager: SessionManager = Depends(get_s
         summary = session_manager.session_summary(session_id)
         state = session_manager.get(session_id)
         task = get_task(state.task_id)
-        summary["title"] = task.title
-        summary["instruction"] = render_template(
-            task.instruction_template or task.instruction or "", state.resolved_targets
+        return build_public_session_summary(
+            summary,
+            title=task.title,
+            instruction=render_template(
+                task.instruction_template or task.instruction or "", state.resolved_targets
+            ),
         )
-        return summary
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.post("/session/{session_id}/reset")
+def reset_session(session_id: str, session_manager: SessionManager = Depends(get_session_manager)) -> dict[str, Any]:
+    try:
+        state = session_manager.get(session_id)
+        next_session = create_session(
+            SessionCreateRequest(
+                task_id=state.task_id,
+                seed=state.seed,
+                degradation=dict(state.degradation) if state.degradation else None,
+            ),
+            session_manager=session_manager,
+        )
+        destroy_session(session_id, session_manager=session_manager)
+        return next_session
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
@@ -497,12 +522,22 @@ def destroy_session(session_id: str, session_manager: SessionManager = Depends(g
 
 
 @router.post("/evaluate")
-def evaluate_session(body: EvaluateRequest, session_manager: SessionManager = Depends(get_session_manager)) -> dict[str, Any]:
+def evaluate_session(
+    body: EvaluateRequest,
+    request: Request,
+    session_manager: SessionManager = Depends(get_session_manager),
+) -> dict[str, Any]:
     try:
+        require_controller_access(request)
         state = session_manager.get(body.session_id)
         if body.benchmark_state is not None:
             session_manager.set_benchmark_state(body.session_id, body.benchmark_state)
-        task = get_task(body.task_id or state.task_id)
+        if body.task_id and body.task_id != state.task_id:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Session {body.session_id} is bound to task {state.task_id!r}, not {body.task_id!r}",
+            )
+        task = get_task(state.task_id)
         return unified_evaluate(
             task,
             server_state=state,

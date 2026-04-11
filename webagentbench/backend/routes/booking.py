@@ -17,6 +17,7 @@ from ..models.booking import (
     ReservationGuest, CancellationPolicy, ReviewBreakdown,
     SearchHistoryEntry,
 )
+from ..security import build_public_session_summary, has_controller_access, require_controller_access
 from ..state import SessionManager
 from ...task_rendering import render_template
 
@@ -271,6 +272,7 @@ def _serialize_property_brief(prop: Property) -> dict[str, Any]:
 @router.post("/session")
 async def create_session(
     body: SessionCreateRequest,
+    request: Request = None,
     sm: SessionManager = Depends(get_session_manager),
 ):
     task_id = body.task_id
@@ -321,16 +323,18 @@ async def create_session(
     if targets:
         instruction = render_template(instruction, targets)
 
-    return {
+    resp: dict[str, Any] = {
         "session_id": session_id,
         "task_id": task_id,
         "seed": actual_seed,
         "start_path": task.start_path or "/",
-        "resolved_targets": targets,
         "title": task.title,
         "instruction": instruction,
         "degradation_active": bool(degradation),
     }
+    if request is not None and has_controller_access(request):
+        resp["resolved_targets"] = targets
+    return resp
 
 
 @router.get("/session/{session_id}")
@@ -341,11 +345,31 @@ async def get_session(
     state = _booking_state(sm, session_id)
     summary = sm.session_summary(session_id)
     task = get_task(state.task_id)
-    summary["title"] = task.title
-    summary["instruction"] = render_template(
-        task.instruction_template or task.instruction or "", state.resolved_targets
+    return build_public_session_summary(
+        summary,
+        title=task.title,
+        instruction=render_template(
+            task.instruction_template or task.instruction or "", state.resolved_targets
+        ),
     )
-    return summary
+
+
+@router.post("/session/{session_id}/reset")
+async def reset_session(
+    session_id: str,
+    sm: SessionManager = Depends(get_session_manager),
+):
+    state = _booking_state(sm, session_id)
+    next_session = await create_session(
+        SessionCreateRequest(
+            task_id=state.task_id,
+            seed=state.seed,
+            degradation=dict(state.degradation) if state.degradation else None,
+        ),
+        sm=sm,
+    )
+    await delete_session(session_id, sm=sm)
+    return next_session
 
 
 @router.delete("/session/{session_id}")
@@ -1179,16 +1203,22 @@ async def apply_wallet_credit(
 @router.post("/evaluate")
 async def evaluate(
     body: EvaluateRequest,
+    request: Request,
     sm: SessionManager = Depends(get_session_manager),
 ):
+    require_controller_access(request)
     session_id = body.session_id
     state = _booking_state(sm, session_id)
 
-    if body.benchmark_state:
+    if body.benchmark_state is not None:
         sm.set_benchmark_state(session_id, body.benchmark_state)
 
-    task_id = body.task_id or state.task_id
-    task = get_task(task_id)
+    if body.task_id and body.task_id != state.task_id:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Session {body.session_id} is bound to task {state.task_id!r}, not {body.task_id!r}",
+        )
+    task = get_task(state.task_id)
     targets = sm.get_targets(session_id)
 
     result = unified_evaluate(
