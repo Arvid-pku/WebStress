@@ -997,7 +997,31 @@ def build_watchlist(ctx: RobinhoodSeedContext, params: dict[str, Any]) -> dict[s
         created_at=ctx.now - timedelta(days=ctx.rng.randint(1, 90)),
     )
     ctx.base["watchlists"].append(wl)
-    return {"watchlist_id": wl_id}
+
+    # Screen symbols against criteria: P/E < 25, div yield > 2%, price within 10% of 52-week high
+    passing_symbols: list[str] = []
+    failing_all_symbols: list[str] = []
+    for sym in symbols:
+        stock = ctx.get_stock_from_base(sym)
+        if not stock:
+            failing_all_symbols.append(sym)
+            continue
+        pe_ok = stock.pe_ratio is not None and stock.pe_ratio < Decimal("25")
+        div_ok = stock.dividend_yield is not None and stock.dividend_yield > Decimal("2")
+        high_ok = stock.fifty_two_week_high > 0 and (
+            stock.price >= stock.fifty_two_week_high * Decimal("0.9")
+        )
+        if pe_ok and div_ok and high_ok:
+            passing_symbols.append(sym)
+        elif not pe_ok and not div_ok and not high_ok:
+            failing_all_symbols.append(sym)
+
+    return {
+        "watchlist_id": wl_id,
+        "passing_symbols": sorted(passing_symbols),
+        "failing_all_symbols": sorted(failing_all_symbols),
+        "initial_watchlist_count": len(symbols),
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -1432,12 +1456,16 @@ def build_recurring_investments(ctx: RobinhoodSeedContext, params: dict[str, Any
         ))
         for symbol in duplicate_symbols
     }
+    total_active_before = len([
+        ri for ri in ctx.base["recurring_investments"] if ri.status == "active"
+    ])
     return {
         "recurring_investment_ids": ri_ids,
         "overpaying_symbols": sorted(set(overpaying_symbols)),
         "overdue_symbols": sorted(set(overdue_symbols)),
         "duplicate_symbols": duplicate_symbols,
         "combined_amounts": combined_amounts,
+        "total_active_before": total_active_before,
     }
 
 
@@ -1883,11 +1911,14 @@ def build_earnings_calendar(ctx: RobinhoodSeedContext, params: dict[str, Any]) -
     symbols : list[str]    -- symbols with earnings (default picks from universe)
     days_ahead : int       -- how far ahead to schedule (default 30)
     """
-    symbols = params.get("symbols", None) or ctx.pick_symbols(5)
+    include_symbols = params.get("include_symbols", None)
+    symbols = params.get("symbols", None) or include_symbols or ctx.pick_symbols(5)
     days_ahead = params.get("days_ahead", 30)
 
     if "earnings_events" not in ctx.base:
         ctx.base["earnings_events"] = []
+
+    include_set = set(include_symbols) if include_symbols else set()
 
     for sym in symbols:
         stock = ctx.get_stock_from_base(sym)
@@ -1895,7 +1926,11 @@ def build_earnings_calendar(ctx: RobinhoodSeedContext, params: dict[str, Any]) -
         if stock and stock.eps:
             eps_est = Decimal(str(round(float(stock.eps) * ctx.rng.uniform(0.95, 1.10), 2)))
 
-        event_date = (ctx.now + timedelta(days=ctx.rng.randint(1, days_ahead))).date()
+        # Ensure include_symbols get earnings within 3 days (for pause eligibility)
+        if sym in include_set:
+            event_date = (ctx.now + timedelta(days=ctx.rng.randint(1, 3))).date()
+        else:
+            event_date = (ctx.now + timedelta(days=ctx.rng.randint(1, days_ahead))).date()
         time = ctx.rng.choice(["before_market", "after_market"])
         revenue_est = Decimal(str(round(ctx.rng.uniform(1e9, 50e9), 0))) if ctx.rng.random() > 0.3 else None
 
@@ -1907,7 +1942,27 @@ def build_earnings_calendar(ctx: RobinhoodSeedContext, params: dict[str, Any]) -
             revenue_estimate=revenue_est,
         ))
 
-    return {}
+    # Identify symbols with earnings within 3 days
+    three_day_cutoff = (ctx.now + timedelta(days=3)).date()
+    earnings_symbols = sorted(
+        e.symbol for e in ctx.base["earnings_events"]
+        if e.date <= three_day_cutoff
+    )
+
+    # should_pause = earnings symbols that also have active recurring investments
+    ri_symbols = {
+        ri.symbol for ri in ctx.base.get("recurring_investments", [])
+        if ri.status == "active"
+    }
+    # Also include overpaying symbols from recurring_investments builder
+    overpaying = set(ctx.outputs.get("overpaying_symbols", []))
+    earnings_with_ri = {sym for sym in earnings_symbols if sym in ri_symbols}
+    should_pause_symbols = sorted(overpaying | earnings_with_ri)
+
+    return {
+        "earnings_symbols": earnings_symbols,
+        "should_pause_symbols": should_pause_symbols,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -1971,7 +2026,30 @@ def build_dividend_schedule(ctx: RobinhoodSeedContext, params: dict[str, Any]) -
                     status="paid",
                 ))
 
-    return {}
+    # Compute yield-on-cost for each position that pays dividends
+    positions = ctx.base.get("positions", [])
+    low_yield_symbols: list[str] = []
+    best_yield_symbol: str | None = None
+    best_yoc = Decimal("-1")
+    for pos in positions:
+        stock = ctx.get_stock_from_base(pos.symbol)
+        if not stock or not stock.dividend_yield:
+            continue
+        annual_div_per_share = stock.price * stock.dividend_yield / Decimal("100")
+        if pos.avg_cost_basis and pos.avg_cost_basis > 0:
+            yoc = annual_div_per_share / pos.avg_cost_basis * Decimal("100")
+        else:
+            continue
+        if yoc < Decimal("1"):
+            low_yield_symbols.append(pos.symbol)
+        if yoc > best_yoc:
+            best_yoc = yoc
+            best_yield_symbol = pos.symbol
+
+    return {
+        "low_yield_symbols": sorted(low_yield_symbols),
+        "best_yield_symbol": best_yield_symbol,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -2061,4 +2139,16 @@ def build_margin_account(ctx: RobinhoodSeedContext, params: dict[str, Any]) -> d
     ctx.base["buying_power"] = ctx.base.get("cash_balance", Decimal("0")) + margin_used
     ctx.base["margin_maintenance"] = Decimal(str(round(float(portfolio_value) * maintenance_pct, 2)))
 
-    return {"margin_used": str(margin_used), "maintenance_pct": maintenance_pct}
+    # Find position with smallest absolute total return (least impact to sell)
+    positions = ctx.base.get("positions", [])
+    smallest_impact_symbol = None
+    if positions:
+        smallest_impact_symbol = min(
+            positions, key=lambda p: abs(p.total_return)
+        ).symbol
+
+    return {
+        "margin_used": str(margin_used),
+        "maintenance_pct": maintenance_pct,
+        "smallest_impact_symbol": smallest_impact_symbol,
+    }
