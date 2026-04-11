@@ -42,15 +42,29 @@ eval:
   source: server_state
   checks:
     - expr: >-
-        any(m.from_type == 'patient' and m.provider_id == '{target.pcp_id}'
-            and 'LDL' in m.body
-            for m in state.messages)
-      desc: Agent messaged PCP if and only if LDL was above threshold
+        (
+          any(lab.test_name == 'LDL Cholesterol'
+              and float(lab.value) > 130
+              for lab in state.lab_results)
+          == any(m.from_type == 'patient'
+                 and m.provider_id == '{target.pcp_id}'
+                 and m.id not in state._initial_snapshot.get('messages', {})
+                 for m in state.messages)
+        )
+      desc: Agent messaged PCP if and only if LDL was above 130
     - expr: >-
-        any(m.from_type == 'patient' and m.provider_id == '{target.pcp_id}'
-            and any(c.isdigit() for c in m.body)
-            for m in state.messages)
-      desc: Message body contains the specific lab value
+        (not any(lab.test_name == 'LDL Cholesterol'
+                 and float(lab.value) > 130
+                 for lab in state.lab_results)
+         or any(m.from_type == 'patient'
+                and m.provider_id == '{target.pcp_id}'
+                and m.id not in state._initial_snapshot.get('messages', {})
+                and next(
+                  lab.value for lab in state.lab_results
+                  if lab.test_name == 'LDL Cholesterol' and float(lab.value) > 130
+                ) in m.body
+                for m in state.messages))
+      desc: If LDL was high, message body contains the specific lab value
   negative_checks:
     - expr: >-
         not any(m.from_type == 'patient'

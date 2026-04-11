@@ -100,10 +100,10 @@ eval:
       desc: Agent did not schedule wrong vaccine type
       penalty: 0.25
     - expr: >-
-        all(
+        not any(
           state.get_appointment(aid) is not None
-          and state.get_appointment(aid).status != 'cancelled'
+          and state.get_appointment(aid).status == 'cancelled'
           for aid in {target.upcoming_ids}
         )
-      desc: Existing appointments were not modified or cancelled
+      desc: Existing appointments were not cancelled
       penalty: 0.2

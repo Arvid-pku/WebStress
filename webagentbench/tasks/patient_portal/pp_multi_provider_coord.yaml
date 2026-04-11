@@ -73,18 +73,17 @@ eval:
     - expr: >-
         any(m.from_type == 'patient'
             and m.provider_id == '{target.pcp_id}'
-            and ('medication' in m.body.lower() or 'blood pressure' in m.body.lower())
+            and m.category == 'clinical'
             and m.id not in state._initial_snapshot.get('messages', {})
             for m in state.messages)
-      desc: PCP message references the medication change
+      desc: PCP message was sent with clinical category
     - expr: >-
         any(m.from_type == 'patient'
             and m.provider_id in {target.cardio_provider_ids}
-            and ('confirm' in m.body.lower() or 'verified' in m.body.lower()
-                 or 'pcp' in m.body.lower())
+            and m.category == 'clinical'
             and m.id not in state._initial_snapshot.get('messages', {})
             for m in state.messages)
-      desc: Cardiologist confirmation references PCP verification
+      desc: Cardiologist was sent a clinical message
     - expr: >-
         len([m for m in state.messages
              if m.from_type == 'patient'

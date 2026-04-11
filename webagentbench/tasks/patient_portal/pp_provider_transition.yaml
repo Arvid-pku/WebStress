@@ -77,17 +77,16 @@ eval:
       desc: Agent messaged the new endocrinologist
     - expr: >-
         any(m.from_type == 'patient'
-            and ('condition' in m.body.lower() or 'diabetes' in m.body.lower()
-                 or 'thyroid' in m.body.lower())
+            and all(cond in m.body for cond in {target.conditions_list})
             and m.id not in state._initial_snapshot.get('messages', {})
             for m in state.messages)
-      desc: Introduction message mentions relevant conditions
+      desc: Introduction message names all patient conditions
     - expr: >-
         any(m.from_type == 'patient'
-            and ('medication' in m.body.lower() or 'prescription' in m.body.lower())
+            and m.category == 'clinical'
             and m.id not in state._initial_snapshot.get('messages', {})
             for m in state.messages)
-      desc: Introduction message mentions current medications
+      desc: Introduction message was sent with clinical category
     - expr: >-
         any(a.provider_id in {target.endo_provider_ids}
             and a.status == 'scheduled'

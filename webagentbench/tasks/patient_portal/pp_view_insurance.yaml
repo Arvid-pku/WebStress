@@ -32,17 +32,23 @@ seed:
     plan_name: "{output.insurance_plan_name}"
 
 eval:
-  source: benchmark_state
+  source: server_state
   checks:
     - expr: >-
-        '{target.member_id}' in str(state.get('agent_output', ''))
-      desc: Agent reported the correct member ID
+        any(m.from_type == 'patient'
+            and '{target.member_id}' in m.body
+            and m.id not in state._initial_snapshot.get('messages', {})
+            for m in state.messages)
+      desc: Agent reported the correct member ID in a message
     - expr: >-
-        state.get('completed', False)
-      desc: Agent indicated task completion
+        any(m.from_type == 'patient'
+            and '{target.plan_name}' in m.body
+            and m.id not in state._initial_snapshot.get('messages', {})
+            for m in state.messages)
+      desc: Agent reported the correct plan name in a message
   negative_checks:
     - expr: >-
-        len([a for a in state.get('appointments_created', [])]) == 0
-        if 'appointments_created' in state else True
+        not any(a.id not in state._initial_snapshot.get('appointments', {})
+                for a in state.appointments)
       desc: Agent did not create any appointments for an information-only task
       penalty: 0.15

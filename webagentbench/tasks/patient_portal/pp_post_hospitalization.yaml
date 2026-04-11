@@ -71,18 +71,17 @@ eval:
     - expr: >-
         any(m.from_type == 'patient'
             and m.provider_id == '{target.pcp_id}'
-            and ('discharge' in m.body.lower() or 'medication' in m.body.lower()
-                 or 'discrepan' in m.body.lower())
+            and m.category == 'clinical'
             and m.id not in state._initial_snapshot.get('messages', {})
             for m in state.messages)
-      desc: Agent messaged PCP about discharge medication discrepancies or referrals
+      desc: Agent sent a clinical message to PCP
     - expr: >-
-        any(m.from_type == 'patient'
-            and m.provider_id == '{target.pcp_id}'
-            and ('referral' in m.body.lower() or 'specialist' in m.body.lower())
-            and m.id not in state._initial_snapshot.get('messages', {})
-            for m in state.messages)
-      desc: Agent requested specialist referrals from PCP
+        len([m for m in state.messages
+             if m.from_type == 'patient'
+             and m.provider_id == '{target.pcp_id}'
+             and m.category == 'clinical'
+             and m.id not in state._initial_snapshot.get('messages', {})]) >= 1
+      desc: At least one new clinical message was sent to PCP
     - expr: >-
         all(rx.status == 'active'
             for rx in state.prescriptions

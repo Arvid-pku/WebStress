@@ -72,8 +72,9 @@ eval:
   source: server_state
   checks:
     - expr: >-
-        any(a.reason.lower().find('lab') >= 0 or a.reason.lower().find('pre-op') >= 0
-            or a.reason.lower().find('blood') >= 0
+        any((a.reason.lower().find('lab') >= 0
+             or a.reason.lower().find('pre-op') >= 0
+             or a.reason.lower().find('blood') >= 0)
             and a.status == 'scheduled'
             and a.id not in {target.upcoming_ids}
             for a in state.appointments)
@@ -81,10 +82,10 @@ eval:
     - expr: >-
         any(m.from_type == 'patient'
             and m.provider_id == '{target.pcp_id}'
-            and ('clearance' in m.body.lower() or 'surgery' in m.body.lower())
+            and m.category == 'clinical'
             and m.id not in state._initial_snapshot.get('messages', {})
             for m in state.messages)
-      desc: Agent messaged PCP requesting surgical clearance letter
+      desc: Agent sent a clinical message to PCP for surgical clearance
     - expr: >-
         (state.get_referral('{target.prior_auth_ref_id}') is not None
          and state.get_referral('{target.prior_auth_ref_id}').prior_auth_status == 'approved')

@@ -96,23 +96,23 @@ eval:
       desc: Appeals were sent to the billing department
     - expr: >-
         any(m.from_type == 'patient'
-            and ('appeal' in m.body.lower() or 'denied' in m.body.lower())
+            and any(cid in m.body for cid in {target.denied_claim_ids})
             and m.id not in state._initial_snapshot.get('messages', {})
             for m in state.messages)
-      desc: Messages reference appeal or denial
+      desc: Messages reference specific denied claim IDs
     - expr: >-
         any(m.from_type == 'patient'
-            and ('evidence' in m.body.lower() or 'referral' in m.body.lower()
-                 or 'appointment' in m.body.lower() or 'lab' in m.body.lower())
+            and m.linked_entity_type == 'claim'
+            and m.linked_entity_id in {target.denied_claim_ids}
             and m.id not in state._initial_snapshot.get('messages', {})
             for m in state.messages)
-      desc: Appeals include supporting evidence references
+      desc: Appeals are linked to denied claim entities
     - expr: >-
         any(m.from_type == 'patient'
-            and ('claim' in m.body.lower())
+            and any(rid in m.body for rid in {target.approved_ref_ids})
             and m.id not in state._initial_snapshot.get('messages', {})
             for m in state.messages)
-      desc: Messages reference specific claims
+      desc: Appeals reference supporting referral IDs
     - expr: >-
         all(c.status != 'approved'
             for c in state.claims

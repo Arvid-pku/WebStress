@@ -111,11 +111,12 @@ eval:
     - expr: >-
         (any(m.from_type == 'patient'
             and m.provider_id == '{target.pcp_id}'
-            and ('interaction' in m.body.lower() or 'conflict' in m.body.lower())
+            and m.category == 'clinical'
+            and all(med in m.body for med in {target.interacting_medications})
             and m.id not in state._initial_snapshot.get('messages', {})
             for m in state.messages)
         or len({target.interacting_rx_ids}) == 0)
-      desc: PCP was notified about interactions or no interactions exist
+      desc: PCP was notified with interacting medication names or no interactions exist
     - expr: >-
         all(
           state.get_referral(rid) is not None

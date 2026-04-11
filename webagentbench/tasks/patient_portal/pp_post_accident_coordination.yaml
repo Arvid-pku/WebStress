@@ -95,10 +95,10 @@ eval:
     - expr: >-
         any(m.from_type == 'patient'
             and m.provider_id == '{target.pcp_id}'
-            and ('physical therapy' in m.body.lower() or 'referral' in m.body.lower())
+            and m.category == 'clinical'
             and m.id not in state._initial_snapshot.get('messages', {})
             for m in state.messages)
-      desc: PCP was messaged requesting physical therapy referral
+      desc: PCP was sent a clinical message
     - expr: >-
         any(m.from_type == 'patient'
             and m.provider_id in {target.billing_provider_ids}
@@ -107,12 +107,11 @@ eval:
             for m in state.messages)
       desc: Billing department was contacted about ER visit claim
     - expr: >-
-        any(m.from_type == 'patient'
-            and m.provider_id == '{target.pcp_id}'
-            and ('disability' in m.body.lower() or 'documentation' in m.body.lower())
-            and m.id not in state._initial_snapshot.get('messages', {})
-            for m in state.messages)
-      desc: PCP was messaged requesting disability documentation
+        len([m for m in state.messages
+             if m.from_type == 'patient'
+             and m.provider_id == '{target.pcp_id}'
+             and m.id not in state._initial_snapshot.get('messages', {})]) >= 2
+      desc: Agent sent at least two messages to PCP (referral + documentation)
     - expr: >-
         all(rx.status == 'active'
             for rx in state.prescriptions

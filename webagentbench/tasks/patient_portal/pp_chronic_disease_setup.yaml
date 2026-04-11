@@ -101,11 +101,10 @@ eval:
     - expr: >-
         any(m.from_type == 'patient'
             and m.provider_id == '{target.pcp_id}'
-            and ('blood pressure' in m.body.lower() or 'monitoring' in m.body.lower()
-                 or 'review' in m.body.lower())
+            and m.category == 'clinical'
             and m.id not in state._initial_snapshot.get('messages', {})
             for m in state.messages)
-      desc: PCP was messaged about blood pressure medication reviews
+      desc: PCP was messaged with clinical category about monitoring plan
     - expr: >-
         all(rx.status == 'active'
             for rx in state.prescriptions

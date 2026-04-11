@@ -71,13 +71,11 @@ eval:
       desc: Agent messaged the specialist who recommended the medication
     - expr: >-
         any(m.from_type == 'patient'
-            and ('formulary' in m.body.lower()
-                 or 'covered' in m.body.lower()
-                 or 'alternative' in m.body.lower()
-                 or 'proceed' in m.body.lower())
+            and m.provider_id in {target.endo_provider_ids}
+            and m.category == 'clinical'
             and m.id not in state._initial_snapshot.get('messages', {})
             for m in state.messages)
-      desc: Message references formulary status or coverage decision
+      desc: Message was sent to the endocrinologist with clinical category
     - expr: >-
         any(m.from_type == 'patient'
             and m.category == 'clinical'

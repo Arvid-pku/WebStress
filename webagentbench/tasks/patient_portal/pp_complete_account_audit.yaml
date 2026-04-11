@@ -94,37 +94,36 @@ eval:
       desc: Agent sent an audit report message
     - expr: >-
         any(m.from_type == 'patient'
-            and ('demographic' in m.body.lower() or 'phone' in m.body.lower()
-                 or 'email' in m.body.lower())
+            and state.patient.phone in m.body
             and m.id not in state._initial_snapshot.get('messages', {})
             for m in state.messages)
-      desc: Audit report covers demographics verification
+      desc: Audit report includes patient phone number
     - expr: >-
         any(m.from_type == 'patient'
-            and ('insurance' in m.body.lower() or 'plan' in m.body.lower()
-                 or 'member' in m.body.lower())
+            and '{target.insurance_plan_name}' in m.body
             and m.id not in state._initial_snapshot.get('messages', {})
             for m in state.messages)
-      desc: Audit report covers insurance verification
+      desc: Audit report includes insurance plan name
     - expr: >-
         any(m.from_type == 'patient'
-            and ('pharmacy' in m.body.lower())
+            and any(state.get_pharmacy(pid).name in m.body
+                    for pid in {target.pharmacy_ids})
             and m.id not in state._initial_snapshot.get('messages', {})
             for m in state.messages)
-      desc: Audit report covers pharmacy verification
+      desc: Audit report references linked pharmacies by name
     - expr: >-
         any(m.from_type == 'patient'
-            and ('immuniz' in m.body.lower() or 'vaccin' in m.body.lower())
+            and any(v in m.body
+                    for v in {target.due_vaccine_names})
             and m.id not in state._initial_snapshot.get('messages', {})
             for m in state.messages)
-      desc: Audit report covers immunization status
+      desc: Audit report references due vaccines by name
     - expr: >-
         any(m.from_type == 'patient'
-            and ('referral' in m.body.lower() or 'claim' in m.body.lower()
-                 or 'orphan' in m.body.lower())
+            and m.category == 'clinical'
             and m.id not in state._initial_snapshot.get('messages', {})
             for m in state.messages)
-      desc: Audit report identifies orphaned referrals or claims
+      desc: Audit report was sent with clinical message category
   negative_checks:
     - expr: >-
         all(

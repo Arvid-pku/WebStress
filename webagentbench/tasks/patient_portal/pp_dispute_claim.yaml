@@ -61,24 +61,29 @@ eval:
   source: server_state
   checks:
     - expr: >-
-        any(c.id in {target.denied_claim_ids}
-            and c.status == 'appealed'
-            for c in state.claims)
-      desc: A denied claim was appealed
+        any(
+          c.id == max(
+            {target.denied_claim_ids},
+            key=lambda cid: (
+              state._initial_snapshot['claims'][cid]['service_date'],
+              cid,
+            ),
+          )
+          and c.status == 'appealed'
+          for c in state.claims
+        )
+      desc: The most recent denied claim was appealed
     - expr: >-
-        any(c.id == '{target.appealable_claim_id}'
-            and c.status == 'appealed'
-            for c in state.claims)
-      desc: The specific appealable claim was the one appealed
-    - expr: >-
-        len([c for c in state.claims
-             if c.status == 'appealed']) >= 1
-      desc: At least one claim has appealed status
+        len([c for c in state.claims if c.status == 'appealed']) == 1
+      desc: Exactly one claim was appealed
     - expr: >-
         all(c.status == 'approved'
             for c in state.claims
             if c.id in {target.approved_claim_ids})
       desc: Approved claims were not modified
+    - expr: >-
+        len(state.claims) >= len({target.approved_claim_ids}) + len({target.denied_claim_ids})
+      desc: No claims were deleted from state
   negative_checks:
     - expr: >-
         not any(c.id in {target.approved_claim_ids}
@@ -87,6 +92,15 @@ eval:
       desc: Agent did not appeal an already-approved claim
       penalty: 0.25
     - expr: >-
-        len([c for c in state.claims if c.status == 'appealed']) <= 2
-      desc: Agent did not file excessive appeals
+        not any(c.id in {target.denied_claim_ids}
+                and c.id != max(
+                  {target.denied_claim_ids},
+                  key=lambda cid: (
+                    state._initial_snapshot['claims'][cid]['service_date'],
+                    cid,
+                  ),
+                )
+                and c.status == 'appealed'
+                for c in state.claims)
+      desc: Agent did not appeal any other denied claim
       penalty: 0.15

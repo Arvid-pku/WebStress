@@ -73,17 +73,16 @@ eval:
       desc: Agent messaged the endocrinologist
     - expr: >-
         any(m.from_type == 'patient'
-            and ('HbA1c' in m.body or 'A1c' in m.body or 'hemoglobin' in m.body.lower())
+            and state.get_lab('{target.critical_lab_id}').test_name in m.body
             and m.id not in state._initial_snapshot.get('messages', {})
             for m in state.messages)
-      desc: Message references the HbA1c test
+      desc: Message references the critical lab test by name
     - expr: >-
         any(m.from_type == 'patient'
-            and ('dose' in m.body.lower() or 'adjust' in m.body.lower()
-                 or 'increase' in m.body.lower())
+            and state.get_lab('{target.critical_lab_id}').value in m.body
             and m.id not in state._initial_snapshot.get('messages', {})
             for m in state.messages)
-      desc: Message requests a dose adjustment
+      desc: Message includes the specific critical lab value
     - expr: >-
         any(m.from_type == 'patient'
             and m.category == 'clinical'

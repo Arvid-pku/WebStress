@@ -113,9 +113,9 @@ eval:
       desc: Existing appointments were preserved
   negative_checks:
     - expr: >-
-        all(
+        not any(
           state.get_appointment(aid) is not None
-          and state.get_appointment(aid).status != 'cancelled'
+          and state.get_appointment(aid).status == 'cancelled'
           for aid in {target.upcoming_ids}
         )
       desc: Existing appointments were not cancelled

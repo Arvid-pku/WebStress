@@ -45,6 +45,9 @@ eval:
     - expr: "len(state.messages) > 0"
       desc: Messages still exist (not deleted)
   negative_checks:
-    - expr: "len(state.sent_messages()) == 0"
-      desc: No messages were sent when none required
+    - expr: >-
+        not any(m.from_type == 'patient'
+                and m.id not in state._initial_snapshot.get('messages', {})
+                for m in state.messages)
+      desc: No new messages were sent when none required
       penalty: 0.15

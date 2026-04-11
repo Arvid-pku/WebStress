@@ -96,11 +96,10 @@ eval:
     - expr: >-
         any(m.from_type == 'patient'
             and m.provider_id == '{target.pcp_id}'
-            and ('pending' in m.body.lower() or 'authorization' in m.body.lower()
-                 or 'pre-auth' in m.body.lower() or 'waiting' in m.body.lower())
+            and m.category == 'clinical'
             and m.id not in state._initial_snapshot.get('messages', {})
             for m in state.messages)
-      desc: PCP was messaged about pending pre-authorization
+      desc: PCP was sent a clinical message about pending pre-authorization
     # Sub-goal: referral verification
     - expr: >-
         all(
@@ -117,12 +116,14 @@ eval:
       desc: Agent sent at least one message
     - expr: >-
         any(m.from_type == 'patient'
-            and ('referral' in m.body.lower() or 'procedure' in m.body.lower()
-                 or 'MRI' in m.body or 'nerve' in m.body.lower()
-                 or 'cortisone' in m.body.lower())
+            and any(
+              state.get_referral(rid) is not None
+              and state.get_referral(rid).to_specialty in m.body
+              for rid in {target.pending_ref_ids}
+            )
             and m.id not in state._initial_snapshot.get('messages', {})
             for m in state.messages)
-      desc: Messages reference specific procedures or referrals
+      desc: Messages reference specific pending referral specialties
   negative_checks:
     - expr: >-
         not any(a.status == 'scheduled'

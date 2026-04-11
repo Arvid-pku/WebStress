@@ -59,8 +59,8 @@ eval:
              and a.id not in {target.upcoming_ids}]) >= 1
       desc: At least one new appointment was scheduled for immunizations
     - expr: >-
-        len(state.due_immunizations()) >= 0
-      desc: Due immunizations list is accessible (state model works)
+        len(state.immunizations) >= len({target.completed_imm_ids}) + len({target.due_imm_ids})
+      desc: All immunization records are preserved in state
     - expr: >-
         all(i.id in {target.due_imm_ids}
             or i.id in {target.completed_imm_ids}

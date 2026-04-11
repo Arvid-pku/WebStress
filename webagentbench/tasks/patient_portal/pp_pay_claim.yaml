@@ -51,21 +51,58 @@ eval:
   source: server_state
   checks:
     - expr: >-
-        any(c.id in {target.approved_claim_ids}
-            and c.patient_responsibility == 0
-            for c in state.claims)
-      desc: At least one approved claim was paid (responsibility reduced to 0)
-    - expr: >-
-        any(c.status == 'approved'
-            and c.id in {target.approved_claim_ids}
-            for c in state.claims)
-      desc: The paid claim retains approved status
+        any(
+          c.id == max(
+            {target.approved_claim_ids},
+            key=lambda cid: (
+              state._initial_snapshot['claims'][cid]['service_date'],
+              cid,
+            ),
+          )
+          and c.status == 'approved'
+          and c.patient_responsibility == 0
+          for c in state.claims
+        )
+      desc: The most recent approved claim was paid in full
     - expr: >-
         len([c for c in state.claims
              if c.id in {target.approved_claim_ids}
-             and c.patient_responsibility == 0]) >= 1
-      desc: Payment was applied to an approved claim
+             and c.patient_responsibility == 0]) == 1
+      desc: Exactly one approved claim was paid
+    - expr: >-
+        all(
+          c.patient_responsibility > 0
+          for c in state.claims
+          if c.id in {target.approved_claim_ids}
+          and c.id != max(
+            {target.approved_claim_ids},
+            key=lambda cid: (
+              state._initial_snapshot['claims'][cid]['service_date'],
+              cid,
+            ),
+          )
+        )
+      desc: Older approved claims were not paid instead
   negative_checks:
+    - expr: >-
+        not any(c.id in {target.approved_claim_ids}
+                and c.id != max(
+                  {target.approved_claim_ids},
+                  key=lambda cid: (
+                    state._initial_snapshot['claims'][cid]['service_date'],
+                    cid,
+                  ),
+                )
+                and c.patient_responsibility == 0
+                for c in state.claims)
+      desc: Agent did not pay a non-target approved claim
+      penalty: 0.20
+    - expr: >-
+        not any(c.id in {target.denied_claim_ids}
+                and c.patient_responsibility == 0
+                for c in state.claims)
+      desc: Agent did not pay a denied claim instead of the target approved claim
+      penalty: 0.20
     - expr: >-
         not any(c.status == 'appealed'
                 and c.id in {target.denied_claim_ids}

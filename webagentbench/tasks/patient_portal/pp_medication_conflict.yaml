@@ -65,23 +65,24 @@ eval:
   checks:
     - expr: >-
         any(m.from_type == 'patient'
-            and {target.interacting_medications}[0] in m.body
-            and {target.interacting_medications}[1] in m.body
+            and all(med in m.body for med in {target.interacting_medications})
             for m in state.messages)
       desc: Agent sent a message mentioning both interacting medications
     - expr: >-
         any(m.from_type == 'patient'
-            and m.provider_id == state.get_prescription({target.interacting_rx_ids}[1]).provider_id
+            and m.provider_id == state.get_prescription(
+              max({target.interacting_rx_ids},
+                  key=lambda rid: state.get_prescription(rid).prescribed_at)
+            ).provider_id
             for m in state.messages
             if m.id not in state._initial_snapshot.get('messages', {}))
       desc: Message was sent to the prescriber of the newer conflicting medication
     - expr: >-
-        any('interaction' in m.body.lower() or 'conflict' in m.body.lower()
-            or 'interact' in m.body.lower()
-            for m in state.messages
-            if m.from_type == 'patient'
-            and m.id not in state._initial_snapshot.get('messages', {}))
-      desc: Message body references the interaction or conflict
+        any(m.from_type == 'patient'
+            and m.category == 'clinical'
+            and m.id not in state._initial_snapshot.get('messages', {})
+            for m in state.messages)
+      desc: Message was sent with clinical category
     - expr: >-
         all(rx.status == 'active'
             for rx in state.prescriptions
@@ -96,7 +97,10 @@ eval:
   negative_checks:
     - expr: >-
         not any(m.from_type == 'patient'
-                and m.provider_id != state.get_prescription({target.interacting_rx_ids}[1]).provider_id
+                and m.provider_id != state.get_prescription(
+                  max({target.interacting_rx_ids},
+                      key=lambda rid: state.get_prescription(rid).prescribed_at)
+                ).provider_id
                 and m.id not in state._initial_snapshot.get('messages', {})
                 for m in state.messages)
       desc: Agent did not message the wrong provider about the interaction

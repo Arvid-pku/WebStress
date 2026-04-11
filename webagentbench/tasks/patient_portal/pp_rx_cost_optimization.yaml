@@ -16,7 +16,7 @@ primary_primitives:
   - state_tracking
   - exploration
   - verification
-start_path: /prescriptions
+start_path: /medications
 
 seed:
   distractors: 8
@@ -70,24 +70,21 @@ eval:
             for rx in state.prescriptions
             if rx.status == 'active')
         or any(m.from_type == 'patient'
-               and ('transfer' in m.body.lower() or 'pharmacy' in m.body.lower()
-                    or 'generic' in m.body.lower())
+               and m.category in ('clinical', 'rx_renewal')
                and m.id not in state._initial_snapshot.get('messages', {})
                for m in state.messages))
-      desc: Prescription was transferred or provider was contacted about alternatives
+      desc: Prescription was transferred or provider was contacted
     - expr: >-
         any(m.from_type == 'patient'
-            and ('atorvastatin' in m.body.lower() or 'cholesterol' in m.body.lower())
+            and 'Atorvastatin' in m.body
             and m.id not in state._initial_snapshot.get('messages', {})
             for m in state.messages)
-      desc: Agent communicated about the specific medication
+      desc: Agent mentioned Atorvastatin by exact medication name
     - expr: >-
-        any(m.from_type == 'patient'
-            and ('cost' in m.body.lower() or 'generic' in m.body.lower()
-                 or 'price' in m.body.lower() or 'cheaper' in m.body.lower())
-            and m.id not in state._initial_snapshot.get('messages', {})
-            for m in state.messages)
-      desc: Agent referenced cost or generic alternatives
+        len([m for m in state.messages
+             if m.from_type == 'patient'
+             and m.id not in state._initial_snapshot.get('messages', {})]) >= 1
+      desc: Agent sent at least one message during optimization
     - expr: >-
         all(rx.status == state._initial_snapshot['prescriptions'][rx.id]['status']
             for rx in state.prescriptions

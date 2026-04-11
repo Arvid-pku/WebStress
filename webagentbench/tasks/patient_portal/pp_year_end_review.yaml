@@ -97,36 +97,38 @@ eval:
       desc: Agent sent a message to PCP
     - expr: >-
         any(m.from_type == 'patient'
-            and ('immuniz' in m.body.lower() or 'vaccin' in m.body.lower())
+            and any(v in m.body for v in {target.due_vaccine_names})
             and m.id not in state._initial_snapshot.get('messages', {})
             for m in state.messages)
-      desc: Message mentions immunizations
+      desc: Message references due vaccines by name
     - expr: >-
         any(m.from_type == 'patient'
-            and ('screening' in m.body.lower() or 'overdue' in m.body.lower())
+            and m.category == 'clinical'
             and m.id not in state._initial_snapshot.get('messages', {})
             for m in state.messages)
-      desc: Message mentions overdue screenings
+      desc: Message was sent with clinical category
     - expr: >-
         any(m.from_type == 'patient'
-            and ('prescription' in m.body.lower() or 'expir' in m.body.lower()
-                 or 'refill' in m.body.lower())
+            and any(
+              state.get_prescription(rid).medication in m.body
+              for rid in {target.expiring_rx_ids}
+            )
             and m.id not in state._initial_snapshot.get('messages', {})
             for m in state.messages)
-      desc: Message mentions expiring prescriptions
+      desc: Message references expiring prescriptions by medication name
     - expr: >-
         any(m.from_type == 'patient'
-            and ('referral' in m.body.lower())
+            and state.get_referral('{target.expiring_ref_id}') is not None
+            and state.get_referral('{target.expiring_ref_id}').to_specialty in m.body
             and m.id not in state._initial_snapshot.get('messages', {})
             for m in state.messages)
-      desc: Message mentions referral status
+      desc: Message references the expiring referral specialty
     - expr: >-
         any(m.from_type == 'patient'
-            and ('claim' in m.body.lower() or 'denied' in m.body.lower()
-                 or 'appeal' in m.body.lower())
+            and any(cid in m.body for cid in {target.denied_claim_ids})
             and m.id not in state._initial_snapshot.get('messages', {})
             for m in state.messages)
-      desc: Message mentions denied claims or appeals
+      desc: Message references denied claim IDs
   negative_checks:
     - expr: >-
         len([m for m in state.messages

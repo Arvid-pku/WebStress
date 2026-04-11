@@ -59,23 +59,50 @@ eval:
   source: server_state
   checks:
     - expr: >-
-        any(m.from_type == 'patient'
-            and m.category == 'billing'
-            and m.id not in {target.all_msg_ids}
-            for m in state.messages)
-      desc: Agent sent a billing-category message
+        len([
+          m for m in state.messages
+          if m.from_type == 'patient'
+          and m.category == 'billing'
+          and state.get_provider(m.provider_id) is not None
+          and state.get_provider(m.provider_id).specialty == 'billing'
+          and m.id not in {target.all_msg_ids}
+        ]) == 1
+      desc: Exactly one new billing message was sent to the billing department
     - expr: >-
-        any(m.from_type == 'patient'
-            and state.get_provider(m.provider_id) is not None
-            and state.get_provider(m.provider_id).specialty == 'billing'
-            and m.id not in {target.all_msg_ids}
-            for m in state.messages)
-      desc: Message was routed to billing department provider
+        all(
+          max(
+            state._initial_snapshot['claims'],
+            key=lambda cid: (
+              state._initial_snapshot['claims'][cid]['service_date'],
+              cid,
+            ),
+          ) in m.body
+          for m in state.messages
+          if m.from_type == 'patient'
+          and m.category == 'billing'
+          and state.get_provider(m.provider_id) is not None
+          and state.get_provider(m.provider_id).specialty == 'billing'
+          and m.id not in {target.all_msg_ids}
+        )
+      desc: The new billing message references the exact most recent claim
     - expr: >-
-        len([m for m in state.messages
-             if m.from_type == 'patient'
-             and m.id not in {target.all_msg_ids}]) >= 1
-      desc: At least one new message was sent
+        all(
+          m.linked_entity_type == 'claim'
+          or max(
+            state._initial_snapshot['claims'],
+            key=lambda cid: (
+              state._initial_snapshot['claims'][cid]['service_date'],
+              cid,
+            ),
+          ) in m.body
+          for m in state.messages
+          if m.from_type == 'patient'
+          and m.category == 'billing'
+          and state.get_provider(m.provider_id) is not None
+          and state.get_provider(m.provider_id).specialty == 'billing'
+          and m.id not in {target.all_msg_ids}
+        )
+      desc: The billing message is linked to or references the target claim
   negative_checks:
     - expr: >-
         not any(m.from_type == 'patient'
@@ -84,3 +111,44 @@ eval:
                 for m in state.messages)
       desc: Agent did not send message with clinical category instead of billing
       penalty: 0.20
+    - expr: >-
+        len([
+          m for m in state.messages
+          if m.from_type == 'patient'
+          and m.id not in {target.all_msg_ids}
+        ]) == 1
+      desc: Agent did not send extra patient messages beyond the billing dispute
+      penalty: 0.20
+    - expr: >-
+        not any(
+          m.from_type == 'patient'
+          and m.id not in {target.all_msg_ids}
+          and (
+            any(
+              cid != max(
+                state._initial_snapshot['claims'],
+                key=lambda target_cid: (
+                  state._initial_snapshot['claims'][target_cid]['service_date'],
+                  target_cid,
+                ),
+              )
+              and cid in m.body
+              for cid in state._initial_snapshot['claims']
+            )
+          )
+          for m in state.messages
+        )
+      desc: Agent did not reference a different claim in the new message
+      penalty: 0.20
+    - expr: >-
+        not any(
+          m.from_type == 'patient'
+          and m.id not in {target.all_msg_ids}
+          and (
+            state.get_provider(m.provider_id) is None
+            or state.get_provider(m.provider_id).specialty != 'billing'
+          )
+          for m in state.messages
+        )
+      desc: Agent did not send the dispute to a non-billing provider
+      penalty: 0.15

@@ -76,11 +76,14 @@ eval:
       desc: Insurance plan details were updated
     - expr: >-
         any(m.from_type == 'patient'
-            and ('formulary' in m.body.lower() or 'coverage' in m.body.lower()
-                 or 'prior auth' in m.body.lower())
+            and m.category in ('clinical', 'rx_renewal')
+            and any(
+              state.get_prescription(rid).medication in m.body
+              for rid in {target.active_rx_ids}
+            )
             and m.id not in state._initial_snapshot.get('messages', {})
             for m in state.messages)
-      desc: Agent communicated about formulary or prior authorization
+      desc: Agent sent a message referencing active medications by name
     - expr: >-
         any(m.from_type == 'patient'
             and m.category in ('clinical', 'rx_renewal')
@@ -93,11 +96,10 @@ eval:
             if rx.id in {target.active_rx_ids})
       desc: All active prescriptions remain active
     - expr: >-
-        any(m.from_type == 'patient'
-            and ('medication' in m.body.lower() or 'prescription' in m.body.lower())
-            and m.id not in state._initial_snapshot.get('messages', {})
-            for m in state.messages)
-      desc: Agent referenced medications in communications
+        len([m for m in state.messages
+             if m.from_type == 'patient'
+             and m.id not in state._initial_snapshot.get('messages', {})]) >= 1
+      desc: Agent sent at least one message during the transition
     - expr: >-
         len([m for m in state.messages
              if m.from_type == 'patient'

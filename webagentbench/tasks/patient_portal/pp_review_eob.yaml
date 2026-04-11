@@ -60,25 +60,76 @@ eval:
   source: server_state
   checks:
     - expr: >-
-        (any(m.from_type == 'patient'
+        (
+          state._initial_snapshot['claims'][
+            max(
+              {target.approved_claim_ids},
+              key=lambda cid: (
+                state._initial_snapshot['claims'][cid]['service_date'],
+                cid,
+              ),
+            )
+          ]['patient_responsibility'] <= 200
+          and len([
+            m for m in state.messages
+            if m.from_type == 'patient'
+            and m.id not in {target.all_msg_ids}
+          ]) == 0
+        ) or (
+          state._initial_snapshot['claims'][
+            max(
+              {target.approved_claim_ids},
+              key=lambda cid: (
+                state._initial_snapshot['claims'][cid]['service_date'],
+                cid,
+              ),
+            )
+          ]['patient_responsibility'] > 200
+          and len([
+            m for m in state.messages
+            if m.from_type == 'patient'
             and m.category == 'billing'
+            and state.get_provider(m.provider_id) is not None
+            and state.get_provider(m.provider_id).specialty == 'billing'
             and m.id not in {target.all_msg_ids}
-            for m in state.messages)
-        or all(c.patient_responsibility <= 200
-               for c in state.claims
-               if c.id in {target.approved_claim_ids}))
-      desc: Agent messaged billing if responsibility exceeds $200 or correctly took no action
+          ]) == 1
+        )
+      desc: Agent followed the threshold rule for the most recent approved claim
     - expr: >-
-        (any(m.from_type == 'patient'
-            and m.id not in {target.all_msg_ids}
-            for m in state.messages)
-        or all(c.patient_responsibility <= 200
-               for c in state.claims
-               if c.id in {target.approved_claim_ids}))
-      desc: Agent took action based on the $200 threshold
+        (
+          state._initial_snapshot['claims'][
+            max(
+              {target.approved_claim_ids},
+              key=lambda cid: (
+                state._initial_snapshot['claims'][cid]['service_date'],
+                cid,
+              ),
+            )
+          ]['patient_responsibility'] <= 200
+        ) or all(
+          max(
+            {target.approved_claim_ids},
+            key=lambda cid: (
+              state._initial_snapshot['claims'][cid]['service_date'],
+              cid,
+            ),
+          ) in m.body
+          for m in state.messages
+          if m.from_type == 'patient'
+          and m.category == 'billing'
+          and state.get_provider(m.provider_id) is not None
+          and state.get_provider(m.provider_id).specialty == 'billing'
+          and m.id not in {target.all_msg_ids}
+        )
+      desc: Any required message references the exact target claim ID
     - expr: >-
-        len(state.claims) >= 3
-      desc: All claims still exist in state (no deletions)
+        all(
+          c.status == state._initial_snapshot['claims'][c.id]['status']
+          and c.patient_responsibility == state._initial_snapshot['claims'][c.id]['patient_responsibility']
+          for c in state.claims
+          if c.id in state._initial_snapshot.get('claims', {})
+        )
+      desc: Reviewing the EOB did not mutate claim state
   negative_checks:
     - expr: >-
         not any(m.from_type == 'patient'
@@ -86,4 +137,89 @@ eval:
                 and m.id not in {target.all_msg_ids}
                 for m in state.messages)
       desc: Agent did not misroute billing query as clinical message
+      penalty: 0.15
+    - expr: >-
+        (
+          state._initial_snapshot['claims'][
+            max(
+              {target.approved_claim_ids},
+              key=lambda cid: (
+                state._initial_snapshot['claims'][cid]['service_date'],
+                cid,
+              ),
+            )
+          ]['patient_responsibility'] <= 200
+          and len([
+            m for m in state.messages
+            if m.from_type == 'patient'
+            and m.id not in {target.all_msg_ids}
+          ]) == 0
+        ) or (
+          state._initial_snapshot['claims'][
+            max(
+              {target.approved_claim_ids},
+              key=lambda cid: (
+                state._initial_snapshot['claims'][cid]['service_date'],
+                cid,
+              ),
+            )
+          ]['patient_responsibility'] > 200
+          and len([
+            m for m in state.messages
+            if m.from_type == 'patient'
+            and m.id not in {target.all_msg_ids}
+          ]) == 1
+        )
+      desc: Agent did not send extra patient messages beyond the threshold-driven action
+      penalty: 0.20
+    - expr: >-
+        (
+          state._initial_snapshot['claims'][
+            max(
+              {target.approved_claim_ids},
+              key=lambda cid: (
+                state._initial_snapshot['claims'][cid]['service_date'],
+                cid,
+              ),
+            )
+          ]['patient_responsibility'] <= 200
+        ) or not any(
+          m.from_type == 'patient'
+          and m.id not in {target.all_msg_ids}
+          and any(
+              cid != max(
+                {target.approved_claim_ids},
+                key=lambda target_cid: (
+                  state._initial_snapshot['claims'][target_cid]['service_date'],
+                  target_cid,
+                ),
+              )
+              and cid in m.body
+              for cid in state._initial_snapshot['claims']
+          )
+          for m in state.messages
+        )
+      desc: Agent did not reference a different claim in the billing question
+      penalty: 0.20
+    - expr: >-
+        (
+          state._initial_snapshot['claims'][
+            max(
+              {target.approved_claim_ids},
+              key=lambda cid: (
+                state._initial_snapshot['claims'][cid]['service_date'],
+                cid,
+              ),
+            )
+          ]['patient_responsibility'] <= 200
+        ) or not any(
+          m.from_type == 'patient'
+          and m.id not in {target.all_msg_ids}
+          and (
+            state.get_provider(m.provider_id) is None
+            or state.get_provider(m.provider_id).specialty != 'billing'
+          )
+          for m in state.messages
+        )
+      desc: Agent did not route the payment-plan question to a non-billing provider
       penalty: 0.15

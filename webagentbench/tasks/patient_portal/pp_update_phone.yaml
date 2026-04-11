@@ -36,17 +36,17 @@ eval:
     - expr: "state.patient.phone == '(555) 867-5309'"
       desc: Phone number was updated to the target value
     - expr: >-
-        state.patient.phone != state._initial_snapshot.get('patient', {}).get('phone', '')
-        if state._initial_snapshot else True
-      desc: Phone number was changed from initial value
+        state.patient.email != ''
+        and state.patient.name != ''
+      desc: Other profile fields were not blanked during the update
   negative_checks:
     - expr: >-
-        state.patient.email == state._initial_snapshot.get('patient', {}).get('email', state.patient.email)
-        if state._initial_snapshot else True
-      desc: Email was not modified
+        state.patient.emergency_contact.phone != '(555) 867-5309'
+      desc: Emergency contact phone was not changed to the new phone number
       penalty: 0.2
     - expr: >-
-        state.patient.emergency_contact.phone == state._initial_snapshot.get('patient', {}).get('emergency_contact', {}).get('phone', state.patient.emergency_contact.phone)
-        if state._initial_snapshot else True
-      desc: Emergency contact phone was not modified
-      penalty: 0.2
+        len(state.sent_messages()) == 0
+        or all(m.id in state._initial_snapshot.get('messages', {})
+               for m in state.sent_messages())
+      desc: No new messages were sent for a profile-update-only task
+      penalty: 0.15

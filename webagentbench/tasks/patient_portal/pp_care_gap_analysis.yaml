@@ -77,30 +77,30 @@ eval:
       desc: Agent sent a message to PCP
     - expr: >-
         any(m.from_type == 'patient'
-            and ('gap' in m.body.lower() or 'missing' in m.body.lower()
-                 or 'overdue' in m.body.lower() or 'no recent' in m.body.lower())
+            and m.category == 'clinical'
             and m.id not in state._initial_snapshot.get('messages', {})
             for m in state.messages)
-      desc: Message identifies care gaps
+      desc: Message was sent with clinical category
     - expr: >-
         any(m.from_type == 'patient'
-            and ('specialist' in m.body.lower() or 'visit' in m.body.lower())
+            and all(cond in m.body for cond in {target.conditions_list})
             and m.id not in state._initial_snapshot.get('messages', {})
             for m in state.messages)
-      desc: Message references specialist visit gaps
+      desc: Message references all patient conditions by name
     - expr: >-
         any(m.from_type == 'patient'
-            and ('lab' in m.body.lower() or 'monitor' in m.body.lower())
+            and any(state.get_lab(lid).test_name in m.body
+                    for lid in {target.abnormal_lab_ids})
             and m.id not in state._initial_snapshot.get('messages', {})
             for m in state.messages)
-      desc: Message references lab monitoring gaps
+      desc: Message references abnormal lab results by test name
     - expr: >-
         any(m.from_type == 'patient'
-            and ('abnormal' in m.body.lower() or 'follow-up' in m.body.lower()
-                 or 'followup' in m.body.lower())
+            and any(state.get_prescription(rid).medication in m.body
+                    for rid in {target.active_rx_ids})
             and m.id not in state._initial_snapshot.get('messages', {})
             for m in state.messages)
-      desc: Message references abnormal lab follow-up gaps
+      desc: Message references active medications by name
   negative_checks:
     - expr: >-
         len([m for m in state.messages

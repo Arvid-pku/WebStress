@@ -107,25 +107,23 @@ eval:
       desc: Agent sent a cost comparison message to the PCP
     - expr: >-
         any(m.from_type == 'patient'
-            and ('cost' in m.body.lower() or 'comparison' in m.body.lower()
-                 or 'out-of-pocket' in m.body.lower() or 'out of pocket' in m.body.lower())
+            and m.provider_id == '{target.pcp_id}'
+            and m.category == 'clinical'
             and m.id not in state._initial_snapshot.get('messages', {})
             for m in state.messages)
-      desc: Message includes cost comparison language
+      desc: Message was sent to PCP with clinical category
     - expr: >-
         any(m.from_type == 'patient'
-            and ('deductible' in m.body.lower() or 'coverage' in m.body.lower()
-                 or 'copay' in m.body.lower())
+            and '{target.insurance_plan_name}' in m.body
             and m.id not in state._initial_snapshot.get('messages', {})
             for m in state.messages)
-      desc: Message references deductible or coverage status
+      desc: Message references the insurance plan by name
     - expr: >-
         any(m.from_type == 'patient'
-            and ('option' in m.body.lower() or 'prefer' in m.body.lower()
-                 or 'recommend' in m.body.lower() or 'choose' in m.body.lower())
+            and str(state.patient.insurance_plan.deductible_met) in m.body
             and m.id not in state._initial_snapshot.get('messages', {})
             for m in state.messages)
-      desc: Message states a preferred treatment option
+      desc: Message includes specific deductible amount from patient records
     # Sub-goal 4: referral and pre-auth verification
     - expr: >-
         (state.get_referral('{target.prior_auth_ref_id}') is not None

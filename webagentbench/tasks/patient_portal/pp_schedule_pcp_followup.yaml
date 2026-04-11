@@ -49,7 +49,7 @@ eval:
     - expr: >-
         any(a.provider_id == '{target.pcp_id}' and a.status == 'scheduled'
             and a.id not in {target.upcoming_ids}
-            and a.appointment_time is not None
+            and a.datetime is not None
             for a in state.appointments)
       desc: The new PCP appointment has a scheduled time
   negative_checks:

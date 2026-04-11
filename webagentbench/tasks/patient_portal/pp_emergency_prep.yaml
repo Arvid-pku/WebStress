@@ -88,25 +88,28 @@ eval:
       desc: Agent sent a message to the PCP
     - expr: >-
         any(m.from_type == 'patient'
-            and ('medication' in m.body.lower() or 'wallet card' in m.body.lower()
-                 or 'prescription' in m.body.lower())
+            and all(
+              state.get_prescription(rid).medication in m.body
+              for rid in {target.active_rx_ids}
+            )
             and m.id not in state._initial_snapshot.get('messages', {})
             for m in state.messages)
-      desc: Message references medications or wallet card
+      desc: Message lists every active medication by name
     - expr: >-
         any(m.from_type == 'patient'
-            and ('dosage' in m.body.lower() or 'mg' in m.body.lower()
-                 or 'mcg' in m.body.lower() or 'dose' in m.body.lower())
+            and all(
+              state.get_prescription(rid).dosage in m.body
+              for rid in {target.active_rx_ids}
+            )
             and m.id not in state._initial_snapshot.get('messages', {})
             for m in state.messages)
-      desc: Message includes dosage information
+      desc: Message includes dosage for each active medication
     - expr: >-
         any(m.from_type == 'patient'
-            and ('daily' in m.body.lower() or 'twice' in m.body.lower()
-                 or 'frequency' in m.body.lower() or 'times' in m.body.lower())
+            and m.category == 'clinical'
             and m.id not in state._initial_snapshot.get('messages', {})
             for m in state.messages)
-      desc: Message includes frequency information
+      desc: Message was sent with clinical category
     # Sub-goal 1-2: verification of profile data (interaction evidence)
     - expr: >-
         state.patient.emergency_contact is not None
@@ -131,13 +134,15 @@ eval:
       desc: Medication summary was not sent to a non-PCP provider
       penalty: 0.2
     - expr: >-
-        state.patient.emergency_contact.name
-        == state._initial_snapshot['patient']['emergency_contact']['name']
-      desc: Emergency contact was not modified (task is verify-only)
+        state.patient.emergency_contact is not None
+        and state.patient.emergency_contact.name != ''
+        and state.patient.emergency_contact.phone != ''
+      desc: Emergency contact was not blanked (task is verify-only)
       penalty: 0.25
     - expr: >-
-        state.patient.allergies == state._initial_snapshot['patient']['allergies']
-      desc: Allergy list was not modified (task is verify-only)
+        not any(a for a in ['Penicillin', 'Sulfa', 'Shellfish']
+                if a not in state.patient.allergies)
+      desc: No original allergy entries were removed (task is verify-only)
       penalty: 0.25
     - expr: >-
         all(

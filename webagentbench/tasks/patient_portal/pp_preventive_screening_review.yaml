@@ -49,17 +49,27 @@ eval:
   source: server_state
   checks:
     - expr: >-
-        any(m.from_type == 'patient'
-            and m.provider_id == '{target.pcp_id}'
-            and m.category == 'clinical'
-            and m.id not in {target.all_msg_ids}
-            for m in state.messages)
-      desc: Agent sent a clinical message to PCP
+        len([m for m in state.messages
+             if m.from_type == 'patient'
+             and m.provider_id == '{target.pcp_id}'
+             and m.category == 'clinical'
+             and m.id not in {target.all_msg_ids}]) == 1
+      desc: Exactly one clinical message was sent to the PCP
     - expr: >-
-        any(m.from_type == 'patient'
-            and m.id not in {target.all_msg_ids}
-            for m in state.messages)
-      desc: At least one new message was sent
+        any(
+          m.from_type == 'patient'
+          and m.provider_id == '{target.pcp_id}'
+          and m.category == 'clinical'
+          and m.id not in {target.all_msg_ids}
+          and all(
+            screening.screening_name in m.body
+            for screening in state.patient.applicable_screenings
+            if screening.next_due is not None
+            and screening.next_due < state.created_at.date()
+          )
+          for m in state.messages
+        )
+      desc: PCP message lists every overdue screening
     - expr: >-
         len(state.patient.applicable_screenings) >= 1
       desc: Patient still has applicable screenings data
@@ -67,6 +77,22 @@ eval:
         state.patient.pcp_id == '{target.pcp_id}'
       desc: PCP assignment was not modified
   negative_checks:
+    - expr: >-
+        not any(
+          m.from_type == 'patient'
+          and m.provider_id == '{target.pcp_id}'
+          and m.category == 'clinical'
+          and m.id not in {target.all_msg_ids}
+          and any(
+            screening.screening_name in m.body
+            for screening in state.patient.applicable_screenings
+            if screening.next_due is None
+            or screening.next_due >= state.created_at.date()
+          )
+          for m in state.messages
+        )
+      desc: Agent did not include screenings that are not overdue
+      penalty: 0.15
     - expr: >-
         not any(m.from_type == 'patient'
                 and m.provider_id != '{target.pcp_id}'
