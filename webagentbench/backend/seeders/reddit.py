@@ -26,6 +26,7 @@ from webagentbench.backend.models.reddit import (
     UserProfile,
 )
 from webagentbench.backend.seeder import derive_anchor_time
+from webagentbench.backend.seeders._common import _assign_output
 from webagentbench.tasks._schema import TaskDefinition
 from webagentbench.tasks._seed_builders_reddit import (
     REDDIT_BUILDER_REGISTRY,
@@ -296,30 +297,25 @@ class RedditSeedRunner:
         for index, out_key in enumerate(declared_outputs):
             # Direct match
             if out_key in result:
-                ctx.outputs[out_key] = result[out_key]
-                continue
-
+                value = result[out_key]
             # Single-value builder: any alias maps to it
-            if len(result_keys) == 1:
-                ctx.outputs[out_key] = result[result_keys[0]]
-                continue
-
+            elif len(result_keys) == 1:
+                value = result[result_keys[0]]
             # Positional match when declared count == result count
-            if len(declared_outputs) == len(result_keys):
-                ctx.outputs[out_key] = result[result_keys[index]]
-                continue
-
-            # Prefix match: search_post_id -> post_id
-            candidates = [k for k in result_keys if out_key.startswith(f"{k}_")]
-            if len(candidates) == 1:
-                ctx.outputs[out_key] = result[candidates[0]]
-                continue
-
-            available = ", ".join(result_keys) if result_keys else "<none>"
-            raise KeyError(
-                f"Builder '{builder_name}' for task {task_id} did not produce "
-                f"requested output '{out_key}'. Available: {available}"
-            )
+            elif len(declared_outputs) == len(result_keys):
+                value = result[result_keys[index]]
+            else:
+                # Prefix match: search_post_id -> post_id
+                candidates = [k for k in result_keys if out_key.startswith(f"{k}_")]
+                if len(candidates) == 1:
+                    value = result[candidates[0]]
+                else:
+                    available = ", ".join(result_keys) if result_keys else "<none>"
+                    raise KeyError(
+                        f"Builder '{builder_name}' for task {task_id} did not produce "
+                        f"requested output '{out_key}'. Available: {available}"
+                    )
+            _assign_output(ctx.outputs, out_key, value, task_id=task_id, builder_name=builder_name)
 
     # ------------------------------------------------------------------
     # Param / target template resolution (same pattern as Gmail/Amazon)

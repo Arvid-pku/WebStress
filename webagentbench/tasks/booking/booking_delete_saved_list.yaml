@@ -18,22 +18,22 @@ seed:
     params:
       name: Weekend Getaways
     outputs:
-    - list_id
-    - list_name
+    - target_list_id
+    - target_list_name
   - use: create_saved_list
     params:
       name: Summer Vacation Ideas
     outputs:
-    - list_id
-    - list_name
+    - other_list_1_id
+    - other_list_1_name
   - use: create_saved_list
     params:
       name: Business Trip Hotels
     outputs:
-    - list_id
-    - list_name
+    - other_list_2_id
+    - other_list_2_name
   targets:
-    list_id: '{output.list_id}'
+    list_id: '{output.target_list_id}'
     list_name: Weekend Getaways
 eval:
   source: server_state

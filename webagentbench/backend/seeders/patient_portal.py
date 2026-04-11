@@ -13,6 +13,7 @@ import random
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
+from webagentbench.backend.seeders._common import _assign_output
 from webagentbench.tasks._schema import TaskDefinition
 from webagentbench.tasks._seed_builders_patient_portal import (
     PATIENT_PORTAL_BUILDER_REGISTRY,
@@ -67,7 +68,10 @@ class PatientPortalSeedRunner:
             result = builder(ctx, resolved_params)
             for out_key in step.outputs:
                 if out_key in result:
-                    ctx.outputs[out_key] = result[out_key]
+                    _assign_output(
+                        ctx.outputs, out_key, result[out_key],
+                        task_id=task.task_id, builder_name=step.use,
+                    )
 
         # 3. Resolve target templates
         targets = self._resolve_targets(seed_cfg.targets, ctx)

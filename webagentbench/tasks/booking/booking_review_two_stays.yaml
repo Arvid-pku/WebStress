@@ -46,8 +46,8 @@ seed:
     outputs:
     - prop_id_1
     - prop_name_1
-    - cheapest_room_id
-    - cheapest_room_name
+    - cheapest_room_id_1
+    - cheapest_room_name_1
   - use: create_reservation
     params:
       property_id: '{output.prop_id_1}'
@@ -60,7 +60,7 @@ seed:
     outputs:
     - res_id_1
     - conf_num_1
-    - property_id
+    - res_1_property_id
   - use: featured_property
     params:
       name: Berlin Mitte Business Hotel
@@ -81,8 +81,8 @@ seed:
     outputs:
     - prop_id_2
     - prop_name_2
-    - cheapest_room_id
-    - cheapest_room_name
+    - cheapest_room_id_2
+    - cheapest_room_name_2
   - use: create_reservation
     params:
       property_id: '{output.prop_id_2}'
@@ -95,7 +95,7 @@ seed:
     outputs:
     - res_id_2
     - conf_num_2
-    - property_id
+    - res_2_property_id
   - use: featured_property
     params:
       name: Vienna Opera Hotel
@@ -107,8 +107,8 @@ seed:
     outputs:
     - prop_id_3
     - prop_name_3
-    - cheapest_room_id
-    - cheapest_room_name
+    - cheapest_room_id_3
+    - cheapest_room_name_3
   - use: create_reservation
     params:
       property_id: '{output.prop_id_3}'
@@ -119,7 +119,7 @@ seed:
     outputs:
     - res_id_3
     - conf_num_3
-    - property_id
+    - res_3_property_id
   - use: add_review
     params:
       property_id: '{output.prop_id_3}'

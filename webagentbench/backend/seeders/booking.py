@@ -32,6 +32,7 @@ from webagentbench.backend.models.booking import (
     WalletTransaction,
 )
 from webagentbench.backend.seeder import derive_anchor_time
+from webagentbench.backend.seeders._common import _assign_output
 from webagentbench.tasks._schema import TaskDefinition
 from webagentbench.tasks._seed_builders_booking import (
     BOOKING_BUILDER_REGISTRY,
@@ -794,20 +795,19 @@ class BookingSeedRunner:
         result_keys = list(result.keys())
         for index, out_key in enumerate(declared_outputs):
             if out_key in result:
-                ctx.outputs[out_key] = result[out_key]
-                continue
-            # Positional fallback
-            if len(declared_outputs) == len(result_keys):
-                ctx.outputs[out_key] = result[result_keys[index]]
-                continue
-            if len(result_keys) == 1:
-                ctx.outputs[out_key] = result[result_keys[0]]
-                continue
-            available = ", ".join(result_keys) if result_keys else "<none>"
-            raise KeyError(
-                f"Builder '{builder_name}' for task {task_id} did not produce "
-                f"requested output '{out_key}'. Available: {available}"
-            )
+                value = result[out_key]
+            elif len(declared_outputs) == len(result_keys):
+                # Positional fallback
+                value = result[result_keys[index]]
+            elif len(result_keys) == 1:
+                value = result[result_keys[0]]
+            else:
+                available = ", ".join(result_keys) if result_keys else "<none>"
+                raise KeyError(
+                    f"Builder '{builder_name}' for task {task_id} did not produce "
+                    f"requested output '{out_key}'. Available: {available}"
+                )
+            _assign_output(ctx.outputs, out_key, value, task_id=task_id, builder_name=builder_name)
 
     _TEMPLATE_RE = _TEMPLATE_RE
     _EXACT_REF_RE = _EXACT_REF_RE

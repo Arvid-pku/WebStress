@@ -96,8 +96,8 @@ seed:
       - Restaurant
       distance_km: 0.8
     outputs:
-    - decoy_property_id
-    - decoy_property_name
+    - decoy_langham_id
+    - decoy_langham_name
   - use: decoy_property
     params:
       name: Canary Wharf Hotel
@@ -115,8 +115,8 @@ seed:
       - Restaurant
       distance_km: 5.2
     outputs:
-    - decoy_property_id
-    - decoy_property_name
+    - decoy_canary_id
+    - decoy_canary_name
   - use: featured_property
     params:
       name: Paddington Central Hotel
@@ -149,10 +149,10 @@ seed:
         meals_included: breakfast
         cancel_type: non_refundable
     outputs:
-    - property_id
-    - property_name
-    - cheapest_room_id
-    - cheapest_room_name
+    - alt_property_id
+    - alt_property_name
+    - alt_cheapest_room_id
+    - alt_cheapest_room_name
   - use: decoy_property
     params:
       name: London Budget Inn
@@ -168,8 +168,8 @@ seed:
       - Pool
       distance_km: 1.0
     outputs:
-    - decoy_property_id
-    - decoy_property_name
+    - decoy_budget_id
+    - decoy_budget_name
   targets:
     property_id: '{output.property_id}'
     property_name: '{output.property_name}'

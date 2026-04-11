@@ -41,8 +41,8 @@ seed:
       - Restaurant
       distance_km: 0.5
     outputs:
-    - decoy_property_id
-    - decoy_property_name
+    - decoy_property_1_id
+    - decoy_property_1_name
   - use: decoy_property
     params:
       name: Le Marais Palace
@@ -61,8 +61,8 @@ seed:
       - Restaurant
       distance_km: 0.3
     outputs:
-    - decoy_property_id
-    - decoy_property_name
+    - decoy_property_2_id
+    - decoy_property_2_name
   - use: featured_property
     params:
       name: Le Marais Grand Hotel

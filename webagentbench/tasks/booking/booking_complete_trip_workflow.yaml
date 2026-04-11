@@ -81,8 +81,8 @@ seed:
     outputs:
     - book_prop_id
     - book_prop_name
-    - cheapest_room_id
-    - cheapest_room_name
+    - first_cheapest_room_id
+    - first_cheapest_room_name
   - use: featured_property
     params:
       name: Hotel Casa Camper Barcelona
@@ -102,8 +102,8 @@ seed:
     outputs:
     - review_prop_id
     - review_prop_name
-    - cheapest_room_id
-    - cheapest_room_name
+    - second_cheapest_room_id
+    - second_cheapest_room_name
   - use: create_reservation
     params:
       property_id: '{output.review_prop_id}'

@@ -27,13 +27,13 @@ seed:
         body: "My accountant suggested converting my traditional IRA but the tax hit seems brutal."
         score: 3200
       outputs:
-        - post_id
-        - post_title
-        - subreddit_name
+        - unsave_post_id
+        - unsave_post_title
+        - unsave_subreddit_name
     - use: saved_posts
       params:
         post_ids:
-          - "{output.post_id}"
+          - "{output.unsave_post_id}"
       outputs:
         - saved_post_ids
     # Step 2: Create the post to save (unique title not in baseline)
@@ -45,13 +45,13 @@ seed:
         score: 9870
         flair_text: "Security"
       outputs:
-        - post_id
-        - post_title
-        - subreddit_name
+        - save_post_id
+        - save_post_title
+        - save_subreddit_name
   targets:
-    unsave_post_title: "Is a Roth IRA conversion worth it if I'm already in the 32% bracket?"
-    save_post_title: "{output.post_title}"
-    save_post_id: "{output.post_id}"
+    unsave_post_title: "{output.unsave_post_title}"
+    save_post_title: "{output.save_post_title}"
+    save_post_id: "{output.save_post_id}"
 eval:
   source: server_state
   checks:

@@ -15,6 +15,7 @@ from typing import Any
 
 from webagentbench.backend.models.gmail import GmailSettings, Label
 from webagentbench.backend.seeder import derive_anchor_time
+from webagentbench.backend.seeders._common import _assign_output
 from webagentbench.tasks._schema import TaskDefinition
 from webagentbench.tasks._seed_builders import (
     BUILDER_REGISTRY,
@@ -75,7 +76,10 @@ class GmailSeedRunner:
             # Store named outputs
             for out_key in step.outputs:
                 if out_key in result:
-                    ctx.outputs[out_key] = result[out_key]
+                    _assign_output(
+                        ctx.outputs, out_key, result[out_key],
+                        task_id=task.task_id, builder_name=step.use,
+                    )
 
         # 3. Add generic distractors
         self._add_generic_distractors(ctx, count=seed_cfg.distractors)

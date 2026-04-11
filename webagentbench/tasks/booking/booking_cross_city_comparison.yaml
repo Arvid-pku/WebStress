@@ -74,8 +74,8 @@ seed:
     outputs:
     - paris_prop_id
     - paris_prop_name
-    - cheapest_room_id
-    - cheapest_room_name
+    - first_cheapest_room_id
+    - first_cheapest_room_name
   - use: featured_property
     params:
       name: Hotel Arts Barcelona
@@ -125,8 +125,8 @@ seed:
     outputs:
     - barcelona_prop_id
     - barcelona_prop_name
-    - cheapest_room_id
-    - cheapest_room_name
+    - second_cheapest_room_id
+    - second_cheapest_room_name
   - use: decoy_property
     params:
       name: Paris Eiffel Budget Hotel
@@ -140,8 +140,8 @@ seed:
       amenities:
       - Free WiFi
     outputs:
-    - decoy_property_id
-    - decoy_property_name
+    - decoy_property_1_id
+    - decoy_property_1_name
   - use: decoy_property
     params:
       name: Barcelona Gothic Quarter Inn
@@ -156,8 +156,8 @@ seed:
       - Free WiFi
       - Bar
     outputs:
-    - decoy_property_id
-    - decoy_property_name
+    - decoy_property_2_id
+    - decoy_property_2_name
   targets:
     paris_prop_id: '{output.paris_prop_id}'
     paris_name: '{output.paris_prop_name}'

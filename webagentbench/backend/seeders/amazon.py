@@ -28,6 +28,7 @@ from webagentbench.backend.models.amazon import (
     BrowsingHistory,
 )
 from webagentbench.backend.seeder import derive_anchor_time
+from webagentbench.backend.seeders._common import _assign_output
 from webagentbench.tasks._schema import TaskDefinition
 from webagentbench.tasks._seed_builders_amazon import (
     AMAZON_BUILDER_REGISTRY,
@@ -262,25 +263,23 @@ class AmazonSeedRunner:
 
         for index, out_key in enumerate(declared_outputs):
             if out_key in result:
-                ctx.outputs[out_key] = result[out_key]
-                continue
-
-            resolved = AmazonSeedRunner._resolve_output_alias(
-                requested_key=out_key,
-                output_index=index,
-                declared_outputs=declared_outputs,
-                result=result,
-                result_keys=result_keys,
-            )
-            if resolved is not None:
-                ctx.outputs[out_key] = resolved
-                continue
-
-            available = ", ".join(result_keys) if result_keys else "<none>"
-            raise KeyError(
-                f"Builder '{builder_name}' for task {task_id} did not produce "
-                f"requested output '{out_key}'. Available outputs: {available}"
-            )
+                value = result[out_key]
+            else:
+                resolved = AmazonSeedRunner._resolve_output_alias(
+                    requested_key=out_key,
+                    output_index=index,
+                    declared_outputs=declared_outputs,
+                    result=result,
+                    result_keys=result_keys,
+                )
+                if resolved is None:
+                    available = ", ".join(result_keys) if result_keys else "<none>"
+                    raise KeyError(
+                        f"Builder '{builder_name}' for task {task_id} did not produce "
+                        f"requested output '{out_key}'. Available outputs: {available}"
+                    )
+                value = resolved
+            _assign_output(ctx.outputs, out_key, value, task_id=task_id, builder_name=builder_name)
 
     @staticmethod
     def _resolve_output_alias(

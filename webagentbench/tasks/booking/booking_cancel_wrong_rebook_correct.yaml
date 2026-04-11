@@ -44,8 +44,8 @@ seed:
     outputs:
     - wrong_prop_id
     - wrong_prop_name
-    - cheapest_room_id
-    - cheapest_room_name
+    - wrong_cheapest_room_id
+    - wrong_cheapest_room_name
   - use: create_reservation
     params:
       property_id: '{output.wrong_prop_id}'
@@ -58,7 +58,7 @@ seed:
     outputs:
     - wrong_res_id
     - wrong_conf_num
-    - property_id
+    - wrong_res_property_id
   - use: featured_property
     params:
       name: Claridge's London
@@ -81,8 +81,8 @@ seed:
     outputs:
     - correct_prop_id
     - correct_prop_name
-    - cheapest_room_id
-    - cheapest_room_name
+    - correct_cheapest_room_id
+    - correct_cheapest_room_name
   - use: create_reservation
     params:
       property_id: '{output.correct_prop_id}'
@@ -95,7 +95,7 @@ seed:
     outputs:
     - correct_res_id
     - correct_conf_num
-    - property_id
+    - correct_res_property_id
   - use: featured_property
     params:
       name: Hotel Costes
@@ -107,8 +107,8 @@ seed:
     outputs:
     - distractor_prop_id
     - distractor_prop_name
-    - cheapest_room_id
-    - cheapest_room_name
+    - distractor_cheapest_room_id
+    - distractor_cheapest_room_name
   - use: create_reservation
     params:
       property_id: '{output.distractor_prop_id}'
@@ -119,7 +119,7 @@ seed:
     outputs:
     - distractor_res_id
     - distractor_conf_num
-    - property_id
+    - distractor_res_property_id
   targets:
     wrong_res_id: '{output.wrong_res_id}'
     wrong_prop_id: '{output.wrong_prop_id}'

@@ -81,8 +81,8 @@ seed:
       - Restaurant
       distance_km: 0.5
     outputs:
-    - decoy_property_id
-    - decoy_property_name
+    - decoy_property_1_id
+    - decoy_property_1_name
   - use: decoy_property
     params:
       name: Sagrada Family View Hotel
@@ -101,8 +101,8 @@ seed:
       - Gym
       distance_km: 2.0
     outputs:
-    - decoy_property_id
-    - decoy_property_name
+    - decoy_property_2_id
+    - decoy_property_2_name
   targets:
     property_id: '{output.property_id}'
     property_name: '{output.property_name}'

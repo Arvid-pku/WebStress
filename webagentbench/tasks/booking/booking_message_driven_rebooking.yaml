@@ -101,8 +101,8 @@ seed:
     outputs:
     - distractor_prop_id
     - distractor_prop_name
-    - cheapest_room_id
-    - cheapest_room_name
+    - distractor_cheapest_room_id
+    - distractor_cheapest_room_name
   - use: create_reservation
     params:
       property_id: '{output.distractor_prop_id}'
@@ -113,7 +113,7 @@ seed:
     outputs:
     - distractor_res_id
     - distractor_conf_num
-    - property_id
+    - distractor_res_property_id
   targets:
     property_id: '{output.property_id}'
     property_name: '{output.property_name}'

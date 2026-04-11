@@ -90,8 +90,8 @@ seed:
       - Free WiFi
       distance_km: 1.0
     outputs:
-    - decoy_property_id
-    - decoy_property_name
+    - decoy_budget_id
+    - decoy_budget_name
   - use: decoy_property
     params:
       name: Soho Boutique Apartments
@@ -110,8 +110,8 @@ seed:
       - Washer
       distance_km: 1.5
     outputs:
-    - decoy_property_id
-    - decoy_property_name
+    - decoy_soho_id
+    - decoy_soho_name
   targets:
     property_id: '{output.property_id}'
     property_name: '{output.property_name}'
