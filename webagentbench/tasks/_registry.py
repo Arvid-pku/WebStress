@@ -61,6 +61,8 @@ def _validate_builder_references(
     from ._seed_builders import BUILDER_REGISTRY
     from ._seed_builders_amazon import AMAZON_BUILDER_REGISTRY
     from ._seed_builders_booking import BOOKING_BUILDER_REGISTRY
+    from ._seed_builders_lms import LMS_BUILDER_REGISTRY
+    from ._seed_builders_patient_portal import PATIENT_PORTAL_BUILDER_REGISTRY
     from ._seed_builders_reddit import REDDIT_BUILDER_REGISTRY
     from ._seed_builders_robinhood import ROBINHOOD_BUILDER_REGISTRY
 
@@ -69,6 +71,8 @@ def _validate_builder_references(
         "amazon": AMAZON_BUILDER_REGISTRY,
         "booking": BOOKING_BUILDER_REGISTRY,
         "gmail": BUILDER_REGISTRY,
+        "lms": LMS_BUILDER_REGISTRY,
+        "patient_portal": PATIENT_PORTAL_BUILDER_REGISTRY,
         "reddit": REDDIT_BUILDER_REGISTRY,
         "robinhood": ROBINHOOD_BUILDER_REGISTRY,
     }

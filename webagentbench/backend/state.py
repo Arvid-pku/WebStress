@@ -10,6 +10,8 @@ from .models.base import AuditEntry, BaseEnvState
 from .models.amazon import AmazonState
 from .models.booking import BookingState
 from .models.gmail import GmailState
+from .models.lms import LMSState
+from .models.patient_portal import PatientPortalState
 from .models.reddit import RedditState
 from .models.robinhood import RobinhoodState
 from .seeder import FakeDataGenerator, derive_seed
@@ -20,6 +22,8 @@ STATE_TYPES: dict[str, type[BaseEnvState]] = {
     "amazon": AmazonState,
     "booking": BookingState,
     "gmail": GmailState,
+    "lms": LMSState,
+    "patient_portal": PatientPortalState,
     "reddit": RedditState,
     "robinhood": RobinhoodState,
 }
