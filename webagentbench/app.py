@@ -1,5 +1,5 @@
 """
-AgentTriage — FastAPI application for advanced environments.
+WebAgentBench — FastAPI application for advanced environments.
 
 Serves:
 - Advanced environment APIs under /api/env/*
@@ -203,7 +203,7 @@ def build_manifest() -> dict:
     """Build the public manifest from YAML registry + environment metadata."""
     manifest = {
         "version": MANIFEST_TEMPLATE.get("version", "2.0.0"),
-        "benchmark": MANIFEST_TEMPLATE.get("benchmark", "AgentTriage"),
+        "benchmark": MANIFEST_TEMPLATE.get("benchmark", "WebAgentBench"),
         "description": MANIFEST_TEMPLATE.get("description", ""),
         "primitives": MANIFEST_TEMPLATE.get("primitives", []),
     }
@@ -242,7 +242,7 @@ KNOWN_ENV_IDS = {env["env_id"] for env in MANIFEST.get("environments", [])}
 description = f"{ENV_TASK_COUNT} advanced environment tasks across {ENVIRONMENT_COUNT} simulated applications"
 
 app = FastAPI(
-    title="AgentTriage",
+    title="WebAgentBench",
     description=description,
     version=MANIFEST_VERSION,
 )
@@ -308,7 +308,7 @@ async def index():
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>AgentTriage</title>
+    <title>WebAgentBench</title>
     <style>
         * {{ box-sizing: border-box; margin: 0; padding: 0; }}
         body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -408,7 +408,7 @@ async def index():
 <body>
     <div class="header">
         <div class="header-inner">
-            <h1>AgentTriage</h1>
+            <h1>WebAgentBench</h1>
             <div class="header-stats">
                 <div><span>{ENVIRONMENT_COUNT}</span> environments</div>
                 <div><span>{ENV_TASK_COUNT}</span> tasks</div>
@@ -752,7 +752,7 @@ if __name__ == "__main__":
     import argparse
     import uvicorn
 
-    parser = argparse.ArgumentParser(description="AgentTriage server")
+    parser = argparse.ArgumentParser(description="WebAgentBench server")
     parser.add_argument("--host", type=str, default="0.0.0.0", help="Host to bind (default: 0.0.0.0)")
     parser.add_argument("--port", type=int, default=8080, help="Port to bind (default: 8080)")
     parser.add_argument("--reload", action="store_true", default=True, help="Enable autoreload (default: on)")
