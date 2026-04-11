@@ -44,6 +44,11 @@ eval:
         and state.get_prescription('{target.target_rx_id}').refills_remaining
         < state._initial_snapshot['prescriptions']['{target.target_rx_id}']['refills_remaining']
       desc: Refill count decremented for the target prescription
+    - expr: >-
+        state.get_prescription('{target.target_rx_id}') is not None
+        and state.get_prescription('{target.target_rx_id}').last_filled
+        != state._initial_snapshot['prescriptions']['{target.target_rx_id}'].get('last_filled')
+      desc: last_filled timestamp updated for the target prescription
   negative_checks:
     - expr: >-
         not any(

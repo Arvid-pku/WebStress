@@ -45,3 +45,8 @@ eval:
         any(e.action == 'lms.announcements.mark_all_read' or e.action == 'lms.announcement.read'
             for e in state.audit_log)
       desc: At least one mark-read action was logged
+  negative_checks:
+    - expr: >-
+        len([e for e in state.enrollments if e.status == 'dropped']) == 0
+      desc: No courses were dropped
+      penalty: 0.2

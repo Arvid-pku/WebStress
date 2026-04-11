@@ -46,6 +46,11 @@ eval:
             and 'LDL' in m.body
             for m in state.messages)
       desc: Agent messaged PCP if and only if LDL was above threshold
+    - expr: >-
+        any(m.from_type == 'patient' and m.provider_id == '{target.pcp_id}'
+            and any(c.isdigit() for c in m.body)
+            for m in state.messages)
+      desc: Message body contains the specific lab value
   negative_checks:
     - expr: >-
         not any(m.from_type == 'patient'
