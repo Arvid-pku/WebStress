@@ -40,6 +40,8 @@ def controller_headers() -> dict[str, str]:
 
 def start_server(host: str, port: int) -> subprocess.Popen:
     """Start the FastAPI server in a subprocess."""
+    env = os.environ.copy()
+    env[CONTROLLER_SECRET_ENV] = get_controller_secret()
     return subprocess.Popen(
         [
             sys.executable,
@@ -53,6 +55,7 @@ def start_server(host: str, port: int) -> subprocess.Popen:
             "--log-level",
             "warning",
         ],
+        env=env,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )

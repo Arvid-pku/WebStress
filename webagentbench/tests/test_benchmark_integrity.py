@@ -12,7 +12,6 @@ from webagentbench.agent_eval import run_episode
 from webagentbench.app import MANIFEST_FINGERPRINT
 from webagentbench.backend.routes.gmail import SessionCreateRequest, create_session
 from webagentbench.backend.state import SessionManager
-from webagentbench.browsergym_task import WebAgentBenchTask
 from webagentbench.injector.middleware import (
     _normalize_progressive_stages,
     _progressive_delay_ms,
@@ -24,6 +23,14 @@ from webagentbench.task_rendering import render_template
 from webagentbench.tasks._evaluator import evaluate
 from webagentbench.tasks._schema import Check, EvalConfig, NegativeCheck
 from webagentbench.tasks._registry import get_task
+
+try:
+    from webagentbench.browsergym_task import WebAgentBenchTask
+except ModuleNotFoundError as exc:
+    WebAgentBenchTask = None
+    _BROWSERGYM_IMPORT_ERROR = exc
+else:
+    _BROWSERGYM_IMPORT_ERROR = None
 
 
 def test_create_session_rejects_variant_task_mismatch() -> None:
@@ -378,6 +385,7 @@ def test_search_and_star_passes_when_target_starred() -> None:
     assert after["success"] is True
 
 
+@pytest.mark.skipif(WebAgentBenchTask is None, reason="browsergym is not installed")
 def test_browsergym_task_rejects_stale_server_manifest(monkeypatch: pytest.MonkeyPatch) -> None:
     task = WebAgentBenchTask(seed=42, task_id="gmail_search_and_star", server_port=8099)
     monkeypatch.setenv("WEBAGENTBENCH_CONTROLLER_SECRET", "test-controller-secret")

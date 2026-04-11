@@ -24,6 +24,8 @@ import pytest
 from starlette.testclient import TestClient
 
 from webagentbench.app import app
+from webagentbench.backend.security import CONTROLLER_SECRET_HEADER
+from webagentbench.backend.state import materialize_task_state
 from webagentbench.injector.middleware import clear_all_degradations
 from webagentbench.runner import controller_headers, ensure_controller_secret
 
@@ -44,6 +46,14 @@ def client():
 
 # ── Helpers ──────────────────────────────────────────────────────────────
 
+def _controller_headers() -> dict[str, str]:
+    return {CONTROLLER_SECRET_HEADER: app.state.controller_secret}
+
+
+def _targets(task_id: str, seed: int) -> dict:
+    _, _, resolved_targets, _ = materialize_task_state("gmail", task_id, seed)
+    return resolved_targets
+
 def _create_session(client: TestClient, task_id: str = "gmail_star_email",
                     seed: int = 42, **extra) -> dict:
     payload = {"task_id": task_id, "seed": seed, **extra}
@@ -51,6 +61,7 @@ def _create_session(client: TestClient, task_id: str = "gmail_star_email",
     assert resp.status_code == 200, resp.text
     data = resp.json()
     assert "session_id" in data
+    data["resolved_targets"] = _targets(task_id, seed)
     return data
 
 
@@ -67,6 +78,8 @@ def _referer(session_id: str) -> dict:
 
 
 # ── 1. Standard session lifecycle ────────────────────────────────────────
+
+_PUBLIC_SESSION_ENVS = ("gmail", "amazon", "booking", "reddit", "robinhood")
 
 class TestStandardLifecycle:
     def test_create_list_evaluate_destroy(self, client: TestClient):
@@ -154,6 +167,31 @@ class TestStandardLifecycle:
         )
         assert resp.status_code == 403
         assert "Controller access required" in resp.json()["detail"]
+
+
+class TestPublicSessionSanitization:
+    @pytest.mark.parametrize("env_id", _PUBLIC_SESSION_ENVS)
+    def test_public_session_endpoints_omit_private_fields(self, client: TestClient, env_id: str):
+        task_id = env_tasks(env_id)[0].task_id
+
+        create_resp = client.post(f"/api/env/{env_id}/session", json={"task_id": task_id, "seed": 42})
+        assert create_resp.status_code == 200, create_resp.text
+        session = create_resp.json()
+
+        assert "task_id" not in session
+        assert "seed" not in session
+        assert "resolved_targets" not in session
+
+        summary_resp = client.get(f"/api/env/{env_id}/session/{session['session_id']}")
+        assert summary_resp.status_code == 200, summary_resp.text
+        summary = summary_resp.json()
+
+        assert "task_id" not in summary
+        assert "seed" not in summary
+        assert "degradation" not in summary
+
+        destroy_resp = client.delete(f"/api/env/{env_id}/session/{session['session_id']}")
+        assert destroy_resp.status_code == 200, destroy_resp.text
 
 
 # ── 2. Network degradation: error_then_success ──────────────────────────

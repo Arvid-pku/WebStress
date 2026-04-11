@@ -49,6 +49,8 @@ from pathlib import Path
 
 from .result_utils import build_manifest_task_meta, merge_result_task_meta
 from .runner import (
+    controller_headers,
+    ensure_controller_secret,
     start_server,
     wait_for_server,
     get_manifest,
@@ -417,15 +419,21 @@ def llm_complete(
     return _llm_complete_openai(client, model, messages, temperature, reasoning_effort)
 
 
-def _http_json(url: str, *, method: str = "GET", payload: dict | None = None) -> dict:
+def _http_json(
+    url: str,
+    *,
+    method: str = "GET",
+    payload: dict | None = None,
+    headers: dict[str, str] | None = None,
+) -> dict:
     """Issue a JSON HTTP request and return the decoded response body."""
     body = None
-    headers = {}
+    request_headers = dict(headers or {})
     if payload is not None:
         body = json.dumps(payload).encode("utf-8")
-        headers["Content-Type"] = "application/json"
+        request_headers["Content-Type"] = "application/json"
 
-    request = urllib.request.Request(url, data=body, headers=headers, method=method)
+    request = urllib.request.Request(url, data=body, headers=request_headers, method=method)
     with urllib.request.urlopen(request) as response:
         response_body = response.read().decode("utf-8")
         return json.loads(response_body) if response_body else {}
@@ -910,6 +918,7 @@ def _run_env_task(
                 "benchmark_state": benchmark_state,
                 "trajectory": agent_result["trajectory"],
             },
+            headers=controller_headers(),
         )
     except Exception as exc:
         logger.error("Error on environment task %s:%s: %s", env_id, task_id, exc)
@@ -1049,11 +1058,19 @@ def run_evaluation(
     using_existing_server = wait_for_server(server_host, server_port, timeout=2)
 
     if using_existing_server:
+        if not os.environ.get("WEBAGENTBENCH_CONTROLLER_SECRET"):
+            print(
+                "ERROR: A WebAgentBench server is already running, but WEBAGENTBENCH_CONTROLLER_SECRET "
+                "is not set in this process. Export the same secret or use a free port.",
+                file=sys.stderr,
+            )
+            sys.exit(1)
         if verbose:
             print(f"Using existing WebAgentBench server at {bench_url}")
     else:
         if verbose:
             print(f"Starting WebAgentBench server on {bench_url}...")
+        ensure_controller_secret()
         server_proc = start_server(server_host, server_port)
 
     try:

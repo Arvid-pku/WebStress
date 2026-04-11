@@ -12,15 +12,21 @@ than older primitive-name canaries.
 
 from __future__ import annotations
 
+import re
+
 import pytest
 from starlette.testclient import TestClient
 
 from webagentbench.app import app
+from webagentbench.backend.security import CONTROLLER_SECRET_HEADER
+from webagentbench.backend.state import materialize_task_state
 from webagentbench.injector.middleware import clear_all_degradations
 from webagentbench.runner import controller_headers, ensure_controller_secret
 
 
 SEED = 42
+EMAIL_RE = re.compile(r"[\w.+-]+@[\w.-]+\.\w+")
+QUOTED_STRING_RE = re.compile(r'"([^"]+)"')
 
 
 @pytest.fixture(autouse=True)
@@ -43,7 +49,9 @@ def _session(client: TestClient, task_id: str, seed: int = SEED, **kw) -> dict:
         headers=controller_headers(),
     )
     assert r.status_code == 200, r.text
-    return r.json()
+    data = r.json()
+    data["resolved_targets"] = _targets(task_id, seed)
+    return data
 
 
 def _eval(client: TestClient, sid: str, task_id: str, benchmark_state=None) -> dict:
@@ -254,6 +262,8 @@ class TestRetryVariants:
         )
         sid = s["session_id"]
         target = s["resolved_targets"]["target_email_id"]
+        target_email = _gmail_state(sid).get_email(target)
+        reply_body = _instruction_quotes("gmail_reply_simple")[-1]
 
         r1 = _send(
             client,
@@ -288,6 +298,8 @@ class TestRetryVariants:
             variant_filename="gmail_compose_new__send_retry.yaml",
         )
         sid = s["session_id"]
+        compose_recipient = _instruction_emails("gmail_compose_new")[0]
+        compose_subject, compose_body = _instruction_quotes("gmail_compose_new")
 
         r1 = _send(
             client,
@@ -470,3 +482,113 @@ class TestDecoyAndExplorationVariants:
         assert r2.status_code == 200 and r2.json()["total"] == 0
         assert r3.status_code == 200
         assert any(item["id"] == target for item in r3.json()["items"])
+<<<<<<< HEAD
+=======
+
+
+class TestStressGrounding:
+    """forward_email + grounding: confusing decoy emails added."""
+
+    def test_still_solvable_with_decoys(self, client):
+        s = _session(client, "gmail_forward_email",
+                     variant_filename="gmail_forward_email__grounding.yaml")
+        sid = s["session_id"]
+        target = s["resolved_targets"]["target_email_id"]
+        forward_recipient = _instruction_emails("gmail_forward_email")[0]
+        forward_note = _instruction_quotes("gmail_forward_email")[-1]
+
+        _forward(client, sid, target, to=[forward_recipient], body=forward_note)
+        ev = _eval(client, sid, "gmail_forward_email")
+        assert ev["success"] is True
+
+    def test_decoy_emails_present(self, client):
+        s_standard = _session(client, "gmail_forward_email", seed=99)
+        s_degraded = _session(client, "gmail_forward_email", seed=99,
+                              variant_filename="gmail_forward_email__grounding.yaml")
+
+        r_std = _emails(client, s_standard["session_id"])
+        r_deg = _emails(client, s_degraded["session_id"])
+
+        std_count = r_std.json()["total"]
+        deg_count = r_deg.json()["total"]
+        assert deg_count > std_count, (
+            f"Degraded should have more emails (decoys). "
+            f"Standard={std_count}, Degraded={deg_count}"
+        )
+
+
+class TestStressStateTracking:
+    """forward_email + state_tracking: distractors + shuffled contacts."""
+
+    def test_still_solvable_with_distractors(self, client):
+        s = _session(client, "gmail_forward_email",
+                     variant_filename="gmail_forward_email__state_tracking.yaml")
+        sid = s["session_id"]
+        target = s["resolved_targets"]["target_email_id"]
+        forward_recipient = _instruction_emails("gmail_forward_email")[0]
+        forward_note = _instruction_quotes("gmail_forward_email")[-1]
+
+        _forward(client, sid, target, to=[forward_recipient], body=forward_note)
+        ev = _eval(client, sid, "gmail_forward_email")
+        assert ev["success"] is True
+
+    def test_distractors_injected(self, client):
+        s = _session(client, "gmail_forward_email",
+                     variant_filename="gmail_forward_email__state_tracking.yaml")
+        r = _emails(client, s["session_id"])
+        emails = r.json()
+        # state_tracking variant injects 5 distractors
+        assert emails["total"] > 15, f"Expected extra distractors, got {emails['total']} total"
+
+    def test_board_briefing_adds_exact_topic_wrong_sender_decoys(self, client):
+        s = _session(client, "gmail_board_briefing_prep",
+                     variant_filename="gmail_board_briefing_prep__state_tracking.yaml")
+        sid = s["session_id"]
+        targets = s["resolved_targets"]
+        decoy_senders = {"Board Ops", "Chief of Staff", "Executive Assistant"}
+
+        for topic in (targets["topic_a"], targets["topic_b"], targets["topic_c"]):
+            results = _search(client, sid, topic).json()["items"]
+            assert any(item["from_name"] in decoy_senders for item in results), (
+                f"Expected wrong-sender decoy for topic {topic!r}"
+            )
+
+
+class TestStressPlanning:
+    """search_and_star + planning: scrambled timestamps + first search returns empty."""
+
+    def test_first_search_returns_stale_empty(self, client):
+        s = _session(client, "gmail_search_and_star",
+                     variant_filename="gmail_search_and_star__planning.yaml")
+        sid = s["session_id"]
+
+        # First search: stale_data returns empty
+        r1 = _search(client, sid, "Q4 Budget Summary")
+        assert r1.status_code == 200
+        data = r1.json()
+        assert data["total"] == 0, f"First search should return 0 (stale), got {data['total']}"
+
+        # Second search: real results
+        r2 = _search(client, sid, "Q4 Budget Summary")
+        assert r2.status_code == 200
+        data2 = r2.json()
+        assert data2["total"] >= 1, f"Second search should return results, got {data2['total']}"
+
+    def test_still_solvable_after_retry(self, client):
+        s = _session(client, "gmail_search_and_star",
+                     variant_filename="gmail_search_and_star__planning.yaml")
+        sid = s["session_id"]
+        target = s["resolved_targets"]["target_email_id"]
+
+        r1 = _search(client, sid, "Q4 Budget Summary")
+        assert r1.status_code == 200
+        assert r1.json()["total"] == 0
+
+        r2 = _search(client, sid, "Q4 Budget Summary")
+        assert r2.status_code == 200
+        assert any(item["id"] == target for item in r2.json()["items"])
+
+        _star(client, sid, target)
+        ev = _eval(client, sid, "gmail_search_and_star")
+        assert ev["success"] is True
+>>>>>>> aeef7318 (chore: infrastructure updates and test additions)

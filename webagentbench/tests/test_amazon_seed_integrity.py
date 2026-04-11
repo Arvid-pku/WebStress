@@ -34,8 +34,10 @@ def test_amazon_session_create_succeeds(task_id: str) -> None:
         session_manager=session_manager,
     )
 
-    assert payload["task_id"] == task_id
+    assert payload["session_id"]
     assert "{output." not in payload["instruction"]
+    assert "task_id" not in payload
+    assert "seed" not in payload
 
 
 @pytest.mark.parametrize("task_id", _AMAZON_TASK_IDS)

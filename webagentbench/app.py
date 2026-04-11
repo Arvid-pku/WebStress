@@ -14,6 +14,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import secrets
 from copy import deepcopy
 from functools import lru_cache
 from pathlib import Path
@@ -690,7 +691,9 @@ async def index():
     // ── Load variants ──
     var envIds = ENV_DATA.map(function(e) {{ return e.env_id; }});
     Promise.all(envIds.map(function(eid) {{
-        return fetch('/api/env/' + eid + '/variants').then(function(r) {{ return r.json(); }}).catch(function() {{ return []; }});
+        return fetch('/api/env/' + eid + '/variants')
+            .then(function(r) {{ return r.ok ? r.json() : []; }})
+            .catch(function() {{ return []; }});
     }})).then(function(results) {{
         for (var i = 0; i < results.length; i++) allVariants = allVariants.concat(results[i]);
     }});
