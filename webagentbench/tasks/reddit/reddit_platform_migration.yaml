@@ -116,6 +116,7 @@ seed:
     r_from: '{output.r_msg_from}'
     r_sub: '{output.r_msg_sub}'
     r_body: Sounds great, let us set up a call next week.
+    msg_body: Just published a new guide in r/MachineLearning. Would love your review.
     del_sub: '{output.del_msg_sub}'
     del_id: '{output.del_msg_id}'
     block_user: CryptoSkeptic

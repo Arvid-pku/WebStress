@@ -116,9 +116,10 @@ eval:
       \ in state.reservations\n)\n"
     desc: Reservation was created for the Genius property with correct dates
   - expr: "any(\n  r.property_id == '{target.property_id}' and\n  r.room_type_id ==\
-      \ '{target.room_id}' and\n  r.guests == 2\n  for r in state.reservations\n \
-      \ if not r.id.startswith('res_initial_')\n)\n"
-    desc: Reservation is for the Genius Superior Room with 2 guests
+      \ '{target.room_id}' and\n  r.room_type_name == '{target.room_name}' and\n  r.guests\
+      \ == 2 and\n  r.payment_method_id == 'pm_1'\n  for r in state.reservations\n\
+      \  if not r.id.startswith('res_initial_')\n)\n"
+    desc: Reservation is for the Genius Superior Room with 2 guests and the correct payment method
   - expr: "any(\n  r.property_id == '{target.property_id}' and\n  r.is_genius_deal\
       \ == True\n  for r in state.reservations\n  if not r.id.startswith('res_initial_')\n\
       )\n"
@@ -128,3 +129,6 @@ eval:
       \ != '{target.property_id}'\n  for e in state.audit_log\n)\n"
     desc: No reservation was made for a non-Genius property
     penalty: 0.3
+  - expr: "sum(1 for r in state.reservations if not r.id.startswith('res_initial_')) == 1\n"
+    desc: Only one new reservation was created
+    penalty: 0.2

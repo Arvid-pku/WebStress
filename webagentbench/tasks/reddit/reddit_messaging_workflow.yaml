@@ -71,19 +71,26 @@ eval:
   - expr: any(m.to_user == '{target.reply_from}' and m.body == "Absolutely! I have experience with evaluation
       frameworks. Let me know how to get started." for m in state.sent_messages)
     desc: Reply sent with exact text
+  - expr: any(m.to_user == '{target.new_to}' and m.subject == '{target.new_subject}' and m.body == '{target.new_body}' for m in state.sent_messages)
+    desc: New message sent with exact text
+  - expr: len(state.sent_messages) == 2
+    desc: Exactly two messages were sent
   - expr: not any(m.id == '{target.delete_msg_id}' for m in state.messages)
     desc: Spam message deleted
+<<<<<<< HEAD
   - expr: any(m.to_user == '{target.new_to}' and m.subject == '{target.new_subject}' and m.body == '{target.new_body}'
       for m in state.sent_messages)
     desc: New message sent to ByteRunner with exact body
+=======
+>>>>>>> c9c05be5 (fix(tasks): minor eval fixes across amazon, booking, reddit, robinhood tasks)
   - expr: not state.settings.email_messages
     desc: Email messages notifications disabled
   negative_checks:
-  - expr: not any(m.id == '{target.reply_msg_id}' for m in state.messages) == False
+  - expr: any(m.id == '{target.reply_msg_id}' for m in state.messages)
     desc: Reply target message was not deleted
     penalty: 0.3
-  - expr: len(state.messages) >= 4
-    desc: Non-spam messages preserved
+  - expr: len(state.messages) >= 6
+    desc: Other messages were not deleted
     penalty: 0.25
   - expr: not any( e.action == 'reddit.message.delete' and e.payload.get('message_id') != '{target.delete_msg_id}'
       for e in state.audit_log)

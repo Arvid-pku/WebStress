@@ -142,9 +142,6 @@ eval:
       \ == '4242'\n  for pm in state.payment_methods\n) for order in state.orders if not order.id.startswith('order_initial_'))\n"
     desc: Both new orders use the required Visa card ending in 4242
   negative_checks:
-  - expr: sum(1 for o in state.orders if not o.id.startswith('order_initial_')) <= 2
-    desc: No more than 2 new orders placed
-    penalty: 0.15
   - expr: len(state.cart_items) == 0
     desc: Cart is empty after both checkouts
     penalty: 0.1

@@ -195,11 +195,11 @@ eval:
   - expr: state.unread_message_count() == 0
     desc: All messages read
   negative_checks:
-  - expr: len(state.sent_messages) <= 2
-    desc: No excessive messages sent
+  - expr: len(state.sent_messages) <= 1
+    desc: No extra messages were sent
     penalty: 0.15
-  - expr: sum(1 for p in state.posts if p.author_name == state.owner_username) <= 2
-    desc: No excessive posts created
+  - expr: sum(1 for p in state.posts if p.author_name == state.owner_username) <= 1
+    desc: No extra posts were created
     penalty: 0.15
   - expr: len(state.blocked_users) == 1 and 'CryptoSkeptic' in state.blocked_users
     desc: No user other than CryptoSkeptic was blocked

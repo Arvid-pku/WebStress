@@ -165,6 +165,12 @@ eval:
       '
     desc: Order not shipped to Denver address
     penalty: 0.15
+  - expr: >
+      not any(
+        o.payment_method_id != 'pm_1'
+        for o in state.orders if not o.id.startswith('order_initial_'))
+    desc: Order used the default Visa payment method
+    penalty: 0.15
   - expr: len(state.cart_items) == 0
     desc: Cart empty after checkout
     penalty: 0.1

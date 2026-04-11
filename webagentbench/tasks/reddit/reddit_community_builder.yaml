@@ -183,8 +183,8 @@ eval:
   - expr: all(sid in state.subscriptions for sid in {target.initial_subscriptions})
     desc: Existing subscriptions preserved
     penalty: 0.2
-  - expr: len(state.sent_messages) <= 4
-    desc: No excessive messages sent
+  - expr: len(state.sent_messages) <= 3
+    desc: No extra messages were sent
     penalty: 0.15
   - expr: not any( e.action == 'reddit.post.create' and e.payload.get('subreddit') != '{target.j1}' for
       e in state.audit_log)

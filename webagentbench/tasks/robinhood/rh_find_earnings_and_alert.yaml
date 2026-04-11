@@ -32,15 +32,28 @@ seed:
 eval:
   source: server_state
   checks:
-    - expr: "len(state.price_alerts) >= 1"
-      desc: At least one price alert was created for a stock with upcoming earnings
     - expr: >-
-        len([a for a in state.price_alerts if a.status == 'active']) >= 1
-      desc: At least one active price alert exists
+        len(state.portfolio_symbols_with_earnings_within(7)) >= 1
+      desc: The portfolio has at least one stock with earnings in the next 7 days
     - expr: >-
-        all(a.condition == 'below' for a in state.price_alerts
-            if a.status == 'active' and not a.id.startswith('alert_decoy_'))
-      desc: All agent-created alerts are set to trigger below current price (5% below)
+        len([a for a in state.price_alerts if not a.id.startswith('alert_decoy_')]) ==
+        len(state.portfolio_symbols_with_earnings_within(7))
+      desc: Exactly one alert was created for each portfolio stock with upcoming earnings
+    - expr: >-
+        all(
+          any(
+            a.symbol == sym and a.condition == 'below' and a.status == 'active' and
+            abs(a.target_price - (state.get_stock(sym).price * Decimal('0.95'))) <= Decimal('0.01')
+            for a in state.price_alerts
+          )
+          for sym in state.portfolio_symbols_with_earnings_within(7)
+        )
+      desc: Each alert was set to 5% below current price for the correct stock
+    - expr: >-
+        not any(a.symbol not in state.portfolio_symbols_with_earnings_within(7)
+                and not a.id.startswith('alert_decoy_')
+                for a in state.price_alerts)
+      desc: No alerts were created for stocks without upcoming portfolio earnings
   negative_checks:
     - expr: >-
         len([o for o in state.orders

@@ -52,3 +52,6 @@ eval:
   - expr: len(state.cart_items) == 0
     desc: No items were accidentally added to cart instead of wishlist
     penalty: 0.15
+  - expr: len(state.wishlist) <= 1
+    desc: No extra products were added to the wishlist
+    penalty: 0.15
