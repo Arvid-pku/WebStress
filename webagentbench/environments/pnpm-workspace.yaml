@@ -3,6 +3,8 @@ packages:
   - "amazon"
   - "booking"
   - "gmail"
+  - "lms"
+  - "patient_portal"
   - "reddit"
   - "robinhood"
   - "demo-site"

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 
 import { usePatientPortal } from "../context";
 import type { InsuranceClaim } from "../types";
@@ -89,8 +89,8 @@ export function BillingPage() {
                 </thead>
                 <tbody>
                   {claims.map((claim) => (
-                    <>
-                      <tr key={claim.id}>
+                    <React.Fragment key={claim.id}>
+                      <tr>
                         <td>{new Date(claim.service_date).toLocaleDateString()}</td>
                         <td>{providerName(claim.provider_id)}</td>
                         <td>{claim.procedure_code}</td>
@@ -161,7 +161,7 @@ export function BillingPage() {
                           </td>
                         </tr>
                       )}
-                    </>
+                    </React.Fragment>
                   ))}
                 </tbody>
               </table>

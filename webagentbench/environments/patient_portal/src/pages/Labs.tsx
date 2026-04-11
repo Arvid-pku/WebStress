@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 
 import { usePatientPortal } from "../context";
@@ -127,9 +127,8 @@ export function LabsPage() {
             </thead>
             <tbody>
               {resulted.map((lab) => (
-                <>
+                <React.Fragment key={lab.id}>
                   <tr
-                    key={lab.id}
                     className={expandedId === lab.id ? "pp-row--expanded" : "pp-row--clickable"}
                     onClick={() => toggleExpand(lab)}
                     role="button"
@@ -177,7 +176,7 @@ export function LabsPage() {
                       </td>
                     </tr>
                   )}
-                </>
+                </React.Fragment>
               ))}
             </tbody>
           </table>
