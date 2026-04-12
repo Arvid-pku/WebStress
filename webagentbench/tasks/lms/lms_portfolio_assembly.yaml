@@ -81,13 +81,13 @@ eval:
              if a.score is not None
              and a.points_possible > 0
              and float(a.score) / float(a.points_possible) >= 0.8]) >= 3
-      desc: At least 3 graded assignments score above 80% (portfolio candidates exist)
+      desc: At least 3 graded assignments score above 80% (seed validation)
     - expr: >-
         len(set(a.course_id for a in state.assignments
                 if a.score is not None
                 and a.points_possible > 0
                 and float(a.score) / float(a.points_possible) >= 0.8)) >= 2
-      desc: High-scoring assignments span at least 2 courses
+      desc: High-scoring assignments span at least 2 courses (seed validation)
     - expr: >-
         all(e.status == 'enrolled'
             for e in state.enrollments)

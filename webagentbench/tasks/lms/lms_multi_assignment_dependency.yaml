@@ -87,8 +87,9 @@ eval:
     - expr: >-
         any(a.file_name == 'quiz_answers.pdf'
             and a.submission_status in ('submitted', 'late')
+            and a.course_id == '{target.target_course_id}'
             for a in state.assignments)
-      desc: Quiz submitted with correct file
+      desc: Quiz submitted with correct file in target course
     - expr: >-
         any(pr.status == 'submitted'
             and pr.reviewer_student_id == state.student.id
@@ -104,8 +105,9 @@ eval:
     - expr: >-
         any(a.file_name == 'project_final.pdf'
             and a.submission_status in ('submitted', 'late')
+            and a.course_id == '{target.target_course_id}'
             for a in state.assignments)
-      desc: Project submitted with correct file
+      desc: Project submitted with correct file in target course
     - expr: >-
         any(m.id == '{target.next_available_module_id}'
             and all(ci.completed for ci in m.content_items)

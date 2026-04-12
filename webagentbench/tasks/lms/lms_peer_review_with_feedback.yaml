@@ -85,11 +85,12 @@ eval:
       desc: Resubmit-requested assignment was resubmitted with feedback file
   negative_checks:
     - expr: >-
-        not any(pr.reviewer_student_id != state.student.id
-                and pr.status == 'submitted'
+        not any(pr.status == 'submitted'
+                and pr.reviewer_student_id == state.student.id
+                and len(pr.rubric_scores) < 1
                 for pr in state.peer_reviews)
-      desc: Reviews assigned to other students were not modified
-      penalty: 0.3
+      desc: No reviews submitted without rubric scores
+      penalty: 0.2
     - expr: >-
         all(e.status != 'dropped' for e in state.enrollments)
       desc: No courses were dropped

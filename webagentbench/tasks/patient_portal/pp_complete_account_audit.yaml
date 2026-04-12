@@ -148,3 +148,11 @@ eval:
         )
       desc: Referral statuses were not changed during audit
       penalty: 0.2
+    - expr: >-
+        not any(m.from_type == 'patient'
+                and m.provider_id not in {target.admin_provider_ids}
+                and m.provider_id != '{target.pcp_id}'
+                and m.id not in state._initial_snapshot.get('messages', {})
+                for m in state.messages)
+      desc: Audit report was not sent to providers other than admin or PCP
+      penalty: 0.15

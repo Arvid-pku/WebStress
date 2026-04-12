@@ -71,6 +71,13 @@ eval:
       desc: Both interacting prescriptions remain active (agent did not discontinue)
   negative_checks:
     - expr: >-
+        not any(m.from_type == 'patient'
+                and m.provider_id != '{target.pcp_id}'
+                and m.id not in {target.all_msg_ids}
+                for m in state.messages)
+      desc: Agent did not message a provider other than PCP about interactions
+      penalty: 0.15
+    - expr: >-
         not any(r.status == 'discontinued'
                 and r.id in {target.interacting_rx_ids}
                 for r in state.prescriptions)

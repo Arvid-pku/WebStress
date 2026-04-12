@@ -101,10 +101,10 @@ eval:
     - expr: >-
         len([pr for pr in state.peer_reviews
              if pr.reviewer_student_id == state.student.id]) >= 1
-      desc: Student has peer review records present
+      desc: Student has peer review records present (seed validation)
     - expr: >-
         len(state.modules) >= 1
-      desc: Module records exist and were accessible during audit
+      desc: Module records exist (seed validation)
     - expr: len(state.sent_messages) >= 1
       desc: Agent sent an audit report
     - expr: >-

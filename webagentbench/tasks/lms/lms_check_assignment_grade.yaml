@@ -5,7 +5,8 @@ instruction_template: >-
   Navigate to the assignment "{target.assignment_title}" in {target.course_code}
   and check its score. If the score is below 70% of the total points possible,
   resubmit the assignment with file 'revision_v2.pdf'. If the score is 70% or
-  above, no action is needed.
+  above, mark the course's latest announcement as read to confirm you have
+  reviewed the score.
 difficulty: easy
 time_limit_seconds: 120
 expected_steps: 6
@@ -44,11 +45,19 @@ seed:
       outputs:
         - grade_ids
         - score_below_70
+    - use: announcements_feed
+      params:
+        count: 3
+        unread_count: 1
+      outputs:
+        - announcement_ids
+        - latest_announcement_id
   targets:
     assignment_title: '{output.target_assignment_title}'
     course_code: '{output.target_course_code}'
     target_assignment_id: '{output.target_assignment_id}'
     score_below_70: '{output.score_below_70}'
+    latest_announcement_id: '{output.latest_announcement_id}'
 
 eval:
   source: server_state
@@ -59,10 +68,11 @@ eval:
          and state.get_assignment('{target.target_assignment_id}').submission_status in ('submitted', 'late')
          and state.get_assignment('{target.target_assignment_id}').file_name == 'revision_v2.pdf')
         or ('{target.score_below_70}' == 'false'
-            and (state.get_assignment('{target.target_assignment_id}') is None
-                 or state.get_assignment('{target.target_assignment_id}').file_name != 'revision_v2.pdf')))
+            and state.get_announcement('{target.latest_announcement_id}') is not None
+            and state.get_announcement('{target.latest_announcement_id}').is_read == True))
       desc: >-
-        Resubmit with revision_v2.pdf if score < 70%, or no resubmission if >= 70%
+        Resubmit with revision_v2.pdf if score < 70%, or mark latest
+        announcement as read if >= 70%
     - expr: >-
         state.get_assignment('{target.target_assignment_id}') is not None
         and state.get_assignment('{target.target_assignment_id}').score is not None
@@ -70,9 +80,15 @@ eval:
   negative_checks:
     - expr: >-
         '{target.score_below_70}' != 'false'
+        or state.get_announcement('{target.latest_announcement_id}') is None
+        or state.get_announcement('{target.latest_announcement_id}').is_read != True
+      desc: Did not mark announcement as read when score was 70% or above (wrong branch)
+      penalty: 0.3
+    - expr: >-
+        '{target.score_below_70}' != 'true'
         or state.get_assignment('{target.target_assignment_id}') is None
         or state.get_assignment('{target.target_assignment_id}').file_name != 'revision_v2.pdf'
-      desc: Did not resubmit when score was 70% or above (wrong branch)
+      desc: Did not resubmit when score was below 70% (wrong branch)
       penalty: 0.3
     - expr: >-
         all(e.status != 'dropped' for e in state.enrollments)

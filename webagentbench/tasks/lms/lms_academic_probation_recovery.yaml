@@ -73,8 +73,9 @@ eval:
             and a.submission_status in ('submitted', 'late')
             and a.points_possible is not None
             and a.points_possible > 0
+            and a.weight_category is not None
             for a in state.assignments)
-      desc: Submitted recovery file is for an assignment with grade weight
+      desc: Submitted recovery file is for a graded assignment with weight
     - expr: >-
         all(e.status == 'enrolled'
             for e in state.enrollments)

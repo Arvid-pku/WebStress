@@ -46,9 +46,8 @@ eval:
   source: server_state
   checks:
     - expr: >-
-        any(a.status == 'cancelled'
-            and a.id in {target.upcoming_ids}
-            for a in state.appointments)
+        state.get_appointment('{target.specialist_apt_id}') is not None
+        and state.get_appointment('{target.specialist_apt_id}').status == 'cancelled'
       desc: The original dermatology appointment was cancelled
     - expr: >-
         any(a.status == 'scheduled'
@@ -61,6 +60,13 @@ eval:
              and a.id not in {target.upcoming_ids}]) >= 1
       desc: At least one new scheduled appointment exists
   negative_checks:
+    - expr: >-
+        not any(a.status == 'cancelled'
+                and a.id != '{target.specialist_apt_id}'
+                and a.id in {target.upcoming_ids}
+                for a in state.appointments)
+      desc: Agent did not cancel a non-dermatology upcoming appointment
+      penalty: 0.25
     - expr: >-
         not any(a.status == 'cancelled'
                 and a.id not in {target.upcoming_ids}

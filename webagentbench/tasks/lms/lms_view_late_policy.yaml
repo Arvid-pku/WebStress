@@ -5,7 +5,8 @@ instruction_template: >-
   Check the syllabus late policy for {target.course_code}. If the policy
   allows more than 3 late days, submit your overdue assignment
   "{target.overdue_assignment_title}" with file "late_submit.pdf". If 3 or
-  fewer late days are allowed, do not submit.
+  fewer late days are allowed, mark the course's latest announcement as
+  read to confirm you have reviewed the late policy.
 difficulty: easy
 time_limit_seconds: 120
 expected_steps: 5
@@ -42,12 +43,20 @@ seed:
         - overdue_assignment_id
         - overdue_assignment_title
         - allows_late_submit
+    - use: announcements_feed
+      params:
+        count: 3
+        unread_count: 1
+      outputs:
+        - announcement_ids
+        - latest_announcement_id
   targets:
     course_code: '{output.course_code}'
     target_course_id: '{output.target_course_id}'
     overdue_assignment_id: '{output.overdue_assignment_id}'
     overdue_assignment_title: '{output.overdue_assignment_title}'
     allows_late_submit: '{output.allows_late_submit}'
+    latest_announcement_id: '{output.latest_announcement_id}'
 
 eval:
   source: server_state
@@ -58,21 +67,28 @@ eval:
          and state.get_assignment('{target.overdue_assignment_id}').submission_status in ('submitted', 'late')
          and state.get_assignment('{target.overdue_assignment_id}').file_name == 'late_submit.pdf')
         or ('{target.allows_late_submit}' != 'true'
-            and (state.get_assignment('{target.overdue_assignment_id}') is None
-                 or state.get_assignment('{target.overdue_assignment_id}').submission_status == 'not_submitted')))
+            and state.get_announcement('{target.latest_announcement_id}') is not None
+            and state.get_announcement('{target.latest_announcement_id}').is_read == True))
       desc: >-
-        Assignment submitted IFF max_late_days > 3, not submitted otherwise
+        Submit late_submit.pdf if max_late_days > 3, or mark latest
+        announcement as read if 3 or fewer late days
     - expr: >-
         state.get_assignment('{target.overdue_assignment_id}') is not None
       desc: Overdue assignment exists (seed validation)
   negative_checks:
     - expr: >-
-        ('{target.allows_late_submit}' != 'true'
-         or len([a for a in state.assignments
-                 if a.file_name == 'late_submit.pdf'
-                 and a.submission_status in ('submitted', 'late')]) <= 1)
+        '{target.allows_late_submit}' != 'true'
+        or len([a for a in state.assignments
+                if a.file_name == 'late_submit.pdf'
+                and a.submission_status in ('submitted', 'late')]) <= 1
       desc: At most one assignment was submitted with late_submit.pdf
       penalty: 0.2
+    - expr: >-
+        '{target.allows_late_submit}' == 'true'
+        or state.get_assignment('{target.overdue_assignment_id}') is None
+        or state.get_assignment('{target.overdue_assignment_id}').submission_status == 'not_submitted'
+      desc: Did not submit assignment when late policy does not allow it
+      penalty: 0.3
     - expr: >-
         all(e.status != 'dropped' for e in state.enrollments)
       desc: No courses were dropped

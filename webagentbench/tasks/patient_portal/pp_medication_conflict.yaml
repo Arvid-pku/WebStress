@@ -66,6 +66,7 @@ eval:
     - expr: >-
         any(m.from_type == 'patient'
             and all(med in m.body for med in {target.interacting_medications})
+            and m.id not in state._initial_snapshot.get('messages', {})
             for m in state.messages)
       desc: Agent sent a message mentioning both interacting medications
     - expr: >-
@@ -89,11 +90,10 @@ eval:
             if rx.id in {target.interacting_rx_ids})
       desc: Neither interacting medication was discontinued by the agent
     - expr: >-
-        any(m.from_type == 'patient'
-            and m.category == 'clinical'
-            for m in state.messages
-            if m.id not in state._initial_snapshot.get('messages', {}))
-      desc: Message was sent with clinical category
+        len([m for m in state.messages
+             if m.from_type == 'patient'
+             and m.id not in state._initial_snapshot.get('messages', {})]) >= 1
+      desc: At least one new patient message was sent
   negative_checks:
     - expr: >-
         not any(m.from_type == 'patient'

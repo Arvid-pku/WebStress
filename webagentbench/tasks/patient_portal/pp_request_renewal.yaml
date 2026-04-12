@@ -53,6 +53,7 @@ eval:
     - expr: >-
         any(m.from_type == 'patient'
             and m.category == 'rx_renewal'
+            and m.id not in state._initial_snapshot.get('messages', {})
             for m in state.messages)
       desc: A renewal request message was sent with rx_renewal category
     - expr: >-
@@ -68,3 +69,9 @@ eval:
                 for r in state.prescriptions)
       desc: Agent did not request renewal for prescriptions with remaining refills
       penalty: 0.20
+    - expr: >-
+        len([m for m in state.messages
+             if m.from_type == 'patient'
+             and m.id not in state._initial_snapshot.get('messages', {})]) <= 1
+      desc: Agent did not send excessive messages beyond the renewal request
+      penalty: 0.15

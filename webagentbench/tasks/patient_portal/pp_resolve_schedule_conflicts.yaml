@@ -67,6 +67,12 @@ eval:
         len([a for a in state.appointments
              if a.id in {target.conflict_apt_ids}]) == 2
       desc: Both conflict appointments still exist in state
+    - expr: >-
+        max(
+          [a for a in state.appointments if a.id in {target.conflict_apt_ids}],
+          key=lambda a: a.booked_at
+        ).status == 'cancelled'
+      desc: The more recently booked conflicting appointment was cancelled
   negative_checks:
     - expr: >-
         not any(a.status == 'cancelled'

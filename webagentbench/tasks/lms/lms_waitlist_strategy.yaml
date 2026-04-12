@@ -70,15 +70,7 @@ eval:
     - expr: >-
         any(e.status == 'waitlisted'
             for e in state.enrollments)
-      desc: Waitlisted enrollment was identified (still present)
-    - expr: >-
-        len([e for e in state.enrollments
-             if e.status in ('enrolled', 'waitlisted')]) >= 1
-      desc: At least one active enrollment or waitlist exists
-    - expr: >-
-        any(e.status == 'waitlisted' or e.status == 'enrolled'
-            for e in state.enrollments)
-      desc: Student has active enrollment records to evaluate
+      desc: Waitlisted enrollment was identified (seed validation)
     - expr: >-
         sum(1 for e in state.enrollments
             if e.status == 'dropped') <= 1
@@ -89,6 +81,13 @@ eval:
         any('{target.advisor_name}' in m.get('to', '')
             for m in state.sent_messages)
       desc: Message addressed to advisor
+    - expr: >-
+        sum(1 for e in state.enrollments
+            if e.status in ('enrolled', 'waitlisted')) >= 4
+      desc: At least 4 enrollments exist across enrolled and waitlisted (seed integrity)
+    - expr: >-
+        len(state.assignments) >= 5
+      desc: Assignment state preserved across all courses (seed integrity)
   negative_checks:
     - expr: >-
         sum(1 for e in state.enrollments if e.status == 'dropped') <= 1

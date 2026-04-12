@@ -92,3 +92,10 @@ eval:
                 for r in state.prescriptions)
       desc: Agent did not discontinue any active prescriptions
       penalty: 0.25
+    - expr: >-
+        not any(m.from_type == 'patient'
+                and m.category != 'rx_renewal'
+                and m.id not in {target.all_msg_ids}
+                for m in state.messages)
+      desc: Agent did not misroute renewal request to a non-rx_renewal category
+      penalty: 0.15

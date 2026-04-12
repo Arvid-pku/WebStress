@@ -142,3 +142,11 @@ eval:
                 for m in state.messages)
       desc: Appeals were not routed through clinical messaging
       penalty: 0.15
+    - expr: >-
+        not any(m.from_type == 'patient'
+                and m.category == 'billing'
+                and m.provider_id not in {target.billing_provider_ids}
+                and m.id not in state._initial_snapshot.get('messages', {})
+                for m in state.messages)
+      desc: Billing appeals were not sent to non-billing providers
+      penalty: 0.15

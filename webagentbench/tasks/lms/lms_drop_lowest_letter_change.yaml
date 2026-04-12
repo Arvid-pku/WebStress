@@ -8,7 +8,8 @@ instruction_template: >-
   the lowest changes your letter grade to a higher one, submit
   'letter_grade_report.pdf' for the lowest-scoring homework (the one that
   would be dropped). If dropping the lowest does NOT change your letter
-  grade, no action is needed.
+  grade, mark the course's latest announcement as read to confirm you have
+  reviewed the drop policy.
 difficulty: hard
 time_limit_seconds: 240
 expected_steps: 12
@@ -51,11 +52,19 @@ seed:
         - current_weighted_scores
         - dropped_grade_ids
         - drop_changes_letter
+    - use: announcements_feed
+      params:
+        count: 3
+        unread_count: 1
+      outputs:
+        - announcement_ids
+        - latest_announcement_id
   targets:
     course_code: '{output.course_code}'
     target_course_id: '{output.target_course_id}'
     drop_changes_letter: '{output.drop_changes_letter}'
     lowest_hw_id: '{output.lowest_hw_id}'
+    latest_announcement_id: '{output.latest_announcement_id}'
 
 eval:
   source: server_state
@@ -66,11 +75,11 @@ eval:
          and state.get_assignment('{target.lowest_hw_id}').submission_status in ('submitted', 'late')
          and state.get_assignment('{target.lowest_hw_id}').file_name == 'letter_grade_report.pdf')
         or ('{target.drop_changes_letter}' == 'false'
-            and (state.get_assignment('{target.lowest_hw_id}') is None
-                 or state.get_assignment('{target.lowest_hw_id}').file_name != 'letter_grade_report.pdf')))
+            and state.get_announcement('{target.latest_announcement_id}') is not None
+            and state.get_announcement('{target.latest_announcement_id}').is_read == True))
       desc: >-
         Submit letter_grade_report.pdf for lowest homework if drop changes
-        letter grade, or no submission if it does not
+        letter grade, or mark latest announcement as read if it does not
     - expr: >-
         state.weighted_score_for_course('{target.target_course_id}') is not None
       desc: Weighted score is computable (seed validation)
@@ -83,9 +92,15 @@ eval:
   negative_checks:
     - expr: >-
         '{target.drop_changes_letter}' != 'false'
+        or state.get_announcement('{target.latest_announcement_id}') is None
+        or state.get_announcement('{target.latest_announcement_id}').is_read != True
+      desc: Did not mark announcement as read when drop does not change letter grade (wrong branch)
+      penalty: 0.3
+    - expr: >-
+        '{target.drop_changes_letter}' != 'true'
         or state.get_assignment('{target.lowest_hw_id}') is None
         or state.get_assignment('{target.lowest_hw_id}').file_name != 'letter_grade_report.pdf'
-      desc: Did not submit when drop does not change letter grade (wrong branch)
+      desc: Did not submit when drop changes letter grade (wrong branch)
       penalty: 0.3
     - expr: >-
         all(e.status != 'dropped' for e in state.enrollments)

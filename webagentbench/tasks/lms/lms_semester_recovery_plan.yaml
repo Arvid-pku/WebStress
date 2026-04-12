@@ -74,15 +74,11 @@ eval:
             for a in state.assignments)
       desc: At least one recovery submission was made
     - expr: >-
-        len([a for a in state.assignments
-             if a.file_name == 'recovery.pdf'
-             and a.submission_status in ('submitted', 'late')]) >= 1
-      desc: Recovery file submitted successfully
-    - expr: >-
-        all(a.submission_status in ('submitted', 'late', 'graded')
-            for a in state.assignments
-            if a.file_name == 'recovery.pdf')
-      desc: All recovery submissions have valid statuses
+        any(a.file_name == 'recovery.pdf'
+            and a.submission_status in ('submitted', 'late')
+            and a.id in [mid.strip() for mid in '{target.missing_assignment_ids}'.split(',')]
+            for a in state.assignments)
+      desc: Recovery file submitted for an identified missing assignment
     - expr: >-
         len([e for e in state.enrollments
              if e.status == 'enrolled']) >= 3
@@ -93,6 +89,11 @@ eval:
         any('{target.advisor_name}' in m.get('to', '')
             for m in state.sent_messages)
       desc: Message addressed to advisor
+    - expr: >-
+        len([a for a in state.assignments
+             if a.file_name == 'recovery.pdf'
+             and a.submission_status in ('submitted', 'late')]) >= 2
+      desc: At least 2 recovery submissions were made (multiple missing/late assignments exist)
   negative_checks:
     - expr: >-
         sum(1 for e in state.enrollments if e.status == 'dropped') <= 2

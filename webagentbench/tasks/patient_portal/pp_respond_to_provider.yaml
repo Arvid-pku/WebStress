@@ -65,6 +65,13 @@ eval:
       desc: At least one new patient message exists
   negative_checks:
     - expr: >-
+        not any(m.from_type == 'patient'
+                and m.provider_id != '{target.pcp_id}'
+                and m.id not in {target.all_msg_ids}
+                for m in state.messages)
+      desc: Agent did not reply to a non-PCP provider
+      penalty: 0.15
+    - expr: >-
         len([m for m in state.messages
              if m.from_type == 'patient'
              and m.id not in {target.all_msg_ids}]) <= 2

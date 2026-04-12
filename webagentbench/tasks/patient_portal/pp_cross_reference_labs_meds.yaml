@@ -100,3 +100,10 @@ eval:
                 for m in state.messages)
       desc: Agent did not misroute the message to a non-clinical category
       penalty: 0.15
+    - expr: >-
+        not any(m.from_type == 'patient'
+                and m.provider_id != '{target.pcp_id}'
+                and m.id not in {target.all_msg_ids}
+                for m in state.messages)
+      desc: Agent did not message a provider other than PCP
+      penalty: 0.15

@@ -71,25 +71,24 @@ eval:
             for a in state.assignments)
       desc: At least one optimization submission was made
     - expr: >-
-        len([a for a in state.assignments
-             if a.file_name == 'optimization.pdf'
-             and a.submission_status in ('submitted', 'late')]) >= 1
-      desc: Optimization file was submitted successfully
+        any(a.file_name == 'optimization.pdf'
+            and a.submission_status in ('submitted', 'late')
+            and a.id in [mid.strip() for mid in '{target.missing_assignment_ids}'.split(',')]
+            for a in state.assignments)
+      desc: Optimization file was submitted for an identified missing assignment
     - expr: >-
         all(e.status == 'enrolled'
             for e in state.enrollments)
       desc: All enrollments remain active (none dropped)
-    - expr: >-
-        all(a.submission_status in ('submitted', 'late', 'graded')
-            for a in state.assignments
-            if a.file_name == 'optimization.pdf')
-      desc: All optimization submissions have valid statuses
     - expr: len(state.sent_messages) >= 1
       desc: Agent sent a strategy message
     - expr: >-
         any('{target.advisor_name}' in m.get('to', '')
             for m in state.sent_messages)
       desc: Message addressed to advisor
+    - expr: >-
+        sum(1 for e in state.enrollments if e.status == 'enrolled') >= 4
+      desc: All 4 enrolled courses are still active (seed integrity)
   negative_checks:
     - expr: >-
         all(e.status != 'dropped' for e in state.enrollments)

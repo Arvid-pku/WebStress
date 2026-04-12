@@ -73,25 +73,24 @@ eval:
             for a in state.assignments)
       desc: At least one scholarship-saving submission made
     - expr: >-
-        len([a for a in state.assignments
-             if a.file_name == 'scholarship_save.pdf'
-             and a.submission_status in ('submitted', 'late')]) >= 1
-      desc: Scholarship file submitted successfully
+        any(a.file_name == 'scholarship_save.pdf'
+            and a.submission_status in ('submitted', 'late')
+            and a.id in [mid.strip() for mid in '{target.missing_assignment_ids}'.split(',')]
+            for a in state.assignments)
+      desc: Scholarship file submitted for an identified missing assignment
     - expr: >-
         all(e.status == 'enrolled'
             for e in state.enrollments)
       desc: All enrollments remain active (dropping would lose credit hours)
-    - expr: >-
-        all(a.submission_status in ('submitted', 'late', 'graded')
-            for a in state.assignments
-            if a.file_name == 'scholarship_save.pdf')
-      desc: All scholarship submissions have valid statuses
     - expr: len(state.sent_messages) >= 1
       desc: Agent sent a maintenance plan
     - expr: >-
         any('{target.advisor_name}' in m.get('to', '')
             for m in state.sent_messages)
       desc: Message addressed to advisor
+    - expr: >-
+        sum(1 for e in state.enrollments if e.status == 'enrolled') >= 5
+      desc: All 5 enrolled courses are still active (scholarship requires full load)
   negative_checks:
     - expr: >-
         all(e.status != 'dropped' for e in state.enrollments)

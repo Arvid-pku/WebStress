@@ -63,21 +63,34 @@ eval:
             for a in state.appointments)
       desc: A new in-person PCP appointment (physical) was scheduled
     - expr: >-
-        (any(a.status == 'scheduled'
+        any(a.status == 'scheduled'
             and a.type == 'in-person'
             and a.id not in {target.upcoming_ids}
-            and 'lab' in a.reason.lower()
+            and any(word in a.reason.lower() for word in ('lab', 'blood', 'pre-visit'))
             for a in state.appointments)
-        or len([a for a in state.appointments
-                if a.status == 'scheduled'
-                and a.id not in {target.upcoming_ids}]) >= 2)
-      desc: A lab work appointment was scheduled
+      desc: A lab work appointment was scheduled with appropriate reason
     - expr: >-
         all(a.type == 'in-person'
             for a in state.appointments
             if a.status == 'scheduled'
             and a.id not in {target.upcoming_ids})
       desc: All new appointments are in-person
+    - expr: >-
+        (
+          next(
+            a.datetime for a in state.appointments
+            if a.status == 'scheduled'
+            and a.provider_id == '{target.pcp_id}'
+            and a.id not in {target.upcoming_ids}
+          )
+          - next(
+            a.datetime for a in state.appointments
+            if a.status == 'scheduled'
+            and a.id not in {target.upcoming_ids}
+            and any(word in a.reason.lower() for word in ('lab', 'blood', 'pre-visit'))
+          )
+        ).days >= 3
+      desc: Lab work is scheduled at least 3 days before the physical
   negative_checks:
     - expr: >-
         not any(a.type == 'telehealth'

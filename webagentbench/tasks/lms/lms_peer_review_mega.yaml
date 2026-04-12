@@ -92,8 +92,10 @@ eval:
       desc: All reviews score all three rubric criteria
     - expr: >-
         any(a.file_name == 'revised_after_review.pdf'
+            and a.submission_status in ('submitted', 'late')
+            and a.id in [rid.strip() for rid in '{target.resubmit_assignment_ids}'.split(',')]
             for a in state.assignments)
-      desc: At least one assignment resubmitted with revised file
+      desc: At least one feedback-tagged assignment resubmitted with revised file
     - expr: >-
         sum(1 for pr in state.peer_reviews
             if pr.reviewer_student_id == state.student.id

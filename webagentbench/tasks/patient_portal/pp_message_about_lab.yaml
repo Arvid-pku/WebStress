@@ -77,3 +77,9 @@ eval:
                 for m in state.messages)
       desc: Agent did not send a billing category message
       penalty: 0.15
+    - expr: >-
+        len([m for m in state.messages
+             if m.from_type == 'patient'
+             and m.id not in {target.all_msg_ids}]) <= 1
+      desc: Agent sent at most one new message (no scatter-shot messaging)
+      penalty: 0.15

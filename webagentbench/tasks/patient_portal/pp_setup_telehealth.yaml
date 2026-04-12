@@ -45,16 +45,16 @@ eval:
   source: server_state
   checks:
     - expr: >-
-        any(a.id in {target.upcoming_ids}
-            and a.status == 'cancelled'
-            for a in state.appointments)
-      desc: An original upcoming appointment was cancelled
+        state.get_appointment('{target.next_appointment_id}') is not None
+        and state.get_appointment('{target.next_appointment_id}').status == 'cancelled'
+      desc: The next upcoming in-person appointment was cancelled
     - expr: >-
         any(a.type == 'telehealth'
             and a.status == 'scheduled'
             and a.id not in {target.upcoming_ids}
+            and a.provider_id == state._initial_snapshot['appointments']['{target.next_appointment_id}']['provider_id']
             for a in state.appointments)
-      desc: A new telehealth appointment was scheduled
+      desc: A new telehealth appointment was scheduled with the same provider
     - expr: >-
         len([a for a in state.appointments
              if a.type == 'telehealth'
@@ -69,3 +69,10 @@ eval:
                 for a in state.appointments)
       desc: Agent did not schedule another in-person appointment
       penalty: 0.20
+    - expr: >-
+        not any(a.id in {target.upcoming_ids}
+                and a.id != '{target.next_appointment_id}'
+                and a.status == 'cancelled'
+                for a in state.appointments)
+      desc: Agent did not cancel a different upcoming appointment
+      penalty: 0.25

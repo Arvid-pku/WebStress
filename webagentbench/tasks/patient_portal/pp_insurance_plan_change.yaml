@@ -101,10 +101,9 @@ eval:
              and m.id not in state._initial_snapshot.get('messages', {})]) >= 1
       desc: Agent sent at least one message during the transition
     - expr: >-
-        len([m for m in state.messages
-             if m.from_type == 'patient'
-             and m.id not in state._initial_snapshot.get('messages', {})]) >= 1
-      desc: Agent sent at least one message
+        state.patient.insurance_plan.plan_name != '{target.old_plan_name}'
+        and state.patient.insurance_plan.member_id != '{target.old_member_id}'
+      desc: Both plan name and member ID were updated (not just one)
   negative_checks:
     - expr: >-
         not any(rx.status == 'discontinued'
@@ -127,3 +126,10 @@ eval:
                 and rx.id in {target.active_rx_ids})
       desc: No prescriptions transferred to unknown pharmacies
       penalty: 0.2
+    - expr: >-
+        not any(m.from_type == 'patient'
+                and m.category == 'billing'
+                and m.id not in state._initial_snapshot.get('messages', {})
+                for m in state.messages)
+      desc: Agent did not misroute formulary requests through billing channel
+      penalty: 0.15

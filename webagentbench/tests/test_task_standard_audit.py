@@ -152,12 +152,12 @@ def test_amazon_order_integrity_tasks_require_exact_order_contents() -> None:
 def test_lms_reporting_tasks_bind_recipient_and_required_facts() -> None:
     """LMS reporting tasks must prove the message went to the right recipient."""
     recipient_bound = {
-        "lms_check_assignment_grade": ("advisor", "points_possible"),
-        "lms_check_course_grade": ("advisor", "get('to'"),
-        "lms_calculate_weighted_grade": ("instructor", "get('to'"),
-        "lms_compare_course_grades": ("advisor", "get('to'"),
-        "lms_find_next_deadline": ("advisor", "get('to'"),
-        "lms_grade_with_curve": ("instructor", "get('to'"),
+        "lms_check_assignment_grade": ("target_assignment_id", "announcement"),
+        "lms_check_course_grade": ("target_course_id", "announcement"),
+        "lms_calculate_weighted_grade": ("target_course_id", "announcement"),
+        "lms_compare_course_grades": ("lower_grade_course_id", "dropped"),
+        "lms_find_next_deadline": ("next_deadline_assignment_id", "early_draft"),
+        "lms_grade_with_curve": ("exam_assignment_id", "curve"),
     }
     for task_id, required_tokens in recipient_bound.items():
         blob = "\n".join(_exprs(task_id)).lower()

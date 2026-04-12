@@ -80,11 +80,12 @@ eval:
       desc: Announcements exist for review (seed validation)
   negative_checks:
     - expr: >-
-        not all(
+        (len([cid for cid in '{target.courses_without_upcoming_exams}'.split(',') if cid.strip()]) == 0
+        or not all(
             all(a.is_read for a in state.announcements if a.course_id == cid)
             for cid in '{target.courses_without_upcoming_exams}'.split(',')
             if cid.strip()
-        )
+        ))
       desc: Not all announcements in non-exam courses were marked read (should be left unread)
       penalty: 0.25
     - expr: >-

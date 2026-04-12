@@ -60,27 +60,27 @@ eval:
   checks:
     - expr: >-
         len([a for a in state.assignments
-             if a.file_name == 'sprint_submission.pdf']) >= 3
+             if a.file_name == 'sprint_submission.pdf'
+             and a.submission_status in ('submitted', 'late')]) >= 3
       desc: At least 3 assignments submitted with sprint filename
     - expr: >-
         any(a.file_name == 'sprint_submission.pdf'
             and a.submission_status in ('submitted', 'late')
+            and a.id in [mid.strip() for mid in '{target.missing_assignment_ids}'.split(',')]
             for a in state.assignments)
-      desc: At least one sprint submission has valid status
-    - expr: >-
-        all(a.submission_status in ('submitted', 'late', 'graded')
-            for a in state.assignments
-            if a.file_name == 'sprint_submission.pdf')
-      desc: All sprint submissions have valid statuses
+      desc: At least one sprint submission was for an identified missing assignment
     - expr: >-
         all(e.status == 'enrolled'
             for e in state.enrollments)
       desc: All enrollments remain active
     - expr: >-
-        len([a for a in state.assignments
-             if a.file_name == 'sprint_submission.pdf'
-             and a.submission_status in ('submitted', 'late')]) >= 3
-      desc: At least 3 sprint submissions were accepted
+        len(set(a.course_id for a in state.assignments
+                if a.file_name == 'sprint_submission.pdf'
+                and a.submission_status in ('submitted', 'late'))) >= 2
+      desc: Sprint submissions span at least 2 different courses
+    - expr: >-
+        sum(1 for e in state.enrollments if e.status == 'enrolled') >= 4
+      desc: All 4 course enrollments remain active (seed integrity)
   negative_checks:
     - expr: >-
         all(e.status != 'dropped' for e in state.enrollments)
