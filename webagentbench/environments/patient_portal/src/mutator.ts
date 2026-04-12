@@ -172,6 +172,7 @@ route("GET", "providers/search", (state, _params, _body, query) => {
   let items = [...state.providers];
   if (query?.specialty) items = items.filter((p) => p.specialty === String(query.specialty));
   if (query?.accepting_new !== undefined) items = items.filter((p) => p.accepting_new === (query.accepting_new === "true" || query.accepting_new === true));
+  if (query?.slot_type) items = items.filter((p) => p.available_slots.some((s) => s.type === String(query.slot_type)));
   return { state, response: { items } };
 });
 
@@ -185,17 +186,17 @@ route("GET", "appointments", (state, _params, _body, query) => {
   return { state, response: { items } };
 });
 
-route("GET", "appointments/:apt_id", (state, params) => {
-  const apt = state.appointments.find((a) => a.id === params.apt_id);
-  if (!apt) return { state, response: { error: "Not found", status: 404 } };
-  return { state, response: apt };
-});
-
 route("GET", "appointments/available-slots", (state, _params, _body, query) => {
   const providerId = String(query?.provider_id ?? "");
   const provider = state.providers.find((p) => p.id === providerId);
   if (!provider) return { state, response: { error: "Provider not found", status: 404 } };
   return { state, response: { items: provider.available_slots } };
+});
+
+route("GET", "appointments/:apt_id", (state, params) => {
+  const apt = state.appointments.find((a) => a.id === params.apt_id);
+  if (!apt) return { state, response: { error: "Not found", status: 404 } };
+  return { state, response: apt };
 });
 
 route("POST", "appointments/create", (state, _params, body) => {
@@ -437,6 +438,32 @@ route("GET", "claims", (state, _params, _body, query) => {
 route("GET", "claims/:clm_id", (state, params) => {
   const claim = state.claims.find((c) => c.id === params.clm_id);
   if (!claim) return { state, response: { error: "Not found", status: 404 } };
+  return { state, response: claim };
+});
+
+route("POST", "claims/submit", (state, _params, body) => {
+  const appointmentId = String(body?.appointment_id ?? "");
+  const apt = state.appointments.find((a) => a.id === appointmentId);
+  if (!apt) return { state, response: { error: "Appointment not found", status: 404 } };
+  if (apt.status !== "completed") return { state, response: { error: `Appointment is ${apt.status}, must be completed`, status: 422 } };
+
+  const clmId = genId("clm");
+  const amountBilled = String(Math.floor(Math.random() * 2350 + 150));
+  const claim: InsuranceClaim = {
+    id: clmId,
+    service_date: apt.datetime,
+    provider_id: apt.provider_id,
+    appointment_id: appointmentId,
+    procedure_code: String(body?.procedure_code ?? ""),
+    diagnosis_code: String(body?.diagnosis_code ?? ""),
+    status: "submitted",
+    amount_billed: amountBilled,
+    amount_covered: "0",
+    patient_responsibility: "0",
+    eob_available: false,
+    appeal_deadline: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString(),
+  };
+  state.claims.push(claim);
   return { state, response: claim };
 });
 

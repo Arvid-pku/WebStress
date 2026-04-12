@@ -73,7 +73,7 @@ eval:
         any(m.from_type == 'patient'
             and m.provider_id == state.get_prescription(
               max({target.interacting_rx_ids},
-                  key=lambda rid: state.get_prescription(rid).prescribed_at)
+                  key=lambda rid: state.get_prescription(rid).last_filled)
             ).provider_id
             for m in state.messages
             if m.id not in state._initial_snapshot.get('messages', {}))
@@ -99,7 +99,7 @@ eval:
         not any(m.from_type == 'patient'
                 and m.provider_id != state.get_prescription(
                   max({target.interacting_rx_ids},
-                      key=lambda rid: state.get_prescription(rid).prescribed_at)
+                      key=lambda rid: state.get_prescription(rid).last_filled)
                 ).provider_id
                 and m.id not in state._initial_snapshot.get('messages', {})
                 for m in state.messages)

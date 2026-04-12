@@ -151,6 +151,14 @@ export interface Grade {
   late_penalty_applied: string;
 }
 
+export interface SentMessage {
+  to: string;
+  subject: string;
+  body: string;
+  sent_at: string;
+  from: string;
+}
+
 export interface CalendarEvent {
   id: string;
   course_id: string;

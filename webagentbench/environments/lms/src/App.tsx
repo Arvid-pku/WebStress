@@ -158,6 +158,7 @@ export function App() {
       <Route path="/launch" element={<LmsWorkspace />} />
       <Route element={<LmsShellWrapper />}>
         <Route path="/" element={<DashboardPage />} />
+        <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/courses" element={<CoursesPage />} />
         <Route path="/courses/:id" element={<CourseViewPage />} />
         <Route path="/courses/:id/assignments/:aid" element={<AssignmentPage />} />

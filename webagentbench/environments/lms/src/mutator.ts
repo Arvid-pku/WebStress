@@ -11,6 +11,7 @@ import type {
   Grade,
   Module,
   PeerReview,
+  SentMessage,
   Student,
 } from "./types";
 
@@ -32,7 +33,7 @@ export interface LmsFixture {
   announcements: Announcement[];
   grades: Grade[];
   calendar_events: CalendarEvent[];
-  sent_messages: Array<Record<string, string>>;
+  sent_messages: SentMessage[];
 }
 
 /* ------------------------------------------------------------------ */

@@ -11,6 +11,7 @@ import type {
   Grade,
   Module,
   PeerReview,
+  SentMessage,
   Student,
 } from "./types";
 
@@ -156,9 +157,9 @@ export function createLmsApi(request: RequestFn) {
 
     /* Messages */
     listMessages: () =>
-      request<{ items: Array<Record<string, string>> }>("messages").then((r) => r.items),
+      request<{ items: SentMessage[] }>("messages").then((r) => r.items),
     sendMessage: (to: string, subject: string, body: string) =>
-      request<{ message: Record<string, string>; sent: boolean }>("messages/send", {
+      request<{ message: SentMessage; sent: boolean }>("messages/send", {
         method: "POST",
         body: { to, subject, body },
       }),

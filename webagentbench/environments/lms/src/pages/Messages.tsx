@@ -1,13 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useLmsLayout } from "../context";
-
-interface SentMessage {
-  to: string;
-  subject: string;
-  body: string;
-  sent_at: string;
-  from: string;
-}
+import type { SentMessage } from "../types";
 
 interface Recipient {
   label: string;
