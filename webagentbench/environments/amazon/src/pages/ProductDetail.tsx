@@ -190,6 +190,8 @@ export function ProductDetailPage() {
   const discount = product.list_price
     ? Math.round(((product.list_price - product.price) / product.list_price) * 100)
     : 0;
+  const priceWhole = Math.floor(product.price);
+  const priceFraction = (product.price % 1).toFixed(2).slice(2);
 
   const isBestSeller = product.rating >= 4.5;
   const boughtCount = product.review_count > 1000
@@ -277,15 +279,17 @@ export function ProductDetailPage() {
               <div className="product-detail__discount-row">
                 <span className="product-detail__discount-badge">-{discount}%</span>
                 <span className="product-detail__price-large">
-                  <sup>$</sup>{Math.floor(product.price)}
-                  <sup>{(product.price % 1).toFixed(2).slice(2)}</sup>
+                  <span className="product-detail__price-currency">$</span>
+                  <span className="product-detail__price-whole">{priceWhole}</span>
+                  <span className="product-detail__price-fraction">{priceFraction}</span>
                 </span>
               </div>
             )}
             {!discount && (
               <div className="product-detail__price-large">
-                <sup>$</sup>{Math.floor(product.price)}
-                <sup>{(product.price % 1).toFixed(2).slice(2)}</sup>
+                <span className="product-detail__price-currency">$</span>
+                <span className="product-detail__price-whole">{priceWhole}</span>
+                <span className="product-detail__price-fraction">{priceFraction}</span>
               </div>
             )}
             {product.list_price && (
@@ -363,8 +367,9 @@ export function ProductDetailPage() {
         <div className="product-detail__buy-col">
           <div className="product-detail__buy-box">
             <div className="product-detail__buy-price">
-              <sup>$</sup>{Math.floor(product.price)}
-              <sup>{(product.price % 1).toFixed(2).slice(2)}</sup>
+              <span className="product-detail__price-currency">$</span>
+              <span className="product-detail__price-whole">{priceWhole}</span>
+              <span className="product-detail__price-fraction">{priceFraction}</span>
             </div>
             {product.prime_eligible && (
               <div className="product-detail__buy-delivery">

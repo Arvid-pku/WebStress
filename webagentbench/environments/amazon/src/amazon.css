@@ -1065,12 +1065,12 @@ a:hover {
 }
 
 .product-detail__image-placeholder {
+  display: none;
   width: 100%;
   height: 350px;
   background: linear-gradient(135deg, #f0f0f0, #e0e0e0);
   border: 1px solid var(--amazon-border);
   border-radius: var(--amazon-radius);
-  display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -1078,6 +1078,10 @@ a:hover {
   color: #999;
   font-size: 3rem;
   font-weight: 700;
+}
+
+.product-detail__image-placeholder.visible {
+  display: flex;
 }
 
 .product-detail__image-label {
@@ -1136,11 +1140,12 @@ a:hover {
 .product-detail__price-large {
   font-size: 1.1rem;
 }
-.product-detail__price-large sup {
+.product-detail__price-currency,
+.product-detail__price-fraction {
   font-size: 0.7rem;
+  vertical-align: super;
 }
-.product-detail__price-large sup:first-child + *,
-.product-detail__price-large > span {
+.product-detail__price-whole {
   font-size: 1.8rem;
 }
 
@@ -1270,9 +1275,6 @@ a:hover {
 .product-detail__buy-price {
   font-size: 1.1rem;
 }
-.product-detail__buy-price sup {
-  font-size: 0.7rem;
-}
 
 .product-detail__buy-delivery {
   font-size: 0.85rem;
@@ -1301,10 +1303,8 @@ a:hover {
 
 /* Reviews */
 .product-detail__reviews {
-  background: var(--amazon-white);
-  border: 1px solid var(--amazon-border);
-  border-radius: var(--amazon-radius);
-  padding: 1.5rem;
+  padding: 1.5rem 0;
+  border-top: 1px solid var(--amazon-border);
 }
 
 .product-detail__reviews h2 {
@@ -3309,11 +3309,8 @@ a:hover {
 /* ── Q&A Section (Product Detail) ── */
 
 .product-detail__qa {
-  background: var(--amazon-white);
-  border: 1px solid var(--amazon-border);
-  border-radius: var(--amazon-radius);
-  padding: 1.5rem;
-  margin-top: 1.5rem;
+  padding: 1.5rem 0;
+  border-top: 1px solid var(--amazon-border);
 }
 
 .qa-header {
