@@ -234,12 +234,16 @@ class AmazonSeedRunner:
         # 4b. Seed realistic account history (orders, reviews, returns, etc.)
         self._add_initial_account_state(ctx)
 
-        # 5. Sort products alphabetically by name
+        # 5. Sync id_counters so the state model continues from where
+        #    the seeder left off — prevents duplicate IDs at runtime.
+        base["id_counters"].update(ctx.counters)
+
+        # 6. Sort products alphabetically by name
         base["products"] = sorted(
             base["products"], key=lambda p: p.name.lower()
         )
 
-        # 6. Resolve target templates
+        # 7. Resolve target templates
         targets = self._resolve_targets(seed_cfg.targets, ctx)
 
         return base, targets
