@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from datetime import datetime, timezone
 from typing import Any
 
@@ -251,6 +252,14 @@ class RedditState(BaseEnvState):
     def get_post(self, post_id: str) -> Post | None:
         return next((p for p in self.posts if p.id == post_id), None)
 
+    @staticmethod
+    def _hot_score(post: Post) -> float:
+        """Reddit-inspired hot ranking: log(score) + recency bias."""
+        score = max(post.score, 1)
+        order = math.log10(score)
+        epoch = post.created_at.timestamp()
+        return order + epoch / 45000
+
     def list_posts(
         self,
         subreddit_name: str | None = None,
@@ -271,7 +280,7 @@ class RedditState(BaseEnvState):
         elif sort == "controversial":
             items.sort(key=lambda p: (abs(p.upvote_ratio - 0.5), p.comment_count), reverse=False)
         else:  # hot (default)
-            items.sort(key=lambda p: (p.is_pinned, p.score, p.created_at), reverse=True)
+            items.sort(key=lambda p: (p.is_pinned, self._hot_score(p)), reverse=True)
 
         return items
 
@@ -288,8 +297,8 @@ class RedditState(BaseEnvState):
             items.sort(key=lambda p: p.score, reverse=True)
         elif sort == "rising":
             items.sort(key=lambda p: (p.upvote_ratio, p.created_at), reverse=True)
-        else:
-            items.sort(key=lambda p: (p.score, p.created_at), reverse=True)
+        else:  # hot (default)
+            items.sort(key=lambda p: self._hot_score(p), reverse=True)
         return items
 
     def create_post(
@@ -461,6 +470,8 @@ class RedditState(BaseEnvState):
         comment = self._require_comment(comment_id)
         if comment.author_name != self.owner_username:
             raise ValueError("Cannot edit another user's comment")
+        if comment.is_removed:
+            raise ValueError("Cannot edit a deleted comment")
         comment.body = body
         comment.is_edited = True
         comment.edited_at = datetime.now(timezone.utc)

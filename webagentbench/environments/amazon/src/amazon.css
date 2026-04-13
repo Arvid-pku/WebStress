@@ -1558,12 +1558,15 @@ a:hover {
   height: 100px;
   background: linear-gradient(135deg, #f0f0f0, #e0e0e0);
   border-radius: 4px;
-  display: flex;
+  display: none;
   align-items: center;
   justify-content: center;
   font-size: 1.5rem;
   font-weight: 700;
   color: #999;
+}
+.cart-item__image-placeholder.visible {
+  display: flex;
 }
 
 .cart-item__details {

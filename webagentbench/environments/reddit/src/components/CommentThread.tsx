@@ -111,12 +111,12 @@ function CommentNode({
               >
                 {comment.is_saved ? "★ Saved" : "☆ Save"}
               </button>
-              {isOwner && onEdit && (
+              {isOwner && onEdit && !comment.is_removed && (
                 <button className="comment-action" onClick={() => { setIsEditing(!isEditing); setEditText(comment.body); }} aria-label="Edit comment">
                   Edit
                 </button>
               )}
-              {isOwner && onDelete && (
+              {isOwner && onDelete && !comment.is_removed && (
                 <button className="comment-action comment-action--danger" onClick={() => onDelete(comment.id)} aria-label="Delete comment">
                   Delete
                 </button>

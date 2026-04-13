@@ -20,10 +20,15 @@ def derive_seed(*parts: str | int) -> int:
 
 
 def derive_anchor_time(seed: int) -> datetime:
-    """Return a fixed UTC reference time for a given seed."""
-    base = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    """Return a fixed UTC reference time for a given seed, always in the past."""
+    base = datetime(2025, 1, 1, tzinfo=timezone.utc)
     minutes = derive_seed("anchor", seed) % (365 * 24 * 60)
-    return base + timedelta(minutes=minutes)
+    anchor = base + timedelta(minutes=minutes)
+    # Ensure anchor is never in the future so seeded timestamps look realistic
+    now = datetime.now(timezone.utc)
+    if anchor > now - timedelta(hours=2):
+        anchor = now - timedelta(hours=2)
+    return anchor
 
 
 class FakeDataGenerator:

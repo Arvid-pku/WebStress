@@ -4,7 +4,7 @@ import type { Post, RedditSettings } from "./types";
 export function timeAgo(dateStr: string): string {
   const now = Date.now();
   const then = new Date(dateStr).getTime();
-  const seconds = Math.floor((now - then) / 1000);
+  const seconds = Math.max(0, Math.floor((now - then) / 1000));
 
   if (seconds < 60) return "just now";
   const minutes = Math.floor(seconds / 60);
