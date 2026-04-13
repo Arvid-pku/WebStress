@@ -506,6 +506,7 @@ class RedditSeedRunner:
             {"sub": "Python", "title": "I built a CLI tool that generates test data for any database schema", "body": "Been working on this for a few months. It reads your DB schema and generates realistic test data with proper foreign key relationships. Supports PostgreSQL, MySQL, and SQLite.\n\nLink to the GitHub repo in comments. Would love feedback!", "score": 892},
             {"sub": "personalfinance", "title": "Finally debt-free at 32 after 5 years of aggressive payoff", "body": "Started with $94k in debt (student loans + car loan). Today I made my last payment. Here's the breakdown of my strategy...", "score": 12400},
         ]
+        owner_posts: list[Post] = []
         for i, pdata in enumerate(owner_posts_data):
             post_counter += 1
             sub = next((s for s in subreddits if s.name == pdata["sub"]), subreddits[0])
@@ -527,6 +528,7 @@ class RedditSeedRunner:
                 permalink=f"/r/{sub.name}/comments/{post_counter}",
             )
             posts.append(post)
+            owner_posts.append(post)
 
         # Create threaded comments
         comments: list[Comment] = []
@@ -653,7 +655,9 @@ class RedditSeedRunner:
             ),
         ]
 
-        # Notifications
+        # Notifications — link each to a relevant post so clicking navigates
+        # owner_posts: [0]=technology, [1]=Python, [2]=personalfinance
+        _prog_post = next((p for p in posts if p.subreddit_name == "programming"), posts[0] if posts else None)
         notifications = [
             Notification(
                 id="notif_1",
@@ -662,7 +666,7 @@ class RedditSeedRunner:
                 body=f"{rng.choice(usernames_used[:10])} replied to your comment in r/technology",
                 created_at=now - timedelta(hours=rng.randint(1, 6)),
                 is_read=False,
-                related_post_id=posts[0].id if posts else None,
+                related_post_id=owner_posts[0].id if owner_posts else None,
                 subreddit_name="technology",
                 from_user=rng.choice(usernames_used[:10]),
             ),
@@ -673,6 +677,7 @@ class RedditSeedRunner:
                 body=f"{rng.choice(usernames_used[:10])} commented on your post 'Just switched to Linux full-time'",
                 created_at=now - timedelta(hours=rng.randint(2, 12)),
                 is_read=False,
+                related_post_id=owner_posts[0].id if owner_posts else None,
                 subreddit_name="technology",
                 from_user=rng.choice(usernames_used[:10]),
             ),
@@ -683,6 +688,7 @@ class RedditSeedRunner:
                 body="Your post in r/personalfinance has reached 1000 upvotes. Congratulations!",
                 created_at=now - timedelta(hours=rng.randint(6, 24)),
                 is_read=False,
+                related_post_id=owner_posts[2].id if len(owner_posts) > 2 else None,
                 subreddit_name="personalfinance",
             ),
             Notification(
@@ -692,6 +698,7 @@ class RedditSeedRunner:
                 body=f"u/{rng.choice(usernames_used[:10])} mentioned you in a comment in r/programming",
                 created_at=now - timedelta(hours=rng.randint(12, 48)),
                 is_read=True,
+                related_post_id=_prog_post.id if _prog_post else None,
                 subreddit_name="programming",
                 from_user=rng.choice(usernames_used[:10]),
             ),
@@ -702,6 +709,8 @@ class RedditSeedRunner:
                 body="A kind redditor has given your post a Gold award.",
                 created_at=now - timedelta(hours=rng.randint(24, 72)),
                 is_read=True,
+                related_post_id=owner_posts[2].id if len(owner_posts) > 2 else None,
+                subreddit_name="personalfinance",
             ),
         ]
 
