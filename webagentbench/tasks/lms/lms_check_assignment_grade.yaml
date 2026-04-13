@@ -4,9 +4,10 @@ title: Check Assignment Grade
 instruction_template: >-
   Navigate to the assignment "{target.assignment_title}" in {target.course_code}
   and check its score. If the score is below 70% of the total points possible,
-  resubmit the assignment with file 'revision_v2.pdf'. If the score is 70% or
-  above, mark the course's latest announcement as read to confirm you have
-  reviewed the score.
+  submit the next unsubmitted assignment in the same course with file
+  'improvement.pdf' to start catching up. If the score is 70% or above, mark
+  the course's latest announcement as read to confirm you have reviewed your
+  standing.
 difficulty: easy
 time_limit_seconds: 120
 expected_steps: 6
@@ -40,6 +41,7 @@ seed:
         - target_assignment_id
         - target_assignment_title
         - target_course_code
+        - unsubmitted_hw_id
     - use: grade_book
       params: {}
       outputs:
@@ -56,6 +58,7 @@ seed:
     assignment_title: '{output.target_assignment_title}'
     course_code: '{output.target_course_code}'
     target_assignment_id: '{output.target_assignment_id}'
+    unsubmitted_hw_id: '{output.unsubmitted_hw_id}'
     score_below_70: '{output.score_below_70}'
     latest_announcement_id: '{output.latest_announcement_id}'
 
@@ -64,14 +67,14 @@ eval:
   checks:
     - expr: >-
         (('{target.score_below_70}' == 'true'
-         and state.get_assignment('{target.target_assignment_id}') is not None
-         and state.get_assignment('{target.target_assignment_id}').submission_status in ('submitted', 'late')
-         and state.get_assignment('{target.target_assignment_id}').file_name == 'revision_v2.pdf')
+         and state.get_assignment('{target.unsubmitted_hw_id}') is not None
+         and state.get_assignment('{target.unsubmitted_hw_id}').submission_status in ('submitted', 'late')
+         and state.get_assignment('{target.unsubmitted_hw_id}').file_name == 'improvement.pdf')
         or ('{target.score_below_70}' == 'false'
             and state.get_announcement('{target.latest_announcement_id}') is not None
             and state.get_announcement('{target.latest_announcement_id}').is_read == True))
       desc: >-
-        Resubmit with revision_v2.pdf if score < 70%, or mark latest
+        Submit improvement.pdf if score < 70%, or mark latest
         announcement as read if >= 70%
     - expr: >-
         state.get_assignment('{target.target_assignment_id}') is not None

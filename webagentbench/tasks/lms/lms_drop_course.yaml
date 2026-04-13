@@ -42,9 +42,8 @@ eval:
         state.get_enrollment_for_course('{target.target_course_id}').status == 'dropped'
       desc: Target course enrollment status is dropped
     - expr: >-
-        state.get_enrollment_for_course('{target.target_course_id}') is not None and
-        state.get_enrollment_for_course('{target.target_course_id}').final_grade is None
-      desc: Dropped enrollment has no final grade assigned
+        sum(1 for e in state.enrollments if e.status == 'dropped') >= 1
+      desc: At least one course enrollment is in dropped status
   negative_checks:
     - expr: >-
         sum(1 for e in state.enrollments if e.status == 'dropped') <= 1

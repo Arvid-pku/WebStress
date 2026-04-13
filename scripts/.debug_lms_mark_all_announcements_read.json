@@ -1,0 +1,10 @@
+{
+  "session_id": "lms_lms_mark_all_announcements_read_1ceebd205e",
+  "task_id": "lms_mark_all_announcements_read",
+  "env": "lms",
+  "variant_filename": null,
+  "instruction": "Mark all announcements as read.",
+  "start_path": "/courses",
+  "current_path": "/courses",
+  "seed": 42
+}

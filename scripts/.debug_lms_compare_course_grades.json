@@ -1,0 +1,10 @@
+{
+  "session_id": "lms_lms_compare_course_grades_e1f8da71f7",
+  "task_id": "lms_compare_course_grades",
+  "env": "lms",
+  "variant_filename": null,
+  "instruction": "Compare your weighted grades between CS101 and MATH201. Drop the course with the lower weighted grade.",
+  "start_path": "/courses",
+  "current_path": "/courses",
+  "seed": 42
+}

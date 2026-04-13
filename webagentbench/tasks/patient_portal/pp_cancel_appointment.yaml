@@ -45,8 +45,10 @@ eval:
         and state.get_appointment('{target.target_apt_id}').status == 'cancelled'
       desc: Target appointment is cancelled
     - expr: >-
-        state.get_appointment('{target.target_apt_id}') is not None
-      desc: Appointment record still exists (not deleted)
+        (sum(1 for a in state.appointments if a.status == 'cancelled')
+        > sum(1 for aid, snap in state._initial_snapshot.get('appointments', {}).items()
+              if snap.get('status') == 'cancelled'))
+      desc: More appointments are cancelled now than at session start
   negative_checks:
     - expr: >-
         all(

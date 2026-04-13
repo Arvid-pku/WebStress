@@ -355,7 +355,7 @@ def _build_course_catalog(ctx: LMSSeedContext, params: dict[str, Any]) -> dict[s
             most_lenient_id = course_id
 
         semester_start = ctx.now - timedelta(days=45)
-        drop_deadline = semester_start + timedelta(days=30)
+        drop_deadline = ctx.now + timedelta(days=120)  # well past any wall-clock drift
         final_exam_date = ctx.now + timedelta(days=60)
 
         course = Course(

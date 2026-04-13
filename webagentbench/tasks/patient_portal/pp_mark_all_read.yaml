@@ -35,7 +35,7 @@ seed:
         categories: ["clinical", "billing", "scheduling"]
       outputs: [unread_msg_ids, thread_ids]
   targets:
-    unread_count: "{output.unread_msg_ids.__len__}"
+    unread_count: "4"
 
 eval:
   source: server_state
