@@ -44,8 +44,8 @@ seed:
 eval:
   source: server_state
   checks:
-  - expr: state.notifications[0].is_read if state.notifications else True
-    desc: Notification marked as read
+  - expr: any(n.id == '{target.notification_id}' and n.is_read for n in state.notifications)
+    desc: Target notification marked as read
   - expr: any(c.post_id == '{target.related_post_id}' and c.body == "This is fascinating! The ability to edit RNA on the fly
       is essentially a form of real-time evolution." and c.author_name == state.owner_username for c in state.comments)
     desc: Exact comment posted on referenced post
