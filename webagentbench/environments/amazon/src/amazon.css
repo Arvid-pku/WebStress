@@ -1307,7 +1307,7 @@ a:hover {
   border-top: 1px solid var(--amazon-border);
 }
 
-.product-detail__reviews h2 {
+.product-detail__reviews > h2 {
   font-size: 1.3rem;
   margin: 0 0 1rem;
 }
@@ -1340,6 +1340,75 @@ a:hover {
 .product-detail__no-reviews {
   color: var(--amazon-text-secondary);
   font-style: italic;
+}
+
+.review-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+.review-header h2 {
+  margin: 0;
+  font-size: 1.3rem;
+}
+
+.review-form {
+  background: #fafafa;
+  border: 1px solid var(--amazon-border);
+  border-radius: var(--amazon-radius);
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+.review-form h3 {
+  margin: 0 0 1rem;
+  font-size: 1.1rem;
+}
+.review-form__rating {
+  margin-bottom: 1rem;
+}
+.review-form__rating label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+  font-size: 0.9rem;
+}
+.review-form__stars {
+  display: flex;
+  gap: 0.25rem;
+}
+.review-form__star {
+  background: none;
+  border: none;
+  font-size: 1.8rem;
+  cursor: pointer;
+  color: #ddd;
+  padding: 0;
+  line-height: 1;
+}
+.review-form__star--active {
+  color: var(--amazon-star);
+}
+.review-form__field {
+  margin-bottom: 1rem;
+}
+.review-form__field label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.3rem;
+  font-size: 0.9rem;
+}
+.review-form__field input,
+.review-form__field textarea {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--amazon-border);
+  border-radius: var(--amazon-radius);
+  font-size: 0.9rem;
+  font-family: inherit;
+}
+.review-form__field textarea {
+  resize: vertical;
 }
 
 .review-card {
@@ -2994,6 +3063,15 @@ a:hover {
   background: #f0f2f2;
   color: var(--amazon-text);
   text-decoration: none;
+}
+
+.amazon-navbar__dropdown-btn {
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
 }
 
 .amazon-navbar__dropdown-divider {

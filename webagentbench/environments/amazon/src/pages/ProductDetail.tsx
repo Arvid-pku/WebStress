@@ -28,6 +28,12 @@ export function ProductDetailPage() {
 
   const [cartAddedProduct, setCartAddedProduct] = useState<string | null>(null);
 
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewTitle, setReviewTitle] = useState("");
+  const [reviewBody, setReviewBody] = useState("");
+  const [submittingReview, setSubmittingReview] = useState(false);
+
   const [showAskForm, setShowAskForm] = useState(false);
   const [newQuestion, setNewQuestion] = useState("");
   const [askingQuestion, setAskingQuestion] = useState(false);
@@ -111,6 +117,39 @@ export function ProductDetailPage() {
     } catch {
       notify("Error", "Failed to add to wishlist.");
     }
+  };
+
+  const handleAddReview = async () => {
+    if (!id || !reviewTitle.trim() || !reviewBody.trim()) return;
+    setSubmittingReview(true);
+    try {
+      const review = await api.addReview(id, {
+        rating: reviewRating,
+        title: reviewTitle.trim(),
+        body: reviewBody.trim(),
+      });
+      setReviews((prev) => [review, ...prev]);
+      notify("Review Submitted", "Your review has been posted.");
+    } catch {
+      const simReview: Review = {
+        id: `review-${Date.now()}`,
+        product_id: id,
+        author_name: "You",
+        rating: reviewRating,
+        title: reviewTitle.trim(),
+        body: reviewBody.trim(),
+        created_at: new Date().toISOString(),
+        verified_purchase: true,
+        helpful_count: 0,
+      };
+      setReviews((prev) => [simReview, ...prev]);
+      notify("Review Submitted (simulated)", "Your review has been posted.");
+    }
+    setReviewTitle("");
+    setReviewBody("");
+    setReviewRating(5);
+    setShowReviewForm(false);
+    setSubmittingReview(false);
   };
 
   const handleAskQuestion = async () => {
@@ -445,12 +484,72 @@ export function ProductDetailPage() {
 
       {/* Reviews section */}
       <section className="product-detail__reviews" aria-label="Customer reviews">
-        <h2>Customer Reviews</h2>
+        <div className="review-header">
+          <h2>Customer Reviews</h2>
+          <button
+            className="amazon-btn amazon-btn--add-to-cart"
+            onClick={() => setShowReviewForm(!showReviewForm)}
+          >
+            {showReviewForm ? "Cancel" : "Write a Review"}
+          </button>
+        </div>
         <div className="product-detail__review-summary">
           <StarRating rating={product.rating} size="lg" />
           <span className="product-detail__review-avg">{product.rating.toFixed(1)} out of 5</span>
           <span className="product-detail__review-total">{product.review_count} global ratings</span>
         </div>
+
+        {showReviewForm && (
+          <div className="review-form" aria-label="Write a review">
+            <h3>Write a Customer Review</h3>
+            <div className="review-form__rating">
+              <label>Overall rating</label>
+              <div className="review-form__stars" role="radiogroup" aria-label="Rating">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    className={`review-form__star ${star <= reviewRating ? "review-form__star--active" : ""}`}
+                    onClick={() => setReviewRating(star)}
+                    aria-label={`${star} star${star !== 1 ? "s" : ""}`}
+                    aria-pressed={star === reviewRating}
+                  >
+                    &#9733;
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="review-form__field">
+              <label htmlFor="review-title">Add a headline</label>
+              <input
+                id="review-title"
+                type="text"
+                value={reviewTitle}
+                onChange={(e) => setReviewTitle(e.target.value)}
+                placeholder="What's most important to know?"
+                aria-label="Review headline"
+              />
+            </div>
+            <div className="review-form__field">
+              <label htmlFor="review-body">Add a written review</label>
+              <textarea
+                id="review-body"
+                value={reviewBody}
+                onChange={(e) => setReviewBody(e.target.value)}
+                placeholder="What did you like or dislike? What did you use this product for?"
+                rows={4}
+                aria-label="Review body"
+              />
+            </div>
+            <button
+              className="amazon-btn amazon-btn--buy-now"
+              onClick={handleAddReview}
+              disabled={submittingReview || !reviewTitle.trim() || !reviewBody.trim()}
+            >
+              {submittingReview ? "Submitting..." : "Submit Review"}
+            </button>
+          </div>
+        )}
 
         {reviews.length > 0 ? (
           <div className="product-detail__review-list">

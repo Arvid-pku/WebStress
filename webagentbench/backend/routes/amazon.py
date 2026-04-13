@@ -121,7 +121,7 @@ class UpdateSettingsRequest(SessionScopedRequest):
     currency: str | None = None
 
 
-class LoginRequest(BaseModel):
+class LoginRequest(SessionScopedRequest):
     email: str
     password: str = "simulated"
 
@@ -158,6 +158,12 @@ class AnswerQuestionRequest(SessionScopedRequest):
 class GiftCardRequest(SessionScopedRequest):
     code: str
     amount: float
+
+    @classmethod
+    def validate_code_format(cls, code: str) -> bool:
+        """Gift card codes must match XXXX-XXXX-XXXX (alphanumeric)."""
+        import re
+        return bool(re.fullmatch(r"[A-Za-z0-9]{4}-[A-Za-z0-9]{4}-[A-Za-z0-9]{4}", code))
 
 
 class UpdateOrderStatusRequest(SessionScopedRequest):
@@ -1069,8 +1075,13 @@ def login(
     body: LoginRequest,
     session_manager: SessionManager = Depends(get_session_manager),
 ) -> dict[str, Any]:
-    # Simulated login -- always succeeds.  We don't have a session_id yet so
-    # we just return a confirmation payload.
+    state = _amazon_state(session_manager, body.session_id)
+    _mutate(
+        session_manager, body.session_id,
+        "amazon.auth.login",
+        {"email": body.email},
+        lambda s: s.login(body.email, body.password),
+    )
     return {
         "ok": True,
         "email": body.email,
@@ -1313,6 +1324,11 @@ def add_gift_card(
     body: GiftCardRequest,
     session_manager: SessionManager = Depends(get_session_manager),
 ) -> dict[str, Any]:
+    if not GiftCardRequest.validate_code_format(body.code):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid gift card code. Must be in format XXXX-XXXX-XXXX (letters and digits).",
+        )
     state = _amazon_state(session_manager, body.session_id)
 
     def do_add(s: Any) -> GiftCard:

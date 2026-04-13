@@ -32,8 +32,13 @@ export function GiftCardsPage() {
   const totalBalance = giftCards.reduce((sum, gc) => sum + gc.balance, 0);
 
   const handleAddGiftCard = async () => {
-    if (!newCode.trim()) {
+    const code = newCode.trim().toUpperCase();
+    if (!code) {
       notify("Error", "Please enter a gift card code.");
+      return;
+    }
+    if (!/^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(code)) {
+      notify("Error", "Invalid code format. Must be XXXX-XXXX-XXXX (letters and digits).");
       return;
     }
     const amount = parseFloat(newAmount);
@@ -42,24 +47,15 @@ export function GiftCardsPage() {
       return;
     }
     try {
-      const gc = await api.addGiftCard(newCode.trim(), amount);
+      const gc = await api.addGiftCard(code, amount);
       setGiftCards((prev) => [...prev, gc]);
       notify("Gift Card Added", `$${amount.toFixed(2)} gift card has been added to your account.`);
+      setNewCode("");
+      setNewAmount("");
+      setShowAddForm(false);
     } catch {
-      const simulatedGc: GiftCard = {
-        id: `gc-${Date.now()}`,
-        code: newCode.trim(),
-        balance: amount,
-        initial_amount: amount,
-        redeemed: false,
-        added_at: new Date().toISOString(),
-      };
-      setGiftCards((prev) => [...prev, simulatedGc]);
-      notify("Gift Card Added (simulated)", `$${amount.toFixed(2)} gift card has been added.`);
+      notify("Error", "Invalid gift card code. Please check and try again.");
     }
-    setNewCode("");
-    setNewAmount("");
-    setShowAddForm(false);
   };
 
   const handleRedeem = async (id: string) => {

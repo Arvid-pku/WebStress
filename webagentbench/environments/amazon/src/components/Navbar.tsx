@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { preserveQueryParams } from "@webagentbench/shared";
 
 import { useAmazonLayout } from "../context";
@@ -26,11 +26,13 @@ const DEPARTMENTS = [
 
 export function Navbar({ searchValue, onSearchChange, onSearchSubmit, cartCount }: NavbarProps) {
   const location = useLocation();
-  const { api } = useAmazonLayout();
+  const navigate = useNavigate();
+  const { api, notify } = useAmazonLayout();
   const [unreadCount, setUnreadCount] = useState(0);
   const [showAccountDropdown, setShowAccountDropdown] = useState(false);
   const [searchDepartment, setSearchDepartment] = useState("All");
   const [ownerName, setOwnerName] = useState("Sign in");
+  const [isLoggedIn, setIsLoggedIn] = useState(true);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -44,9 +46,25 @@ export function Navbar({ searchValue, onSearchChange, onSearchSubmit, cartCount 
           const first = acct.owner_name.split(" ")[0];
           setOwnerName(first);
         }
+        if (acct) {
+          setIsLoggedIn(acct.is_logged_in);
+        }
       })
       .catch(() => {});
   }, [api, location.pathname]);
+
+  const handleSignOut = async () => {
+    setShowAccountDropdown(false);
+    try {
+      await api.logout();
+    } catch {
+      // logout is best-effort
+    }
+    setIsLoggedIn(false);
+    setOwnerName("Sign in");
+    notify("Signed Out", "You have been signed out.");
+    navigate(preserveQueryParams("/login", location.search));
+  };
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -195,13 +213,22 @@ export function Navbar({ searchValue, onSearchChange, onSearchSubmit, cartCount 
                   Settings
                 </Link>
                 <hr className="amazon-navbar__dropdown-divider" />
-                <Link
-                  to={preserveQueryParams("/login", location.search)}
-                  className="amazon-navbar__dropdown-item"
-                  onClick={() => setShowAccountDropdown(false)}
-                >
-                  Sign In / Sign Out
-                </Link>
+                {isLoggedIn ? (
+                  <button
+                    className="amazon-navbar__dropdown-item amazon-navbar__dropdown-btn"
+                    onClick={handleSignOut}
+                  >
+                    Sign Out
+                  </button>
+                ) : (
+                  <Link
+                    to={preserveQueryParams("/login", location.search)}
+                    className="amazon-navbar__dropdown-item"
+                    onClick={() => setShowAccountDropdown(false)}
+                  >
+                    Sign In
+                  </Link>
+                )}
               </div>
             )}
           </div>
