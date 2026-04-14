@@ -38,6 +38,7 @@ export interface CartItem {
   unit_price: number;
   image_url?: string;
   prime_eligible?: boolean;
+  in_stock?: boolean;
 }
 
 export interface Address {

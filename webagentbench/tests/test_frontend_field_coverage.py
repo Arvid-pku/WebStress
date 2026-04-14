@@ -5,8 +5,8 @@ Linter that ensures every field referenced by task instructions is actually
 rendered in the corresponding frontend component.
 
 Methodology:
-  1. For each task YAML in lms/ and patient_portal/, scan the instruction_template
-     for known field-reference keywords.
+  1. For each task YAML in each environment's tasks/ directory, scan the
+     instruction_template for known field-reference keywords.
   2. For each match, assert that the target frontend file contains the field name
      (as a React prop or data access expression).
 
@@ -27,10 +27,18 @@ REPO_ROOT = Path(__file__).parent.parent.parent
 TASK_DIRS = [
     REPO_ROOT / "webagentbench/tasks/patient_portal",
     REPO_ROOT / "webagentbench/tasks/lms",
+    REPO_ROOT / "webagentbench/tasks/amazon",
+    REPO_ROOT / "webagentbench/tasks/robinhood",
+    REPO_ROOT / "webagentbench/tasks/gmail",
+    REPO_ROOT / "webagentbench/tasks/booking",
+    REPO_ROOT / "webagentbench/tasks/reddit",
 ]
 
 PP_PAGES = REPO_ROOT / "webagentbench/environments/patient_portal/src/pages"
 LMS_PAGES = REPO_ROOT / "webagentbench/environments/lms/src/pages"
+AMAZON_COMPONENTS = REPO_ROOT / "webagentbench/environments/amazon/src/components"
+RH_PAGES = REPO_ROOT / "webagentbench/environments/robinhood/src/pages"
+GMAIL_PAGES = REPO_ROOT / "webagentbench/environments/gmail/src/pages"
 
 # Maps (instruction keyword regex) -> (frontend_file, field_string_that_must_appear)
 # The keyword regex is matched case-insensitively against instruction_template.
@@ -101,6 +109,27 @@ TASK_FIELD_REQUIREMENTS: list[tuple[str, str, str]] = [
     # LMS — PeerReviews
     (r"read.*submission|submission.*rubric|reviewee.*submission",
      str(LMS_PAGES / "PeerReviews.tsx"), "submission_body"),
+
+    # Amazon — Cart
+    # CartItem.in_stock: tasks ask agent to remove out-of-stock items from cart.
+    # "Currently unavailable" badge is rendered in CartItem.tsx when in_stock === false.
+    (r"out.of.stock|out-of-stock|remove.*unavailable|unavailable.*item.*cart|diagnose.*cart",
+     str(AMAZON_COMPONENTS / "CartItem.tsx"), "in_stock"),
+
+    # Robinhood — Portfolio (margin maintenance)
+    # rh_margin_call_resolution asks agent to read margin_maintenance and sell/deposit to cover it.
+    (r"margin maintenance|margin.call|maintenance requirement|margin.*warning",
+     str(RH_PAGES / "Portfolio.tsx"), "margin_maintenance"),
+
+    # Robinhood — Recurring (execution history / average purchase price)
+    # rh_recurring_optimization asks agent to compare avg purchase price from history vs current price.
+    (r"average purchase price.*history|history.*average|purchase.*history|recurring.*history",
+     str(RH_PAGES / "Recurring.tsx"), "avgPrice"),
+
+    # Gmail — Labels / Contacts (last_contacted_at)
+    # gmail_contact_audit and gmail_annual_contact_review ask agent to read "Last Contact" column.
+    (r"last.contact|not been in touch|email activity.*days|contact.*days",
+     str(GMAIL_PAGES / "Labels.tsx"), "last_contacted_at"),
 ]
 
 

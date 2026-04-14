@@ -25,6 +25,8 @@ export function RobinhoodShell({ sessionId }: { sessionId: string }) {
     cash_balance: string;
     buying_power: string;
     portfolio_value: string;
+    margin_maintenance: string;
+    day_trade_count: number;
   } | null>(null);
   const [searchValue, setSearchValue] = useState("");
   const [liveTick, setLiveTick] = useState(0);
@@ -60,6 +62,8 @@ export function RobinhoodShell({ sessionId }: { sessionId: string }) {
         cash_balance: data.cash_balance,
         buying_power: data.buying_power,
         portfolio_value: data.portfolio_value,
+        margin_maintenance: data.margin_maintenance,
+        day_trade_count: data.day_trade_count,
       });
       update({
         sessionId,

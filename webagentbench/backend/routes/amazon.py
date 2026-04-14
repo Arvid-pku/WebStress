@@ -616,11 +616,12 @@ def get_product(
 
 
 def _enrich_cart_item(state: AmazonState, item_data: dict[str, Any]) -> dict[str, Any]:
-    """Add image_url and prime_eligible from the product to a cart item dict."""
+    """Add image_url, prime_eligible, and in_stock from the product to a cart item dict."""
     product = state.get_product(item_data.get("product_id", ""))
     if product is not None:
         item_data["image_url"] = product.image_url
         item_data["prime_eligible"] = product.prime_eligible
+        item_data["in_stock"] = product.in_stock
     return item_data
 
 

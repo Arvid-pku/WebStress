@@ -117,6 +117,19 @@ export function RecurringPage() {
                 <span className="rh-recurring__amount">${parseFloat(ri.amount).toFixed(2)}</span>
                 <span className="rh-recurring__freq">{ri.frequency}</span>
               </div>
+              {ri.history && ri.history.length > 0 && (
+                <div className="rh-recurring__history" style={{ fontSize: "0.75rem", color: "var(--rh-gray-500)", marginTop: 2 }}>
+                  {(() => {
+                    const avgPrice = ri.history.reduce((sum, e) => sum + parseFloat(e.price), 0) / ri.history.length;
+                    return (
+                      <span aria-label={`${ri.symbol} avg purchase price`}>
+                        Avg cost: <strong style={{ color: "var(--rh-text)" }}>${avgPrice.toFixed(2)}</strong>
+                        {" · "}{ri.history.length} execution{ri.history.length !== 1 ? "s" : ""}
+                      </span>
+                    );
+                  })()}
+                </div>
+              )}
               <div className="rh-recurring__meta">
                 <span className={`rh-recurring__status ${ri.status === "active" ? "rh-gain" : ""}`}>
                   {ri.status}

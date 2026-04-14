@@ -5,7 +5,7 @@ import type { PriceData } from "./types";
 
 export interface RobinhoodLayoutContextValue {
   sessionId: string;
-  account: { cash_balance: string; buying_power: string; portfolio_value: string } | null;
+  account: { cash_balance: string; buying_power: string; portfolio_value: string; margin_maintenance: string; day_trade_count: number } | null;
   api: ReturnType<typeof createRobinhoodApi>;
   refreshAccount: () => Promise<void>;
   notify: (title: string, description?: string) => void;

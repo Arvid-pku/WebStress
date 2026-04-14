@@ -72,6 +72,11 @@ export function CartItemRow({ item }: CartItemProps) {
         {item.prime_eligible && (
           <span className="product-card__prime" aria-label="Prime eligible">prime</span>
         )}
+        {item.in_stock === false && (
+          <div className="cart-item__oos" style={{ color: "#b12704", fontSize: "0.8125rem", fontWeight: 600, marginBottom: 4 }}>
+            Currently unavailable
+          </div>
+        )}
         <div className="cart-item__price">${(item.unit_price ?? 0).toFixed(2)}</div>
         <div className="cart-item__actions">
           <div className="cart-item__quantity">

@@ -63,6 +63,23 @@ export function PortfolioPage() {
         <span>${account ? parseFloat(account.buying_power).toLocaleString("en-US", { minimumFractionDigits: 2 }) : "0.00"}</span>
       </div>
 
+      <div className="rh-portfolio__account-stats" aria-label="Account stats" style={{ display: "flex", gap: 24, padding: "8px 0 4px", fontSize: "0.8125rem", color: "var(--rh-gray-500)" }}>
+        <div>
+          <span>Cash Balance: </span>
+          <span style={{ color: "var(--rh-text)", fontWeight: 500 }}>${account ? parseFloat(account.cash_balance).toLocaleString("en-US", { minimumFractionDigits: 2 }) : "0.00"}</span>
+        </div>
+        {account && parseFloat(account.margin_maintenance) > 0 && (
+          <div aria-label="Margin maintenance">
+            <span>Margin Maintenance: </span>
+            <span style={{ color: "var(--rh-red)", fontWeight: 600 }}>${parseFloat(account.margin_maintenance).toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
+          </div>
+        )}
+        <div>
+          <span>Day Trades: </span>
+          <span style={{ color: "var(--rh-text)", fontWeight: 500 }}>{account ? account.day_trade_count : 0}/3</span>
+        </div>
+      </div>
+
       <section className="rh-portfolio__positions" aria-label="Positions">
         <div className="rh-portfolio__positions-header">
           <h2>Stocks</h2>
