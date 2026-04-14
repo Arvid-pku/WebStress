@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import os
+import subprocess
 from pathlib import Path
+from types import SimpleNamespace
 
 from fastapi.responses import FileResponse
 
@@ -93,3 +95,62 @@ def test_serve_env_html_returns_built_file_without_mutation(monkeypatch, tmp_pat
 
     assert isinstance(response, FileResponse)
     assert Path(response.path) == index_path
+
+
+def test_auto_build_frontends_builds_only_stale_envs(monkeypatch) -> None:
+    monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
+    monkeypatch.setenv("WEBAGENTBENCH_AUTO_BUILD_FRONTENDS", "1")
+
+    stale_states = [["lms", "patient_portal"], ["lms", "patient_portal"], []]
+
+    def fake_stale_frontend_env_ids() -> list[str]:
+        return stale_states.pop(0) if stale_states else []
+
+    build_calls: list[tuple[list[str], Path]] = []
+
+    def fake_run(command: list[str], cwd: Path, check: bool) -> SimpleNamespace:
+        build_calls.append((command, Path(cwd)))
+        assert check is True
+        return SimpleNamespace(returncode=0)
+
+    monkeypatch.setattr(wab_app, "_stale_frontend_env_ids", fake_stale_frontend_env_ids)
+    monkeypatch.setattr(wab_app.subprocess, "run", fake_run)
+
+    built_envs = wab_app._auto_build_frontends_if_needed()
+
+    assert built_envs == ["lms", "patient_portal"]
+    assert build_calls == [
+        (["pnpm", "--filter", "@webagentbench/shared", "build"], Path(wab_app.BASE_DIR / "environments")),
+        (["pnpm", "--filter", "@webagentbench/lms", "build"], Path(wab_app.BASE_DIR / "environments")),
+        (["pnpm", "--filter", "@webagentbench/patient_portal", "build"], Path(wab_app.BASE_DIR / "environments")),
+    ]
+
+
+def test_auto_build_frontends_respects_disable_flag(monkeypatch) -> None:
+    monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
+    monkeypatch.setenv("WEBAGENTBENCH_AUTO_BUILD_FRONTENDS", "0")
+    monkeypatch.setattr(
+        wab_app,
+        "_stale_frontend_env_ids",
+        lambda: (_ for _ in ()).throw(AssertionError("stale env check should be skipped")),
+    )
+
+    assert wab_app._auto_build_frontends_if_needed() == []
+
+
+def test_auto_build_frontends_raises_clear_error_on_build_failure(monkeypatch) -> None:
+    monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
+    monkeypatch.setenv("WEBAGENTBENCH_AUTO_BUILD_FRONTENDS", "1")
+    monkeypatch.setattr(wab_app, "_stale_frontend_env_ids", lambda: ["lms"])
+
+    def fake_run(command: list[str], cwd: Path, check: bool) -> SimpleNamespace:
+        raise subprocess.CalledProcessError(returncode=1, cmd=command)
+
+    monkeypatch.setattr(wab_app.subprocess, "run", fake_run)
+
+    try:
+        wab_app._auto_build_frontends_if_needed()
+    except RuntimeError as exc:
+        assert "Frontend auto-build failed" in str(exc)
+    else:
+        raise AssertionError("expected RuntimeError when frontend build fails")

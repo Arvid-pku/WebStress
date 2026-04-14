@@ -13,9 +13,13 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import os
 import secrets
+import shutil
+import subprocess
 from copy import deepcopy
+from contextlib import asynccontextmanager, contextmanager
 from functools import lru_cache
 from pathlib import Path
 
@@ -30,6 +34,12 @@ from .tasks._registry import tasks_by_env
 
 BASE_DIR = Path(__file__).parent
 STATIC_DIR = BASE_DIR / "static"
+logger = logging.getLogger(__name__)
+
+try:
+    import fcntl
+except ImportError:  # pragma: no cover - not expected on local macOS/Linux dev
+    fcntl = None
 
 # Load environment metadata from manifest.json (no longer contains task defs)
 with open(BASE_DIR / "manifest.json") as f:
@@ -48,6 +58,16 @@ def _env_assets_path(env_id: str) -> Path:
 
 def _frontend_build_command() -> str:
     return "scripts/webagentbench.sh build"
+
+
+def _auto_frontend_build_enabled() -> bool:
+    raw = os.getenv("WEBAGENTBENCH_AUTO_BUILD_FRONTENDS", "1").strip().lower()
+    return raw not in {"0", "false", "no", "off"}
+
+
+def _auto_frontend_build_clean() -> bool:
+    raw = os.getenv("WEBAGENTBENCH_AUTO_BUILD_CLEAN", "").strip().lower()
+    return raw in {"1", "true", "yes", "on"}
 
 
 def _dev_frontend_overrides() -> dict[str, str]:
@@ -172,6 +192,85 @@ def _env_unavailable_reason(env_id: str) -> str | None:
     return reason
 
 
+def _stale_frontend_env_ids() -> list[str]:
+    stale: list[str] = []
+    for env_id in sorted(_ENV_TASK_GROUPS):
+        available, _ = _env_frontend_status(env_id)
+        if not available:
+            stale.append(env_id)
+    return stale
+
+
+@contextmanager
+def _frontend_build_lock():
+    lock_path = STATIC_DIR / ".frontend-build.lock"
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    with lock_path.open("w") as lock_file:
+        if fcntl is not None:
+            fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            if fcntl is not None:
+                fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
+
+
+def _run_frontend_build(env_ids: list[str]) -> None:
+    env_dir = BASE_DIR / "environments"
+
+    if _auto_frontend_build_clean():
+        shutil.rmtree(STATIC_DIR / "envs", ignore_errors=True)
+        (STATIC_DIR / "envs").mkdir(parents=True, exist_ok=True)
+
+    commands = [
+        ["pnpm", "--filter", "@webagentbench/shared", "build"],
+        *[["pnpm", "--filter", f"@webagentbench/{env_id}", "build"] for env_id in env_ids],
+    ]
+    for command in commands:
+        subprocess.run(command, cwd=env_dir, check=True)
+
+
+def _auto_build_frontends_if_needed() -> list[str]:
+    if not _auto_frontend_build_enabled():
+        return []
+    if "PYTEST_CURRENT_TEST" in os.environ:
+        return []
+
+    stale_envs = _stale_frontend_env_ids()
+    if not stale_envs:
+        return []
+
+    with _frontend_build_lock():
+        stale_envs = _stale_frontend_env_ids()
+        if not stale_envs:
+            return []
+
+        logger.info(
+            "Auto-building stale frontend bundles before backend startup: %s",
+            ", ".join(stale_envs),
+        )
+        try:
+            _run_frontend_build(stale_envs)
+        except FileNotFoundError as exc:
+            raise RuntimeError(
+                "Frontend auto-build requires `pnpm` on PATH. "
+                "Install pnpm or disable auto-build with WEBAGENTBENCH_AUTO_BUILD_FRONTENDS=0."
+            ) from exc
+        except subprocess.CalledProcessError as exc:
+            raise RuntimeError(
+                "Frontend auto-build failed while starting the backend. "
+                "Run `./scripts/webagentbench.sh build --clean` to inspect the failing build."
+            ) from exc
+
+        remaining = _stale_frontend_env_ids()
+        if remaining:
+            raise RuntimeError(
+                "Frontend auto-build completed, but these environments are still stale or unavailable: "
+                + ", ".join(remaining)
+            )
+        return stale_envs
+
+
 def _public_task_from_def(task) -> dict:
     """Return task metadata safe to expose through the public manifest."""
     return {
@@ -243,10 +342,20 @@ KNOWN_ENV_IDS = {env["env_id"] for env in MANIFEST.get("environments", [])}
 
 description = f"{ENV_TASK_COUNT} advanced environment tasks across {ENVIRONMENT_COUNT} simulated applications"
 
+
+@asynccontextmanager
+async def _app_lifespan(_: FastAPI):
+    built_envs = _auto_build_frontends_if_needed()
+    if built_envs:
+        logger.info("Frontend bundles refreshed for: %s", ", ".join(built_envs))
+    yield
+
+
 app = FastAPI(
     title="WebAgentBench",
     description=description,
     version=MANIFEST_VERSION,
+    lifespan=_app_lifespan,
 )
 app.state.session_manager = SessionManager()
 app.state.controller_secret = os.getenv(CONTROLLER_SECRET_ENV)

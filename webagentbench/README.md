@@ -67,6 +67,8 @@ python -m pytest -q tests/test_task_linter.py tests/test_scoring_audit.py tests/
 Frontend workspace:
 
 ```bash
+./scripts/webagentbench.sh status
+./scripts/webagentbench.sh build --clean
 pnpm -C environments build
 pnpm -C environments test
 pnpm -C environments dev:amazon
@@ -74,6 +76,8 @@ pnpm -C environments dev:gmail
 ```
 
 The built bundles are written to `static/envs/<env>/`. The FastAPI app marks an environment unavailable when its bundle is missing or stale relative to `environments/<env>/src/` and `environments/shared/src/`.
+
+`./scripts/webagentbench.sh status` prints the current availability check per environment. `./scripts/webagentbench.sh build --clean` removes old static bundles and rebuilds every benchmark frontend in the workspace, excluding only `demo-site`.
 
 ## Results And Artifacts
 
