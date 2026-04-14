@@ -11,7 +11,7 @@ expected_steps: 12
 primary_primitives:
   - state_tracking
   - verification
-start_path: /courses
+start_path: /peer-reviews
 
 seed:
   distractors: 1

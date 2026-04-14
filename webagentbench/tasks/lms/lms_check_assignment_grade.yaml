@@ -79,15 +79,16 @@ eval:
   negative_checks:
     - expr: >-
         '{target.score_below_70}' != 'false'
-        or state.get_announcement('{target.latest_announcement_id}') is None
-        or state.get_announcement('{target.latest_announcement_id}').is_read != True
+        or (state.get_announcement('{target.latest_announcement_id}') is not None
+            and state.get_announcement('{target.latest_announcement_id}').is_read == True)
       desc: Did not mark announcement as read when score was 70% or above (wrong branch)
       penalty: 0.3
     - expr: >-
         '{target.score_below_70}' != 'true'
-        or state.get_assignment('{target.target_assignment_id}') is None
-        or state.get_assignment('{target.target_assignment_id}').file_name != 'revision_v2.pdf'
-      desc: Did not resubmit when score was below 70% (wrong branch)
+        or (state.get_assignment('{target.unsubmitted_hw_id}') is not None
+            and state.get_assignment('{target.unsubmitted_hw_id}').file_name == 'improvement.pdf'
+            and state.get_assignment('{target.unsubmitted_hw_id}').submission_status in ('submitted', 'late'))
+      desc: Did not submit improvement.pdf when score was below 70% (wrong branch)
       penalty: 0.3
     - expr: >-
         all(e.status != 'dropped' for e in state.enrollments)

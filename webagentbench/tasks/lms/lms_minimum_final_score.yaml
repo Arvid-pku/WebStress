@@ -44,7 +44,6 @@ seed:
         late_count: 1
       outputs:
         - assignment_ids
-        - final_exam_assignment_id
     - use: grade_book
       params: {}
       outputs:
@@ -53,6 +52,7 @@ seed:
         - dropped_grade_ids
         - minimum_final_score_for_b
         - min_score_achievable
+        - final_exam_assignment_id
   targets:
     course_code: '{output.course_code}'
     target_course_id: '{output.target_course_id}'
@@ -65,7 +65,7 @@ eval:
     - expr: >-
         (('{target.min_score_achievable}' == 'true'
          and state.get_assignment('{target.final_exam_assignment_id}') is not None
-         and state.get_assignment('{target.final_exam_assignment_id}').submission_status == 'submitted'
+         and state.get_assignment('{target.final_exam_assignment_id}').submission_status in ('submitted', 'late')
          and state.get_assignment('{target.final_exam_assignment_id}').file_name == 'study_plan.pdf')
         or ('{target.min_score_achievable}' == 'false'
             and state.get_enrollment_for_course('{target.target_course_id}') is not None

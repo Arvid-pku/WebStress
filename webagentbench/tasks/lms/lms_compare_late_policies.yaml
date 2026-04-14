@@ -54,13 +54,13 @@ eval:
   checks:
     - expr: >-
         state.get_assignment('{target.missing_assignment_id}') is not None
-        and state.get_assignment('{target.missing_assignment_id}').submission_status == 'submitted'
+        and state.get_assignment('{target.missing_assignment_id}').submission_status in ('submitted', 'late')
         and state.get_assignment('{target.missing_assignment_id}').file_name == 'late_recovery.pdf'
       desc: Missing assignment in the most lenient course was submitted with late_recovery.pdf
   negative_checks:
     - expr: >-
         not any(
-          a.submission_status == 'submitted'
+          a.submission_status in ('submitted', 'late')
           and a.file_name == 'late_recovery.pdf'
           and a.course_id != '{target.most_lenient_course_id}'
           for a in state.assignments

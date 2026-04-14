@@ -49,6 +49,7 @@ seed:
       outputs:
         - grade_ids
         - current_weighted_scores
+        - worst_category_assignment_id
   targets:
     course_code: '{output.course_code}'
     target_course_id: '{output.target_course_id}'

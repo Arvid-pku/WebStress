@@ -45,13 +45,13 @@ seed:
         late_count: 1
       outputs:
         - assignment_ids
-        - most_disputed_assignment_ids
         - decoy_assignment_id
     - use: grade_book
       params: {}
       outputs:
         - grade_ids
         - current_weighted_scores
+        - most_disputed_assignment_ids
     - use: discussion_forums
       params:
         count: 2

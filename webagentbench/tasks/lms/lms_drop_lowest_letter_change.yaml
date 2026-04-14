@@ -84,7 +84,7 @@ eval:
     - expr: >-
         '{target.drop_changes_letter}' != 'false'
         or state.get_announcement('{target.latest_announcement_id}') is None
-        or state.get_announcement('{target.latest_announcement_id}').is_read != True
+        or state.get_announcement('{target.latest_announcement_id}').is_read == True
       desc: Did not mark announcement as read when drop does not change letter grade (wrong branch)
       penalty: 0.3
     - expr: >-

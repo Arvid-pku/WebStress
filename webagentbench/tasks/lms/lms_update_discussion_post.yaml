@@ -35,6 +35,7 @@ seed:
       params:
         count: 3
         posts_per: 4
+        include_student_post: true
       outputs:
         - discussion_ids
         - target_discussion_id

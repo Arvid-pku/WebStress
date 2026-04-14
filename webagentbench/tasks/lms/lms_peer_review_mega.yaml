@@ -18,7 +18,7 @@ primary_primitives:
   - state_tracking
   - verification
   - planning
-start_path: /courses
+start_path: /peer-reviews
 
 seed:
   distractors: 2

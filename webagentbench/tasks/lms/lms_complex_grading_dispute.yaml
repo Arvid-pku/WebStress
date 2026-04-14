@@ -44,11 +44,15 @@ seed:
         per_course_count: 7
         graded_fraction: 0.6
         late_count: 1
+        late_within_grace_count: 1
       outputs:
         - assignment_ids
         - late_assignment_ids
+        - late_within_grace_ids
         - disputed_assignment_id_1
         - disputed_assignment_id_2
+        - disputed_title_1
+        - disputed_title_2
     - use: grade_book
       params: {}
       outputs:
@@ -58,8 +62,8 @@ seed:
     course_code: '{output.course_code}'
     target_course_id: '{output.target_course_id}'
     instructor_name: '{output.instructor_name}'
-    disputed_title_1: "Problem Set 1"
-    disputed_title_2: "Weekly Quiz 1"
+    disputed_title_1: '{output.disputed_title_1}'
+    disputed_title_2: '{output.disputed_title_2}'
     disputed_assignment_id_1: '{output.disputed_assignment_id_1}'
     disputed_assignment_id_2: '{output.disputed_assignment_id_2}'
 

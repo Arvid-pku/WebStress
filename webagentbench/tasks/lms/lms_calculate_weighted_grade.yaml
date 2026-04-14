@@ -50,6 +50,12 @@ seed:
         - dropped_grade_ids
         - has_discrepancy
         - most_recent_graded_id
+    - use: announcements_feed
+      params:
+        count: 2
+        unread_count: 2
+      outputs:
+        - announcement_ids
         - latest_announcement_id
   targets:
     course_code: '{output.course_code}'
@@ -63,14 +69,15 @@ eval:
   checks:
     - expr: >-
         (('{target.has_discrepancy}' == 'true'
-         and state.get_assignment('{target.most_recent_graded_id}') is not None
-         and state.get_assignment('{target.most_recent_graded_id}').submission_status in ('submitted', 'late')
-         and state.get_assignment('{target.most_recent_graded_id}').file_name == 'grade_dispute.pdf')
+         and any(a.course_id == '{target.target_course_id}'
+                 and a.submission_status in ('submitted', 'late')
+                 and a.file_name == 'grade_dispute.pdf'
+                 for a in state.assignments))
         or ('{target.has_discrepancy}' == 'false'
             and state.get_announcement('{target.latest_announcement_id}') is not None
             and state.get_announcement('{target.latest_announcement_id}').is_read == True))
       desc: >-
-        Correct conditional action taken: resubmit with grade_dispute.pdf if
+        Correct conditional action taken: submit grade_dispute.pdf in target course if
         discrepancy exists, or mark latest announcement as read if no discrepancy
   negative_checks:
     - expr: >-
@@ -81,9 +88,10 @@ eval:
       penalty: 0.3
     - expr: >-
         '{target.has_discrepancy}' != 'false'
-        or state.get_assignment('{target.most_recent_graded_id}') is None
-        or state.get_assignment('{target.most_recent_graded_id}').file_name != 'grade_dispute.pdf'
-      desc: Did not resubmit when no discrepancy exists (wrong branch)
+        or not any(a.course_id == '{target.target_course_id}'
+                   and a.file_name == 'grade_dispute.pdf'
+                   for a in state.assignments)
+      desc: Did not submit grade_dispute.pdf when no discrepancy exists (wrong branch)
       penalty: 0.3
     - expr: >-
         all(e.status != 'dropped' for e in state.enrollments)

@@ -42,6 +42,12 @@ seed:
       outputs:
         - assignment_ids
         - lowest_homework_id
+    - use: announcements_feed
+      params:
+        count: 3
+        unread_count: 1
+      outputs:
+        - announcement_ids
     - use: grade_book
       params: {}
       outputs:

@@ -42,15 +42,15 @@ seed:
         late_count: 1
       outputs:
         - assignment_ids
-        - discrepant_course_ids
-        - discrepant_resubmit_assignment_ids
-        - non_discrepant_course_ids
     - use: grade_book
       params: {}
       outputs:
         - grade_ids
         - dropped_grade_ids
         - current_weighted_scores
+        - discrepant_course_ids
+        - discrepant_resubmit_assignment_ids
+        - non_discrepant_course_ids
     - use: announcements_feed
       params:
         count: 6
@@ -96,6 +96,6 @@ eval:
     - expr: >-
         len([a for a in state.assignments
              if a.file_name == 'grade_audit.pdf'
-             and a.submission_status in ('submitted', 'late')]) <= len('{target.discrepant_resubmit_assignment_ids}'.split(','))
+             and a.submission_status in ('submitted', 'late')]) <= len([aid.strip() for aid in '{target.discrepant_resubmit_assignment_ids}'.split(',') if aid.strip()])
       desc: No more grade_audit.pdf submissions than discrepant courses
       penalty: 0.15

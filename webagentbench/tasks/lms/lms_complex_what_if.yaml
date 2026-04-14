@@ -61,13 +61,13 @@ eval:
   checks:
     - expr: >-
         state.get_assignment('{target.highest_weight_ungraded_id}') is not None
-        and state.get_assignment('{target.highest_weight_ungraded_id}').submission_status == 'submitted'
+        and state.get_assignment('{target.highest_weight_ungraded_id}').submission_status in ('submitted', 'late')
         and state.get_assignment('{target.highest_weight_ungraded_id}').file_name == 'priority_submission.pdf'
       desc: Highest-weight ungraded assignment submitted with priority_submission.pdf
   negative_checks:
     - expr: >-
         not any(
-          a.submission_status == 'submitted'
+          a.submission_status in ('submitted', 'late')
           and a.file_name == 'priority_submission.pdf'
           and a.id != '{target.highest_weight_ungraded_id}'
           for a in state.assignments

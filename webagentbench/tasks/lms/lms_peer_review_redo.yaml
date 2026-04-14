@@ -14,7 +14,7 @@ primary_primitives:
   - verification
   - state_tracking
   - patience
-start_path: /courses
+start_path: /peer-reviews
 
 seed:
   distractors: 1
@@ -31,6 +31,7 @@ seed:
         - course_ids
         - course_codes
         - course_code
+        - target_course_id
     - use: enrollment_set
       params: {}
       outputs:
@@ -48,15 +49,19 @@ seed:
     - use: peer_review_assignments
       params:
         count: 3
-        statuses: ["in_progress", "assigned", "in_progress"]
+        course_id: "{output.target_course_id}"
+        statuses: ["in_progress", "assigned", "submitted"]
+        returned_review_count: 1
       outputs:
         - review_ids
         - pending_review_ids
         - completed_review_ids
+        - returned_review_ids
   targets:
     course_code: '{output.course_code}'
     pending_review_ids: '{output.pending_review_ids}'
     completed_review_ids: '{output.completed_review_ids}'
+    returned_review_ids: '{output.returned_review_ids}'
 
 eval:
   source: server_state

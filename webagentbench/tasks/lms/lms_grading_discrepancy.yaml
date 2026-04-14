@@ -44,7 +44,13 @@ seed:
         late_count: 2
       outputs:
         - assignment_ids
-        - most_impactful_graded_id
+    - use: announcements_feed
+      params:
+        count: 4
+        unread_count: 2
+      outputs:
+        - announcement_ids
+        - unread_announcement_ids
     - use: grade_book
       params: {}
       outputs:
@@ -52,6 +58,7 @@ seed:
         - current_weighted_scores
         - dropped_grade_ids
         - has_discrepancy
+        - most_impactful_graded_id
         - latest_announcement_id
   targets:
     course_code: '{output.course_code}'

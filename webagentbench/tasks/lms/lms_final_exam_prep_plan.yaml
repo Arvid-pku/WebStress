@@ -42,14 +42,14 @@ seed:
         graded_fraction: 0.6
       outputs:
         - assignment_ids
-        - impossible_b_course_ids
-        - final_exam_assignment_ids
-        - achievable_course_ids
     - use: grade_book
       params: {}
       outputs:
         - grade_ids
         - current_weighted_scores
+        - impossible_b_course_ids
+        - final_exam_assignment_ids
+        - achievable_course_ids
     - use: calendar_events
       params:
         include_recurring: false
@@ -108,6 +108,6 @@ eval:
     - expr: >-
         len([a for a in state.assignments
              if a.file_name == 'exam_prep.pdf'
-             and a.submission_status in ('submitted', 'late')]) <= len('{target.final_exam_assignment_ids}'.split(','))
+             and a.submission_status in ('submitted', 'late')]) <= len([aid.strip() for aid in '{target.final_exam_assignment_ids}'.split(',') if aid.strip()])
       desc: No more exam_prep submissions than achievable courses
       penalty: 0.15

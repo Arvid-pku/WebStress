@@ -47,14 +47,14 @@ seed:
         late_count: 1
       outputs:
         - assignment_ids
-        - gpa_risk_course_ids
-        - improvement_assignment_ids
-        - no_risk_flag
     - use: grade_book
       params: {}
       outputs:
         - grade_ids
         - current_weighted_scores
+        - gpa_risk_course_ids
+        - improvement_assignment_ids
+        - no_risk_flag
     - use: announcements_feed
       params:
         count: 4

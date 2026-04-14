@@ -36,6 +36,7 @@ seed:
       params:
         per_course_count: 6
         graded_fraction: 0.5
+        missing_count: 1
       outputs:
         - assignment_ids
     - use: grade_book
@@ -65,7 +66,7 @@ eval:
     - expr: >-
         (('{target.grade_below_80}' == 'true'
          and state.get_assignment('{target.unsubmitted_hw_id}') is not None
-         and state.get_assignment('{target.unsubmitted_hw_id}').submission_status == 'submitted'
+         and state.get_assignment('{target.unsubmitted_hw_id}').submission_status in ('submitted', 'late')
          and state.get_assignment('{target.unsubmitted_hw_id}').file_name == 'catch_up.pdf')
         or ('{target.grade_below_80}' == 'false'
             and state.get_announcement('{target.latest_announcement_id}') is not None

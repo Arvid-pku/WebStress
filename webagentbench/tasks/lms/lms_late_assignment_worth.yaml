@@ -38,6 +38,7 @@ seed:
       per_course_count: 6
       graded_fraction: 0.4
       missing_count: 3
+      unrecoverable_missing_count: 1
     outputs:
     - assignment_ids
     - missing_assignment_ids

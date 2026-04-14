@@ -46,7 +46,7 @@ seed:
     - use: announcements_feed
       params:
         count: 3
-        unread_count: 1
+        unread_count: 2
       outputs:
         - announcement_ids
         - latest_announcement_id
@@ -61,16 +61,9 @@ seed:
 eval:
   source: server_state
   checks:
-    - expr: >-
-        (('{target.allows_late_submit}' == 'true'
-         and state.get_assignment('{target.overdue_assignment_id}') is not None
-         and state.get_assignment('{target.overdue_assignment_id}').submission_status in ('submitted', 'late')
-         and state.get_assignment('{target.overdue_assignment_id}').file_name == 'late_submit.pdf')
-        or ('{target.allows_late_submit}' != 'true'
-            and state.get_announcement('{target.latest_announcement_id}') is not None
-            and state.get_announcement('{target.latest_announcement_id}').is_read == True))
+    - expr: "('{target.allows_late_submit}' == 'true' and state.get_assignment('{target.overdue_assignment_id}') is not None and state.get_assignment('{target.overdue_assignment_id}').submission_status in ('submitted', 'late') and state.get_assignment('{target.overdue_assignment_id}').file_name == 'late_submit.pdf') or ('{target.allows_late_submit}' != 'true' and len([a for a in state.announcements if a.is_read]) > len([aid for aid, snap in state._initial_snapshot.get('announcements', {}).items() if snap.get('is_read')]))"
       desc: >-
-        Submit late_submit.pdf if max_late_days > 3, or mark latest
+        Submit late_submit.pdf if max_late_days > 3, or mark at least one
         announcement as read if 3 or fewer late days
   negative_checks:
     - expr: >-

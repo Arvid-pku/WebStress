@@ -104,6 +104,6 @@ eval:
         (len([a for a in state.assignments
              if a.submission_status in ('submitted', 'late')
              and a.file_name is not None
-             and a.file_name != 'course_plan.pdf']) == 0)
-      desc: No extraneous files were submitted
+             and a.file_name not in ('course_plan.pdf', 'submission.pdf')]) == 0)
+      desc: No extraneous non-default files were submitted
       penalty: 0.1

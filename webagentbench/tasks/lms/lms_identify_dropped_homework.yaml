@@ -40,12 +40,12 @@ seed:
         graded_fraction: 0.6
       outputs:
         - assignment_ids
-        - lowest_homework_id
     - use: grade_book
       params: {}
       outputs:
         - grade_ids
         - dropped_grade_ids
+        - lowest_homework_id
   targets:
     course_code: '{output.course_code}'
     target_course_id: '{output.target_course_id}'

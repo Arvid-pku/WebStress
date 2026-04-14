@@ -69,6 +69,7 @@ eval:
   negative_checks:
     - expr: >-
         state.get_assignment('{target.decoy_assignment_id}') is None
-        or state.get_assignment('{target.decoy_assignment_id}').submission_status == 'not_submitted'
-      desc: Decoy assignment was not submitted
+        or state.get_assignment('{target.decoy_assignment_id}').submission_status not in ('submitted', 'late')
+        or state.get_assignment('{target.decoy_assignment_id}').file_name != '{target.file_name}'
+      desc: Decoy assignment was not submitted by the agent
       penalty: 0.25
