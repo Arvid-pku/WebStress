@@ -8,21 +8,25 @@ OPEN_BROWSER=true
 MODE="dev"
 PIDS=()
 SELECTED_ENVS=()
+CLEAN_BUILD=false
 
 usage() {
   cat <<'EOF'
 Usage:
   ./scripts/webagentbench.sh dev [--env ENV_ID] [--port PORT] [--no-open]
-  ./scripts/webagentbench.sh build
+  ./scripts/webagentbench.sh build [--clean]
+  ./scripts/webagentbench.sh status
 
 Modes:
   dev     Start the FastAPI backend and frontend dev servers, then open /launch
   build   Build the static frontend bundles under webagentbench/static/envs/
+  status  Print environment frontend freshness and availability status
 
 Options:
   --env ENV_ID   Start only the specified frontend in dev mode. Repeatable.
   --port PORT    Backend port (default: 8080). Also settable via WEBAGENTBENCH_PORT.
   --no-open      Do not open the browser automatically.
+  --clean        Remove existing static frontend bundles before building.
 
 If no subcommand is provided, the script defaults to dev mode.
 EOF
@@ -66,7 +70,7 @@ start_env_dev_server() {
 
 if [ $# -gt 0 ]; then
   case "$1" in
-    dev|build)
+    dev|build|status)
       MODE="$1"
       shift
       ;;
@@ -99,6 +103,10 @@ while [ $# -gt 0 ]; do
       ;;
     --no-open)
       OPEN_BROWSER=false
+      shift
+      ;;
+    --clean)
+      CLEAN_BUILD=true
       shift
       ;;
     help|-h|--help)
@@ -229,9 +237,30 @@ open_url() {
 
 build_frontends() {
   ensure_node_modules
+  if [ "$CLEAN_BUILD" = true ]; then
+    echo "[frontend] Removing previous static bundles..."
+    rm -rf "$ROOT/webagentbench/static/envs"
+    mkdir -p "$ROOT/webagentbench/static/envs"
+  fi
   echo "[frontend] Building workspace frontends..."
   (cd "$ENV_DIR" && pnpm build)
   echo "[frontend] Build complete."
+}
+
+print_frontend_status() {
+  ensure_uv
+  ensure_python_deps
+
+  "$ROOT/.venv/bin/python" - <<'PY'
+from webagentbench.app import build_manifest
+
+manifest = build_manifest()
+print("env_id\tstatus\ttasks\treason")
+for env in manifest.get("environments", []):
+    status = "available" if env.get("available") else "unavailable"
+    reason = env.get("unavailable_reason") or ""
+    print(f"{env['env_id']}\t{status}\t{len(env.get('tasks', []))}\t{reason}")
+PY
 }
 
 selected_envs_or_default() {
@@ -342,6 +371,9 @@ start_dev() {
 case "$MODE" in
   build)
     build_frontends
+    ;;
+  status)
+    print_frontend_status
     ;;
   dev)
     start_dev
