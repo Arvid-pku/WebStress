@@ -23,6 +23,7 @@ export function AppointmentsPage() {
   const [rescheduleId, setRescheduleId] = useState<string | null>(null);
   const [rescheduleSlots, setRescheduleSlots] = useState<SlotInfo[]>([]);
   const [rescheduleSlot, setRescheduleSlot] = useState("");
+  const [rescheduleType, setRescheduleType] = useState("in-person");
 
   const providerName = (id: string) => providers.find((p) => p.id === id)?.name ?? id;
   const providerSpecialty = (id: string) => providers.find((p) => p.id === id)?.specialty ?? "";
@@ -100,6 +101,7 @@ export function AppointmentsPage() {
 
   const startReschedule = async (apt: Appointment) => {
     setRescheduleId(apt.id);
+    setRescheduleType(apt.type || "in-person");
     try {
       const s = await api.getAvailableSlots(apt.provider_id);
       setRescheduleSlots(s);
@@ -111,10 +113,11 @@ export function AppointmentsPage() {
   const handleReschedule = async () => {
     if (!rescheduleId || !rescheduleSlot) return;
     try {
-      await api.rescheduleAppointment(rescheduleId, { new_slot_datetime: rescheduleSlot });
+      await api.rescheduleAppointment(rescheduleId, { new_slot_datetime: rescheduleSlot, new_type: rescheduleType });
       notify("Appointment rescheduled");
       setRescheduleId(null);
       setRescheduleSlot("");
+      setRescheduleType("in-person");
       void loadAppointments();
     } catch {
       notify("Failed to reschedule appointment");
@@ -194,20 +197,34 @@ export function AppointmentsPage() {
         {rescheduleId && (
           <div className="pp-form-section" aria-label="Reschedule appointment form">
             <h4>Reschedule Appointment</h4>
-            <label htmlFor="reschedule-slot">New Date/Time</label>
-            <select
-              id="reschedule-slot"
-              value={rescheduleSlot}
-              onChange={(e) => setRescheduleSlot(e.target.value)}
-              aria-label="Select new appointment slot"
-            >
-              <option value="">Select a slot...</option>
-              {rescheduleSlots.map((s) => (
-                <option key={s.datetime} value={s.datetime}>
-                  {new Date(s.datetime).toLocaleString()} - {s.type} ({s.duration_minutes}min)
-                </option>
-              ))}
-            </select>
+            <div className="pp-form-field">
+              <label htmlFor="reschedule-slot">New Date/Time</label>
+              <select
+                id="reschedule-slot"
+                value={rescheduleSlot}
+                onChange={(e) => setRescheduleSlot(e.target.value)}
+                aria-label="Select new appointment slot"
+              >
+                <option value="">Select a slot...</option>
+                {rescheduleSlots.map((s) => (
+                  <option key={s.datetime} value={s.datetime}>
+                    {new Date(s.datetime).toLocaleString()} - {s.type} ({s.duration_minutes}min)
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="pp-form-field">
+              <label htmlFor="reschedule-type">Appointment Type</label>
+              <select
+                id="reschedule-type"
+                value={rescheduleType}
+                onChange={(e) => setRescheduleType(e.target.value)}
+                aria-label="Select appointment type"
+              >
+                <option value="in-person">In-Person</option>
+                <option value="telehealth">Telehealth</option>
+              </select>
+            </div>
             <div className="pp-form-actions">
               <button
                 className="pp-btn pp-btn--primary"
@@ -220,7 +237,7 @@ export function AppointmentsPage() {
               <button
                 className="pp-btn pp-btn--secondary"
                 aria-label="Cancel reschedule"
-                onClick={() => { setRescheduleId(null); setRescheduleSlot(""); }}
+                onClick={() => { setRescheduleId(null); setRescheduleSlot(""); setRescheduleType("in-person"); }}
               >
                 Cancel
               </button>
@@ -293,7 +310,7 @@ export function AppointmentsPage() {
                 {Object.entries(groupBySpecialty(schedulableProviders)).map(([specialty, provs]) => (
                   <optgroup key={specialty} label={specialty}>
                     {provs.map((p) => (
-                      <option key={p.id} value={p.id}>{p.name} - {p.department}</option>
+                      <option key={p.id} value={p.id}>{p.name} - {p.department}{p.accepting_new ? " (Accepting new patients)" : ""}</option>
                     ))}
                   </optgroup>
                 ))}

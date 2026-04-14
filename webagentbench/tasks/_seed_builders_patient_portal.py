@@ -1504,9 +1504,13 @@ def build_message_threads(ctx: PatientPortalSeedContext, params: dict[str, Any])
                 is_read = False
                 unread_assigned += 1
 
-            # Inject contextual body for the first provider message of the first clinical thread
+            # Inject contextual body for contextual threads; keep subsequent messages relevant
             if thread_context and from_type == "provider" and m == 0:
                 body = _generate_contextual_body(ctx, thread_context)
+            elif thread_context and from_type == "patient":
+                body = "Thank you, I've reviewed this and will follow up as needed."
+            elif thread_context and from_type == "provider" and m > 0:
+                body = "Please let me know if you have any questions about the information above or your current medications."
             else:
                 body = ctx.fake.paragraph(nb_sentences=ctx.rng.randint(2, 4))
 

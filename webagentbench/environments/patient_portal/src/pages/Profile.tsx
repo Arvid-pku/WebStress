@@ -389,6 +389,34 @@ export function ProfilePage() {
         </table>
       </section>
 
+      {/* Conditions / Diagnoses */}
+      {profile && profile.conditions.length > 0 && (
+        <section aria-label="Conditions and Diagnoses" className="pp-section">
+          <h3>Conditions / Diagnoses</h3>
+          <ul aria-label="Conditions list" className="pp-tag-list">
+            {profile.conditions.map((condition) => (
+              <li key={condition} className="pp-tag" aria-label={`Condition: ${condition}`}>
+                {condition}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {/* Allergies */}
+      {profile && profile.allergies.length > 0 && (
+        <section aria-label="Allergies" className="pp-section">
+          <h3>Allergies</h3>
+          <ul aria-label="Allergies list" className="pp-tag-list">
+            {profile.allergies.map((allergy) => (
+              <li key={allergy} className="pp-tag pp-tag--warning" aria-label={`Allergy: ${allergy}`}>
+                ⚠ {allergy}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {/* Applicable Screenings */}
       {profile && profile.applicable_screenings.length > 0 && (
         <section aria-label="Applicable Screenings" className="pp-section">
@@ -442,18 +470,30 @@ export function ProfilePage() {
                 <th>Administered By</th>
                 <th>Next Due</th>
                 <th>Series Complete</th>
+                <th>Status</th>
               </tr>
             </thead>
             <tbody>
-              {immunizations.map((imm) => (
+              {immunizations.map((imm) => {
+                const isOverdue = imm.next_due_at !== null && new Date(imm.next_due_at) < new Date();
+                return (
                 <tr key={imm.id}>
                   <td>{imm.vaccine_name}</td>
                   <td>{new Date(imm.administered_at).toLocaleDateString()}</td>
                   <td>{providerName(imm.administering_provider_id)}</td>
                   <td>{imm.next_due_at ? new Date(imm.next_due_at).toLocaleDateString() : "N/A"}</td>
                   <td>{imm.series_complete ? "Yes" : "No"}</td>
+                  <td>
+                    {imm.next_due_at === null
+                      ? <span className="pp-status-badge pp-status-badge--approved" aria-label="Current">Current</span>
+                      : isOverdue
+                        ? <span className="pp-status-badge pp-status-badge--denied" aria-label="Overdue">Overdue</span>
+                        : <span className="pp-status-badge pp-status-badge--approved" aria-label="Current">Current</span>
+                    }
+                  </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         )}

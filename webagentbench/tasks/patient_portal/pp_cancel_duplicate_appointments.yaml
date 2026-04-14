@@ -2,7 +2,7 @@ task_id: pp_cancel_duplicate_appointments
 env_id: patient_portal
 title: Cancel Duplicate Appointment
 instruction_template: >-
-  You have two appointments scheduled on the same day with the same provider.
+  You have two appointments scheduled for the same time slot (with different providers).
   Cancel the one that was booked later and keep the earlier-booked one.
 difficulty: medium
 time_limit_seconds: 180
