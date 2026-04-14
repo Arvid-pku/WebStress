@@ -70,6 +70,9 @@ export function CoursesPage() {
               <div style={{ fontSize: "0.85rem", color: "#666" }}>
                 {course.semester} -- {course.credits} credits
               </div>
+              <div style={{ fontSize: "0.8rem", color: "#888" }} aria-label={`Drop deadline: ${new Date(course.drop_deadline).toLocaleDateString()}`}>
+                Drop deadline: {new Date(course.drop_deadline).toLocaleDateString()}
+              </div>
               {weightedScore !== null && (
                 <div
                   style={{ marginTop: "0.5rem", fontWeight: 600 }}

@@ -389,6 +389,45 @@ export function ProfilePage() {
         </table>
       </section>
 
+      {/* Applicable Screenings */}
+      {profile && profile.applicable_screenings.length > 0 && (
+        <section aria-label="Applicable Screenings" className="pp-section">
+          <h3>Applicable Screenings</h3>
+          <table aria-label="Applicable Screenings">
+            <thead>
+              <tr>
+                <th>Screening</th>
+                <th>Frequency</th>
+                <th>Last Completed</th>
+                <th>Next Due</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {profile.applicable_screenings.map((s) => {
+                const isOverdue = s.next_due !== null && new Date(s.next_due) < new Date();
+                return (
+                  <tr key={s.screening_name}>
+                    <td>{s.screening_name}</td>
+                    <td className="pp-text--sm pp-text--muted">{s.frequency}</td>
+                    <td>{s.last_completed ? new Date(s.last_completed).toLocaleDateString() : "Never"}</td>
+                    <td className={isOverdue ? "pp-text--danger" : ""} aria-label={`Next due: ${s.next_due ? new Date(s.next_due).toLocaleDateString() : "N/A"}`}>
+                      {s.next_due ? new Date(s.next_due).toLocaleDateString() : "N/A"}
+                    </td>
+                    <td>
+                      {isOverdue
+                        ? <span className="pp-status-badge pp-status-badge--denied" aria-label="Overdue">Overdue</span>
+                        : <span className="pp-status-badge pp-status-badge--approved" aria-label="Current">Current</span>
+                      }
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </section>
+      )}
+
       {/* Immunizations */}
       <section aria-label="Immunization Record" className="pp-section">
         <h3>Immunization Record</h3>

@@ -134,10 +134,12 @@ export function AppointmentsPage() {
               <tr>
                 <th>Appointment ID</th>
                 <th>Date/Time</th>
+                <th>Booked At</th>
                 <th>Provider</th>
                 <th>Specialty</th>
                 <th>Type</th>
                 <th>Status</th>
+                <th>Pre-Auth Status</th>
                 <th>Reason</th>
                 <th>Linked Referral</th>
                 <th>Location</th>
@@ -149,10 +151,12 @@ export function AppointmentsPage() {
                 <tr key={apt.id}>
                   <td>{apt.id}</td>
                   <td>{new Date(apt.datetime).toLocaleString()}</td>
+                  <td aria-label={`Booked at ${new Date(apt.booked_at).toLocaleString()}`} className="pp-text--muted pp-text--sm">{new Date(apt.booked_at).toLocaleString()}</td>
                   <td>{providerName(apt.provider_id)}</td>
                   <td>{providerSpecialty(apt.provider_id)}</td>
                   <td>{apt.type}</td>
                   <td><span className={`pp-status-badge pp-status-badge--${apt.status}`}>{apt.status}</span></td>
+                  <td aria-label={`Pre-authorization status: ${apt.pre_auth_status}`}><span className={`pp-status-badge pp-status-badge--${apt.pre_auth_status}`}>{apt.pre_auth_status}</span></td>
                   <td>{apt.reason}</td>
                   <td>{apt.linked_referral_id ?? "None"}</td>
                   <td>{apt.location}</td>
@@ -230,6 +234,7 @@ export function AppointmentsPage() {
               <tr>
                 <th>Appointment ID</th>
                 <th>Date/Time</th>
+                <th>Booked At</th>
                 <th>Provider</th>
                 <th>Specialty</th>
                 <th>Type</th>
@@ -243,6 +248,7 @@ export function AppointmentsPage() {
                 <tr key={apt.id}>
                   <td>{apt.id}</td>
                   <td>{new Date(apt.datetime).toLocaleString()}</td>
+                  <td aria-label={`Booked at ${new Date(apt.booked_at).toLocaleString()}`} className="pp-text--muted pp-text--sm">{new Date(apt.booked_at).toLocaleString()}</td>
                   <td>{providerName(apt.provider_id)}</td>
                   <td>{providerSpecialty(apt.provider_id)}</td>
                   <td>{apt.type}</td>

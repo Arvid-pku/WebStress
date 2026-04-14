@@ -182,6 +182,11 @@ export function MessagesPage() {
                   {msg.is_urgent && <span className="pp-urgent-badge" aria-label="Urgent">Urgent</span>}
                 </div>
                 <div className="pp-thread-message__body">{msg.body}</div>
+                {msg.linked_entity_id && (
+                  <div className="pp-text--sm pp-text--muted" aria-label={`Linked ${msg.linked_entity_type ?? "entity"}: ${msg.linked_entity_id}`}>
+                    Linked {msg.linked_entity_type ?? "entity"}: {msg.linked_entity_id}
+                  </div>
+                )}
               </article>
             ))}
 
