@@ -1,0 +1,16 @@
+variant_id: pp_mark_all_read__mark_all_read_verification_v1
+base_task_id: pp_mark_all_read
+target_primitive: verification
+description: The first mark-all-read request returns a fake success while leaving the unread messages untouched. The agent must verify the unread state and retry.
+injections:
+- layer: network
+  params:
+    action: silent_fail
+    url_pattern: '**/api/env/patient_portal/messages/mark-all-read'
+    methods:
+    - POST
+    fail_count: 1
+    response_body:
+      count: 12
+    behavior:
+      mode: once

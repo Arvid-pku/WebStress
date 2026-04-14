@@ -15,7 +15,7 @@ Targets all primitives, especially:
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import Any
 import random as _random
 
@@ -105,6 +105,19 @@ def _coerce_timestamp(value: Any) -> datetime | None:
     if isinstance(value, str):
         try:
             return datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except ValueError:
+            return None
+    return None
+
+
+def _coerce_date(value: Any) -> date | None:
+    if isinstance(value, date) and not isinstance(value, datetime):
+        return value
+    if isinstance(value, datetime):
+        return value.date()
+    if isinstance(value, str):
+        try:
+            return date.fromisoformat(value)
         except ValueError:
             return None
     return None
@@ -734,6 +747,633 @@ def _add_confusing_decoys(state: Any, params: dict[str, Any], *, rng=None) -> No
         if hasattr(state, "touch"):
             state.touch()
         return
+
+    if hasattr(state, "patient") and hasattr(state, "providers") and hasattr(state, "claims"):
+        from webagentbench.backend.models.patient_portal import (
+            ClinicalMessage,
+            Immunization,
+            InsuranceClaim,
+            LabResult,
+            Pharmacy,
+            Prescription,
+            ScreeningRecommendation,
+        )
+
+        provider_template = state.providers[0] if getattr(state, "providers", None) else None
+        appointment_template = state.appointments[0] if getattr(state, "appointments", None) else None
+        claim_template = state.claims[0] if getattr(state, "claims", None) else None
+        message_template = state.messages[0] if getattr(state, "messages", None) else None
+        lab_template = state.lab_results[0] if getattr(state, "lab_results", None) else None
+        immunization_template = state.immunizations[0] if getattr(state, "immunizations", None) else None
+        pharmacy_template = state.pharmacies[0] if getattr(state, "pharmacies", None) else None
+        prescription_template = state.prescriptions[0] if getattr(state, "prescriptions", None) else None
+
+        def _pick_provider(spec: dict[str, Any]) -> Any:
+            provider_id = spec.get("provider_id")
+            if provider_id and hasattr(state, "get_provider"):
+                provider = state.get_provider(provider_id)
+                if provider is not None:
+                    return provider
+            provider_name = spec.get("provider_name")
+            if provider_name:
+                for provider in state.providers:
+                    if provider.name == provider_name:
+                        return provider
+            specialty = spec.get("provider_specialty")
+            if specialty:
+                for provider in state.providers:
+                    if provider.specialty == specialty:
+                        return provider
+            return provider_template
+
+        def _pick_pharmacy(spec: dict[str, Any]) -> Any:
+            pharmacy_id = spec.get("pharmacy_id")
+            if pharmacy_id and hasattr(state, "get_pharmacy"):
+                pharmacy = state.get_pharmacy(pharmacy_id)
+                if pharmacy is not None:
+                    return pharmacy
+            name = spec.get("name")
+            if name:
+                for pharmacy in state.pharmacies:
+                    if pharmacy.name == name:
+                        return pharmacy
+            return pharmacy_template
+
+        default_appointment_id = appointment_template.id if appointment_template is not None else ""
+
+        for spec in decoys:
+            if not isinstance(spec, dict):
+                continue
+            dtype = str(spec.get("type", "message")).lower()
+
+            if dtype == "message":
+                provider = _pick_provider(spec)
+                if provider is None:
+                    continue
+                created_at = _coerce_timestamp(spec.get("timestamp")) or datetime(2025, 2, 10, 9, 0, tzinfo=timezone.utc)
+                if message_template is not None:
+                    message = message_template.model_copy(deep=True)
+                    message.id = _state_next_id(state, "msg", rng=_rng, fallback_seed=118)
+                    message.from_type = spec.get("from_type", message.from_type)
+                    message.provider_id = provider.id
+                    message.subject = spec.get("subject", message.subject)
+                    message.body = spec.get("body", message.body)
+                    message.thread_id = spec.get("thread_id", f"thread_{message.id}")
+                    message.timestamp = created_at
+                    message.is_read = bool(spec.get("is_read", False))
+                    message.category = spec.get("category", message.category)
+                    message.linked_entity_id = spec.get("linked_entity_id", message.linked_entity_id)
+                    message.linked_entity_type = spec.get("linked_entity_type", message.linked_entity_type)
+                    message.is_urgent = bool(spec.get("is_urgent", False))
+                else:
+                    message = ClinicalMessage(
+                        id=_state_next_id(state, "msg", rng=_rng, fallback_seed=118),
+                        from_type=spec.get("from_type", "provider"),
+                        provider_id=provider.id,
+                        subject=spec.get("subject", "Follow-up note"),
+                        body=spec.get("body", "Please review this older, unrelated portal thread."),
+                        thread_id=spec.get("thread_id", f"thread_{_rng.randint(10000, 99999)}"),
+                        timestamp=created_at,
+                        is_read=bool(spec.get("is_read", False)),
+                        category=spec.get("category", "clinical"),
+                        linked_entity_id=spec.get("linked_entity_id"),
+                        linked_entity_type=spec.get("linked_entity_type"),
+                        is_urgent=bool(spec.get("is_urgent", False)),
+                    )
+                state.messages.insert(0, message)
+                continue
+
+            if dtype == "claim":
+                provider = _pick_provider(spec)
+                if provider is None:
+                    continue
+                if claim_template is not None:
+                    claim = claim_template.model_copy(deep=True)
+                    claim.id = _state_next_id(state, "clm", rng=_rng, fallback_seed=119)
+                else:
+                    claim = InsuranceClaim(
+                        id=_state_next_id(state, "clm", rng=_rng, fallback_seed=119),
+                        service_date=_coerce_date(spec.get("service_date")) or date(2025, 1, 10),
+                        provider_id=provider.id,
+                        appointment_id=spec.get("appointment_id", default_appointment_id),
+                        procedure_code=spec.get("procedure_code", "99213"),
+                        diagnosis_code=spec.get("diagnosis_code", "Z00.00"),
+                        amount_billed=spec.get("amount_billed", "175.00"),
+                        appeal_deadline=_coerce_timestamp(spec.get("appeal_deadline")) or datetime(2025, 3, 1, tzinfo=timezone.utc),
+                    )
+                claim.service_date = _coerce_date(spec.get("service_date")) or date(2025, 1, 10)
+                claim.provider_id = provider.id
+                claim.appointment_id = spec.get("appointment_id", claim.appointment_id or default_appointment_id)
+                claim.procedure_code = spec.get("procedure_code", claim.procedure_code)
+                claim.diagnosis_code = spec.get("diagnosis_code", claim.diagnosis_code)
+                claim.status = spec.get("status", claim.status)
+                claim.amount_billed = spec.get("amount_billed", claim.amount_billed)
+                claim.amount_covered = spec.get("amount_covered", claim.amount_covered)
+                claim.patient_responsibility = spec.get("patient_responsibility", claim.patient_responsibility)
+                claim.eob_available = bool(spec.get("eob_available", claim.eob_available))
+                claim.appeal_deadline = _coerce_timestamp(spec.get("appeal_deadline")) or claim.appeal_deadline
+                claim.denial_reason = spec.get("denial_reason", claim.denial_reason)
+                claim.supporting_referral_id = spec.get("supporting_referral_id", claim.supporting_referral_id)
+                claim.supporting_lab_ids = list(spec.get("supporting_lab_ids", claim.supporting_lab_ids))
+                state.claims.insert(0, claim)
+                continue
+
+            if dtype == "pharmacy":
+                if pharmacy_template is not None:
+                    pharmacy = pharmacy_template.model_copy(deep=True)
+                    pharmacy.id = _state_next_id(state, "pharm", rng=_rng, fallback_seed=120)
+                else:
+                    pharmacy = Pharmacy(
+                        id=_state_next_id(state, "pharm", rng=_rng, fallback_seed=120),
+                        name=spec.get("name", "Decoy Pharmacy"),
+                        address=spec.get("address", "1 Placeholder Ave"),
+                        phone=spec.get("phone", "(555) 000-0000"),
+                    )
+                pharmacy.name = spec.get("name", pharmacy.name)
+                pharmacy.address = spec.get("address", pharmacy.address)
+                pharmacy.phone = spec.get("phone", pharmacy.phone)
+                pharmacy.is_default = bool(spec.get("is_default", False))
+                pharmacy.is_mail_order = bool(spec.get("is_mail_order", pharmacy.is_mail_order))
+                pharmacy.dispensing_fee = spec.get("dispensing_fee", pharmacy.dispensing_fee)
+                pharmacy.cost_per_90day_supply = spec.get("cost_per_90day_supply", pharmacy.cost_per_90day_supply)
+                state.pharmacies.insert(0, pharmacy)
+                continue
+
+            if dtype == "lab_result":
+                provider = _pick_provider(spec)
+                if provider is None:
+                    continue
+                collected_at = _coerce_timestamp(spec.get("collected_at")) or datetime(2025, 2, 10, 8, 0, tzinfo=timezone.utc)
+                if lab_template is not None:
+                    lab = lab_template.model_copy(deep=True)
+                    lab.id = _state_next_id(state, "lab", rng=_rng, fallback_seed=121)
+                else:
+                    lab = LabResult(
+                        id=_state_next_id(state, "lab", rng=_rng, fallback_seed=121),
+                        test_name=spec.get("test_name", "Comprehensive Metabolic Panel"),
+                        test_code=spec.get("test_code", "24323-8"),
+                        ordered_by=provider.id,
+                        collected_at=collected_at,
+                        value=spec.get("value", "Normal"),
+                        unit=spec.get("unit", ""),
+                        reference_range=spec.get("reference_range", ""),
+                    )
+                lab.test_name = spec.get("test_name", lab.test_name)
+                lab.test_code = spec.get("test_code", lab.test_code)
+                lab.ordered_by = provider.id
+                lab.collected_at = collected_at
+                lab.value = spec.get("value", lab.value)
+                lab.unit = spec.get("unit", lab.unit)
+                lab.reference_range = spec.get("reference_range", lab.reference_range)
+                lab.flag = spec.get("flag", lab.flag)
+                lab.status = spec.get("status", lab.status)
+                lab.linked_appointment_id = spec.get("linked_appointment_id", lab.linked_appointment_id)
+                state.lab_results.insert(0, lab)
+                continue
+
+            if dtype == "prescription":
+                provider = _pick_provider(spec)
+                pharmacy = _pick_pharmacy(spec)
+                if provider is None or pharmacy is None:
+                    continue
+                if prescription_template is not None:
+                    prescription = prescription_template.model_copy(deep=True)
+                    prescription.id = _state_next_id(state, "rx", rng=_rng, fallback_seed=122)
+                else:
+                    prescription = Prescription(
+                        id=_state_next_id(state, "rx", rng=_rng, fallback_seed=122),
+                        medication=spec.get("medication", "Metoprolol 25mg"),
+                        dosage=spec.get("dosage", "25mg"),
+                        frequency=spec.get("frequency", "once daily"),
+                        provider_id=provider.id,
+                        pharmacy_id=pharmacy.id,
+                        refills_remaining=int(spec.get("refills_remaining", 2)),
+                        last_filled=_coerce_timestamp(spec.get("last_filled")) or datetime(2025, 2, 1, tzinfo=timezone.utc),
+                        expires_at=_coerce_timestamp(spec.get("expires_at")) or datetime(2027, 2, 1, tzinfo=timezone.utc),
+                    )
+                prescription.medication = spec.get("medication", prescription.medication)
+                prescription.dosage = spec.get("dosage", prescription.dosage)
+                prescription.frequency = spec.get("frequency", prescription.frequency)
+                prescription.provider_id = provider.id
+                prescription.pharmacy_id = pharmacy.id
+                prescription.refills_remaining = int(spec.get("refills_remaining", prescription.refills_remaining))
+                prescription.last_filled = _coerce_timestamp(spec.get("last_filled")) or prescription.last_filled
+                prescription.expires_at = _coerce_timestamp(spec.get("expires_at")) or prescription.expires_at
+                prescription.status = spec.get("status", prescription.status)
+                prescription.interactions = list(spec.get("interactions", prescription.interactions))
+                state.prescriptions.insert(0, prescription)
+                continue
+
+            if dtype == "immunization":
+                provider = _pick_provider(spec)
+                if provider is None:
+                    continue
+                if immunization_template is not None:
+                    immunization = immunization_template.model_copy(deep=True)
+                    immunization.id = _state_next_id(state, "imm", rng=_rng, fallback_seed=123)
+                else:
+                    immunization = Immunization(
+                        id=_state_next_id(state, "imm", rng=_rng, fallback_seed=123),
+                        vaccine_name=spec.get("vaccine_name", "Influenza (Flu)"),
+                        administered_at=_coerce_timestamp(spec.get("administered_at")) or datetime(2025, 10, 1, tzinfo=timezone.utc),
+                        administering_provider_id=provider.id,
+                    )
+                immunization.vaccine_name = spec.get("vaccine_name", immunization.vaccine_name)
+                immunization.administered_at = _coerce_timestamp(spec.get("administered_at")) or immunization.administered_at
+                immunization.next_due_at = _coerce_timestamp(spec.get("next_due_at")) or immunization.next_due_at
+                immunization.series_complete = bool(spec.get("series_complete", immunization.series_complete))
+                immunization.administering_provider_id = provider.id
+                state.immunizations.insert(0, immunization)
+                continue
+
+            if dtype == "screening":
+                recommendation = ScreeningRecommendation(
+                    screening_name=spec.get("screening_name", "Bone Density Scan"),
+                    recommended_age_start=int(spec.get("recommended_age_start", 50)),
+                    frequency=spec.get("frequency", "every 2 years"),
+                    last_completed=_coerce_date(spec.get("last_completed")),
+                    next_due=_coerce_date(spec.get("next_due")),
+                )
+                state.patient.applicable_screenings.append(recommendation)
+                continue
+
+        if hasattr(state, "touch"):
+            state.touch()
+        return
+
+    if hasattr(state, "courses") and hasattr(state, "assignments") and hasattr(state, "modules"):
+        from webagentbench.backend.models.lms import (
+            Announcement,
+            Assignment,
+            CalendarEvent,
+            ContentItem,
+            Course,
+            Discussion,
+            DiscussionPost,
+            Enrollment,
+            Module,
+            PeerReview,
+            RubricItem,
+        )
+
+        course_template = state.courses[0] if state.courses else None
+        enrollment_template = state.enrollments[0] if getattr(state, "enrollments", None) else None
+        assignment_template = state.assignments[0] if state.assignments else None
+        module_template = state.modules[0] if state.modules else None
+        discussion_template = state.discussions[0] if getattr(state, "discussions", None) else None
+        post_template = state.discussion_posts[0] if getattr(state, "discussion_posts", None) else None
+        review_template = state.peer_reviews[0] if getattr(state, "peer_reviews", None) else None
+        announcement_template = state.announcements[0] if getattr(state, "announcements", None) else None
+        event_template = state.calendar_events[0] if getattr(state, "calendar_events", None) else None
+
+        def _pick_course(spec: dict[str, Any]) -> Any:
+            course_id = spec.get("course_id")
+            if course_id and hasattr(state, "get_course"):
+                course = state.get_course(course_id)
+                if course is not None:
+                    return course
+            course_code = spec.get("course_code")
+            if course_code and hasattr(state, "get_course_by_code"):
+                course = state.get_course_by_code(course_code)
+                if course is not None:
+                    return course
+            course_title = spec.get("course_title")
+            if course_title:
+                for course in state.courses:
+                    if course.title == course_title:
+                        return course
+            return course_template
+
+        def _pick_weight_category(course: Any, spec: dict[str, Any]) -> str:
+            category = spec.get("weight_category")
+            if category:
+                return str(category)
+            if course is not None:
+                policy = getattr(course.syllabus, "grading_policy", {}) or {}
+                if policy:
+                    return next(iter(policy.keys()))
+            if assignment_template is not None:
+                return assignment_template.weight_category
+            return "homework"
+
+        def _latest_lms_timestamp() -> datetime:
+            fallback = datetime(2026, 1, 15, 12, 0, tzinfo=timezone.utc)
+            latest = fallback
+            for course in getattr(state, "courses", []):
+                for candidate in (
+                    getattr(course, "drop_deadline", None),
+                    getattr(course, "final_exam_date", None),
+                ):
+                    ts = _coerce_timestamp(candidate)
+                    if ts is not None and ts > latest:
+                        latest = ts
+            for assignment in getattr(state, "assignments", []):
+                for candidate in (getattr(assignment, "due_at", None), getattr(assignment, "submitted_at", None)):
+                    ts = _coerce_timestamp(candidate)
+                    if ts is not None and ts > latest:
+                        latest = ts
+            for discussion_post in getattr(state, "discussion_posts", []):
+                ts = _coerce_timestamp(getattr(discussion_post, "timestamp", None))
+                if ts is not None and ts > latest:
+                    latest = ts
+            for announcement in getattr(state, "announcements", []):
+                ts = _coerce_timestamp(getattr(announcement, "posted_at", None))
+                if ts is not None and ts > latest:
+                    latest = ts
+            for review in getattr(state, "peer_reviews", []):
+                ts = _coerce_timestamp(getattr(review, "due_at", None))
+                if ts is not None and ts > latest:
+                    latest = ts
+            for event in getattr(state, "calendar_events", []):
+                ts = _coerce_timestamp(getattr(event, "start_datetime", None))
+                if ts is not None and ts > latest:
+                    latest = ts
+            return latest
+
+        def _next_lms_id(prefix: str, *, fallback_seed: int) -> str:
+            return _state_next_id(state, prefix, rng=_rng, fallback_seed=fallback_seed)
+
+        def _ensure_discussion(course: Any, spec: dict[str, Any]) -> tuple[Any, bool]:
+            discussion_id = spec.get("discussion_id")
+            if discussion_id and hasattr(state, "get_discussion"):
+                discussion = state.get_discussion(discussion_id)
+                if discussion is not None:
+                    return discussion, False
+            if discussion_template is not None:
+                discussion = discussion_template.model_copy(deep=True)
+            else:
+                discussion = Discussion(
+                    id=_next_lms_id("disc", fallback_seed=210),
+                    course_id=course.id if course is not None else "",
+                    title=spec.get("title", "Discussion"),
+                    prompt=spec.get("prompt", ""),
+                    due_at=_latest_lms_timestamp() + timedelta(days=7),
+                    min_posts=int(spec.get("min_posts", 1)),
+                    min_replies=int(spec.get("min_replies", 1)),
+                    points_possible=spec.get("points_possible", "10"),
+                    weight_category=_pick_weight_category(course, spec),
+                )
+            discussion.id = spec.get("id", _next_lms_id("disc", fallback_seed=210))
+            discussion.course_id = course.id if course is not None else discussion.course_id
+            discussion.module_id = spec.get("module_id", discussion.module_id)
+            discussion.title = spec.get("title", discussion.title)
+            discussion.prompt = spec.get("prompt", discussion.prompt)
+            discussion.due_at = _coerce_timestamp(spec.get("due_at")) or (_latest_lms_timestamp() + timedelta(days=7))
+            discussion.min_posts = int(spec.get("min_posts", discussion.min_posts))
+            discussion.min_replies = int(spec.get("min_replies", discussion.min_replies))
+            discussion.points_possible = spec.get("points_possible", discussion.points_possible)
+            discussion.weight_category = _pick_weight_category(course, spec)
+            return discussion, True
+
+        action = params.get("action", "")
+        if action in {"add_confusing_decoys", "inject_distractor_lms_entities", "add_lms_distractors", "add_lms_noise"}:
+            items = decoys if action == "add_confusing_decoys" else (params.get("items") or [])
+            count = int(params.get("count", 0))
+            if not items and count > 0:
+                default_types = list(params.get("types") or [])
+                if not default_types:
+                    default_types = ["announcement", "assignment", "module", "discussion", "calendar_event"]
+                items = [{"type": default_types[i % len(default_types)]} for i in range(count)]
+
+            for i, spec in enumerate(items):
+                if not isinstance(spec, dict):
+                    continue
+                item_type = str(spec.get("type", "announcement")).lower()
+                course = _pick_course(spec)
+                if course is None:
+                    continue
+                base_time = _latest_lms_timestamp()
+
+                if item_type == "announcement":
+                    created_at = _coerce_timestamp(spec.get("posted_at")) or (base_time + timedelta(minutes=15 * (i + 1)))
+                    if announcement_template is not None:
+                        announcement = announcement_template.model_copy(deep=True)
+                    else:
+                        announcement = Announcement(
+                            id=_next_lms_id("ann", fallback_seed=211),
+                            course_id=course.id,
+                            title=spec.get("title", "Course update"),
+                            body=spec.get("body", ""),
+                            posted_at=created_at,
+                            priority=spec.get("priority", "normal"),
+                        )
+                    announcement.id = spec.get("id", _next_lms_id("ann", fallback_seed=211))
+                    announcement.course_id = course.id
+                    announcement.title = spec.get("title", announcement.title)
+                    announcement.body = spec.get("body", announcement.body)
+                    announcement.posted_at = created_at
+                    announcement.priority = spec.get("priority", announcement.priority)
+                    announcement.is_read = bool(spec.get("is_read", announcement.is_read))
+                    state.announcements.insert(0, announcement)
+                    continue
+
+                if item_type == "course":
+                    if course_template is None:
+                        continue
+                    course = course_template.model_copy(deep=True)
+                    course.id = spec.get("id", _next_lms_id("course", fallback_seed=217))
+                    course.course_code = spec.get("course_code", f"{course.course_code}-ALT")
+                    course.title = spec.get("title", f"{course.title} Lab")
+                    course.instructor_id = spec.get("instructor_id", course.instructor_id)
+                    course.instructor_name = spec.get("instructor_name", course.instructor_name)
+                    course.semester = spec.get("semester", course.semester)
+                    course.credits = int(spec.get("credits", course.credits))
+                    course.drop_deadline = _coerce_timestamp(spec.get("drop_deadline")) or course.drop_deadline
+                    course.final_exam_date = _coerce_timestamp(spec.get("final_exam_date")) or course.final_exam_date
+                    state.courses.append(course)
+                    if hasattr(state, "enrollments"):
+                        if enrollment_template is not None:
+                            enrollment = enrollment_template.model_copy(deep=True)
+                        else:
+                            enrollment = Enrollment(
+                                id=_next_lms_id("enroll", fallback_seed=218),
+                                student_id=state.student.id,
+                                course_id=course.id,
+                                role=spec.get("role", "student"),
+                                status=spec.get("status", "enrolled"),
+                            )
+                        enrollment.id = spec.get("enrollment_id", _next_lms_id("enroll", fallback_seed=218))
+                        enrollment.student_id = state.student.id
+                        enrollment.course_id = course.id
+                        enrollment.role = spec.get("role", enrollment.role)
+                        enrollment.status = spec.get("status", enrollment.status)
+                        enrollment.final_grade = spec.get("final_grade", enrollment.final_grade)
+                        enrollment.final_score = spec.get("final_score", enrollment.final_score)
+                        state.enrollments.append(enrollment)
+                    continue
+
+                if item_type == "assignment":
+                    due_at = _coerce_timestamp(spec.get("due_at")) or (base_time + timedelta(days=7 + i))
+                    if assignment_template is not None:
+                        assignment = assignment_template.model_copy(deep=True)
+                    else:
+                        assignment = Assignment(
+                            id=_next_lms_id("asm", fallback_seed=212),
+                            course_id=course.id,
+                            title=spec.get("title", "Assignment"),
+                            type=spec.get("assignment_type", "homework"),
+                            due_at=due_at,
+                            points_possible=spec.get("points_possible", "10"),
+                            submission_status="not_submitted",
+                            weight_category=_pick_weight_category(course, spec),
+                        )
+                    assignment.id = spec.get("id", _next_lms_id("asm", fallback_seed=212))
+                    assignment.course_id = course.id
+                    assignment.title = spec.get("title", assignment.title)
+                    assignment.type = spec.get("assignment_type", assignment.type)
+                    assignment.due_at = due_at
+                    assignment.points_possible = spec.get("points_possible", assignment.points_possible)
+                    assignment.submission_status = spec.get("submission_status", "not_submitted")
+                    assignment.score = spec.get("score", None)
+                    assignment.feedback = spec.get("feedback", None)
+                    assignment.attempt_count = int(spec.get("attempt_count", 0))
+                    assignment.max_attempts = int(spec.get("max_attempts", assignment.max_attempts))
+                    rubric = spec.get("rubric")
+                    if rubric is not None:
+                        assignment.rubric = [RubricItem(**item) if isinstance(item, dict) else item for item in rubric]
+                    assignment.weight_category = _pick_weight_category(course, spec)
+                    assignment.submitted_at = _coerce_timestamp(spec.get("submitted_at"))
+                    assignment.file_name = spec.get("file_name")
+                    state.assignments.insert(0, assignment)
+                    continue
+
+                if item_type == "module":
+                    if module_template is not None:
+                        module = module_template.model_copy(deep=True)
+                    else:
+                        module = Module(
+                            id=_next_lms_id("mod", fallback_seed=213),
+                            course_id=course.id,
+                            title=spec.get("title", "Module"),
+                            position=int(spec.get("position", 1)),
+                            unlock_condition=spec.get("unlock_condition", "none"),
+                            status=spec.get("status", "available"),
+                        )
+                    module.id = spec.get("id", _next_lms_id("mod", fallback_seed=213))
+                    module.course_id = course.id
+                    module.title = spec.get("title", module.title)
+                    module.position = int(spec.get("position", module.position))
+                    module.unlock_condition = spec.get("unlock_condition", module.unlock_condition)
+                    module.unlock_value = list(spec.get("unlock_value", module.unlock_value))
+                    module.unlock_logic = spec.get("unlock_logic", module.unlock_logic)
+                    module.status = spec.get("status", module.status)
+                    content_items = spec.get("content_items")
+                    if content_items is not None:
+                        module.content_items = [
+                            ContentItem(**item) if isinstance(item, dict) else item
+                            for item in content_items
+                        ]
+                    state.modules.insert(0, module)
+                    continue
+
+                if item_type == "discussion":
+                    discussion, created = _ensure_discussion(course, spec)
+                    if created:
+                        state.discussions.insert(0, discussion)
+                    posts = spec.get("posts") or []
+                    for post_index, post_spec in enumerate(posts):
+                        if not isinstance(post_spec, dict):
+                            continue
+                        created_at = _coerce_timestamp(post_spec.get("timestamp")) or (base_time + timedelta(minutes=post_index + 1))
+                        if post_template is not None:
+                            post = post_template.model_copy(deep=True)
+                        else:
+                            post = DiscussionPost(
+                                id=_next_lms_id("post", fallback_seed=214),
+                                discussion_id=discussion.id,
+                                author_id=spec.get("author_id", getattr(course, "instructor_id", state.student.id)),
+                                author_name=post_spec.get("author_name", getattr(course, "instructor_name", "Instructor")),
+                                body=post_spec.get("body", ""),
+                                timestamp=created_at,
+                            )
+                        post.id = post_spec.get("id", _next_lms_id("post", fallback_seed=214))
+                        post.discussion_id = discussion.id
+                        post.author_id = post_spec.get("author_id", post.author_id)
+                        post.author_name = post_spec.get("author_name", post.author_name)
+                        post.body = post_spec.get("body", post.body)
+                        post.parent_post_id = post_spec.get("parent_post_id", post.parent_post_id)
+                        post.timestamp = created_at
+                        post.updated_at = _coerce_timestamp(post_spec.get("updated_at")) or post.updated_at
+                        post.is_anonymous = bool(post_spec.get("is_anonymous", post.is_anonymous))
+                        state.discussion_posts.insert(0, post)
+                    continue
+
+                if item_type == "peer_review":
+                    assignment_id = spec.get("assignment_id")
+                    if not assignment_id:
+                        assignment_id = next(
+                            (assignment.id for assignment in state.assignments if assignment.course_id == course.id),
+                            assignment_template.id if assignment_template is not None else "",
+                        )
+                    if not assignment_id:
+                        continue
+                    if review_template is not None:
+                        review = review_template.model_copy(deep=True)
+                    else:
+                        review = PeerReview(
+                            id=_next_lms_id("rev", fallback_seed=215),
+                            assignment_id=assignment_id,
+                            reviewer_student_id=state.student.id,
+                            reviewee_student_id=spec.get("reviewee_student_id", "peer_1"),
+                            reviewee_name=spec.get("reviewee_name", "Peer Student"),
+                            submission_title=spec.get("submission_title", "Submission"),
+                            submission_body=spec.get("submission_body", ""),
+                            assignment_rubric=[],
+                            rubric_scores={},
+                            comments="",
+                            status=spec.get("status", "assigned"),
+                            returned_for_revision=bool(spec.get("returned_for_revision", False)),
+                            due_at=_coerce_timestamp(spec.get("due_at")) or (base_time + timedelta(days=5)),
+                        )
+                    review.id = spec.get("id", _next_lms_id("rev", fallback_seed=215))
+                    review.assignment_id = assignment_id
+                    review.reviewer_student_id = state.student.id
+                    review.reviewee_student_id = spec.get("reviewee_student_id", review.reviewee_student_id)
+                    review.reviewee_name = spec.get("reviewee_name", review.reviewee_name)
+                    review.submission_title = spec.get("submission_title", review.submission_title)
+                    review.submission_body = spec.get("submission_body", review.submission_body)
+                    rubric = spec.get("assignment_rubric")
+                    if rubric is not None:
+                        review.assignment_rubric = [RubricItem(**item) if isinstance(item, dict) else item for item in rubric]
+                    review.rubric_scores = dict(spec.get("rubric_scores", review.rubric_scores))
+                    review.comments = spec.get("comments", review.comments)
+                    review.status = spec.get("status", review.status)
+                    review.returned_for_revision = bool(spec.get("returned_for_revision", review.returned_for_revision))
+                    review.previous_rubric_scores = dict(spec.get("previous_rubric_scores", review.previous_rubric_scores))
+                    review.previous_comments = spec.get("previous_comments", review.previous_comments)
+                    review.due_at = _coerce_timestamp(spec.get("due_at")) or review.due_at
+                    state.peer_reviews.insert(0, review)
+                    continue
+
+                if item_type == "calendar_event":
+                    start_dt = _coerce_timestamp(spec.get("start_datetime")) or (base_time + timedelta(days=1 + i))
+                    end_dt = _coerce_timestamp(spec.get("end_datetime")) or (start_dt + timedelta(hours=1))
+                    if event_template is not None:
+                        event = event_template.model_copy(deep=True)
+                    else:
+                        event = CalendarEvent(
+                            id=_next_lms_id("cal", fallback_seed=216),
+                            course_id=course.id,
+                            title=spec.get("title", "Event"),
+                            event_type=spec.get("event_type", "lecture"),
+                            start_datetime=start_dt,
+                            end_datetime=end_dt,
+                        )
+                    event.id = spec.get("id", _next_lms_id("cal", fallback_seed=216))
+                    event.course_id = course.id
+                    event.title = spec.get("title", event.title)
+                    event.event_type = spec.get("event_type", event.event_type)
+                    event.start_datetime = start_dt
+                    event.end_datetime = end_dt
+                    event.location = spec.get("location", event.location)
+                    event.recurrence = spec.get("recurrence", event.recurrence)
+                    event.recurrence_end_date = _coerce_timestamp(spec.get("recurrence_end_date")) or event.recurrence_end_date
+                    state.calendar_events.insert(0, event)
+                    continue
+
+            if hasattr(state, "touch"):
+                state.touch()
+            return
 
     if hasattr(state, "posts") and hasattr(state, "subreddits"):
         from webagentbench.backend.models.base import utc_now

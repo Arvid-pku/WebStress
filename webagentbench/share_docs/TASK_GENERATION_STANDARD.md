@@ -16,6 +16,10 @@ must refine this standard rather than contradict it.
 Use [TASK_ENVIRONMENT_SUPPLEMENT_TEMPLATE.md](TASK_ENVIRONMENT_SUPPLEMENT_TEMPLATE.md)
 when creating a new environment-specific supplement.
 
+For environment-agnostic batch authoring, diversity control, and degradation
+correctness, also follow
+[BATCH_TASK_GENERATION_STANDARD.md](BATCH_TASK_GENERATION_STANDARD.md).
+
 In the current checkout:
 
 - task definitions live under `tasks/`

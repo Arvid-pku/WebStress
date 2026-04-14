@@ -1,0 +1,27 @@
+variant_id: pp_renew_expiring_rx__medication_shadow_v1
+base_task_id: pp_renew_expiring_rx
+target_primitive: state_tracking
+description: Extra active medications are added to the cabinet. The agent must keep track of the seeded target medications instead of acting on unrelated but plausible prescriptions.
+injections:
+- layer: seed
+  params:
+    action: add_confusing_decoys
+    decoys:
+    - type: prescription
+      medication: Metoprolol 25mg
+      dosage: 25mg
+      frequency: once daily
+      refills_remaining: 3
+      last_filled: '2025-02-01T08:00:00+00:00'
+      expires_at: '2027-02-01T08:00:00+00:00'
+      status: active
+      interactions: []
+    - type: prescription
+      medication: Albuterol Inhaler
+      dosage: 2 puffs
+      frequency: as needed
+      refills_remaining: 1
+      last_filled: '2025-01-10T08:00:00+00:00'
+      expires_at: '2026-12-01T08:00:00+00:00'
+      status: active
+      interactions: []

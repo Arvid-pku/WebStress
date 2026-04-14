@@ -1,0 +1,27 @@
+variant_id: lms_ta_dual_role__peer_review_clutter_v1
+base_task_id: lms_ta_dual_role
+target_primitive: exploration
+description: Extra peer review noise expands the LMS search surface. The agent must
+  keep exploring until it finds the real target.
+injections:
+- layer: seed
+  params:
+    action: add_confusing_decoys
+    decoys:
+    - type: peer_review
+      course_id: '{target.ta_course_id}'
+      course_code: '{target.ta_course_code}'
+      assignment_id: '{target.target_assignment_id}'
+      reviewee_name: Jordan Perez
+      submission_title: Reflection submission draft
+      submission_body: Near-match draft that is not the active review target.
+      status: assigned
+- layer: network
+  params:
+    action: stale_data
+    url_pattern: '**/api/env/lms/peer-reviews'
+    stale_body:
+      items: []
+    stale_count: 1
+    behavior:
+      mode: once

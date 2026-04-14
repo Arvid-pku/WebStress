@@ -6,7 +6,7 @@ Targets Planning, State Tracking, and Backtracking primitives.
 from __future__ import annotations
 
 import random
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 
@@ -47,6 +47,39 @@ def _rh_normalize_notification_type(raw_type: Any) -> str:
     }.get(notification_type, "security_alert")
 
 
+def _lms_latest_timestamp(state: Any) -> datetime:
+    fallback = datetime(2026, 1, 15, 12, 0, tzinfo=timezone.utc)
+    latest = fallback
+    for course in getattr(state, "courses", []):
+        for candidate in (
+            getattr(course, "drop_deadline", None),
+            getattr(course, "final_exam_date", None),
+        ):
+            if candidate and candidate > latest:
+                latest = candidate
+    for assignment in getattr(state, "assignments", []):
+        for candidate in (getattr(assignment, "due_at", None), getattr(assignment, "submitted_at", None)):
+            if candidate and candidate > latest:
+                latest = candidate
+    for post in getattr(state, "discussion_posts", []):
+        candidate = getattr(post, "timestamp", None)
+        if candidate and candidate > latest:
+            latest = candidate
+    for ann in getattr(state, "announcements", []):
+        candidate = getattr(ann, "posted_at", None)
+        if candidate and candidate > latest:
+            latest = candidate
+    for review in getattr(state, "peer_reviews", []):
+        candidate = getattr(review, "due_at", None)
+        if candidate and candidate > latest:
+            latest = candidate
+    for event in getattr(state, "calendar_events", []):
+        candidate = getattr(event, "start_datetime", None)
+        if candidate and candidate > latest:
+            latest = candidate
+    return latest
+
+
 def apply_server_injection(state: Any, params: dict[str, Any]) -> None:
     """Mutate server state to create degraded conditions."""
     action = params.get("action", "")
@@ -60,6 +93,47 @@ def apply_server_injection(state: Any, params: dict[str, Any]) -> None:
                     offset = rng.randint(-86400 * 7, 86400 * 7)
                     email.timestamp += timedelta(seconds=offset)
                     mutated = True
+        elif hasattr(state, "courses") and hasattr(state, "assignments"):
+            for course in getattr(state, "courses", []):
+                for field in ("drop_deadline", "final_exam_date"):
+                    value = getattr(course, field, None)
+                    if value is not None:
+                        setattr(course, field, value + timedelta(seconds=rng.randint(-86400 * 3, 86400 * 3)))
+                        mutated = True
+            for assignment in getattr(state, "assignments", []):
+                if getattr(assignment, "due_at", None) is not None:
+                    assignment.due_at += timedelta(seconds=rng.randint(-86400 * 4, 86400 * 4))
+                    mutated = True
+                if getattr(assignment, "submitted_at", None) is not None:
+                    assignment.submitted_at += timedelta(seconds=rng.randint(-3600 * 12, 3600 * 12))
+                    mutated = True
+            for discussion in getattr(state, "discussions", []):
+                if getattr(discussion, "due_at", None) is not None:
+                    discussion.due_at += timedelta(seconds=rng.randint(-86400 * 4, 86400 * 4))
+                    mutated = True
+            for post in getattr(state, "discussion_posts", []):
+                if getattr(post, "timestamp", None) is not None:
+                    post.timestamp += timedelta(seconds=rng.randint(-3600 * 18, 3600 * 18))
+                    mutated = True
+                if getattr(post, "updated_at", None) is not None:
+                    post.updated_at += timedelta(seconds=rng.randint(-3600 * 18, 3600 * 18))
+                    mutated = True
+            for ann in getattr(state, "announcements", []):
+                if getattr(ann, "posted_at", None) is not None:
+                    ann.posted_at += timedelta(seconds=rng.randint(-86400 * 5, 86400 * 5))
+                    mutated = True
+            for review in getattr(state, "peer_reviews", []):
+                if getattr(review, "due_at", None) is not None:
+                    review.due_at += timedelta(seconds=rng.randint(-86400 * 3, 86400 * 3))
+                    mutated = True
+            for event in getattr(state, "calendar_events", []):
+                if getattr(event, "start_datetime", None) is not None:
+                    delta = timedelta(seconds=rng.randint(-86400 * 4, 86400 * 4))
+                    event.start_datetime += delta
+                    mutated = True
+                    if getattr(event, "end_datetime", None) is not None:
+                        event.end_datetime += delta
+                        mutated = True
 
     elif action == "shuffle_contacts":
         rng = random.Random(params.get("seed", 42))
@@ -235,6 +309,73 @@ def apply_server_injection(state: Any, params: dict[str, Any]) -> None:
                     is_read=spec.get("is_read", rng.random() > 0.5),
                 ))
             mutated = True
+
+    elif action in {"add_lms_correction_notice", "inject_lms_correction_notice"}:
+        if hasattr(state, "courses") and hasattr(state, "announcements"):
+            from webagentbench.backend.models.lms import Announcement, DiscussionPost
+            rng = random.Random(params.get("seed", 42))
+
+            def pick_course() -> Any:
+                course_id = params.get("course_id")
+                if course_id and hasattr(state, "get_course"):
+                    course = state.get_course(course_id)
+                    if course is not None:
+                        return course
+                course_code = params.get("course_code")
+                if course_code and hasattr(state, "get_course_by_code"):
+                    course = state.get_course_by_code(course_code)
+                    if course is not None:
+                        return course
+                course_title = params.get("course_title")
+                if course_title:
+                    for course in state.courses:
+                        if course.title == course_title:
+                            return course
+                return state.courses[0] if state.courses else None
+
+            course = pick_course()
+            if course is not None:
+                notice_type = str(params.get("type", "announcement")).lower()
+                created_at = params.get("posted_at")
+                if not created_at:
+                    created_at = _lms_latest_timestamp(state) + timedelta(minutes=int(params.get("minutes_offset", 20)))
+                title = params.get("title", f"Correction: {getattr(course, 'course_code', course.title)}")
+                body = params.get("body", "Correction: please use the latest course update.")
+
+                if notice_type == "discussion_post" and hasattr(state, "discussions"):
+                    discussion_id = params.get("discussion_id")
+                    discussion = None
+                    if discussion_id and hasattr(state, "get_discussion"):
+                        discussion = state.get_discussion(discussion_id)
+                    if discussion is None and params.get("discussion_title"):
+                        discussion = next(
+                            (d for d in state.discussions if d.title == params.get("discussion_title")),
+                            None,
+                        )
+                    if discussion is not None:
+                        post_id = f"post_noise_{rng.randint(10000, 99999)}"
+                        state.discussion_posts.append(DiscussionPost(
+                            id=post_id,
+                            discussion_id=discussion.id,
+                            author_id=params.get("author_id", getattr(course, "instructor_id", state.student.id)),
+                            author_name=params.get("author_name", getattr(course, "instructor_name", "Instructor")),
+                            body=body,
+                            timestamp=created_at,
+                            is_anonymous=bool(params.get("is_anonymous", False)),
+                        ))
+                        mutated = True
+                else:
+                    ann_id = params.get("id", f"ann_noise_{rng.randint(10000, 99999)}")
+                    state.announcements.append(Announcement(
+                        id=ann_id,
+                        course_id=course.id,
+                        title=title,
+                        body=body,
+                        posted_at=created_at,
+                        is_read=bool(params.get("is_read", False)),
+                        priority=params.get("priority", "normal"),
+                    ))
+                    mutated = True
 
     if mutated and hasattr(state, "touch"):
         state.touch()

@@ -1,0 +1,35 @@
+variant_id: lms_multi_course_thresholds__grade_state_shadow_v1
+base_task_id: lms_multi_course_thresholds
+target_primitive: state_tracking
+description: Additional LMS shadows split relevant state across similar entities.
+  The agent must track the right object throughout the workflow.
+injections:
+- layer: seed
+  params:
+    action: add_confusing_decoys
+    decoys:
+    - type: assignment
+      course_code: '{target.course_code_1}'
+      title: Grade review worksheet
+      assignment_type: homework
+      submission_status: graded
+      score: '92'
+      feedback: Reference score from a lower-weight practice item.
+    - type: announcement
+      course_code: '{target.course_code_1}'
+      title: Grade review clarification
+      body: Reminder that grade calculations should use the active syllabus weights.
+      priority: normal
+- layer: network
+  params:
+    action: stale_data
+    url_pattern: '**/api/env/lms/courses/*/grades'
+    stale_body:
+      course_id: ''
+      course_code: '{target.course_code_1}'
+      weighted_score: null
+      category_scores: {}
+      grades: []
+    stale_count: 1
+    behavior:
+      mode: once

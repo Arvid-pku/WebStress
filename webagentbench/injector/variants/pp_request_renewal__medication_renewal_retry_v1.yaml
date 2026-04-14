@@ -1,0 +1,16 @@
+variant_id: pp_request_renewal__medication_renewal_retry_v1
+base_task_id: pp_request_renewal
+target_primitive: backtracking
+description: The first renewal request fails transiently. The agent must retry and confirm the medication actually moved to pending renewal.
+injections:
+- layer: network
+  params:
+    action: error_then_success
+    url_pattern: '**/api/env/patient_portal/medications/*/renewal'
+    methods:
+    - POST
+    error_count: 1
+    error_status: 503
+    error_message: Temporary pharmacy service failure. Retry the renewal request.
+    behavior:
+      mode: once

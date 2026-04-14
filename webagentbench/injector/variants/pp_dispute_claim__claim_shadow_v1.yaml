@@ -1,0 +1,31 @@
+variant_id: pp_dispute_claim__claim_shadow_v1
+base_task_id: pp_dispute_claim
+target_primitive: state_tracking
+description: Older claim lookalikes and a stale billing thread appear beside the seeded records. The agent must identify the real eligible claim set rather than acting on cosmetic near-misses.
+injections:
+- layer: seed
+  params:
+    action: add_confusing_decoys
+    decoys:
+    - type: claim
+      service_date: '2025-01-10'
+      status: denied
+      amount_billed: '425.00'
+      amount_covered: '0.00'
+      patient_responsibility: '425.00'
+      eob_available: false
+      appeal_deadline: '2025-02-15T00:00:00+00:00'
+      denial_reason: Documentation incomplete
+    - type: claim
+      service_date: '2025-02-18'
+      status: approved
+      amount_billed: '95.00'
+      amount_covered: '80.00'
+      patient_responsibility: '15.00'
+      eob_available: true
+      appeal_deadline: '2025-04-01T00:00:00+00:00'
+    - type: message
+      category: billing
+      subject: Older claim update available
+      body: This archived billing thread refers to an older claim and is not the one that needs action.
+      timestamp: '2025-02-20T08:30:00+00:00'

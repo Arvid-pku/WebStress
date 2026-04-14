@@ -312,6 +312,8 @@ def _expected_response_keys(url_pattern: str) -> set[str] | None:
 
     if "/api/env/robinhood/settings" in normalized or "/api/env/robinhood/security/2fa" in normalized:
         return None
+    if "/api/env/lms/messages/send" in normalized:
+        return {"message"}
     if normalized.endswith("/send"):
         return {"email"}
     if normalized.endswith("/settings"):

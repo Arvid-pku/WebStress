@@ -1,0 +1,27 @@
+variant_id: pp_insurance_plan_change__insurance_plan_transition_retry_v1
+base_task_id: pp_insurance_plan_change
+target_primitive: backtracking
+description: The insurance plan transition hits one transient write failure on the plan update and one on the default-pharmacy update. The agent must retry both and verify the transition completed.
+injections:
+- layer: network
+  params:
+    action: error_then_success
+    url_pattern: '**/api/env/patient_portal/profile/insurance'
+    methods:
+    - POST
+    error_count: 1
+    error_status: 503
+    error_message: Temporary insurance profile failure. Retry the insurance update.
+    behavior:
+      mode: once
+- layer: network
+  params:
+    action: error_then_success
+    url_pattern: '**/api/env/patient_portal/profile/pharmacy/*/set-default'
+    methods:
+    - POST
+    error_count: 1
+    error_status: 503
+    error_message: Temporary pharmacy profile failure. Retry the default-pharmacy update.
+    behavior:
+      mode: once
