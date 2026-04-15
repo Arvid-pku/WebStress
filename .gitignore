@@ -70,6 +70,7 @@ tinker-cookbook/
 
 llmos/tests/*
 webagentbench/static/*.html
+!webagentbench/static/docs.html
 webagentbench/static/envs/
 EXPERIMENT_LOG.md
 EXPERIMENT.md
@@ -80,3 +81,4 @@ training_data.jsonl
 webagentbench/trajectories/*
 webagentbench/.codex
 webagentbench/.playwright-mcp/*
+webagentbench/static/.frontend-build.lock
