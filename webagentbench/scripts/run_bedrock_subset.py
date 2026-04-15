@@ -110,6 +110,8 @@ def _run_one(
     seed: int,
     headless: bool,
     verbose: bool,
+    max_steps: int,
+    timeout_per_task: int,
 ) -> dict:
     """Run a single task through agent_eval.run_evaluation. Returns the result
     dict (not the full envelope)."""
@@ -124,6 +126,8 @@ def _run_one(
         seed=seed,
         headless=headless,
         verbose=verbose,
+        max_steps=max_steps,
+        timeout_per_task=timeout_per_task,
         output_path=str(output_path),
     )
     if not results:
@@ -199,6 +203,10 @@ def main() -> int:
                         help="Skip the standard runs (8 trajectories instead of 16)")
     parser.add_argument("--per-env", type=int, default=8,
                         help="Number of tasks to sample from each of the 7 envs (default: 8)")
+    parser.add_argument("--max-steps", type=int, default=30,
+                        help="Max agent steps per task (default: 30)")
+    parser.add_argument("--timeout", type=int, default=300,
+                        help="Wall-clock cap per task in seconds (default: 300)")
     args = parser.parse_args()
 
     global SUBSET
@@ -224,6 +232,7 @@ def main() -> int:
                     task_id=task_id, variant_filename=None,
                     output_path=out, seed=args.seed,
                     headless=not args.no_headless, verbose=not args.quiet,
+                    max_steps=args.max_steps, timeout_per_task=args.timeout,
                 )
                 aggregated.append(_tag_result(result, configuration="standard", variant_filename=None))
             except Exception as exc:
@@ -241,6 +250,7 @@ def main() -> int:
                     task_id=task_id, variant_filename=variant,
                     output_path=out, seed=args.seed,
                     headless=not args.no_headless, verbose=not args.quiet,
+                    max_steps=args.max_steps, timeout_per_task=args.timeout,
                 )
                 aggregated.append(_tag_result(result, configuration="degraded", variant_filename=variant))
             except Exception as exc:
