@@ -44,7 +44,7 @@ raw_instructions/
 scripts/*.txt
 scripts/_*/
 scripts/.rh_session*.json
-scripts/.debug_session*.json
+scripts/.debug_*.json
 scripts/debug_screenshots/
 
 # Superpowers plugin
