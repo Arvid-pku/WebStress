@@ -11,8 +11,8 @@ export default function BenchmarkDocsPage() {
         Benchmark
       </h1>
       <p className="text-[14px] text-[var(--text-secondary)] leading-[1.7] mb-12 max-w-[580px]">
-        Task structure, the Gmail environment, difficulty tiers, version history, and how to run
-        WebAgentBench.
+        Task structure, seeded environments, difficulty tiers, version history, and how to run
+        the current WebAgentBench stack.
       </p>
 
       {/* Task Structure */}
@@ -56,8 +56,8 @@ export default function BenchmarkDocsPage() {
                 resolved against the seed&apos;s target object at runtime. This keeps the instruction
                 human-readable in the YAML while remaining parametric across fixture variations.
               </p>
-              <CodeBlock code={`Find the most recent email from {{target.sender}} and reply
-with the meeting time {{target.time}}.`} language="yaml" />
+              <CodeBlock code={`Open billing settings and add the card ending in
+{{target.last4}} with expiry {{target.expiry}}.`} language="yaml" />
             </div>
           </div>
 
@@ -81,15 +81,15 @@ with the meeting time {{target.time}}.`} language="yaml" />
                   <tbody>
                     <tr className="border-b border-[var(--border)]">
                       <td className="px-4 py-2.5 font-mono text-[var(--text-primary)]">actors</td>
-                      <td className="px-4 py-2.5 text-[var(--text-secondary)]">Named people with roles (e.g. target sender, distractor sender). Resolved to random names and addresses at generation time.</td>
+                      <td className="px-4 py-2.5 text-[var(--text-secondary)]">Named entities with task roles: customers, sellers, senders, patients, moderators, and other environment-specific identities.</td>
                     </tr>
                     <tr className="border-b border-[var(--border)]">
                       <td className="px-4 py-2.5 font-mono text-[var(--text-primary)]">steps</td>
-                      <td className="px-4 py-2.5 text-[var(--text-secondary)]">Ordered list of seeder operations that build the initial inbox state — compose email, label, archive, etc.</td>
+                      <td className="px-4 py-2.5 text-[var(--text-secondary)]">Ordered seeder operations that build the initial environment state: create messages, bookings, payment methods, products, posts, or portfolio records.</td>
                     </tr>
                     <tr>
                       <td className="px-4 py-2.5 font-mono text-[var(--text-primary)]">distractors</td>
-                      <td className="px-4 py-2.5 text-[var(--text-secondary)]">Additional emails or UI elements injected to test attention and filtering. Controlled by count and similarity parameters.</td>
+                      <td className="px-4 py-2.5 text-[var(--text-secondary)]">Additional records or UI elements injected to test attention and filtering. Controlled by count, similarity, and placement parameters.</td>
                     </tr>
                   </tbody>
                 </table>
@@ -116,20 +116,20 @@ with the meeting time {{target.time}}.`} language="yaml" />
         </div>
       </section>
 
-      {/* Gmail Environment */}
+      {/* Seeded Environments */}
       <section className="mb-12">
-        <h2 id="gmail-environment" className="text-lg font-medium tracking-tight mb-4">
-          Gmail Environment
+        <h2 id="seeded-environments" className="text-lg font-medium tracking-tight mb-4">
+          Seeded Environments
         </h2>
         <p className="text-[14px] text-[var(--text-secondary)] leading-[1.7] mb-5">
-          The Gmail page is a fully interactive React simulation of Gmail. It supports composing,
-          replying, forwarding, labelling, archiving, starring, and searching — enough surface area
-          to host tasks that span multiple cognitive primitives simultaneously.
+          Current benchmark environments include Amazon, Booking, Gmail, LMS, Patient Portal,
+          Reddit, and Robinhood. Each environment exposes a live task surface backed by a seeded
+          session API rather than a static mock page.
         </p>
         <p className="text-[14px] text-[var(--text-secondary)] leading-[1.7] mb-6">
-          Unlike a simple mock, the Gmail simulation maintains a live in-memory state so the agent&apos;s
-          actions have observable consequences: a sent email appears in Sent, an archived thread
-          leaves the inbox, and a label persists across navigation.
+          The exact state model differs by environment, but the contract is consistent: a task
+          materializes targets, a backend seeds canonical state, the frontend renders that state,
+          and evaluation checks the resulting records and audit trail after the agent acts.
         </p>
 
         <h3 className="text-[14px] font-medium text-[var(--text-primary)] mb-3">
@@ -145,20 +145,20 @@ with the meeting time {{target.time}}.`} language="yaml" />
             </thead>
             <tbody>
               <tr className="border-b border-[var(--border)]">
-                <td className="px-4 py-2.5 font-medium text-[var(--text-primary)]">1. Actor generation</td>
-                <td className="px-4 py-2.5 text-[var(--text-secondary)]">Seed actor roles are resolved to random names, email addresses, and avatar colours. The same role always maps to the same identity within a fixture so evals are deterministic.</td>
+                <td className="px-4 py-2.5 font-medium text-[var(--text-primary)]">1. Actor and target generation</td>
+                <td className="px-4 py-2.5 text-[var(--text-secondary)]">Seed roles are resolved to concrete identities and targets. The same role maps consistently within a session so instructions and evals remain deterministic.</td>
               </tr>
               <tr className="border-b border-[var(--border)]">
                 <td className="px-4 py-2.5 font-medium text-[var(--text-primary)]">2. Seeder steps</td>
-                <td className="px-4 py-2.5 text-[var(--text-secondary)]">Each step in the seed is executed against an empty inbox: compose emails with templated bodies, apply labels, set read/unread state, archive threads, etc.</td>
+                <td className="px-4 py-2.5 text-[var(--text-secondary)]">Each step is executed against environment-specific state stores to create the starting world for the task.</td>
               </tr>
               <tr className="border-b border-[var(--border)]">
-                <td className="px-4 py-2.5 font-medium text-[var(--text-primary)]">3. Distractor injection</td>
-                <td className="px-4 py-2.5 text-[var(--text-secondary)]">Distractor emails are generated from the distractor spec and inserted at randomised positions in the inbox to avoid positional bias.</td>
+                <td className="px-4 py-2.5 font-medium text-[var(--text-primary)]">3. Distractor and variant injection</td>
+                <td className="px-4 py-2.5 text-[var(--text-secondary)]">Optional distractors and degradation variants are layered in to stress specific primitives without changing the core task objective.</td>
               </tr>
               <tr>
-                <td className="px-4 py-2.5 font-medium text-[var(--text-primary)]">4. Target resolution</td>
-                <td className="px-4 py-2.5 text-[var(--text-secondary)]">All <code className="font-mono text-[12px] text-[var(--text-primary)] bg-[var(--surface)] px-1 py-0.5 rounded">{"{{target.*}}"}</code> placeholders in the instruction template are resolved against the finalised fixture, producing the exact string shown to the agent.</td>
+                <td className="px-4 py-2.5 font-medium text-[var(--text-primary)]">4. Session handoff</td>
+                <td className="px-4 py-2.5 text-[var(--text-secondary)]">The backend returns the start path, resolved instruction text, and metadata needed by the frontend, evaluator, and trajectory tools.</td>
               </tr>
             </tbody>
           </table>
@@ -252,7 +252,7 @@ with the meeting time {{target.time}}.`} language="yaml" />
               <tr className="border-b border-[var(--border)]">
                 <td className="px-4 py-2.5 font-mono text-[var(--text-primary)]">v6 – v8</td>
                 <td className="px-4 py-2.5 text-[var(--text-secondary)]">15</td>
-                <td className="px-4 py-2.5 text-[var(--text-secondary)]">Frontier pages targeting LLM weak spots: adversarial checkout, deep wizard form, and the Gmail environment introduced in v6.</td>
+                <td className="px-4 py-2.5 text-[var(--text-secondary)]">Environment expansion and harder interaction patterns, including frontier tasks designed to expose weak planning and attention behavior.</td>
               </tr>
               <tr className="border-b border-[var(--border)]">
                 <td className="px-4 py-2.5 font-mono text-[var(--text-primary)]">v9</td>
@@ -262,7 +262,7 @@ with the meeting time {{target.time}}.`} language="yaml" />
               <tr>
                 <td className="px-4 py-2.5 font-mono text-[var(--text-primary)]">v10</td>
                 <td className="px-4 py-2.5 text-[var(--text-secondary)]">15</td>
-                <td className="px-4 py-2.5 text-[var(--text-secondary)]">Shared-runtime release. Unified indexed accessibility-tree format across simulator and real browser; all pages migrated to the shared adapter.</td>
+                <td className="px-4 py-2.5 text-[var(--text-secondary)]">Unified runtime release. Indexed accessibility-tree observations, shared task metadata, and trajectory tooling were standardized across environments.</td>
               </tr>
             </tbody>
           </table>
@@ -277,15 +277,19 @@ with the meeting time {{target.time}}.`} language="yaml" />
         <p className="text-[14px] text-[var(--text-secondary)] leading-[1.7] mb-5">
           WebAgentBench evaluations are driven by{" "}
           <code className="font-mono text-[13px] text-[var(--text-primary)] bg-[var(--surface)] px-1.5 py-0.5 rounded">webagentbench/agent_eval.py</code>. It
-          spins up a local FastAPI server, initialises each page with a seeded fixture, then runs
-          the agent against the live DOM via Playwright.
+          spins up a local FastAPI server, initializes seeded sessions, then runs the agent against
+          the live DOM via Playwright.
         </p>
-        <CodeBlock code={`# Evaluate on all 15 pages
+        <CodeBlock code={`# Evaluate the full benchmark
 python -m webagentbench.agent_eval --model gpt-4o --provider openai
 
-# Specific pages only
+# Restrict to specific environments
 python -m webagentbench.agent_eval --model gpt-4o --provider openai \\
-    --pages dark_checkout wizard_form gmail
+    --environments amazon booking reddit
+
+# Run specific tasks only
+python -m webagentbench.agent_eval --model gpt-4o --provider openai \\
+    --tasks booking_add_payment gmail_thread_detective
 
 # With visible browser (useful for debugging)
 python -m webagentbench.agent_eval --model gpt-4o --provider openai --no-headless`} language="bash" />

@@ -1,0 +1,166 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - navigation "Shortcuts menu" [ref=e3]:
+      - heading "Skip to" [level=2] [ref=e4]
+      - list "Skip to" [ref=e5]:
+        - listitem [ref=e6]:
+          - link "main content" [ref=e7] [cursor=pointer]:
+            - /url: "#skippedLink"
+      - separator [ref=e8]
+      - heading "Keyboard shortcuts" [level=2] [ref=e9]
+      - list "Keyboard shortcuts" [ref=e10]:
+        - listitem [ref=e11]:
+          - link "Search, option, forward slash" [ref=e12] [cursor=pointer]:
+            - /url: javascript:void(0)
+        - listitem [ref=e19]:
+          - link "Cart, shift, option, c" [ref=e20] [cursor=pointer]:
+            - /url: javascript:void(0)
+        - listitem [ref=e29]:
+          - link "Home, shift, option, h" [ref=e30] [cursor=pointer]:
+            - /url: javascript:void(0)
+        - listitem [ref=e39]:
+          - link "Your orders, shift, option, o" [ref=e40] [cursor=pointer]:
+            - /url: javascript:void(0)
+        - listitem [ref=e49]:
+          - button "Show/hide shortcuts, shift, option, z" [ref=e50] [cursor=pointer]
+      - generic [ref=e64]: To move between items, use your keyboard's up or down arrows.
+    - banner [ref=e65]:
+      - navigation "Primary" [ref=e66]:
+        - generic [ref=e67]:
+          - generic [ref=e68]
+          - search [ref=e80]
+          - generic [ref=e98]
+        - generic [ref=e122]:
+          - button "Open All Categories Menu" [ref=e124] [cursor=pointer]
+          - list [ref=e130]
+    - main [ref=e212]:
+      - banner [ref=e214]:
+        - group "Featured content" [ref=e215]:
+          - generic [ref=e217]
+      - generic [ref=e241]:
+        - generic [ref=e242]:
+          - generic [ref=e244]
+          - generic [ref=e280]
+          - generic [ref=e316]
+        - generic [ref=e358]:
+          - generic [ref=e361]
+          - separator [ref=e493]
+          - generic [ref=e496]
+          - separator [ref=e623]
+          - generic [ref=e625]
+          - generic [ref=e661]
+          - generic [ref=e697]
+          - separator [ref=e732]
+          - generic [ref=e734]
+          - generic [ref=e747]
+          - separator [ref=e874]
+          - generic [ref=e877]
+          - separator [ref=e1000]
+          - generic [ref=e1002]
+          - generic [ref=e1038]
+          - separator [ref=e1073]
+          - generic [ref=e1075]
+          - generic [ref=e1111]
+          - generic [ref=e1148]
+          - separator [ref=e1275]
+          - generic [ref=e1278]
+          - separator [ref=e1393]
+          - generic [ref=e1395]
+          - separator [ref=e1406]
+          - generic [ref=e1409]
+    - complementary "Your recently viewed items and featured recommendations"
+    - generic [ref=e1512]:
+      - button "Back to top" [ref=e1513] [cursor=pointer]:
+        - generic [ref=e1514]: Back to top
+      - generic [ref=e1515]:
+        - generic [ref=e1516]:
+          - heading "Get to Know Us" [level=6] [ref=e1517]
+          - list [ref=e1518]
+        - generic [ref=e1538]:
+          - heading "Make Money with Us" [level=6] [ref=e1539]
+          - list [ref=e1540]
+        - generic [ref=e1564]:
+          - heading "Amazon Payment Products" [level=6] [ref=e1565]
+          - list [ref=e1566]
+        - generic [ref=e1586]:
+          - heading "Let Us Help You" [level=6] [ref=e1587]
+          - list [ref=e1588]
+      - generic [ref=e1608]:
+        - link "Amazon US Home" [ref=e1611] [cursor=pointer]:
+          - /url: /?ref_=footer_logo
+        - generic [ref=e1614]:
+          - generic [ref=e1615]
+          - button "Choose a country/region for shopping. The current selection is United States." [ref=e1620] [cursor=pointer]
+      - navigation "More on Amazon" [ref=e1623]:
+        - generic "More on Amazon" [ref=e1624]:
+          - list [ref=e1625]
+          - list [ref=e1660]
+          - list [ref=e1695]
+          - list [ref=e1730]
+          - list [ref=e1765]
+      - generic [ref=e1791]:
+        - list [ref=e1792]:
+          - listitem [ref=e1793]
+          - listitem [ref=e1795]
+          - listitem [ref=e1797]
+          - listitem [ref=e1799]
+          - listitem [ref=e1801]
+        - generic [ref=e1803]: © 1996-2026, Amazon.com, Inc. or its affiliates
+    - iframe [ref=e1805]:
+      - iframe [ref=f1e2]:
+        - generic [active] [ref=f2e1]:
+          - img [ref=f2e2]
+          - img [ref=f2e3]
+          - img [ref=f2e4]
+          - img [ref=f2e5]
+          - img [ref=f2e6]
+          - img [ref=f2e7]
+          - img [ref=f2e8]
+          - img [ref=f2e9]
+          - img [ref=f2e10]
+          - img [ref=f2e11]
+          - img [ref=f2e12]
+          - img [ref=f2e13]
+          - img [ref=f2e14]
+          - img [ref=f2e15]
+          - img [ref=f2e16]
+          - img [ref=f2e17]
+          - img [ref=f2e18]
+          - img [ref=f2e19]
+          - img [ref=f2e20]
+          - img [ref=f2e21]
+          - img [ref=f2e22]
+          - img [ref=f2e23]
+          - img [ref=f2e24]
+          - img [ref=f2e25]
+          - img [ref=f2e26]
+          - img [ref=f2e27]
+          - img [ref=f2e28]
+          - img [ref=f2e29]
+          - img [ref=f2e30]
+          - img [ref=f2e31]
+          - img [ref=f2e32]
+          - img [ref=f2e33]
+          - img [ref=f2e34]
+          - img [ref=f2e35]
+          - img [ref=f2e36]
+          - img [ref=f2e37]
+          - img [ref=f2e38]
+          - img [ref=f2e39]
+          - img [ref=f2e40]
+          - img [ref=f2e41]
+          - img [ref=f2e42]
+          - img [ref=f2e43]
+          - img [ref=f2e44]
+  - generic: "Test: amzn-nv-flyout-healthy-choice"
+  - generic: "Test: nav-rufus-disc-txt"
+  - generic: "Test: a-truncate-cut"
+  - generic: "Test: sp-cc-wrapper"
+  - generic: "Test: .mo-wp"
+  - generic: "Test: sp-cc"
+  - generic: "Test: .amzn-box-inner"
+  - generic: "Test: .js-order-card"
+  - generic: "Test: pldn-deep-link"
+  - generic: "Test: add-to-cart-btn"
+  - generic: "Test: amzn-nav-app-banner-container"
+  - generic: "Test: .sparkle-container"

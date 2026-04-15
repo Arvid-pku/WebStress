@@ -678,8 +678,7 @@ class TestEvaluationScoring:
         assert data["session_id"] == sid
         assert data["title"] == "Star a Specific Email"
         assert data["degradation_active"] is True
-        assert data["degradation"]["variant_id"] == "test_meta"
-        assert data["degradation"]["target_primitive"] == "patience"
+        assert "degradation" not in data
 
 
 @pytest.mark.parametrize(

@@ -9,7 +9,6 @@ const sections = [
   { href: "/docs/primitives", label: "Cognitive Primitives" },
   { href: "/docs/architecture", label: "Architecture" },
   { href: "/docs/benchmark", label: "Benchmark" },
-  { href: "/docs/training", label: "Training Pipeline" },
 ];
 
 export function DocsSidebar() {

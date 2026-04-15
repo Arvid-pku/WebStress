@@ -38,9 +38,10 @@ def test_create_session(client: TestClient):
     resp = client.post(f"{BASE}/session", json={"task_id": "rh_buy_market_order", "seed": 42})
     assert resp.status_code == 200
     data = resp.json()
-    assert data["task_id"] == "rh_buy_market_order"
-    assert data["seed"] == 42
     assert "session_id" in data
+    assert data["start_path"] == "/"
+    assert data["title"] == "Buy Shares at Market Price"
+    assert data["degradation_active"] is False
 
 
 # ---------------------------------------------------------------------------

@@ -14,17 +14,12 @@ const cards = [
   {
     href: "/docs/architecture",
     title: "Architecture",
-    desc: "Sandwich architecture, unified agent format, state visibility, and the episode loop.",
+    desc: "Runtime layers, seeded sessions, audit-backed scoring, and trajectory tooling.",
   },
   {
     href: "/docs/benchmark",
     title: "Benchmark",
-    desc: "Task structure, the Gmail environment, fixtures, version history, and how to run it.",
-  },
-  {
-    href: "/docs/training",
-    title: "Training Pipeline",
-    desc: "SFT and DPO finetuning on Qwen models using simulator and browser trajectories.",
+    desc: "Task structure, seeded environments, version history, and how to run it.",
   },
 ];
 
@@ -35,12 +30,12 @@ export default function DocsLandingPage() {
         Documentation
       </p>
       <h1 className="text-[clamp(1.8rem,3vw,2.5rem)] font-medium tracking-tight leading-[1.2] mb-4">
-        LLMOS Documentation
+        WebAgentBench Documentation
       </h1>
       <p className="text-[16px] text-[var(--text-secondary)] leading-[1.75] max-w-[540px] mb-12">
-        LLMOS is a research framework for training web agents. It has three subsystems: an LLM-based
-        UI simulator, a browser benchmark (WebAgentBench), and a training pipeline for finetuning
-        language models on agent trajectories.
+        WebAgentBench is a research benchmark for evaluating web agents in seeded, stateful web
+        environments. These docs cover the benchmark contract, scoring model, runtime
+        architecture, and cognitive primitive taxonomy used to analyze agent behavior.
       </p>
 
       <div className="flex flex-col gap-3">

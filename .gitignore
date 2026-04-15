@@ -5,19 +5,16 @@ __pycache__/
 dist/
 build/
 
-# Virtual environment
+# Virtual environments
 .venv/
 .uv/
 
-# Environment & secrets
+# Environment and local config
 .env
 .env.*
 config.json
-tmp.py
-tmp.json
-tmp.html
 
-# IDE
+# Editor state
 .vscode/
 .idea/
 .DS_Store
@@ -26,59 +23,47 @@ tmp.html
 node_modules/
 .tools/
 
-# Testing
+# Test and lint caches
 .pytest_cache/
 .ruff_cache/
 
-# Output directories
+# Benchmark outputs
 runs/
 runs*
 results/
 results_*
 trajectory/
-# tasks/
 history/
 raw_instructions/
 
-# Debug files
+# Local planning scratch files
+task_plan.md
+findings.md
+progress.md
+
+# Debug artifacts
+tmp.py
+tmp.json
+tmp.html
 scripts/*.txt
-scripts/_*/
-scripts/.rh_session*.json
-scripts/.debug_*.json
-scripts/debug_screenshots/
-
-# Superpowers plugin
-.superpowers/
-
-# Claude Code (personal notes)
-.claude/
-CLAUDE.md
-Ideas.md
-Discussion.md
-docs/
-
 scripts/*.pkl
-
+scripts/_*/
+scripts/.debug_*.json
+scripts/.gmail_session*.json
+scripts/.rh_session*.json
+scripts/.lms_session*.json
+scripts/.pp_session*.json
+scripts/debug_screenshots/
 *.pdf
 *.log
 
-# Training data (generated, large)
-training/data/
-
-# External repos (cloned as dependencies, not part of LLMOS)
-tinker-cookbook/
-
-llmos/tests/*
+# Frontend and generated benchmark assets
+*.tsbuildinfo
 webagentbench/static/*.html
 !webagentbench/static/docs.html
 webagentbench/static/envs/
-EXPERIMENT_LOG.md
-EXPERIMENT.md
-IDEA.md
-REPORT.md
-training_data.jsonl
-.vercel
+webagentbench/static/.frontend-build.lock
 webagentbench/trajectories/*
 webagentbench/.codex
 webagentbench/.playwright-mcp/*
-webagentbench/static/.frontend-build.lock
+.vercel

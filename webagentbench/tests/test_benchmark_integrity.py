@@ -425,24 +425,28 @@ def test_controller_secret_helpers_round_trip(monkeypatch: pytest.MonkeyPatch) -
 
 
 def test_thread_detective_ignores_quoted_conflicting_times() -> None:
+    server_state = SimpleNamespace(
+        sent=[
+            SimpleNamespace(
+                to=["sofia.rivera@vertexlab.io"],
+                body=(
+                    "11:00 AM works on my side, so let's confirm that.\n\n"
+                    "On 3/2/2026, 3:20:00 AM, Sofia Rivera wrote:\n"
+                    "Could we use 4:00 PM for the Cedar policy review?"
+                ),
+                in_reply_to="email_123",
+                thread_id="thread_456",
+            )
+        ]
+    )
+    server_state.get_email = lambda _email_id: SimpleNamespace(is_read=True)
+
     result = evaluate(
         get_task("gmail_thread_detective"),
-        server_state=SimpleNamespace(
-            sent=[
-                SimpleNamespace(
-                    to=["sofia.rivera@vertexlab.io"],
-                    body=(
-                        "11:00 AM works on my side, so let's confirm that.\n\n"
-                        "On 3/2/2026, 3:20:00 AM, Sofia Rivera wrote:\n"
-                        "Could we use 4:00 PM for the Cedar policy review?"
-                    ),
-                    in_reply_to="email_123",
-                    thread_id="thread_456",
-                )
-            ]
-        ),
+        server_state=server_state,
         targets={
             "sender_email": "sofia.rivera@vertexlab.io",
+            "calendar_email_id": "email_calendar",
             "correct_time": "11:00 AM",
             "wrong_times": ["4:00 PM", "2:30 PM"],
             "most_recent_thread_id": "thread_456",

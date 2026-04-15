@@ -1,81 +1,72 @@
-# LLMOS - LLM-based OS Simulator
+# WebAgentBench
 
-Train computer-use agents using LLMs as "physics engines" to simulate UI state transitions.
+This repository is the main development branch for WebAgentBench, a benchmark for evaluating web agents in seeded, stateful web application environments. The repo now keeps only benchmark-related code: environment frontends, backend routes, task definitions, evaluators, trajectory tooling, visualization, and benchmark test coverage.
 
-## Setup
+## Repository Map
+
+- `webagentbench/`: benchmark runtime, tasks, evaluators, BrowserGym integration, visualization, and frontend workspaces
+- `tests/webagentbench/`: repo-level benchmark tests
+- `scripts/`: launch, eval, debugging, and result-analysis helpers for the benchmark
+- `docs/guides/`: benchmark authoring and evaluation guidance
+- `results/`: checked-in benchmark artifacts and example trajectories
+
+## Quickstart
 
 ```bash
 uv sync
-source .venv/bin/activate
+uv run playwright install chromium
+pnpm -C webagentbench/environments install
+./scripts/webagentbench.sh build --clean
+./scripts/webagentbench.sh dev
 ```
 
-Create `llmos/config.json` (copy from `config-demo.json`):
-```json
-{
-  "llm": {
-    "default_provider": "openai",
-    "openai": {"api_key": "sk-...", "default_model": "gpt-4o"},
-    "gemini": {"api_key": "...", "default_model": "gemini-2.0-flash"}
-  }
-}
-```
+The launcher is served at `http://localhost:8080/launch` by default.
 
-## Quick Run
+If you want the optional `browser-use` harness, install its extra on Python 3.11+:
 
 ```bash
-# Single episode
-python -m llmos.main run --task "Click the Settings button"
-
-# With template and difficulty
-python -m llmos.main run --task "Fill the form" --template form --difficulty hard
-
-# Human agent (debugging)
-python -m llmos.main run --task "Navigate to Documents" --human
+uv sync --extra browser-use
 ```
 
-## Structure
+## Common Workflows
 
-```
-llmos/
-├── main.py                 # CLI & orchestrator
-├── core/
-│   ├── unified_simulator.py  # LLM predicts state transitions
-│   ├── agent.py              # LLM generates actions
-│   └── judge.py              # Evaluates episode success
-├── utils/
-│   ├── llm_client.py         # OpenAI/Gemini wrapper
-│   └── patching.py           # bid-based state modifications
-├── prompts/                  # System prompts (*.md)
-├── templates/                # Initial states (*.json)
-├── experiments/              # Correlation study framework
-└── benchmarks/               # WorkArena adapter
-
-tinker-cookbook/              # Tinker fine-tuning library (not our focus)
-```
-
-## Key Concepts
-
-**Sandwich Architecture**: Python handles deterministic ops (validation, state management), LLM handles predictions (state transitions).
-
-**bid (Block ID)**: Stable IDs for UI elements. Actions target elements by `bid`, not JSON paths:
-```json
-{"action_type": "click", "bid": 12}
-```
-
-**State Visibility**:
-- Simulator: sees full state (including `hidden_state`)
-- Agent: sees filtered observation (no hidden info)
-- Judge: sees full state + history
-
-## Experiments
-
-The `experiments/` folder contains code for measuring simulator fidelity via correlation with real benchmarks.
+Run the backend and selected frontend dev servers:
 
 ```bash
-# Run correlation study
-python -m llmos.experiments.run_correlation_study
-
-# Configs in experiments/configs/
+./scripts/webagentbench.sh dev --env gmail
+./scripts/webagentbench.sh dev --env amazon --env booking
 ```
 
-See `llmos/experiments/README.md` for details.
+Check frontend build status or rebuild all benchmark SPAs:
+
+```bash
+./scripts/webagentbench.sh status
+./scripts/webagentbench.sh build --clean
+```
+
+Run benchmark tests:
+
+```bash
+python -m pytest -q webagentbench/tests tests/webagentbench
+python scripts/run_environment_tests.py
+```
+
+Run evaluation:
+
+```bash
+python -m webagentbench.agent_eval --model gpt-5.4 --provider openai --tasks gmail_star_email
+./scripts/run_gmail_sweep.sh
+```
+
+Generate or refresh trajectory visualizations:
+
+```bash
+python -m webagentbench.visualize results/webagentbench/<run>.json
+python -m webagentbench.scripts.viz_watcher --once
+```
+
+## Documentation
+
+- Benchmark internals: `webagentbench/README.md`
+- Task-quality standard: `webagentbench/share_docs/TASK_GENERATION_STANDARD.md`
+- Evaluation hardening patterns: `docs/guides/eval-hardening-playbook.md`

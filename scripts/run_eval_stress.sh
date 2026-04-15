@@ -1,10 +1,16 @@
 #!/usr/bin/env bash
 # Stress evaluation: 7 tasks, one degradation variant per primitive, with gpt-5.4
 set -euo pipefail
-cd /hpc/group/szhoulab/yinxunjian/mycode/Env/LLMOS
-export OPENSSL_CONF=""
+cd "$(dirname "$0")/.."
+export OPENSSL_CONF="${OPENSSL_CONF:-}"
 
-COMMON="--model gpt-5.4 --provider openai --api-key $OPENAI_API_KEY --max-steps 25 --timeout 180 --seed 42 --server-port 8081"
+if [[ -f .env ]]; then
+  set -a
+  source .env
+  set +a
+fi
+
+COMMON="--model gpt-5.4 --provider openai --api-key ${OPENAI_API_KEY:-} --max-steps 25 --timeout 180 --seed 42 --server-port 8081"
 
 # One variant per primitive
 VARIANTS=(
@@ -21,7 +27,6 @@ RESULTS_DIR="results/webagentbench/stress"
 mkdir -p "$RESULTS_DIR"
 
 for variant in "${VARIANTS[@]}"; do
-  # Extract primitive name from filename for output naming
   prim=$(echo "$variant" | sed 's/.*__//; s/\.yaml//')
   echo ""
   echo "================================================================"

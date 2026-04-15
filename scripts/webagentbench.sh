@@ -39,7 +39,10 @@ all_dev_envs() {
 
 env_port() {
   case "$1" in
+    amazon) echo "$((BACKEND_PORT + 3))" ;;
+    booking) echo "$((BACKEND_PORT + 4))" ;;
     gmail) echo "$((BACKEND_PORT + 1))" ;;
+    reddit) echo "$((BACKEND_PORT + 5))" ;;
     robinhood) echo "$((BACKEND_PORT + 2))" ;;
     *) return 1 ;;
   esac
@@ -49,7 +52,10 @@ env_base_url() {
   local port
   port="$(env_port "$1")"
   case "$1" in
+    amazon) echo "http://localhost:${port}/env/amazon" ;;
+    booking) echo "http://localhost:${port}/env/booking" ;;
     gmail) echo "http://localhost:${port}/env/gmail" ;;
+    reddit) echo "http://localhost:${port}/env/reddit" ;;
     robinhood) echo "http://localhost:${port}/env/robinhood" ;;
     *) return 1 ;;
   esac
@@ -165,18 +171,7 @@ ensure_uv() {
 }
 
 ensure_python_deps() {
-  if [ ! -f "$ROOT/tinker-cookbook/pyproject.toml" ]; then
-    mkdir -p "$ROOT/tinker-cookbook"
-    cat > "$ROOT/tinker-cookbook/pyproject.toml" <<'STUB'
-[project]
-name = "tinker-cookbook"
-version = "0.0.0"
-requires-python = ">=3.10"
-STUB
-    echo "  Created tinker-cookbook stub (submodule not cloned)"
-  fi
-
-  if ! "$ROOT/.venv/bin/python" -c "import uvicorn" 2>/dev/null; then
+  if ! "$ROOT/.venv/bin/python" -c "import fastapi, httpx, pydantic, uvicorn, yaml" 2>/dev/null; then
     echo "[1/3] Installing Python dependencies..."
     (cd "$ROOT" && uv sync)
   else

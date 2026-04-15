@@ -1,8 +1,14 @@
 #!/usr/bin/env bash
 # Normal (standard) evaluation: 30 tasks with gpt-5.4
 set -euo pipefail
-cd /hpc/group/szhoulab/yinxunjian/mycode/Env/LLMOS
-export OPENSSL_CONF=""
+cd "$(dirname "$0")/.."
+export OPENSSL_CONF="${OPENSSL_CONF:-}"
+
+if [[ -f .env ]]; then
+  set -a
+  source .env
+  set +a
+fi
 
 TASKS=(
   gmail_star_email gmail_reply_simple gmail_create_label gmail_forward_email
@@ -23,7 +29,7 @@ TASKS=(
 UV_CACHE_DIR=/tmp/uv-cache uv run python -m webagentbench.agent_eval \
   --model gpt-5.4 \
   --provider openai \
-  --api-key "$OPENAI_API_KEY" \
+  --api-key "${OPENAI_API_KEY:-}" \
   --tasks "${TASKS[@]}" \
   --max-steps 25 \
   --timeout 180 \

@@ -1,8 +1,14 @@
 #!/usr/bin/env bash
 # Rerun 20 hard tasks with max-steps 50 (was 25)
 set -euo pipefail
-cd /hpc/group/szhoulab/yinxunjian/mycode/Env/LLMOS
-export OPENSSL_CONF=""
+cd "$(dirname "$0")/.."
+export OPENSSL_CONF="${OPENSSL_CONF:-}"
+
+if [[ -f .env ]]; then
+  set -a
+  source .env
+  set +a
+fi
 
 TASKS=(
   gmail_board_briefing_prep gmail_compliance_settings_audit
@@ -20,7 +26,7 @@ TASKS=(
 UV_CACHE_DIR=/tmp/uv-cache uv run python -m webagentbench.agent_eval \
   --model gpt-5.4 \
   --provider openai \
-  --api-key "$OPENAI_API_KEY" \
+  --api-key "${OPENAI_API_KEY:-}" \
   --tasks "${TASKS[@]}" \
   --max-steps 50 \
   --timeout 300 \
