@@ -28,19 +28,58 @@ def _env_from_task(task_id: str) -> str:
     return {"rh": "robinhood", "pp": "patient_portal"}.get(prefix, prefix)
 
 
-def _tag(result: dict, *, configuration: str, variant_filename: str | None) -> dict:
+_TASK_REPLAY_CACHE: dict[str, tuple[str, str]] = {}
+
+
+def _task_replay_info(root: Path, task_id: str) -> tuple[str, str]:
+    """Return (env_id, start_path) for a task by reading its YAML."""
+    if task_id in _TASK_REPLAY_CACHE:
+        return _TASK_REPLAY_CACHE[task_id]
+    import yaml
+    env_id = _env_from_task(task_id)
+    start_path = "/"
+    p = root / "tasks" / env_id / f"{task_id}.yaml"
+    if p.is_file():
+        try:
+            d = yaml.safe_load(p.read_text()) or {}
+            env_id = d.get("env_id", env_id) or env_id
+            start_path = d.get("start_path", start_path) or start_path
+        except Exception:
+            pass
+    _TASK_REPLAY_CACHE[task_id] = (env_id, start_path)
+    return env_id, start_path
+
+
+def _tag(result: dict, *, configuration: str, variant_filename: str | None,
+         root: Path, seed: int = 42) -> dict:
+    """Tag a per-task result with configuration + attach a `replay` block so
+    visualize.py's iframe can spin up a live session for playback."""
     tagged = dict(result)
     base = tagged.get("task_id", "")
+    env_id, start_path = _task_replay_info(root, base)
+    base_url = f"/env/{env_id}"
+
     tagged["task_id"] = f"{base}__{configuration}"
     tagged["base_task_id"] = base
     tagged["configuration"] = configuration
+    tagged.setdefault("env_id", env_id)
+    tagged.setdefault("task_type", "env")
+    tagged.setdefault("base_url", base_url)
+    tagged.setdefault("replay", {
+        "kind": "env",
+        "env_id": env_id,
+        "task_id": base,
+        "seed": seed,
+        "base_url": base_url,
+        "start_path": start_path,
+    })
     if variant_filename:
         tagged.setdefault("degradation", {})
         tagged["degradation"].setdefault("variant_filename", variant_filename)
     return tagged
 
 
-def _collect(results_dir: Path) -> list[dict]:
+def _collect(results_dir: Path, *, root: Path, seed: int) -> list[dict]:
     """Read every standard_*.json and stress_*.json that exists, produce a
     uniformly-tagged list of result entries."""
     aggregated: list[dict] = []
@@ -51,7 +90,8 @@ def _collect(results_dir: Path) -> list[dict]:
         except Exception:
             continue
         for r in envelope.get("results", []):
-            aggregated.append(_tag(r, configuration="standard", variant_filename=None))
+            aggregated.append(_tag(r, configuration="standard", variant_filename=None,
+                                   root=root, seed=seed))
 
     for path in sorted(results_dir.glob("stress_*.json")):
         try:
@@ -65,7 +105,8 @@ def _collect(results_dir: Path) -> list[dict]:
                 variant_filename = deg.get("variant_filename")
             if not variant_filename:
                 variant_filename = f"{path.stem.removeprefix('stress_')}.yaml"
-            aggregated.append(_tag(r, configuration="degraded", variant_filename=variant_filename))
+            aggregated.append(_tag(r, configuration="degraded", variant_filename=variant_filename,
+                                   root=root, seed=seed))
 
     return aggregated
 
@@ -96,7 +137,7 @@ def _envelope(results: list[dict], model: str, provider: str, manifest_version: 
 
 
 def _rebuild(results_dir: Path, *, model: str, provider: str,
-             root: Path, expected_total: int) -> tuple[int, int, Path]:
+             root: Path, expected_total: int, seed: int) -> tuple[int, int, Path]:
     """One regeneration pass. Returns (count, passed, viz_path)."""
     from webagentbench.result_utils import build_manifest_task_meta, load_embedded_task_meta
     from webagentbench.visualize import generate_html
@@ -104,7 +145,7 @@ def _rebuild(results_dir: Path, *, model: str, provider: str,
     manifest_path = root / "manifest.json"
     manifest = json.loads(manifest_path.read_text())
 
-    results = _collect(results_dir)
+    results = _collect(results_dir, root=root, seed=seed)
     envelope = _envelope(results, model, provider, manifest.get("version", ""))
 
     # Attach task_meta for the viz
@@ -131,6 +172,8 @@ def main() -> int:
     parser.add_argument("--model", default="us.anthropic.claude-sonnet-4-6")
     parser.add_argument("--provider", default="bedrock")
     parser.add_argument("--expected", type=int, default=112, help="total trajectories expected")
+    parser.add_argument("--seed", type=int, default=42,
+                        help="Seed to embed in replay blocks so the viz can spin up matching sessions")
     args = parser.parse_args()
 
     root = Path(__file__).resolve().parent.parent
@@ -145,7 +188,7 @@ def main() -> int:
             count, passed, viz_path = _rebuild(
                 results_dir,
                 model=args.model, provider=args.provider, root=root,
-                expected_total=args.expected,
+                expected_total=args.expected, seed=args.seed,
             )
         except FileNotFoundError:
             count, passed, viz_path = 0, 0, root / "static" / "bedrock_subset_viz.html"
