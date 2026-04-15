@@ -42,6 +42,32 @@ def client():
     return TestClient(app)
 
 
+def _targets(task_id: str, seed: int) -> dict:
+    _, _, resolved_targets, _ = materialize_task_state("gmail", task_id, seed)
+    return resolved_targets
+
+
+def _gmail_state(sid: str):
+    """Live GmailState for a session id, read from the app's SessionManager."""
+    return app.state.session_manager.get(sid)
+
+
+def _instruction_text(task_id: str) -> str:
+    from webagentbench.tasks._registry import get_task
+    task = get_task(task_id)
+    return (task.instruction_template or "") if hasattr(task, "instruction_template") else ""
+
+
+def _instruction_quotes(task_id: str) -> list[str]:
+    """Return double-quoted strings found in the task's instruction template."""
+    return QUOTED_STRING_RE.findall(_instruction_text(task_id))
+
+
+def _instruction_emails(task_id: str) -> list[str]:
+    """Return email addresses found in the task's instruction template."""
+    return EMAIL_RE.findall(_instruction_text(task_id))
+
+
 def _session(client: TestClient, task_id: str, seed: int = SEED, **kw) -> dict:
     r = client.post(
         "/api/env/gmail/session",

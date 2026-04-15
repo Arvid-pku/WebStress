@@ -577,14 +577,50 @@ webagentbench/
 </pre>
 
 <!-- ═══════════════════════════════════════════════════ -->
-<h2>11. Running the Benchmark</h2>
+<h2>11. The Agent (Short Version)</h2>
+
+<p>A single-LLM loop inside a <strong>BrowserGym</strong> environment. Per step: read the page's accessibility tree, emit <em>one</em> Python function call (<code>click("75")</code>, <code>fill("b22", "hello")</code>, <code>send_msg_to_user("done")</code>, &hellip;), the harness executes it, the SPA hits the real API, the middleware may intervene, and the evaluator grades against server state the moment <code>send_msg_to_user</code> fires.</p>
+
+<div class="split">
+<div>
+<h4>What the LLM sees</h4>
+<pre>
+Task: Find the email from Alice Chen...
+
+Accessibility tree:
+[11] banner '', visible
+[23] button 'Compose', clickable, visible
+[28] link 'Inbox', clickable, visible
+[73] region 'Email results', visible
+  [74] article '', clickable, visible
+    <span class="hl">[75] button 'Star Project Update', clickable, visible</span>
+    [79] strong 'Alice Chen'
+</pre>
+</div>
+<div>
+<h4>What the LLM says</h4>
+<pre>
+click("75")
+</pre>
+<p class="dim">One call per step; that's the whole interface. 14 verbs total: <code>click</code>, <code>fill</code>, <code>select_option</code>, <code>hover</code>, <code>press</code>, <code>scroll</code>, <code>dblclick</code>, <code>drag_and_drop</code>, <code>clear</code>, <code>focus</code>, <code>send_msg_to_user</code>, <code>report_infeasible</code>, <code>noop</code>, <code>upload_file</code>.</p>
+</div>
+</div>
+
+<h4>Providers</h4>
+<p><code>openai</code> (incl. OpenAI-compat servers via <code>--api-base-url</code>), <code>gemini</code>, <code>vllm</code>, and <code>bedrock</code> (AWS Bedrock via its OpenAI-compat endpoint). The agent doesn't know about degradations &mdash; it sees normal HTTP responses and a normal DOM. Interventions fire one layer below in the server / middleware / client layer.</p>
+
+<h4>Context discipline</h4>
+<p>Messages are trimmed to <code>MAX_INPUT_TOKENS</code> (26k); the middle of long episodes is replaced with either a 200-word LLM summary or a regex-extracted factual snapshot (last route, last action outcome, current field values). Deterministic, handles 50-step runs without blowing up.</p>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>12. Running the Benchmark</h2>
 
 <pre>
 <span class="cm"># ── Install ──</span>
 uv sync && playwright install chromium
 pnpm -C environments install && pnpm -C environments build
 
-<span class="cm"># ── Standard evaluation ──</span>
+<span class="cm"># ── Standard evaluation (any provider) ──</span>
 python -m webagentbench.agent_eval \
     --model gpt-4o --provider openai --api-key $KEY \
     --tasks gmail_action_item_extraction \
@@ -594,8 +630,22 @@ python -m webagentbench.agent_eval \
 python -m webagentbench.agent_eval \
     --model gpt-4o --provider openai --api-key $KEY \
     --tasks gmail_action_item_extraction \
-    --variant gmail_action_item_extraction__phishing_inbox.yaml \
+    --degradation gmail_action_item_extraction__phishing_inbox.yaml \
     --max-steps 50 --seed 42 --output results/stress.json
+
+<span class="cm"># ── AWS Bedrock Claude (put AWS_BEDROCK_API_KEY in webagentbench/.env — gitignored) ──</span>
+python -m webagentbench.agent_eval \
+    --model anthropic.claude-sonnet-4-6 --provider bedrock \
+    --tasks gmail_action_item_extraction --seed 42
+
+<span class="cm"># ── 16-trajectory Bedrock subset (8 tasks × standard + degraded) with viz ──</span>
+python -m webagentbench.app --host 127.0.0.1 --port 8080 &amp;     <span class="cm"># launcher for iframe host</span>
+python -m webagentbench.scripts.run_bedrock_subset              <span class="cm"># default: anthropic.claude-sonnet-4-6</span>
+<span class="cm"># open http://127.0.0.1:8080/trajectories</span>
+
+<span class="cm"># ── Visualize any existing result JSON ──</span>
+python -m webagentbench.visualize results/standard.json
+<span class="cm"># viz served at /static/&lt;name&gt;_viz.html, listed at /trajectories</span>
 
 <span class="cm"># ── Human play ──</span>
 python -m webagentbench.app --host 127.0.0.1 --port 8080

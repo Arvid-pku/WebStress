@@ -18,7 +18,7 @@ Prerequisites (one-time):
 
 Run:
   python -m webagentbench.scripts.run_bedrock_subset
-  # default model: us.anthropic.claude-sonnet-4-6
+  # default model: anthropic.claude-sonnet-4-6
   # overrides: --model, --seed, --no-viz
 
 After completion the launcher at http://127.0.0.1:8080/launch stays up and the
@@ -158,8 +158,8 @@ def main() -> int:
     _load_env_file()
 
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--model", default="us.anthropic.claude-sonnet-4-6",
-                        help="Bedrock model ID (default: us.anthropic.claude-sonnet-4-6)")
+    parser.add_argument("--model", default="anthropic.claude-sonnet-4-6",
+                        help="Bedrock model ID (default: anthropic.claude-sonnet-4-6)")
     parser.add_argument("--provider", default="bedrock")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--no-headless", action="store_true",
