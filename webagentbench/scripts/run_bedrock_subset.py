@@ -43,24 +43,50 @@ logger = logging.getLogger(__name__)
 # different environment, a different primitive, and a different NEW action.
 # ---------------------------------------------------------------------------
 
-SUBSET: list[tuple[str, str]] = [
-    ("gmail_action_item_extraction",
-     "gmail_action_item_extraction__phishing_inbox.yaml"),        # seed / grounding
-    ("gmail_ambiguous_inbox_cleanup",
-     "gmail_ambiguous_inbox_cleanup__double_submit.yaml"),        # client / verification
-    ("amazon_cart_optimization",
-     "amazon_cart_optimization__misleading_success.yaml"),        # network / verification
-    ("reddit_clear_notifications",
-     "reddit_clear_notifications__rate_limit.yaml"),              # network / patience
-    ("rh_buy_market_order",
-     "rh_buy_market_order__adjacent_selection.yaml"),             # client / verification
-    ("booking_budget_comparison",
-     "booking_budget_comparison__tail_latency.yaml"),             # network / patience
-    ("lms_check_assignment_grade",
-     "lms_check_assignment_grade__correlated_window.yaml"),       # network / patience
-    ("pp_cancel_appointment",
-     "pp_cancel_appointment__phishing_message.yaml"),             # seed / grounding
+ALL_ENVS: list[str] = [
+    "gmail", "amazon", "reddit", "robinhood", "booking", "lms", "patient_portal",
 ]
+
+
+def _sample_pairs(per_env: int) -> list[tuple[str, str]]:
+    """Return ``per_env`` tasks from every environment, paired with each
+    task's canonical (alphabetically-first) variant. Sample is deterministic:
+    alphabetical order within each env."""
+    import yaml
+    from collections import defaultdict
+
+    variants_dir = Path(__file__).resolve().parent.parent / "injector" / "variants"
+    variants_by_task: dict[str, list[str]] = defaultdict(list)
+    for f in sorted(variants_dir.glob("*.yaml")):
+        try:
+            d = yaml.safe_load(f.read_text())
+            btid = d.get("base_task_id", "")
+            if btid:
+                variants_by_task[btid].append(f.name)
+        except Exception:
+            pass
+
+    pairs: list[tuple[str, str]] = []
+    tasks_root = Path(__file__).resolve().parent.parent / "tasks"
+    for env in ALL_ENVS:
+        env_dir = tasks_root / env
+        if not env_dir.is_dir():
+            continue
+        task_ids: list[str] = []
+        for f in sorted(env_dir.glob("*.yaml")):
+            try:
+                d = yaml.safe_load(f.read_text())
+                tid = d.get("task_id", "")
+                if tid and variants_by_task.get(tid):
+                    task_ids.append(tid)
+            except Exception:
+                pass
+        for tid in task_ids[:per_env]:
+            pairs.append((tid, sorted(variants_by_task[tid])[0]))
+    return pairs
+
+
+SUBSET: list[tuple[str, str]] = _sample_pairs(8)
 
 
 def _load_env_file() -> None:
@@ -171,7 +197,12 @@ def main() -> int:
                         help="Skip the degraded runs (8 trajectories instead of 16)")
     parser.add_argument("--only-degraded", action="store_true",
                         help="Skip the standard runs (8 trajectories instead of 16)")
+    parser.add_argument("--per-env", type=int, default=8,
+                        help="Number of tasks to sample from each of the 7 envs (default: 8)")
     args = parser.parse_args()
+
+    global SUBSET
+    SUBSET = _sample_pairs(args.per_env)
 
     logging.basicConfig(level=logging.INFO, format="%(message)s")
 
