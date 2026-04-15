@@ -152,12 +152,16 @@ def _rebuild(results_dir: Path, *, model: str, provider: str,
     task_meta = load_embedded_task_meta(envelope)
     envelope["task_meta"] = {**build_manifest_task_meta(manifest), **task_meta}
 
-    # Write merged.json snapshot + viz HTML
+    # Write merged.json snapshot + viz HTML.
+    # Use a relative SERVER_URL ("") so the viz's fetches + iframe src resolve
+    # against whichever origin serves the HTML (the launcher on :9090 or the
+    # benchmark's internal :8080). Avoids cross-origin mismatches when both
+    # are up simultaneously.
     results_dir.mkdir(parents=True, exist_ok=True)
     (results_dir / "merged.json").write_text(json.dumps(envelope, indent=2, default=str))
     static_path = root / "static" / "bedrock_subset_viz.html"
     results_viz = results_dir / "viz.html"
-    viz_html = generate_html(envelope, "http://127.0.0.1:8080")
+    viz_html = generate_html(envelope, "")
     static_path.write_text(viz_html)
     results_viz.write_text(viz_html)
 
