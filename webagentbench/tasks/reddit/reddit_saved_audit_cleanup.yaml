@@ -21,7 +21,7 @@ difficulty: expert
 time_limit_seconds: 480
 expected_steps: 38
 primary_primitives:
-- state_tracking
+- grounding
 seed:
   distractors: 8
   actors: {}

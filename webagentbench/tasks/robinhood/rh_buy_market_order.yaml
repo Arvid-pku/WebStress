@@ -1,49 +1,54 @@
 task_id: rh_buy_market_order
 env_id: robinhood
 title: Buy Shares at Market Price
-instruction_template: "Buy 3 shares of {target.symbol} at market price."
+instruction_template: Buy 3 shares of {target.symbol} at market price.
 difficulty: easy
 time_limit_seconds: 90
 expected_steps: 5
 primary_primitives:
-  - grounding
+- verification
 start_path: /
-
 seed:
   distractors: 5
   steps:
-    - use: stock_universe
-      params:
-        count: 20
-        must_include: ["AAPL", "TSLA", "MSFT"]
-      outputs: []
-    - use: portfolio_basic
-      params:
-        stocks: ["TSLA", "MSFT"]
-        quantities: ["10", "5"]
-        cost_bases: ["220.00", "380.00"]
-      outputs: []
-    - use: linked_banks
-      params: {}
-      outputs: []
+  - use: stock_universe
+    params:
+      count: 20
+      must_include:
+      - AAPL
+      - TSLA
+      - MSFT
+    outputs: []
+  - use: portfolio_basic
+    params:
+      stocks:
+      - TSLA
+      - MSFT
+      quantities:
+      - '10'
+      - '5'
+      cost_bases:
+      - '220.00'
+      - '380.00'
+    outputs: []
+  - use: linked_banks
+    params: {}
+    outputs: []
   targets:
-    symbol: "AAPL"
-
+    symbol: AAPL
 eval:
   source: server_state
   checks:
-    - expr: >-
-        any(o.symbol == 'AAPL' and o.side == 'buy' and o.order_type == 'market'
-            and o.quantity == 3 and o.status == 'filled'
-            and not o.id.startswith('ord_decoy_')
-            for o in state.orders)
-      desc: A filled market buy order for 3 shares of AAPL exists (non-decoy)
-    - expr: "state.get_position('AAPL') is not None and state.get_position('AAPL').quantity >= 3"
-      desc: AAPL position reflects the purchased shares
+  - expr: "any(o.symbol == 'AAPL' and o.side == 'buy' and o.order_type == 'market'\n\
+      \    and o.quantity == 3 and o.status == 'filled'\n    and not o.id.startswith('ord_decoy_')\n\
+      \    for o in state.orders)"
+    desc: A filled market buy order for 3 shares of AAPL exists (non-decoy)
+  - expr: state.get_position('AAPL') is not None and state.get_position('AAPL').quantity
+      >= 3
+    desc: AAPL position reflects the purchased shares
   negative_checks:
-    - expr: >-
-        not any(o.symbol != 'AAPL' and o.side == 'buy'
-                and not o.id.startswith('ord_decoy_')
-                for o in state.orders)
-      desc: Agent did not place buy orders on other symbols
-      penalty: 0.25
+  - expr: "not any(o.symbol != 'AAPL' and o.side == 'buy'\n        and not o.id.startswith('ord_decoy_')\n\
+      \        for o in state.orders)"
+    desc: Agent did not place buy orders on other symbols
+    penalty: 0.25
+secondary_primitives: []

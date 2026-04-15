@@ -8,7 +8,7 @@ difficulty: medium
 time_limit_seconds: 300
 expected_steps: 20
 primary_primitives:
-- grounding
+- backtracking
 start_path: /wishlist
 seed:
   distractors: 8

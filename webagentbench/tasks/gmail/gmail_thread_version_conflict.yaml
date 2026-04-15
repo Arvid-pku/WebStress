@@ -24,7 +24,7 @@ difficulty: medium
 time_limit_seconds: 360
 expected_steps: 18
 primary_primitives:
-- state_tracking
+- backtracking
 secondary_primitives: []
 start_path: /inbox
 seed:

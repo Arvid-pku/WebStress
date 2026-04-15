@@ -12,8 +12,7 @@ time_limit_seconds: 240
 expected_steps: 18
 primary_primitives:
 - grounding
-secondary_primitives:
-- state_tracking
+secondary_primitives: []
 start_path: /feed
 seed:
   distractors: 6

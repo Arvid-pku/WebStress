@@ -12,7 +12,7 @@ difficulty: expert
 time_limit_seconds: 300
 expected_steps: 15
 primary_primitives:
-- state_tracking
+- verification
 start_path: /courses
 seed:
   distractors: 1

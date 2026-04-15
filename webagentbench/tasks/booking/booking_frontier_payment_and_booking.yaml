@@ -22,7 +22,7 @@ difficulty: frontier
 time_limit_seconds: 600
 expected_steps: 50
 primary_primitives:
-- planning
+- backtracking
 secondary_primitives: []
 start_path: /home
 seed:

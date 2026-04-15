@@ -11,7 +11,7 @@ difficulty: medium
 time_limit_seconds: 200
 expected_steps: 14
 primary_primitives:
-- planning
+- grounding
 start_path: /home
 seed:
   distractors: 6

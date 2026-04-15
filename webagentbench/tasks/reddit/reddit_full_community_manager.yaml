@@ -25,7 +25,7 @@ difficulty: frontier
 time_limit_seconds: 720
 expected_steps: 55
 primary_primitives:
-- planning
+- grounding
 seed:
   distractors: 12
   actors: {}

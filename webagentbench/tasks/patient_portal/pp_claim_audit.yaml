@@ -11,7 +11,7 @@ difficulty: expert
 time_limit_seconds: 480
 expected_steps: 40
 primary_primitives:
-- planning
+- state_tracking
 start_path: /billing
 seed:
   distractors: 8

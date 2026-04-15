@@ -8,7 +8,7 @@ difficulty: easy
 time_limit_seconds: 90
 expected_steps: 4
 primary_primitives:
-- grounding
+- verification
 start_path: /account
 seed:
   distractors: 3
@@ -39,3 +39,4 @@ eval:
       '
     desc: Email was not accidentally changed
     penalty: 0.2
+secondary_primitives: []

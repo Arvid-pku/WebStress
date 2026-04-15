@@ -8,7 +8,7 @@ difficulty: hard
 time_limit_seconds: 280
 expected_steps: 12
 primary_primitives:
-- state_tracking
+- planning
 start_path: /
 seed:
   distractors: 10

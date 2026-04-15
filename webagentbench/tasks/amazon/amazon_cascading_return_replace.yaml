@@ -12,7 +12,7 @@ difficulty: expert
 time_limit_seconds: 420
 expected_steps: 38
 primary_primitives:
-- planning
+- backtracking
 secondary_primitives: []
 start_path: /orders
 seed:

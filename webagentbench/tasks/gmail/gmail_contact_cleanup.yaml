@@ -10,7 +10,7 @@ difficulty: medium
 time_limit_seconds: 300
 expected_steps: 25
 primary_primitives:
-- exploration
+- verification
 start_path: /inbox
 seed:
   distractors: 40

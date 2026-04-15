@@ -8,7 +8,7 @@ difficulty: frontier
 time_limit_seconds: 600
 expected_steps: 60
 primary_primitives:
-- planning
+- backtracking
 start_path: /billing
 seed:
   distractors: 10

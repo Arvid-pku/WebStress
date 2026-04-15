@@ -12,7 +12,7 @@ difficulty: expert
 time_limit_seconds: 480
 expected_steps: 35
 primary_primitives:
-- planning
+- grounding
 start_path: /
 seed:
   distractors: 8

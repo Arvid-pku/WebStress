@@ -19,7 +19,7 @@ difficulty: expert
 time_limit_seconds: 400
 expected_steps: 28
 primary_primitives:
-- state_tracking
+- grounding
 secondary_primitives: []
 start_path: /messages
 seed:

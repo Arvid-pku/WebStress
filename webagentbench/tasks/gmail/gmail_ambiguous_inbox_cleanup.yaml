@@ -16,7 +16,7 @@ difficulty: expert
 time_limit_seconds: 420
 expected_steps: 35
 primary_primitives:
-- planning
+- verification
 secondary_primitives: []
 start_path: /inbox
 seed:

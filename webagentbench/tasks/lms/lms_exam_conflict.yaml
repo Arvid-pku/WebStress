@@ -8,7 +8,7 @@ difficulty: expert
 time_limit_seconds: 300
 expected_steps: 18
 primary_primitives:
-- state_tracking
+- exploration
 start_path: /calendar
 seed:
   distractors: 1

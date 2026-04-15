@@ -9,7 +9,7 @@ difficulty: frontier
 time_limit_seconds: 500
 expected_steps: 32
 primary_primitives:
-- state_tracking
+- exploration
 start_path: /
 seed:
   distractors: 20

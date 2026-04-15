@@ -8,7 +8,7 @@ difficulty: hard
 time_limit_seconds: 300
 expected_steps: 18
 primary_primitives:
-- planning
+- state_tracking
 start_path: /billing
 seed:
   distractors: 10

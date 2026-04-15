@@ -12,7 +12,7 @@ difficulty: frontier
 time_limit_seconds: 600
 expected_steps: 40
 primary_primitives:
-- state_tracking
+- planning
 start_path: /dashboard
 seed:
   distractors: 2

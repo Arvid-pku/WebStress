@@ -1,12 +1,13 @@
 task_id: reddit_switch_dark_mode
 env_id: reddit
 title: Switch to Dark Mode
-instruction_template: Go to Settings and switch the theme to "dark". Do not change any other settings.
+instruction_template: Go to Settings and switch the theme to "dark". Do not change
+  any other settings.
 difficulty: easy
 time_limit_seconds: 60
 expected_steps: 4
 primary_primitives:
-- grounding
+- verification
 start_path: /feed
 seed:
   distractors: 0
@@ -28,3 +29,4 @@ eval:
   - expr: state.settings.show_online_status == True
     desc: Privacy settings unchanged
     penalty: 0.15
+secondary_primitives: []

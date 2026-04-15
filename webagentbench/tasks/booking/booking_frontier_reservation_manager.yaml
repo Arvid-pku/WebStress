@@ -23,7 +23,7 @@ difficulty: frontier
 time_limit_seconds: 600
 expected_steps: 50
 primary_primitives:
-- state_tracking
+- grounding
 secondary_primitives: []
 start_path: /trips
 seed:

@@ -9,7 +9,7 @@ difficulty: medium
 time_limit_seconds: 240
 expected_steps: 16
 primary_primitives:
-- exploration
+- backtracking
 start_path: /feed
 seed:
   distractors: 5

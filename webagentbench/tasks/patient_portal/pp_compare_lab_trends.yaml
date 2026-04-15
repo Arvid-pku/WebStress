@@ -9,7 +9,7 @@ difficulty: medium
 time_limit_seconds: 180
 expected_steps: 10
 primary_primitives:
-- state_tracking
+- grounding
 start_path: /labs
 seed:
   distractors: 8

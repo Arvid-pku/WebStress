@@ -9,7 +9,7 @@ difficulty: medium
 time_limit_seconds: 120
 expected_steps: 6
 primary_primitives:
-- state_tracking
+- verification
 start_path: /courses
 seed:
   distractors: 1

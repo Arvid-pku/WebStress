@@ -1,17 +1,17 @@
 task_id: gmail_recover_deleted_draft
 env_id: gmail
 title: Recover Deleted Draft
-instruction_template: 'You were composing an important email to {target.recipient_name} ({target.recipient_email})
-  about "{target.draft_subject}" but it was accidentally deleted. Check your trash, find the draft content,
-  then compose and send a new email to the same recipient with the same subject. Make sure to include
-  the key information: {target.key_point_1}, {target.key_point_2}, and {target.key_point_3}.'
+instruction_template: 'You were composing an important email to {target.recipient_name}
+  ({target.recipient_email}) about "{target.draft_subject}" but it was accidentally
+  deleted. Check your trash, find the draft content, then compose and send a new email
+  to the same recipient with the same subject. Make sure to include the key information:
+  {target.key_point_1}, {target.key_point_2}, and {target.key_point_3}.'
 difficulty: hard
 time_limit_seconds: 300
 expected_steps: 20
 primary_primitives:
-- exploration
-secondary_primitives:
 - grounding
+secondary_primitives: []
 start_path: /inbox
 seed:
   distractors: 15
@@ -53,16 +53,18 @@ eval:
   - expr: any('{target.key_point_3}' in m.body for m in state.sent)
     desc: Email body contains key point 3
   negative_checks:
-  - expr: not any(m.to != ['{target.recipient_email}'] and '{target.recipient_email}' not in m.to for
-      m in state.sent)
+  - expr: not any(m.to != ['{target.recipient_email}'] and '{target.recipient_email}'
+      not in m.to for m in state.sent)
     desc: No emails sent to wrong recipients
     penalty: 0.4
   - expr: len(state.sent) <= 2
     desc: No excessive emails sent
     penalty: 0.2
-  - expr: not any( '{target.recipient_email}' in m.to and m.forwarded_from_id is not None for m in state.sent)
+  - expr: not any( '{target.recipient_email}' in m.to and m.forwarded_from_id is not
+      None for m in state.sent)
     desc: Recovered draft was sent as a fresh email, not a forward
     penalty: 0.15
-  - expr: not any( '{target.recipient_email}' in m.to and m.in_reply_to is not None for m in state.sent)
+  - expr: not any( '{target.recipient_email}' in m.to and m.in_reply_to is not None
+      for m in state.sent)
     desc: Recovered draft was not sent as a threaded reply
     penalty: 0.15

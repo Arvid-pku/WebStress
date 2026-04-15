@@ -11,7 +11,7 @@ difficulty: expert
 time_limit_seconds: 480
 expected_steps: 32
 primary_primitives:
-- planning
+- grounding
 start_path: /messages
 seed:
   distractors: 8

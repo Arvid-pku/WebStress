@@ -22,7 +22,7 @@ difficulty: frontier
 time_limit_seconds: 720
 expected_steps: 75
 primary_primitives:
-- state_tracking
+- exploration
 secondary_primitives: []
 start_path: /inbox
 seed:

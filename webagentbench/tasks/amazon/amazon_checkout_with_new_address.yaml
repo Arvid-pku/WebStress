@@ -11,7 +11,7 @@ difficulty: medium
 time_limit_seconds: 300
 expected_steps: 25
 primary_primitives:
-- planning
+- backtracking
 start_path: /cart
 seed:
   distractors: 5

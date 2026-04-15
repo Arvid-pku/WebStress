@@ -9,7 +9,7 @@ difficulty: easy
 time_limit_seconds: 90
 expected_steps: 3
 primary_primitives:
-- grounding
+- verification
 start_path: /settings
 seed:
   distractors: 3
@@ -37,3 +37,4 @@ eval:
   - expr: state.settings.two_factor_enabled == False
     desc: Two-factor authentication was not accidentally enabled
     penalty: 0.1
+secondary_primitives: []

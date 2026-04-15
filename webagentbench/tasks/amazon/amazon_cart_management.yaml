@@ -10,7 +10,7 @@ difficulty: medium
 time_limit_seconds: 240
 expected_steps: 15
 primary_primitives:
-- state_tracking
+- verification
 start_path: /cart
 seed:
   distractors: 5

@@ -9,7 +9,7 @@ difficulty: easy
 time_limit_seconds: 150
 expected_steps: 10
 primary_primitives:
-- exploration
+- grounding
 start_path: /
 seed:
   distractors: 8

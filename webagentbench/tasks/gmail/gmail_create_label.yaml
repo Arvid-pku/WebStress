@@ -6,7 +6,7 @@ difficulty: easy
 time_limit_seconds: 90
 expected_steps: 5
 primary_primitives:
-- planning
+- backtracking
 start_path: /inbox
 seed:
   distractors: 5

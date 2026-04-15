@@ -19,7 +19,7 @@ difficulty: expert
 time_limit_seconds: 450
 expected_steps: 35
 primary_primitives:
-- planning
+- grounding
 secondary_primitives: []
 start_path: /trips
 seed:

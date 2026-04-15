@@ -7,7 +7,7 @@ difficulty: medium
 time_limit_seconds: 180
 expected_steps: 8
 primary_primitives:
-- grounding
+- verification
 start_path: /billing
 seed:
   distractors: 6

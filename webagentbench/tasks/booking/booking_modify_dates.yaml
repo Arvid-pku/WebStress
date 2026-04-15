@@ -12,7 +12,7 @@ difficulty: medium
 time_limit_seconds: 180
 expected_steps: 10
 primary_primitives:
-- grounding
+- state_tracking
 start_path: /home
 seed:
   distractors: 5

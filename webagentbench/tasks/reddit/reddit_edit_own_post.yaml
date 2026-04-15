@@ -1,14 +1,15 @@
 task_id: reddit_edit_own_post
 env_id: reddit
 title: Edit Your Own Post
-instruction_template: 'Navigate to r/technology and find your own post titled "{target.post_title}". Edit the body to exactly:
-  "UPDATE: After 8 months of full-time Linux use, I can confirm the productivity gains are real. I wrote a detailed follow-up
-  on my blog." Do not edit or delete any other posts.'
+instruction_template: 'Navigate to r/technology and find your own post titled "{target.post_title}".
+  Edit the body to exactly: "UPDATE: After 8 months of full-time Linux use, I can
+  confirm the productivity gains are real. I wrote a detailed follow-up on my blog."
+  Do not edit or delete any other posts.'
 difficulty: easy
 time_limit_seconds: 120
 expected_steps: 7
 primary_primitives:
-- grounding
+- verification
 start_path: /feed
 seed:
   distractors: 3
@@ -29,8 +30,9 @@ seed:
 eval:
   source: server_state
   checks:
-  - expr: 'state.get_post(''{target.post_id}'').body == ''UPDATE: After 8 months of full-time Linux use, I can confirm the
-      productivity gains are real. I wrote a detailed follow-up on my blog.'''
+  - expr: 'state.get_post(''{target.post_id}'').body == ''UPDATE: After 8 months of
+      full-time Linux use, I can confirm the productivity gains are real. I wrote
+      a detailed follow-up on my blog.'''
     desc: Post body updated to exact required text
   - expr: state.get_post('{target.post_id}').is_edited
     desc: Post marked as edited
@@ -38,3 +40,4 @@ eval:
   - expr: not state.get_post('{target.post_id}').is_removed
     desc: Post was not deleted
     penalty: 0.5
+secondary_primitives: []

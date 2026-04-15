@@ -18,7 +18,7 @@ difficulty: medium
 time_limit_seconds: 360
 expected_steps: 28
 primary_primitives:
-- exploration
+- grounding
 secondary_primitives: []
 start_path: /feed
 seed:

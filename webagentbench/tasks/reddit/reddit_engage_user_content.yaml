@@ -8,7 +8,7 @@ difficulty: medium
 time_limit_seconds: 180
 expected_steps: 12
 primary_primitives:
-- exploration
+- grounding
 start_path: /feed
 seed:
   distractors: 5

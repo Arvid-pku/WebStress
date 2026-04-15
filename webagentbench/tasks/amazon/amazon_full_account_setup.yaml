@@ -13,7 +13,7 @@ difficulty: hard
 time_limit_seconds: 480
 expected_steps: 40
 primary_primitives:
-- planning
+- grounding
 start_path: /
 seed:
   distractors: 16

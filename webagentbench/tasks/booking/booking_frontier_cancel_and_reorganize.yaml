@@ -23,7 +23,7 @@ difficulty: frontier
 time_limit_seconds: 600
 expected_steps: 48
 primary_primitives:
-- planning
+- patience
 secondary_primitives: []
 start_path: /trips
 seed:

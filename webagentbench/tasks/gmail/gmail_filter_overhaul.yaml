@@ -15,7 +15,7 @@ difficulty: expert
 time_limit_seconds: 480
 expected_steps: 55
 primary_primitives:
-- planning
+- patience
 start_path: /inbox
 seed:
   distractors: 40

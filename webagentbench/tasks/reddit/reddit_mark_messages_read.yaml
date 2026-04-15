@@ -1,12 +1,13 @@
 task_id: reddit_mark_messages_read
 env_id: reddit
 title: Mark All Messages as Read
-instruction_template: Go to your Messages inbox and mark all messages as read. Do not delete any messages or send any replies.
+instruction_template: Go to your Messages inbox and mark all messages as read. Do
+  not delete any messages or send any replies.
 difficulty: easy
 time_limit_seconds: 60
 expected_steps: 4
 primary_primitives:
-- grounding
+- backtracking
 start_path: /feed
 seed:
   distractors: 0
@@ -22,6 +23,8 @@ eval:
   - expr: len(state.messages) >= 5
     desc: No messages were deleted
     penalty: 0.3
-  - expr: sum(1 for m in state.sent_messages if m.from_user == state.owner_username) <= 2
+  - expr: sum(1 for m in state.sent_messages if m.from_user == state.owner_username)
+      <= 2
     desc: No new replies sent
     penalty: 0.2
+secondary_primitives: []

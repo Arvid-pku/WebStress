@@ -10,7 +10,7 @@ difficulty: easy
 time_limit_seconds: 120
 expected_steps: 6
 primary_primitives:
-- grounding
+- backtracking
 start_path: /messages
 seed:
   distractors: 4
@@ -69,3 +69,4 @@ eval:
       '
     desc: Only one message was sent
     penalty: 0.2
+secondary_primitives: []

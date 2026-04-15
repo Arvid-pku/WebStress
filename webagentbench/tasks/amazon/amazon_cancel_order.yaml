@@ -11,7 +11,7 @@ difficulty: medium
 time_limit_seconds: 280
 expected_steps: 22
 primary_primitives:
-- planning
+- backtracking
 start_path: /
 seed:
   distractors: 10

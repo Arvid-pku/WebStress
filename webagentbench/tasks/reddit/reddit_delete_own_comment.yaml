@@ -1,13 +1,14 @@
 task_id: reddit_delete_own_comment
 env_id: reddit
 title: Delete Your Own Comment
-instruction_template: Navigate to r/{target.subreddit_name} and open the post titled "{target.post_title}". Find your own
-  comment that says "{target.comment_snippet}" and delete it. Do not delete any other comments or the post.
+instruction_template: Navigate to r/{target.subreddit_name} and open the post titled
+  "{target.post_title}". Find your own comment that says "{target.comment_snippet}"
+  and delete it. Do not delete any other comments or the post.
 difficulty: easy
 time_limit_seconds: 120
 expected_steps: 7
 primary_primitives:
-- grounding
+- verification
 start_path: /feed
 seed:
   distractors: 3
@@ -26,8 +27,8 @@ seed:
   - use: owner_comment
     params:
       post_id: '{output.post_id}'
-      body: This is misleading. The report counts installed capacity, not actual generation. Coal still produces more electricity
-        globally.
+      body: This is misleading. The report counts installed capacity, not actual generation.
+        Coal still produces more electricity globally.
       score: 150
     outputs:
     - comment_id
@@ -48,3 +49,4 @@ eval:
   - expr: not state.get_post('{target.post_id}').is_removed
     desc: The post itself was not deleted
     penalty: 0.5
+secondary_primitives: []

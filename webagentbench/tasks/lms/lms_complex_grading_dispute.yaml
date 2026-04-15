@@ -10,7 +10,7 @@ difficulty: expert
 time_limit_seconds: 420
 expected_steps: 30
 primary_primitives:
-- verification
+- exploration
 start_path: /courses
 seed:
   distractors: 2

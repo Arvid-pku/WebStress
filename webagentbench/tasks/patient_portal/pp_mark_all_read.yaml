@@ -6,7 +6,7 @@ difficulty: easy
 time_limit_seconds: 120
 expected_steps: 6
 primary_primitives:
-- patience
+- verification
 start_path: /messages
 seed:
   distractors: 5

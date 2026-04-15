@@ -11,7 +11,7 @@ difficulty: easy
 time_limit_seconds: 150
 expected_steps: 8
 primary_primitives:
-- grounding
+- verification
 start_path: /reviews
 seed:
   distractors: 4
@@ -64,3 +64,4 @@ eval:
       '
     desc: Only one review was written for this property
     penalty: 0.2
+secondary_primitives: []

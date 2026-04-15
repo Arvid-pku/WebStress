@@ -11,7 +11,7 @@ difficulty: easy
 time_limit_seconds: 120
 expected_steps: 8
 primary_primitives:
-- verification
+- grounding
 secondary_primitives: []
 start_path: /feed
 seed:

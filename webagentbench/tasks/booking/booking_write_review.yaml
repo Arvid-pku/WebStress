@@ -9,7 +9,7 @@ difficulty: medium
 time_limit_seconds: 240
 expected_steps: 18
 primary_primitives:
-- grounding
+- verification
 secondary_primitives: []
 start_path: /trips
 seed:

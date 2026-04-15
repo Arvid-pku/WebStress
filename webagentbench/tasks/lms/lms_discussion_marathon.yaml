@@ -11,7 +11,7 @@ difficulty: expert
 time_limit_seconds: 420
 expected_steps: 35
 primary_primitives:
-- patience
+- planning
 start_path: /courses
 seed:
   distractors: 2

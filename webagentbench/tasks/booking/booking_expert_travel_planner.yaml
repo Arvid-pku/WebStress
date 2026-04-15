@@ -30,7 +30,7 @@ difficulty: expert
 time_limit_seconds: 480
 expected_steps: 38
 primary_primitives:
-- planning
+- grounding
 secondary_primitives: []
 start_path: /home
 seed:

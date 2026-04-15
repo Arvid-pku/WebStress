@@ -7,7 +7,7 @@ difficulty: medium
 time_limit_seconds: 240
 expected_steps: 10
 primary_primitives:
-- grounding
+- exploration
 start_path: /appointments
 seed:
   distractors: 8

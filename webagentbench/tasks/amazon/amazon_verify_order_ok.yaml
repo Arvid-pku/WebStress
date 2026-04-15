@@ -10,7 +10,7 @@ difficulty: easy
 time_limit_seconds: 120
 expected_steps: 8
 primary_primitives:
-- verification
+- state_tracking
 start_path: /
 seed:
   distractors: 5

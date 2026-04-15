@@ -12,7 +12,7 @@ difficulty: medium
 time_limit_seconds: 220
 expected_steps: 14
 primary_primitives:
-- planning
+- patience
 start_path: /home
 seed:
   distractors: 7

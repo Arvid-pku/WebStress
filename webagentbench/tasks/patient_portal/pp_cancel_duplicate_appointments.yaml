@@ -8,7 +8,7 @@ difficulty: medium
 time_limit_seconds: 180
 expected_steps: 8
 primary_primitives:
-- state_tracking
+- backtracking
 start_path: /appointments
 seed:
   distractors: 8

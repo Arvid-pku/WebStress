@@ -8,7 +8,7 @@ difficulty: expert
 time_limit_seconds: 350
 expected_steps: 18
 primary_primitives:
-- planning
+- exploration
 start_path: /
 seed:
   distractors: 20

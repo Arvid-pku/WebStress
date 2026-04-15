@@ -9,7 +9,7 @@ difficulty: easy
 time_limit_seconds: 90
 expected_steps: 4
 primary_primitives:
-- grounding
+- backtracking
 start_path: /trips
 seed:
   distractors: 4
@@ -54,3 +54,4 @@ eval:
       \ != '{target.reservation_id}'\n  for e in state.audit_log\n)\n"
     desc: No other reservation was cancelled by the agent
     penalty: 0.3
+secondary_primitives: []

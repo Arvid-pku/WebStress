@@ -17,7 +17,7 @@ difficulty: expert
 time_limit_seconds: 540
 expected_steps: 40
 primary_primitives:
-- planning
+- grounding
 seed:
   distractors: 8
   actors: {}

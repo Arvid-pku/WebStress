@@ -1,10 +1,10 @@
 task_id: reddit_edit_delete_subscribe
 title: Edit, Delete, and Subscribe
-instruction_template: '1. Find your post "{target.edit_title}" in r/{target.edit_sub}. Edit body to exactly:
-  "{target.edit_body}"
+instruction_template: '1. Find your post "{target.edit_title}" in r/{target.edit_sub}.
+  Edit body to exactly: "{target.edit_body}"
 
-  2. Find your comment on "{target.del_post_title}" in r/{target.del_sub} that says "{target.del_hint}".
-  Delete it.
+  2. Find your comment on "{target.del_post_title}" in r/{target.del_sub} that says
+  "{target.del_hint}". Delete it.
 
   3. Subscribe to r/{target.join_sub}.
 
@@ -43,7 +43,8 @@ seed:
   - use: owner_comment
     params:
       post_id: '{output.del_post_id}'
-      body: This seems overhyped. I will wait for independent benchmarks before getting excited.
+      body: This seems overhyped. I will wait for independent benchmarks before getting
+        excited.
       score: 80
     outputs:
     - del_comment_id
@@ -57,8 +58,8 @@ seed:
     edit_title: '{output.edit_title}'
     edit_sub: Python
     edit_id: '{output.edit_id}'
-    edit_body: After 6 months with FastAPI, I can confirm the async performance gains are real. Migration
-      guide and benchmarks in the follow-up post.
+    edit_body: After 6 months with FastAPI, I can confirm the async performance gains
+      are real. Migration guide and benchmarks in the follow-up post.
     del_post_title: '{output.del_post_title}'
     del_sub: '{output.del_sub}'
     del_comment_id: '{output.del_comment_id}'
@@ -82,7 +83,8 @@ eval:
   - expr: len(state.sent_messages) == 0
     desc: No messages sent when none required
     penalty: 0.15
-  - expr: sum(1 for p in state.posts if p.author_name == state.owner_username) == 0
+  - expr: sum(1 for p in state.posts if p.author_name == state.owner_username) ==
+      0
     desc: No posts created when none required
     penalty: 0.15
   - expr: len(state.blocked_users) == 0
@@ -90,5 +92,4 @@ eval:
     penalty: 0.15
 env_id: reddit
 start_path: /feed
-secondary_primitives:
-- state_tracking
+secondary_primitives: []

@@ -1,4 +1,3 @@
----
 task_id: rh_check_buying_power
 env_id: robinhood
 title: Invest Half of Buying Power in AAPL
@@ -8,8 +7,8 @@ difficulty: easy
 time_limit_seconds: 90
 expected_steps: 4
 primary_primitives:
-- grounding
-start_path: "/"
+- backtracking
+start_path: /
 seed:
   distractors: 5
   steps:
@@ -39,8 +38,8 @@ seed:
 eval:
   source: server_state
   checks:
-  - expr: any(o.symbol == 'AAPL' and o.side == 'buy' and o.order_type == 'market' and
-      o.status in ('filled', 'pending') for o in state.orders)
+  - expr: any(o.symbol == 'AAPL' and o.side == 'buy' and o.order_type == 'market'
+      and o.status in ('filled', 'pending') for o in state.orders)
     desc: A market buy order was placed for AAPL
   - expr: any(o.symbol == 'AAPL' and o.side == 'buy' and o.quantity * state.get_stock('AAPL').price
       / (state.buying_power + o.quantity * state.get_stock('AAPL').price) >= Decimal('0.40')

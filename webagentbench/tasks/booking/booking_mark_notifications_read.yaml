@@ -9,7 +9,7 @@ difficulty: easy
 time_limit_seconds: 90
 expected_steps: 3
 primary_primitives:
-- patience
+- verification
 start_path: /notifications
 seed:
   distractors: 3

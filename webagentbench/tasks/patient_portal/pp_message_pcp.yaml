@@ -9,7 +9,7 @@ difficulty: easy
 time_limit_seconds: 120
 expected_steps: 5
 primary_primitives:
-- planning
+- backtracking
 start_path: /medications
 seed:
   distractors: 5
