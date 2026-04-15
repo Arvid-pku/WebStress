@@ -1,17 +1,17 @@
 task_id: amazon_buy_highest_rated
 env_id: amazon
 title: Buy the Highest-Rated Product in a Category
-instruction_template: >
-  Search for products in the "{target.category}" category, find the one with the
-  highest customer rating (at least 4.5 stars), and purchase it. Use the shipping
-  address for Jordan Parker at 742 Evergreen Terrace and the Visa card ending in 4242.
+instruction_template: 'Search for products in the "{target.category}" category, find
+  the one with the highest customer rating (at least 4.5 stars), and purchase it.
+  Use the shipping address for Jordan Parker at 742 Evergreen Terrace and the Visa
+  card ending in 4242.
+
+  '
 difficulty: medium
 time_limit_seconds: 280
 expected_steps: 22
 primary_primitives:
-- planning
 - grounding
-- verification
 start_path: /
 seed:
   distractors: 10
@@ -45,25 +45,31 @@ eval:
   checks:
   - expr: any(not o.id.startswith('order_initial_') for o in state.orders)
     desc: A new order was placed
-  - expr: >
-      any(any(item.product_id == '{target.best_product_id}' for item in order.items)
-      for order in state.orders if not order.id.startswith('order_initial_'))
+  - expr: 'any(any(item.product_id == ''{target.best_product_id}'' for item in order.items)
+      for order in state.orders if not order.id.startswith(''order_initial_''))
+
+      '
     desc: Order contains the highest-rated product
-  - expr: any(order.status == 'confirmed' and any(item.product_id == '{target.best_product_id}' for item in order.items) for order in state.orders if not order.id.startswith('order_initial_'))
-    desc: Order containing the target product is confirmed
-  - expr: >
-      any(any(next((p.rating for p in state.products if p.id == item.product_id), 0) >= 4.5
+  - expr: any(order.status == 'confirmed' and any(item.product_id == '{target.best_product_id}'
       for item in order.items) for order in state.orders if not order.id.startswith('order_initial_'))
+    desc: Order containing the target product is confirmed
+  - expr: 'any(any(next((p.rating for p in state.products if p.id == item.product_id),
+      0) >= 4.5 for item in order.items) for order in state.orders if not order.id.startswith(''order_initial_''))
+
+      '
     desc: Purchased product has a rating of at least 4.5 stars
   negative_checks:
-  - expr: sum(1 for o in state.orders if not o.id.startswith('order_initial_')) <= 1
+  - expr: sum(1 for o in state.orders if not o.id.startswith('order_initial_')) <=
+      1
     desc: Only one new order placed
     penalty: 0.15
-  - expr: >
-      all(any(item.product_id == '{target.best_product_id}' for item in order.items)
-      for order in state.orders if not order.id.startswith('order_initial_'))
+  - expr: 'all(any(item.product_id == ''{target.best_product_id}'' for item in order.items)
+      for order in state.orders if not order.id.startswith(''order_initial_''))
+
+      '
     desc: Purchased product matches the target highest-rated product
     penalty: 0.3
   - expr: len(state.cart_items) == 0
     desc: Cart is empty after checkout
     penalty: 0.1
+secondary_primitives: []

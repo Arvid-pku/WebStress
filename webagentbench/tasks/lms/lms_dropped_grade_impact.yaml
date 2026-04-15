@@ -1,96 +1,87 @@
 task_id: lms_dropped_grade_impact
 env_id: lms
 title: Calculate Impact of Dropped Grade on Standing
-instruction_template: >-
-  In {target.course_code}, calculate the difference between your weighted
-  grade with and without the drop-lowest policy. If the drop makes more
-  than a 3-point difference, resubmit the dropped assignment (the lowest
-  homework) with file 'improvement.pdf' to try to improve it further. If
-  the drop makes a 3-point difference or less, mark the course's latest
-  announcement as read.
+instruction_template: In {target.course_code}, calculate the difference between your
+  weighted grade with and without the drop-lowest policy. If the drop makes more than
+  a 3-point difference, resubmit the dropped assignment (the lowest homework) with
+  file 'improvement.pdf' to try to improve it further. If the drop makes a 3-point
+  difference or less, mark the course's latest announcement as read.
 difficulty: hard
 time_limit_seconds: 240
 expected_steps: 12
 primary_primitives:
-  - state_tracking
-  - verification
+- state_tracking
 start_path: /courses
-
 seed:
   distractors: 2
   steps:
-    - use: student_profile
-      params: {}
-      outputs:
-        - student_id
-    - use: course_catalog
-      params:
-        count: 3
-        must_include: ["CS101"]
-      outputs:
-        - course_ids
-        - course_code
-        - target_course_id
-    - use: enrollment_set
-      params: {}
-      outputs:
-        - enrollment_ids
-    - use: assignment_battery
-      params:
-        per_course_count: 8
-        graded_fraction: 0.7
-      outputs:
-        - assignment_ids
-        - lowest_homework_id
-    - use: announcements_feed
-      params:
-        count: 3
-        unread_count: 1
-      outputs:
-        - announcement_ids
-    - use: grade_book
-      params: {}
-      outputs:
-        - grade_ids
-        - current_weighted_scores
-        - dropped_grade_ids
-        - drop_impact_above_3
-        - latest_announcement_id
+  - use: student_profile
+    params: {}
+    outputs:
+    - student_id
+  - use: course_catalog
+    params:
+      count: 3
+      must_include:
+      - CS101
+    outputs:
+    - course_ids
+    - course_code
+    - target_course_id
+  - use: enrollment_set
+    params: {}
+    outputs:
+    - enrollment_ids
+  - use: assignment_battery
+    params:
+      per_course_count: 8
+      graded_fraction: 0.7
+    outputs:
+    - assignment_ids
+    - lowest_homework_id
+  - use: announcements_feed
+    params:
+      count: 3
+      unread_count: 1
+    outputs:
+    - announcement_ids
+  - use: grade_book
+    params: {}
+    outputs:
+    - grade_ids
+    - current_weighted_scores
+    - dropped_grade_ids
+    - drop_impact_above_3
+    - latest_announcement_id
   targets:
     course_code: '{output.course_code}'
     target_course_id: '{output.target_course_id}'
     lowest_hw_id: '{output.lowest_homework_id}'
     drop_impact_above_3: '{output.drop_impact_above_3}'
     latest_announcement_id: '{output.latest_announcement_id}'
-
 eval:
   source: server_state
   checks:
-    - expr: >-
-        (('{target.drop_impact_above_3}' == 'true'
-         and state.get_assignment('{target.lowest_hw_id}') is not None
-         and state.get_assignment('{target.lowest_hw_id}').submission_status in ('submitted', 'late')
-         and state.get_assignment('{target.lowest_hw_id}').file_name == 'improvement.pdf')
-        or ('{target.drop_impact_above_3}' == 'false'
-            and state.get_announcement('{target.latest_announcement_id}') is not None
-            and state.get_announcement('{target.latest_announcement_id}').is_read == True))
-      desc: >-
-        Resubmit lowest homework with improvement.pdf if drop impact > 3 points,
-        or mark latest announcement as read if impact <= 3 points
+  - expr: "(('{target.drop_impact_above_3}' == 'true'\n and state.get_assignment('{target.lowest_hw_id}')\
+      \ is not None\n and state.get_assignment('{target.lowest_hw_id}').submission_status\
+      \ in ('submitted', 'late')\n and state.get_assignment('{target.lowest_hw_id}').file_name\
+      \ == 'improvement.pdf')\nor ('{target.drop_impact_above_3}' == 'false'\n   \
+      \ and state.get_announcement('{target.latest_announcement_id}') is not None\n\
+      \    and state.get_announcement('{target.latest_announcement_id}').is_read ==\
+      \ True))"
+    desc: Resubmit lowest homework with improvement.pdf if drop impact > 3 points,
+      or mark latest announcement as read if impact <= 3 points
   negative_checks:
-    - expr: >-
-        '{target.drop_impact_above_3}' != 'true'
-        or state.get_announcement('{target.latest_announcement_id}') is None
-        or state.get_announcement('{target.latest_announcement_id}').is_read != True
-      desc: Did not mark announcement as read when drop impact > 3 (wrong branch)
-      penalty: 0.3
-    - expr: >-
-        '{target.drop_impact_above_3}' != 'false'
-        or state.get_assignment('{target.lowest_hw_id}') is None
-        or state.get_assignment('{target.lowest_hw_id}').file_name != 'improvement.pdf'
-      desc: Did not resubmit when drop impact <= 3 (wrong branch)
-      penalty: 0.3
-    - expr: >-
-        all(e.status != 'dropped' for e in state.enrollments)
-      desc: No courses were dropped
-      penalty: 0.3
+  - expr: '''{target.drop_impact_above_3}'' != ''true'' or state.get_announcement(''{target.latest_announcement_id}'')
+      is None or state.get_announcement(''{target.latest_announcement_id}'').is_read
+      != True'
+    desc: Did not mark announcement as read when drop impact > 3 (wrong branch)
+    penalty: 0.3
+  - expr: '''{target.drop_impact_above_3}'' != ''false'' or state.get_assignment(''{target.lowest_hw_id}'')
+      is None or state.get_assignment(''{target.lowest_hw_id}'').file_name != ''improvement.pdf'''
+    desc: Did not resubmit when drop impact <= 3 (wrong branch)
+    penalty: 0.3
+  - expr: all(e.status != 'dropped' for e in state.enrollments)
+    desc: No courses were dropped
+    penalty: 0.3
+secondary_primitives: []

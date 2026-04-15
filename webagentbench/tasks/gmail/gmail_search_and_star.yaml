@@ -1,13 +1,13 @@
 task_id: gmail_search_and_star
 env_id: gmail
 title: Find Budget Email and Star It
-instruction_template: Find the email about "Q4 Budget Summary" from the Finance Team in your inbox and star it.
+instruction_template: Find the email about "Q4 Budget Summary" from the Finance Team
+  in your inbox and star it.
 difficulty: easy
 time_limit_seconds: 120
 expected_steps: 8
 primary_primitives:
 - exploration
-- grounding
 start_path: /inbox
 seed:
   distractors: 10
@@ -23,8 +23,7 @@ eval:
   checks:
   - expr: state.get_email('{target.target_email_id}').is_starred
     desc: Budget email is starred
-  - expr: >-
-      'Q4 Budget Summary' in state.get_email('{target.target_email_id}').subject
+  - expr: '''Q4 Budget Summary'' in state.get_email(''{target.target_email_id}'').subject'
     desc: Starred email has the correct subject (identity check)
   negative_checks:
   - expr: sum(1 for e in state.emails if e.is_starred) <= 2
@@ -33,3 +32,4 @@ eval:
   - expr: len(state.deleted) == 0
     desc: No emails moved to trash
     penalty: 0.15
+secondary_primitives: []

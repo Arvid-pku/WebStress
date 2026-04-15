@@ -1,8 +1,9 @@
 task_id: amazon_selective_reorder
 env_id: amazon
 title: Reorder Specific Products from Past Orders
-instruction_template: 'Check your order history. Find the delivered order for ''{target.name_1}'' and
-  the delivered order for ''{target.name_3}''. Reorder both products in a single new order.
+instruction_template: 'Check your order history. Find the delivered order for ''{target.name_1}''
+  and the delivered order for ''{target.name_3}''. Reorder both products in a single
+  new order.
 
   '
 difficulty: expert
@@ -10,8 +11,7 @@ time_limit_seconds: 400
 expected_steps: 35
 primary_primitives:
 - exploration
-secondary_primitives:
-- state_tracking
+secondary_primitives: []
 start_path: /orders
 seed:
   distractors: 20
@@ -114,18 +114,19 @@ eval:
   checks:
   - expr: any(not o.id.startswith('order_initial_') for o in state.orders)
     desc: A new order was placed
-  - expr: 'any(any(item.product_id == ''{target.product_id_sel1}'' for item in o.items) for o in state.orders
-      if not o.id.startswith(''order_initial_''))
+  - expr: 'any(any(item.product_id == ''{target.product_id_sel1}'' for item in o.items)
+      for o in state.orders if not o.id.startswith(''order_initial_''))
 
       '
     desc: Product 1 reordered
-  - expr: 'any(any(item.product_id == ''{target.product_id_sel3}'' for item in o.items) for o in state.orders
-      if not o.id.startswith(''order_initial_''))
+  - expr: 'any(any(item.product_id == ''{target.product_id_sel3}'' for item in o.items)
+      for o in state.orders if not o.id.startswith(''order_initial_''))
 
       '
     desc: Product 3 reordered
-  - expr: 'any(any(item.product_id == ''{target.product_id_sel1}'' for item in o.items) and any(item.product_id
-      == ''{target.product_id_sel3}'' for item in o.items) for o in state.orders if not o.id.startswith(''order_initial_''))
+  - expr: 'any(any(item.product_id == ''{target.product_id_sel1}'' for item in o.items)
+      and any(item.product_id == ''{target.product_id_sel3}'' for item in o.items)
+      for o in state.orders if not o.id.startswith(''order_initial_''))
 
       '
     desc: Both products are in the same order
@@ -135,18 +136,20 @@ eval:
     desc: New order confirmed
   - expr: len(state.cart_items) == 0
     desc: Cart empty after checkout
-  - expr: '''{target.order_id_sel1}'' in state.viewed_order_ids or ''{target.order_id_sel3}'' in state.viewed_order_ids
+  - expr: '''{target.order_id_sel1}'' in state.viewed_order_ids or ''{target.order_id_sel3}''
+      in state.viewed_order_ids
 
       '
     desc: Agent viewed at least one of the target orders
   negative_checks:
-  - expr: 'not any(any(item.product_id == ''{target.product_id_sel2}'' for item in o.items) for o in state.orders
-      if not o.id.startswith(''order_initial_''))
+  - expr: 'not any(any(item.product_id == ''{target.product_id_sel2}'' for item in
+      o.items) for o in state.orders if not o.id.startswith(''order_initial_''))
 
       '
     desc: Product 2 was NOT reordered
     penalty: 0.2
-  - expr: 'sum(1 for o in state.orders if not o.id.startswith(''order_initial_'')) <= 1
+  - expr: 'sum(1 for o in state.orders if not o.id.startswith(''order_initial_''))
+      <= 1
 
       '
     desc: Only one new order placed

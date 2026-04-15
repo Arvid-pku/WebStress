@@ -1,7 +1,7 @@
 task_id: reddit_deep_thread_engagement
 title: Deep Multi-Thread Engagement
-instruction_template: '1. In r/{target.sub1} find "{target.p1}". Upvote. Comment: "{target.c1}". Reply
-  to u/{target.r1_auth} (mentions "{target.r1_hint}"): "{target.r1_text}".
+instruction_template: '1. In r/{target.sub1} find "{target.p1}". Upvote. Comment:
+  "{target.c1}". Reply to u/{target.r1_auth} (mentions "{target.r1_hint}"): "{target.r1_text}".
 
   2. In r/{target.sub2} find "{target.p2}". Save. Comment: "{target.c2}".
 
@@ -162,7 +162,8 @@ eval:
   - expr: len(state.sent_messages) <= 4
     desc: No excessive messages sent
     penalty: 0.15
-  - expr: sum(1 for p in state.posts if p.author_name == state.owner_username) <= 2
+  - expr: sum(1 for p in state.posts if p.author_name == state.owner_username) <=
+      2
     desc: No excessive posts created
     penalty: 0.15
   - expr: len(state.blocked_users) == 0
@@ -170,5 +171,4 @@ eval:
     penalty: 0.15
 env_id: reddit
 start_path: /feed
-secondary_primitives:
-- exploration
+secondary_primitives: []

@@ -1,18 +1,17 @@
 task_id: amazon_review_after_purchase
 env_id: amazon
 title: Buy a Product Then Write a Review
-instruction_template: >
-  Search for "{target.product_name}", purchase it using the shipping address
-  for Jordan Parker at 742 Evergreen Terrace and the Visa card ending in 4242. After the order is placed, navigate to the product page
-  and write a 5-star review with the title "{target.review_title}" and a body
-  describing why you love the product.
+instruction_template: 'Search for "{target.product_name}", purchase it using the shipping
+  address for Jordan Parker at 742 Evergreen Terrace and the Visa card ending in 4242.
+  After the order is placed, navigate to the product page and write a 5-star review
+  with the title "{target.review_title}" and a body describing why you love the product.
+
+  '
 difficulty: medium
 time_limit_seconds: 300
 expected_steps: 24
 primary_primitives:
 - planning
-- grounding
-- state_tracking
 start_path: /
 seed:
   distractors: 10
@@ -54,24 +53,30 @@ eval:
   checks:
   - expr: any(not o.id.startswith('order_initial_') for o in state.orders)
     desc: A new order was placed
-  - expr: >
-      any(any(item.product_id == '{target.product_id}' for item in order.items)
-      for order in state.orders if not order.id.startswith('order_initial_'))
+  - expr: 'any(any(item.product_id == ''{target.product_id}'' for item in order.items)
+      for order in state.orders if not order.id.startswith(''order_initial_''))
+
+      '
     desc: The target product was purchased
-  - expr: >
-      any(r.product_id == '{target.product_id}' and r.rating == 5
-      for r in state.reviews)
+  - expr: 'any(r.product_id == ''{target.product_id}'' and r.rating == 5 for r in
+      state.reviews)
+
+      '
     desc: A 5-star review was written for the product
-  - expr: >
-      any(r.product_id == '{target.product_id}' and 'Absolutely love' in r.title
-      for r in state.reviews)
+  - expr: 'any(r.product_id == ''{target.product_id}'' and ''Absolutely love'' in
+      r.title for r in state.reviews)
+
+      '
     desc: Review title matches expected title
   negative_checks:
-  - expr: sum(1 for o in state.orders if not o.id.startswith('order_initial_')) <= 1
+  - expr: sum(1 for o in state.orders if not o.id.startswith('order_initial_')) <=
+      1
     desc: Only one new order placed
     penalty: 0.15
-  - expr: >
-      sum(1 for r in state.reviews if r.product_id == '{target.product_id}'
+  - expr: 'sum(1 for r in state.reviews if r.product_id == ''{target.product_id}''
       and r.author_name == state.owner_name) <= 1
+
+      '
     desc: Only one review written by the user
     penalty: 0.2
+secondary_primitives: []

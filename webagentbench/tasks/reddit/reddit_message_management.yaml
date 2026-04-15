@@ -1,17 +1,16 @@
 task_id: reddit_message_management
 env_id: reddit
 title: Message Inbox Management
-instruction_template: 'Go to your Messages inbox. Mark all messages as read. Then find the message with subject "{target.delete_subject}"
-  and delete it. Finally, compose a new message to u/{target.new_msg_to} with subject "{target.new_msg_subject}" and body
-  exactly: "{target.new_msg_body}"'
+instruction_template: 'Go to your Messages inbox. Mark all messages as read. Then
+  find the message with subject "{target.delete_subject}" and delete it. Finally,
+  compose a new message to u/{target.new_msg_to} with subject "{target.new_msg_subject}"
+  and body exactly: "{target.new_msg_body}"'
 difficulty: medium
 time_limit_seconds: 300
 expected_steps: 18
 primary_primitives:
 - planning
-- state_tracking
-secondary_primitives:
-- grounding
+secondary_primitives: []
 start_path: /feed
 seed:
   distractors: 3
@@ -32,8 +31,8 @@ seed:
     delete_subject: '{output.message_subject}'
     new_msg_to: DataWizard42
     new_msg_subject: Quick question about data pipelines
-    new_msg_body: Hi! I saw you work with data pipelines. What tool do you recommend for orchestrating ETL jobs - Airflow
-      or Prefect?
+    new_msg_body: Hi! I saw you work with data pipelines. What tool do you recommend
+      for orchestrating ETL jobs - Airflow or Prefect?
 eval:
   source: server_state
   checks:
@@ -41,8 +40,8 @@ eval:
     desc: All messages marked as read
   - expr: not any(m.id == '{target.delete_msg_id}' for m in state.messages)
     desc: Spam message was deleted
-  - expr: any(m.to_user == "DataWizard42" and m.subject == "Quick question about data pipelines" and ("Airflow or Prefect"
-      in m.body) for m in state.sent_messages)
+  - expr: any(m.to_user == "DataWizard42" and m.subject == "Quick question about data
+      pipelines" and ("Airflow or Prefect" in m.body) for m in state.sent_messages)
     desc: New message sent with correct content
   negative_checks:
   - expr: len(state.messages) >= 4
@@ -51,7 +50,8 @@ eval:
   - expr: len(state.sent_messages) <= 5
     desc: No excessive messages sent
     penalty: 0.15
-  - expr: sum(1 for p in state.posts if p.author_name == state.owner_username) == 0
+  - expr: sum(1 for p in state.posts if p.author_name == state.owner_username) ==
+      0
     desc: No posts created when none required
     penalty: 0.15
   - expr: len(state.blocked_users) == 0

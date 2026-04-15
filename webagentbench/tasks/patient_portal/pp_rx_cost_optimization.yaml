@@ -1,102 +1,90 @@
 task_id: pp_rx_cost_optimization
 env_id: patient_portal
 title: Prescription Cost Optimization
-instruction_template: >-
-  Move your active Atorvastatin prescription to the mail-order pharmacy already
-  linked to your profile. Do not send any messages, do not request a renewal,
-  and do not modify any other prescription.
+instruction_template: Move your active Atorvastatin prescription to the mail-order
+  pharmacy already linked to your profile. Do not send any messages, do not request
+  a renewal, and do not modify any other prescription.
 difficulty: hard
 time_limit_seconds: 360
 expected_steps: 16
 primary_primitives:
-  - grounding
-  - planning
-  - state_tracking
-  - verification
+- grounding
 start_path: /medications
-
 seed:
   distractors: 8
   steps:
-    - use: patient_profile
-      params:
-        conditions: ["High Cholesterol"]
-        insurance_tier: standard
-      outputs: [pcp_id, pcp_name]
-    - use: provider_directory
-      params:
-        count: 4
-        specialties: ["pcp", "cardiology", "billing"]
-        must_include: ["pcp"]
-      outputs: [provider_ids, providers_by_specialty]
-    - use: pharmacy_list
-      params:
-        count: 3
-        include_mail_order: true
-      outputs: [pharmacy_ids, default_pharmacy_id, mail_order_pharmacy_id]
-    - use: prescription_cabinet
-      params:
-        active_count: 4
-        expired_count: 1
-        target_medication_name: "Atorvastatin"
-        target_exclude_mail_order: true
-      outputs: [active_rx_ids, target_rx_id]
+  - use: patient_profile
+    params:
+      conditions:
+      - High Cholesterol
+      insurance_tier: standard
+    outputs:
+    - pcp_id
+    - pcp_name
+  - use: provider_directory
+    params:
+      count: 4
+      specialties:
+      - pcp
+      - cardiology
+      - billing
+      must_include:
+      - pcp
+    outputs:
+    - provider_ids
+    - providers_by_specialty
+  - use: pharmacy_list
+    params:
+      count: 3
+      include_mail_order: true
+    outputs:
+    - pharmacy_ids
+    - default_pharmacy_id
+    - mail_order_pharmacy_id
+  - use: prescription_cabinet
+    params:
+      active_count: 4
+      expired_count: 1
+      target_medication_name: Atorvastatin
+      target_exclude_mail_order: true
+    outputs:
+    - active_rx_ids
+    - target_rx_id
   targets:
-    active_rx_ids: "{output.active_rx_ids}"
-    target_rx_id: "{output.target_rx_id}"
-    default_pharmacy_id: "{output.default_pharmacy_id}"
-    mail_order_pharmacy_id: "{output.mail_order_pharmacy_id}"
-
+    active_rx_ids: '{output.active_rx_ids}'
+    target_rx_id: '{output.target_rx_id}'
+    default_pharmacy_id: '{output.default_pharmacy_id}'
+    mail_order_pharmacy_id: '{output.mail_order_pharmacy_id}'
 eval:
   source: server_state
   checks:
-    - expr: >-
-        state.get_prescription('{target.target_rx_id}') is not None
-        and state.get_prescription('{target.target_rx_id}').status == 'active'
-      desc: The target Atorvastatin prescription remained active
-    - expr: >-
-        state.get_prescription('{target.target_rx_id}') is not None
-        and state.get_prescription('{target.target_rx_id}').pharmacy_id == '{target.mail_order_pharmacy_id}'
-      desc: The target Atorvastatin prescription was transferred to the mail-order pharmacy
-    - expr: >-
-        len([
-          rx for rx in state.prescriptions
-          if rx.id in state._initial_snapshot.get('prescriptions', {})
-          and rx.pharmacy_id != state._initial_snapshot['prescriptions'][rx.id]['pharmacy_id']
-        ]) == 1
-      desc: Exactly one prescription changed pharmacies
+  - expr: state.get_prescription('{target.target_rx_id}') is not None and state.get_prescription('{target.target_rx_id}').status
+      == 'active'
+    desc: The target Atorvastatin prescription remained active
+  - expr: state.get_prescription('{target.target_rx_id}') is not None and state.get_prescription('{target.target_rx_id}').pharmacy_id
+      == '{target.mail_order_pharmacy_id}'
+    desc: The target Atorvastatin prescription was transferred to the mail-order pharmacy
+  - expr: "len([\n  rx for rx in state.prescriptions\n  if rx.id in state._initial_snapshot.get('prescriptions',\
+      \ {})\n  and rx.pharmacy_id != state._initial_snapshot['prescriptions'][rx.id]['pharmacy_id']\n\
+      ]) == 1"
+    desc: Exactly one prescription changed pharmacies
   negative_checks:
-    - expr: >-
-        all(
-          rx.status == state._initial_snapshot['prescriptions'][rx.id]['status']
-          for rx in state.prescriptions
-          if rx.id in state._initial_snapshot.get('prescriptions', {})
-          and rx.id != '{target.target_rx_id}'
-        )
-      desc: Non-target prescriptions kept their original status
-      penalty: 0.25
-    - expr: >-
-        all(
-          rx.pharmacy_id == state._initial_snapshot['prescriptions'][rx.id]['pharmacy_id']
-          for rx in state.prescriptions
-          if rx.id in state._initial_snapshot.get('prescriptions', {})
-          and rx.id != '{target.target_rx_id}'
-        )
-      desc: Non-target prescriptions were not transferred
-      penalty: 0.25
-    - expr: >-
-        not any(
-          rx.status == 'pending_renewal'
-          for rx in state.prescriptions
-          if rx.id in {target.active_rx_ids}
-        )
-      desc: No renewal request was started
-      penalty: 0.2
-    - expr: >-
-        not any(
-          m.from_type == 'patient'
-          and m.id not in state._initial_snapshot.get('messages', {})
-          for m in state.messages
-        )
-      desc: No new patient messages were sent
-      penalty: 0.2
+  - expr: "all(\n  rx.status == state._initial_snapshot['prescriptions'][rx.id]['status']\n\
+      \  for rx in state.prescriptions\n  if rx.id in state._initial_snapshot.get('prescriptions',\
+      \ {})\n  and rx.id != '{target.target_rx_id}'\n)"
+    desc: Non-target prescriptions kept their original status
+    penalty: 0.25
+  - expr: "all(\n  rx.pharmacy_id == state._initial_snapshot['prescriptions'][rx.id]['pharmacy_id']\n\
+      \  for rx in state.prescriptions\n  if rx.id in state._initial_snapshot.get('prescriptions',\
+      \ {})\n  and rx.id != '{target.target_rx_id}'\n)"
+    desc: Non-target prescriptions were not transferred
+    penalty: 0.25
+  - expr: "not any(\n  rx.status == 'pending_renewal'\n  for rx in state.prescriptions\n\
+      \  if rx.id in {target.active_rx_ids}\n)"
+    desc: No renewal request was started
+    penalty: 0.2
+  - expr: "not any(\n  m.from_type == 'patient'\n  and m.id not in state._initial_snapshot.get('messages',\
+      \ {})\n  for m in state.messages\n)"
+    desc: No new patient messages were sent
+    penalty: 0.2
+secondary_primitives: []

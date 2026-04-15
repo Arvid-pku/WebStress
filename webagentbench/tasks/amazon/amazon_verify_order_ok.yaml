@@ -1,15 +1,16 @@
 task_id: amazon_verify_order_ok
 env_id: amazon
 title: Verify Order Status Is Correct
-instruction_template: >
-  Check your recent order for "{target.product_name}". If the shipping address is
-  wrong or the item is no longer needed, cancel it. Otherwise, leave it as is.
+instruction_template: 'Check your recent order for "{target.product_name}". If the
+  shipping address is wrong or the item is no longer needed, cancel it. Otherwise,
+  leave it as is.
+
+  '
 difficulty: easy
 time_limit_seconds: 120
 expected_steps: 8
 primary_primitives:
 - verification
-- grounding
 start_path: /
 seed:
   distractors: 5
@@ -48,22 +49,25 @@ seed:
 eval:
   source: server_state
   checks:
-    - expr: >
-        any(o.id == '{target.order_id}' and not o.id.startswith('order_initial_') and o.status != 'cancelled'
-        for o in state.orders)
-      desc: Order was not cancelled (correct behavior since address and item are fine)
+  - expr: 'any(o.id == ''{target.order_id}'' and not o.id.startswith(''order_initial_'')
+      and o.status != ''cancelled'' for o in state.orders)
+
+      '
+    desc: Order was not cancelled (correct behavior since address and item are fine)
   negative_checks:
-    - expr: >
-        not any(o.id == '{target.order_id}' and not o.id.startswith('order_initial_') and o.status == 'cancelled'
-        for o in state.orders)
-      desc: Order should not have been cancelled since everything was correct
-      penalty: 0.5
-    - expr: len(state.returns) == 0
-      desc: No returns filed when none required
-      penalty: 0.3
-    - expr: >
-        not any(not o.id.startswith('order_initial_')
-        and o.id != '{target.order_id}'
-        for o in state.orders)
-      desc: No extra orders placed
-      penalty: 0.2
+  - expr: 'not any(o.id == ''{target.order_id}'' and not o.id.startswith(''order_initial_'')
+      and o.status == ''cancelled'' for o in state.orders)
+
+      '
+    desc: Order should not have been cancelled since everything was correct
+    penalty: 0.5
+  - expr: len(state.returns) == 0
+    desc: No returns filed when none required
+    penalty: 0.3
+  - expr: 'not any(not o.id.startswith(''order_initial_'') and o.id != ''{target.order_id}''
+      for o in state.orders)
+
+      '
+    desc: No extra orders placed
+    penalty: 0.2
+secondary_primitives: []

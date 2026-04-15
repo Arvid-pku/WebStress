@@ -1,9 +1,9 @@
 task_id: rh_wash_sale_avoidance
 env_id: robinhood
 title: Tax-Loss Harvest While Avoiding Wash Sales
-instruction_template: 'Perform tax-loss harvesting: sell all positions that have unrealized losses. However,
-  skip any position where you purchased the same stock within the last 30 days, as this would trigger
-  a wash sale.'
+instruction_template: 'Perform tax-loss harvesting: sell all positions that have unrealized
+  losses. However, skip any position where you purchased the same stock within the
+  last 30 days, as this would trigger a wash sale.'
 difficulty: hard
 time_limit_seconds: 280
 expected_steps: 12
@@ -52,17 +52,19 @@ seed:
 eval:
   source: server_state
   checks:
-  - expr: len([o for o in state.orders if o.side == 'sell' and not o.id.startswith('ord_decoy_')]) >=
-      1
+  - expr: len([o for o in state.orders if o.side == 'sell' and not o.id.startswith('ord_decoy_')])
+      >= 1
     desc: At least one loss position was sold for tax-loss harvesting
   - expr: any(o.side == 'sell' and o.symbol in {target.loss_symbols} and not o.id.startswith('ord_decoy_')
       for o in state.orders)
     desc: A sell order targets a stock with unrealized losses
-  - expr: all(o.symbol in {target.loss_symbols} for o in state.orders if o.side == 'sell' and not o.id.startswith('ord_decoy_'))
+  - expr: all(o.symbol in {target.loss_symbols} for o in state.orders if o.side ==
+      'sell' and not o.id.startswith('ord_decoy_'))
     desc: All sell orders target stocks with unrealized losses (not gainers)
-  - expr: not any(o.side == 'sell' and o.symbol in {target.recent_buy_symbols} and not o.id.startswith('ord_decoy_')
-      for o in state.orders)
-    desc: No sells were placed on stocks purchased within the last 30 days (wash sale avoidance)
+  - expr: not any(o.side == 'sell' and o.symbol in {target.recent_buy_symbols} and
+      not o.id.startswith('ord_decoy_') for o in state.orders)
+    desc: No sells were placed on stocks purchased within the last 30 days (wash sale
+      avoidance)
   negative_checks:
   - expr: not any(o.side == 'sell' and o.symbol in {target.gain_symbols} and not o.id.startswith('ord_decoy_')
       for o in state.orders)
@@ -75,9 +77,9 @@ eval:
     desc: Wash-sale avoidance did not initiate transfers
     penalty: 0.1
   - expr: not any( e.action == 'robinhood.options.order.place' or e.action == 'robinhood.alert.create'
-      or e.action == 'robinhood.alert.delete' or e.action.startswith('robinhood.watchlist.') or e.action.startswith('robinhood.recurring.')
-      for e in state.audit_log)
-    desc: Wash-sale avoidance did not mutate unrelated options, alerts, watchlists, or recurring plans
+      or e.action == 'robinhood.alert.delete' or e.action.startswith('robinhood.watchlist.')
+      or e.action.startswith('robinhood.recurring.') for e in state.audit_log)
+    desc: Wash-sale avoidance did not mutate unrelated options, alerts, watchlists,
+      or recurring plans
     penalty: 0.1
-secondary_primitives:
-- planning
+secondary_primitives: []

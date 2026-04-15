@@ -1,18 +1,16 @@
 task_id: gmail_verify_inbox_clean
 env_id: gmail
 title: Verify VIP Inbox is Clean (No-Op)
-instruction_template: 'Check your inbox for any unread emails from {target.vip_name}
-  ({target.vip_email}) that haven''t been replied to. If you find any unreplied emails
-  from this sender, reply acknowledging receipt. If all their emails have already been
-  answered, no action is needed.'
+instruction_template: Check your inbox for any unread emails from {target.vip_name}
+  ({target.vip_email}) that haven't been replied to. If you find any unreplied emails
+  from this sender, reply acknowledging receipt. If all their emails have already
+  been answered, no action is needed.
 difficulty: medium
 time_limit_seconds: 180
 expected_steps: 12
 primary_primitives:
 - verification
-secondary_primitives:
-- exploration
-- patience
+secondary_primitives: []
 start_path: /inbox
 seed:
   distractors: 10

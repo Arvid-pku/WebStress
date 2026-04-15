@@ -1,40 +1,36 @@
 task_id: rh_security_audit
 env_id: robinhood
 title: Audit Security Log and Enable 2FA
-instruction_template: "Check your security log for any logins from outside the United States. If you find any, enable two-factor authentication via authenticator app."
+instruction_template: Check your security log for any logins from outside the United
+  States. If you find any, enable two-factor authentication via authenticator app.
 difficulty: medium
 time_limit_seconds: 180
 expected_steps: 7
 primary_primitives:
-  - exploration
-  - state_tracking
-  - planning
+- exploration
 start_path: /
-
 seed:
   distractors: 10
   steps:
-    - use: security_log
-      params:
-        count: 8
-        include_suspicious: true
-      outputs: []
+  - use: security_log
+    params:
+      count: 8
+      include_suspicious: true
+    outputs: []
   targets: {}
-
 eval:
   source: server_state
   checks:
-    - expr: "state.settings.two_factor_method == 'authenticator'"
-      desc: Two-factor authentication is set to authenticator app
-    - expr: "state.settings.two_factor_method != 'none'"
-      desc: Two-factor authentication is enabled
-    - expr: >-
-        state.settings.two_factor_method in ('authenticator', 'sms', 'email')
-        and state.settings.two_factor_method == 'authenticator'
-      desc: The 2FA method is specifically authenticator (not SMS or email)
+  - expr: state.settings.two_factor_method == 'authenticator'
+    desc: Two-factor authentication is set to authenticator app
+  - expr: state.settings.two_factor_method != 'none'
+    desc: Two-factor authentication is enabled
+  - expr: state.settings.two_factor_method in ('authenticator', 'sms', 'email') and
+      state.settings.two_factor_method == 'authenticator'
+    desc: The 2FA method is specifically authenticator (not SMS or email)
   negative_checks:
-    - expr: >-
-        len([o for o in state.orders
-            if not o.id.startswith('ord_decoy_')]) == 0
-      desc: No orders were placed (task only required enabling 2FA)
-      penalty: 0.15
+  - expr: "len([o for o in state.orders\n    if not o.id.startswith('ord_decoy_')])\
+      \ == 0"
+    desc: No orders were placed (task only required enabling 2FA)
+    penalty: 0.15
+secondary_primitives: []

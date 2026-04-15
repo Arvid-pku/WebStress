@@ -1,9 +1,12 @@
 task_id: amazon_diagnose_cart
 env_id: amazon
 title: Diagnose and Fix Cart Problems
-instruction_template: "Your shopping cart seems to have issues \u2014 some items may be out of stock or\
-  \ have incorrect quantities. Review your cart, remove any out-of-stock items, and correct the quantity\
-  \ of \"{target.product_name}\" to {target.correct_qty}. The current quantity is wrong.\n"
+instruction_template: 'Your shopping cart seems to have issues — some items may be
+  out of stock or have incorrect quantities. Review your cart, remove any out-of-stock
+  items, and correct the quantity of "{target.product_name}" to {target.correct_qty}.
+  The current quantity is wrong.
+
+  '
 difficulty: hard
 time_limit_seconds: 300
 expected_steps: 22
@@ -99,18 +102,19 @@ eval:
 
       '
     desc: Out-of-stock item (USB-C Charging Cable) removed from cart
-  - expr: 'any(item.product_id == ''{target.product_id}'' and item.quantity == {target.correct_qty} for
-      item in state.cart_items)
+  - expr: 'any(item.product_id == ''{target.product_id}'' and item.quantity == {target.correct_qty}
+      for item in state.cart_items)
 
       '
     desc: Target product quantity corrected to the specified amount
-  - expr: 'any(item.product_id == ''{target.extra_product_id}'' and item.quantity == {target.extra_product_qty}
-      for item in state.cart_items)
+  - expr: 'any(item.product_id == ''{target.extra_product_id}'' and item.quantity
+      == {target.extra_product_qty} for item in state.cart_items)
 
       '
     desc: In-stock comparison item remains in the cart at its original quantity
   negative_checks:
-  - expr: 'sum(1 for item in state.cart_items if item.product_id == ''{target.product_id}'') == 1
+  - expr: 'sum(1 for item in state.cart_items if item.product_id == ''{target.product_id}'')
+      == 1
 
       '
     desc: Target cart item was corrected in place instead of duplicated or removed
@@ -120,7 +124,8 @@ eval:
       '
     desc: No checkout was started while fixing the cart
     penalty: 0.15
-  - expr: 'not any(not return_request.id.startswith(''return_initial_'') for return_request in state.returns)
+  - expr: 'not any(not return_request.id.startswith(''return_initial_'') for return_request
+      in state.returns)
 
       '
     desc: No return request was filed while fixing the cart
@@ -131,9 +136,9 @@ eval:
   - expr: sum(1 for e in state.audit_log if e.action == 'amazon.cart.remove') == 1
     desc: Cart diagnosis removed only the out-of-stock item
     penalty: 0.15
-  - expr: "not any(\n  e.action in [\n    'amazon.address.add',\n    'amazon.address.update',\n    'amazon.address.remove',\n\
-      \    'amazon.payment.add',\n    'amazon.payment.remove'\n  ]\n  for e in state.audit_log)"
+  - expr: "not any(\n  e.action in [\n    'amazon.address.add',\n    'amazon.address.update',\n\
+      \    'amazon.address.remove',\n    'amazon.payment.add',\n    'amazon.payment.remove'\n\
+      \  ]\n  for e in state.audit_log)"
     desc: Cart diagnosis did not mutate address or payment settings
     penalty: 0.1
-secondary_primitives:
-- verification
+secondary_primitives: []

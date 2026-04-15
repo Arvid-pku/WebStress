@@ -1,42 +1,42 @@
 task_id: rh_deposit_funds
 env_id: robinhood
 title: Deposit Funds from Bank Account
-instruction_template: "Deposit $500 from your default bank account."
+instruction_template: Deposit $500 from your default bank account.
 difficulty: easy
 time_limit_seconds: 90
 expected_steps: 5
 primary_primitives:
-  - grounding
-  - planning
+- grounding
 start_path: /
-
 seed:
   distractors: 5
   steps:
-    - use: linked_banks
-      params:
-        banks:
-          - name: "Chase Checking"
-            type: "checking"
-            last_four: "4521"
-      outputs: [bank_ids]
+  - use: linked_banks
+    params:
+      banks:
+      - name: Chase Checking
+        type: checking
+        last_four: '4521'
+    outputs:
+    - bank_ids
   targets:
-    bank_ids: "{output.bank_ids}"
-
+    bank_ids: '{output.bank_ids}'
 eval:
   source: server_state
   checks:
-    - expr: "any(t.direction == 'deposit' and t.amount == 500 for t in state.transfers)"
-      desc: A $500 deposit transfer exists
-    - expr: "any(t.direction == 'deposit' and t.amount == 500 and t.status == 'completed' for t in state.transfers)"
-      desc: The $500 deposit transfer has completed status
+  - expr: any(t.direction == 'deposit' and t.amount == 500 for t in state.transfers)
+    desc: A $500 deposit transfer exists
+  - expr: any(t.direction == 'deposit' and t.amount == 500 and t.status == 'completed'
+      for t in state.transfers)
+    desc: The $500 deposit transfer has completed status
   negative_checks:
-    - expr: "not any(t.direction == 'withdrawal' for t in state.transfers)"
-      desc: No withdrawals were initiated
-      penalty: 0.15
-    - expr: "len([t for t in state.transfers if t.direction == 'deposit']) == 1"
-      desc: Exactly one deposit was initiated
-      penalty: 0.5
-    - expr: "sum(t.amount for t in state.transfers if t.direction == 'deposit') == 500"
-      desc: Total deposited amount is exactly $500
-      penalty: 0.5
+  - expr: not any(t.direction == 'withdrawal' for t in state.transfers)
+    desc: No withdrawals were initiated
+    penalty: 0.15
+  - expr: len([t for t in state.transfers if t.direction == 'deposit']) == 1
+    desc: Exactly one deposit was initiated
+    penalty: 0.5
+  - expr: sum(t.amount for t in state.transfers if t.direction == 'deposit') == 500
+    desc: Total deposited amount is exactly $500
+    penalty: 0.5
+secondary_primitives: []

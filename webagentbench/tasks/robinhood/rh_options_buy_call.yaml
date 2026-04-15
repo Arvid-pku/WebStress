@@ -1,55 +1,50 @@
 task_id: rh_options_buy_call
 env_id: robinhood
 title: Buy a Call Option on AAPL
-instruction_template: "Buy 1 call option on AAPL with the nearest expiration date, at the strike price closest to current price."
+instruction_template: Buy 1 call option on AAPL with the nearest expiration date,
+  at the strike price closest to current price.
 difficulty: medium
 time_limit_seconds: 180
 expected_steps: 7
 primary_primitives:
-  - grounding
-  - exploration
-  - planning
+- grounding
 start_path: /
-
 seed:
   distractors: 10
   steps:
-    - use: stock_universe
-      params:
-        count: 25
-        must_include: ["AAPL", "MSFT", "TSLA"]
-      outputs: []
-    - use: options_chain
-      params:
-        symbol: "AAPL"
-        expirations_count: 4
-        strikes_per_expiration: 10
-      outputs: []
-    - use: linked_banks
-      params: {}
-      outputs: []
+  - use: stock_universe
+    params:
+      count: 25
+      must_include:
+      - AAPL
+      - MSFT
+      - TSLA
+    outputs: []
+  - use: options_chain
+    params:
+      symbol: AAPL
+      expirations_count: 4
+      strikes_per_expiration: 10
+    outputs: []
+  - use: linked_banks
+    params: {}
+    outputs: []
   targets: {}
-
 eval:
   source: server_state
   checks:
-    - expr: >-
-        any(oo.strategy == 'single'
-            and any(leg.option_type == 'call' and leg.side == 'buy' for leg in oo.legs)
-            for oo in state.options_orders)
-      desc: An options order exists with a single-leg call buy
-    - expr: >-
-        any(oo.underlying_symbol == 'AAPL'
-            and any(leg.option_type == 'call' and leg.side == 'buy' for leg in oo.legs)
-            for oo in state.options_orders)
-      desc: The call option order is for AAPL
-    - expr: >-
-        any(oo.strategy == 'single' for oo in state.options_orders
-            if any(leg.side == 'buy' for leg in oo.legs))
-      desc: The options order strategy is single (not a multi-leg spread)
+  - expr: "any(oo.strategy == 'single'\n    and any(leg.option_type == 'call' and\
+      \ leg.side == 'buy' for leg in oo.legs)\n    for oo in state.options_orders)"
+    desc: An options order exists with a single-leg call buy
+  - expr: "any(oo.underlying_symbol == 'AAPL'\n    and any(leg.option_type == 'call'\
+      \ and leg.side == 'buy' for leg in oo.legs)\n    for oo in state.options_orders)"
+    desc: The call option order is for AAPL
+  - expr: "any(oo.strategy == 'single' for oo in state.options_orders\n    if any(leg.side\
+      \ == 'buy' for leg in oo.legs))"
+    desc: The options order strategy is single (not a multi-leg spread)
   negative_checks:
-    - expr: >-
-        not any(any(leg.option_type == 'put' and leg.side == 'buy' for leg in oo.legs)
-            for oo in state.options_orders)
-      desc: No put options were bought
-      penalty: 0.25
+  - expr: "not any(any(leg.option_type == 'put' and leg.side == 'buy' for leg in oo.legs)\n\
+      \    for oo in state.options_orders)"
+    desc: No put options were bought
+    penalty: 0.25
+secondary_primitives: []

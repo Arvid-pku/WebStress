@@ -1,14 +1,14 @@
 task_id: amazon_browse_category
 env_id: amazon
 title: Browse Category and Add Cheapest Item
-instruction_template: >
-  Browse the Electronics category, find the cheapest item available,
+instruction_template: 'Browse the Electronics category, find the cheapest item available,
   and add it to your cart.
+
+  '
 difficulty: easy
 time_limit_seconds: 150
 expected_steps: 10
 primary_primitives:
-- grounding
 - exploration
 start_path: /
 seed:
@@ -53,3 +53,4 @@ eval:
   - expr: len(state.cart_items) <= 1
     desc: Only the cheapest item was added
     penalty: 0.15
+secondary_primitives: []

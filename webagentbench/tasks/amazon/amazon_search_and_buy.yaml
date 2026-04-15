@@ -1,13 +1,13 @@
 task_id: amazon_search_and_buy
 env_id: amazon
 title: Search for a Product and Complete Purchase
-instruction_template: Search for "{target.product_name}" on Amazon, add it to your cart,
-  and complete the checkout process using the shipping address for Jordan Parker at 742 Evergreen Terrace and the Visa card ending in 4242.
+instruction_template: Search for "{target.product_name}" on Amazon, add it to your
+  cart, and complete the checkout process using the shipping address for Jordan Parker
+  at 742 Evergreen Terrace and the Visa card ending in 4242.
 difficulty: medium
 time_limit_seconds: 300
 expected_steps: 20
 primary_primitives:
-- planning
 - grounding
 start_path: /
 seed:
@@ -53,22 +53,28 @@ eval:
   - expr: any(any('{target.product_id}' == item.product_id for item in order.items)
       for order in state.orders if not order.id.startswith('order_initial_'))
     desc: Order contains the target product
-  - expr: any(order.status == 'confirmed' and any(item.product_id == '{target.product_id}' for item in order.items) for order in state.orders if not order.id.startswith('order_initial_'))
+  - expr: any(order.status == 'confirmed' and any(item.product_id == '{target.product_id}'
+      for item in order.items) for order in state.orders if not order.id.startswith('order_initial_'))
     desc: Order containing the target product is confirmed
   negative_checks:
-  - expr: sum(1 for o in state.orders if not o.id.startswith('order_initial_') and o.status == 'confirmed' and any(item.product_id == '{target.product_id}' for item in o.items)) <= 1
+  - expr: sum(1 for o in state.orders if not o.id.startswith('order_initial_') and
+      o.status == 'confirmed' and any(item.product_id == '{target.product_id}' for
+      item in o.items)) <= 1
     desc: Target product ordered at most once
     penalty: 0.15
   - expr: len(state.cart_items) == 0
     desc: Cart is empty after checkout
     penalty: 0.1
-  - expr: >
-      any(order.shipping_address_id == 'addr_1'
-      for order in state.orders if not order.id.startswith('order_initial_') and order.status == 'confirmed')
+  - expr: 'any(order.shipping_address_id == ''addr_1'' for order in state.orders if
+      not order.id.startswith(''order_initial_'') and order.status == ''confirmed'')
+
+      '
     desc: Order uses the correct shipping address (742 Evergreen Terrace)
     penalty: 0.15
-  - expr: >
-      any(order.payment_method_id == 'pm_1'
-      for order in state.orders if not order.id.startswith('order_initial_') and order.status == 'confirmed')
+  - expr: 'any(order.payment_method_id == ''pm_1'' for order in state.orders if not
+      order.id.startswith(''order_initial_'') and order.status == ''confirmed'')
+
+      '
     desc: Order uses the correct payment method (Visa ending in 4242)
     penalty: 0.15
+secondary_primitives: []

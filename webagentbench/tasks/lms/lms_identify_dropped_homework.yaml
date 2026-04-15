@@ -1,82 +1,73 @@
 task_id: lms_identify_dropped_homework
 env_id: lms
 title: Identify the Lowest Homework Grade That Will Be Dropped
-instruction_template: >-
-  In {target.course_code}, the syllabus allows dropping the lowest homework
-  score. Find which homework assignment has the lowest score and will be
-  dropped. Resubmit that assignment with file 'redo_lowest.pdf' to try to
-  improve it.
+instruction_template: In {target.course_code}, the syllabus allows dropping the lowest
+  homework score. Find which homework assignment has the lowest score and will be
+  dropped. Resubmit that assignment with file 'redo_lowest.pdf' to try to improve
+  it.
 difficulty: medium
 time_limit_seconds: 120
 expected_steps: 6
 primary_primitives:
-  - state_tracking
-  - verification
+- state_tracking
 start_path: /courses
-
 seed:
   distractors: 1
   steps:
-    - use: student_profile
-      params: {}
-      outputs:
-        - student_id
-        - advisor_name
-    - use: course_catalog
-      params:
-        count: 3
-        must_include: ["CS101"]
-      outputs:
-        - course_ids
-        - course_code
-        - target_course_id
-    - use: enrollment_set
-      params: {}
-      outputs:
-        - enrollment_ids
-    - use: assignment_battery
-      params:
-        per_course_count: 8
-        graded_fraction: 0.6
-      outputs:
-        - assignment_ids
-    - use: grade_book
-      params: {}
-      outputs:
-        - grade_ids
-        - dropped_grade_ids
-        - lowest_homework_id
+  - use: student_profile
+    params: {}
+    outputs:
+    - student_id
+    - advisor_name
+  - use: course_catalog
+    params:
+      count: 3
+      must_include:
+      - CS101
+    outputs:
+    - course_ids
+    - course_code
+    - target_course_id
+  - use: enrollment_set
+    params: {}
+    outputs:
+    - enrollment_ids
+  - use: assignment_battery
+    params:
+      per_course_count: 8
+      graded_fraction: 0.6
+    outputs:
+    - assignment_ids
+  - use: grade_book
+    params: {}
+    outputs:
+    - grade_ids
+    - dropped_grade_ids
+    - lowest_homework_id
   targets:
     course_code: '{output.course_code}'
     target_course_id: '{output.target_course_id}'
     lowest_homework_id: '{output.lowest_homework_id}'
-
 eval:
   source: server_state
   checks:
-    - expr: >-
-        state.get_assignment('{target.lowest_homework_id}') is not None
-        and state.get_assignment('{target.lowest_homework_id}').submission_status in ('submitted', 'late')
-        and state.get_assignment('{target.lowest_homework_id}').file_name == 'redo_lowest.pdf'
-      desc: Lowest homework assignment was resubmitted with redo_lowest.pdf
-    - expr: >-
-        state.get_assignment('{target.lowest_homework_id}') is not None
-        and state.get_assignment('{target.lowest_homework_id}').attempt_count >= 2
-      desc: Attempt count incremented (resubmission)
-    - expr: >-
-        len(state.dropped_grades_for_category('{target.target_course_id}', 'homework')) >= 1
-      desc: At least one homework grade is eligible for dropping (seed validation)
+  - expr: state.get_assignment('{target.lowest_homework_id}') is not None and state.get_assignment('{target.lowest_homework_id}').submission_status
+      in ('submitted', 'late') and state.get_assignment('{target.lowest_homework_id}').file_name
+      == 'redo_lowest.pdf'
+    desc: Lowest homework assignment was resubmitted with redo_lowest.pdf
+  - expr: state.get_assignment('{target.lowest_homework_id}') is not None and state.get_assignment('{target.lowest_homework_id}').attempt_count
+      >= 2
+    desc: Attempt count incremented (resubmission)
+  - expr: len(state.dropped_grades_for_category('{target.target_course_id}', 'homework'))
+      >= 1
+    desc: At least one homework grade is eligible for dropping (seed validation)
   negative_checks:
-    - expr: >-
-        not any(
-          a.submission_status in ('submitted', 'late')
-          and a.file_name == 'redo_lowest.pdf'
-          and a.id != '{target.lowest_homework_id}'
-          for a in state.assignments
-        )
-      desc: No other assignment was resubmitted with redo_lowest.pdf (wrong assignment)
-      penalty: 0.5
-    - expr: >-
-        all(e.status != 'dropped' for e in state.enrollments)
-      desc: No courses were dropped
-      penalty: 0.3
+  - expr: "not any(\n  a.submission_status in ('submitted', 'late')\n  and a.file_name\
+      \ == 'redo_lowest.pdf'\n  and a.id != '{target.lowest_homework_id}'\n  for a\
+      \ in state.assignments\n)"
+    desc: No other assignment was resubmitted with redo_lowest.pdf (wrong assignment)
+    penalty: 0.5
+  - expr: all(e.status != 'dropped' for e in state.enrollments)
+    desc: No courses were dropped
+    penalty: 0.3
+secondary_primitives: []

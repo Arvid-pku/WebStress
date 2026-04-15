@@ -7,7 +7,6 @@ time_limit_seconds: 90
 expected_steps: 5
 primary_primitives:
 - planning
-- exploration
 start_path: /inbox
 seed:
   distractors: 5
@@ -30,3 +29,4 @@ eval:
   - expr: len(state.deleted) == 0
     desc: No emails moved to trash
     penalty: 0.15
+secondary_primitives: []

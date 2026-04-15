@@ -1,101 +1,96 @@
 task_id: pp_wellness_visit_prep
 env_id: patient_portal
 title: Annual Wellness Visit Preparation
-instruction_template: >-
-  Prepare for your annual wellness visit using appointments only:
-  1) Schedule exactly one PCP appointment with reason "Annual wellness visit",
-  2) For every due or overdue immunization, schedule exactly one appointment and
-  use the vaccine name itself as the appointment reason,
-  3) For every overdue screening, schedule exactly one appointment and use the
-  screening name itself as the appointment reason.
-  Do not send any messages.
+instruction_template: 'Prepare for your annual wellness visit using appointments only:
+  1) Schedule exactly one PCP appointment with reason "Annual wellness visit", 2)
+  For every due or overdue immunization, schedule exactly one appointment and use
+  the vaccine name itself as the appointment reason, 3) For every overdue screening,
+  schedule exactly one appointment and use the screening name itself as the appointment
+  reason. Do not send any messages.'
 difficulty: expert
 time_limit_seconds: 480
 expected_steps: 35
 primary_primitives:
-  - grounding
-  - planning
-  - state_tracking
-  - verification
-  - patience
+- planning
 start_path: /
-
 seed:
   distractors: 8
   steps:
-    - use: patient_profile
-      params:
-        conditions: ["Hypertension", "Type 2 Diabetes"]
-        insurance_tier: standard
-        overdue_screening_count: 1
-      outputs: [pcp_id, pcp_name, applicable_screening_names]
-    - use: provider_directory
-      params:
-        count: 5
-        specialties: ["pcp", "cardiology", "endocrinology", "billing"]
-        must_include: ["pcp"]
-      outputs: [provider_ids, providers_by_specialty]
-    - use: pharmacy_list
-      params:
-        count: 2
-      outputs: [default_pharmacy_id]
-    - use: prescription_cabinet
-      params:
-        active_count: 3
-        expiring_soon_count: 2
-      outputs: [active_rx_ids, expiring_rx_ids]
-    - use: immunization_record
-      params:
-        completed_count: 3
-        due_count: 2
-      outputs: [due_imm_ids, due_vaccine_names]
-    - use: referral_chain
-      params:
-        approved_count: 1
-        pending_count: 1
-      outputs: [pending_ref_ids]
+  - use: patient_profile
+    params:
+      conditions:
+      - Hypertension
+      - Type 2 Diabetes
+      insurance_tier: standard
+      overdue_screening_count: 1
+    outputs:
+    - pcp_id
+    - pcp_name
+    - applicable_screening_names
+  - use: provider_directory
+    params:
+      count: 5
+      specialties:
+      - pcp
+      - cardiology
+      - endocrinology
+      - billing
+      must_include:
+      - pcp
+    outputs:
+    - provider_ids
+    - providers_by_specialty
+  - use: pharmacy_list
+    params:
+      count: 2
+    outputs:
+    - default_pharmacy_id
+  - use: prescription_cabinet
+    params:
+      active_count: 3
+      expiring_soon_count: 2
+    outputs:
+    - active_rx_ids
+    - expiring_rx_ids
+  - use: immunization_record
+    params:
+      completed_count: 3
+      due_count: 2
+    outputs:
+    - due_imm_ids
+    - due_vaccine_names
+  - use: referral_chain
+    params:
+      approved_count: 1
+      pending_count: 1
+    outputs:
+    - pending_ref_ids
   targets:
-    pcp_id: "{output.pcp_id}"
-    due_vaccine_names: "{output.due_vaccine_names}"
-    expiring_rx_ids: "{output.expiring_rx_ids}"
-    pending_ref_ids: "{output.pending_ref_ids}"
-    applicable_screening_names: "{output.applicable_screening_names}"
-
+    pcp_id: '{output.pcp_id}'
+    due_vaccine_names: '{output.due_vaccine_names}'
+    expiring_rx_ids: '{output.expiring_rx_ids}'
+    pending_ref_ids: '{output.pending_ref_ids}'
+    applicable_screening_names: '{output.applicable_screening_names}'
 eval:
   source: server_state
   checks:
-    - expr: >-
-        len([
-          a for a in state.appointments
-          if a.status == 'scheduled'
-          and a.provider_id == '{target.pcp_id}'
-          and a.reason == 'Annual wellness visit'
-          and a.id not in state._initial_snapshot.get('appointments', {})
-        ]) == 1
-      desc: Exactly one PCP annual wellness appointment was scheduled
-    - expr: >-
-        sorted(
-          a.reason
-          for a in state.appointments
-          if a.status == 'scheduled'
-          and a.id not in state._initial_snapshot.get('appointments', {})
-          and a.reason != 'Annual wellness visit'
-        ) == sorted(
-          [imm.vaccine_name for imm in state.immunizations if imm.next_due_at is not None and imm.next_due_at <= state.created_at]
-          + [
-            screening.screening_name
-            for screening in state.patient.applicable_screenings
-            if screening.next_due is not None
-            and screening.next_due < state.created_at.date()
-          ]
-        )
-      desc: Every due vaccine and overdue screening was scheduled once using the exact item name as the appointment reason
+  - expr: "len([\n  a for a in state.appointments\n  if a.status == 'scheduled'\n\
+      \  and a.provider_id == '{target.pcp_id}'\n  and a.reason == 'Annual wellness\
+      \ visit'\n  and a.id not in state._initial_snapshot.get('appointments', {})\n\
+      ]) == 1"
+    desc: Exactly one PCP annual wellness appointment was scheduled
+  - expr: "sorted(\n  a.reason\n  for a in state.appointments\n  if a.status == 'scheduled'\n\
+      \  and a.id not in state._initial_snapshot.get('appointments', {})\n  and a.reason\
+      \ != 'Annual wellness visit'\n) == sorted(\n  [imm.vaccine_name for imm in state.immunizations\
+      \ if imm.next_due_at is not None and imm.next_due_at <= state.created_at]\n\
+      \  + [\n    screening.screening_name\n    for screening in state.patient.applicable_screenings\n\
+      \    if screening.next_due is not None\n    and screening.next_due < state.created_at.date()\n\
+      \  ]\n)"
+    desc: Every due vaccine and overdue screening was scheduled once using the exact
+      item name as the appointment reason
   negative_checks:
-    - expr: >-
-        len([
-          m for m in state.messages
-          if m.from_type == 'patient'
-          and m.id not in state._initial_snapshot.get('messages', {})
-        ]) == 0
-      desc: Agent did not send any patient messages
-      penalty: 0.2
+  - expr: "len([\n  m for m in state.messages\n  if m.from_type == 'patient'\n  and\
+      \ m.id not in state._initial_snapshot.get('messages', {})\n]) == 0"
+    desc: Agent did not send any patient messages
+    penalty: 0.2
+secondary_primitives: []

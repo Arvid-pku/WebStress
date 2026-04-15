@@ -15,9 +15,6 @@ time_limit_seconds: 360
 expected_steps: 28
 primary_primitives:
 - backtracking
-- verification
-- grounding
-- state_tracking
 start_path: /inbox
 seed:
   distractors: 40
@@ -73,3 +70,4 @@ eval:
       m.body for m in state.sent)
     desc: Did not re-confirm Wednesday 10 AM
     penalty: 0.2
+secondary_primitives: []

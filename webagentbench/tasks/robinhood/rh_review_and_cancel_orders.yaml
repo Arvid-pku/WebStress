@@ -1,4 +1,3 @@
----
 task_id: rh_review_and_cancel_orders
 env_id: robinhood
 title: Review and Cancel Far-Below-Market Limit Orders
@@ -9,9 +8,7 @@ time_limit_seconds: 200
 expected_steps: 8
 primary_primitives:
 - state_tracking
-- grounding
-- planning
-start_path: "/"
+start_path: /
 seed:
   distractors: 10
   steps:
@@ -43,24 +40,18 @@ seed:
 eval:
   source: server_state
   checks:
-  - expr: >-
-      any(o.order_type == 'limit' and o.side == 'buy' and o.limit_price is not None
-          and float(o.limit_price) < float(state.get_stock(o.symbol).price) * 0.90
-          and o.status == 'cancelled'
-          for o in state.orders)
+  - expr: "any(o.order_type == 'limit' and o.side == 'buy' and o.limit_price is not\
+      \ None\n    and float(o.limit_price) < float(state.get_stock(o.symbol).price)\
+      \ * 0.90\n    and o.status == 'cancelled'\n    for o in state.orders)"
     desc: At least one far-below-market limit buy order was cancelled
-  - expr: >-
-      all(o.status == 'cancelled' for o in state.orders
-          if o.order_type == 'limit' and o.side == 'buy'
-          and o.limit_price is not None
-          and float(o.limit_price) < float(state.get_stock(o.symbol).price) * 0.90)
+  - expr: "all(o.status == 'cancelled' for o in state.orders\n    if o.order_type\
+      \ == 'limit' and o.side == 'buy'\n    and o.limit_price is not None\n    and\
+      \ float(o.limit_price) < float(state.get_stock(o.symbol).price) * 0.90)"
     desc: All far-below-market limit buy orders were cancelled
-  - expr: >-
-      len([o for o in state.orders
-          if o.order_type == 'limit' and o.side == 'buy'
-          and o.limit_price is not None
-          and float(o.limit_price) < float(state.get_stock(o.symbol).price) * 0.90
-          and o.status == 'cancelled']) >= 1
+  - expr: "len([o for o in state.orders\n    if o.order_type == 'limit' and o.side\
+      \ == 'buy'\n    and o.limit_price is not None\n    and float(o.limit_price)\
+      \ < float(state.get_stock(o.symbol).price) * 0.90\n    and o.status == 'cancelled'])\
+      \ >= 1"
     desc: At least one qualifying order was found and cancelled (vacuous truth guard)
   negative_checks:
   - expr: not any(o.status == 'cancelled' and o.order_type == 'limit' and o.side ==

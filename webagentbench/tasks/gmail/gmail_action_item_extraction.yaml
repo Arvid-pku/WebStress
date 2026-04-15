@@ -15,11 +15,7 @@ time_limit_seconds: 480
 expected_steps: 45
 primary_primitives:
 - state_tracking
-- grounding
-- planning
-secondary_primitives:
-- patience
-- verification
+secondary_primitives: []
 start_path: /inbox
 seed:
   distractors: 40
@@ -61,16 +57,18 @@ eval:
 
       '
     desc: Email sent to manager with correct subject
-  - expr: "any(all(item in m.body for item in {target.correct_action_items}) for m in state.sent if '{target.manager_email}' in m.to)"
+  - expr: any(all(item in m.body for item in {target.correct_action_items}) for m
+      in state.sent if '{target.manager_email}' in m.to)
     desc: All correct action items appear in sent email body
-  - expr: >-
-      any('{target.user_name}' in m.subject
-      for m in state.sent if '{target.manager_email}' in m.to)
+  - expr: any('{target.user_name}' in m.subject for m in state.sent if '{target.manager_email}'
+      in m.to)
     desc: Subject line contains the user's name as instructed
   negative_checks:
-  - expr: "not any('{target.reassigned_item}' in m.body for m in state.sent if '{target.manager_email}' in m.to)"
+  - expr: not any('{target.reassigned_item}' in m.body for m in state.sent if '{target.manager_email}'
+      in m.to)
     desc: Reassigned item not included in summary
     penalty: 0.25
-  - expr: "not any('{target.adversarial_wrong_item}' in m.body for m in state.sent if '{target.manager_email}' in m.to)"
+  - expr: not any('{target.adversarial_wrong_item}' in m.body for m in state.sent
+      if '{target.manager_email}' in m.to)
     desc: Item from adversarial summary line (assigned to another attendee) not included
     penalty: 0.2

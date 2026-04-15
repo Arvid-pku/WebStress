@@ -1,115 +1,108 @@
 task_id: pp_care_gap_analysis
 env_id: patient_portal
 title: Care Gap Analysis
-instruction_template: >-
-  Cross-reference your conditions, medications, and lab results to close the
-  seeded care gaps using only appointments:
-  1) Schedule exactly one cardiology follow-up appointment with reason
-  "Atrial fibrillation care gap",
-  2) Schedule exactly one endocrinology follow-up appointment with reason
-  "Diabetes care gap",
-  3) Schedule exactly one PCP follow-up appointment with reason
-  "Abnormal lab follow-up".
-  Do not send any messages and do not modify any prescriptions.
+instruction_template: 'Cross-reference your conditions, medications, and lab results
+  to close the seeded care gaps using only appointments: 1) Schedule exactly one cardiology
+  follow-up appointment with reason "Atrial fibrillation care gap", 2) Schedule exactly
+  one endocrinology follow-up appointment with reason "Diabetes care gap", 3) Schedule
+  exactly one PCP follow-up appointment with reason "Abnormal lab follow-up". Do not
+  send any messages and do not modify any prescriptions.'
 difficulty: expert
 time_limit_seconds: 480
 expected_steps: 35
 primary_primitives:
-  - grounding
-  - planning
-  - state_tracking
-  - verification
-  - exploration
+- planning
 start_path: /
-
 seed:
   distractors: 8
   steps:
-    - use: patient_profile
-      params:
-        conditions: ["Type 2 Diabetes", "Hypertension", "Atrial Fibrillation"]
-        insurance_tier: standard
-      outputs: [pcp_id, pcp_name, conditions_list]
-    - use: provider_directory
-      params:
-        count: 6
-        specialties: ["pcp", "cardiology", "endocrinology", "neurology", "billing"]
-        must_include: ["pcp", "endocrinology", "cardiology"]
-      outputs: [provider_ids, providers_by_specialty]
-    - use: pharmacy_list
-      params:
-        count: 2
-      outputs: [default_pharmacy_id]
-    - use: prescription_cabinet
-      params:
-        active_count: 4
-        interaction_pair: true
-      outputs: [active_rx_ids, interacting_medications]
-    - use: lab_results_panel
-      params:
-        resulted_count: 4
-        abnormal_count: 2
-        pending_count: 1
-      outputs: [resulted_lab_ids, abnormal_lab_ids, pending_lab_ids]
-    - use: appointment_history
-      params:
-        upcoming_count: 1
-        completed_count: 3
-      outputs: [upcoming_ids, completed_ids]
+  - use: patient_profile
+    params:
+      conditions:
+      - Type 2 Diabetes
+      - Hypertension
+      - Atrial Fibrillation
+      insurance_tier: standard
+    outputs:
+    - pcp_id
+    - pcp_name
+    - conditions_list
+  - use: provider_directory
+    params:
+      count: 6
+      specialties:
+      - pcp
+      - cardiology
+      - endocrinology
+      - neurology
+      - billing
+      must_include:
+      - pcp
+      - endocrinology
+      - cardiology
+    outputs:
+    - provider_ids
+    - providers_by_specialty
+  - use: pharmacy_list
+    params:
+      count: 2
+    outputs:
+    - default_pharmacy_id
+  - use: prescription_cabinet
+    params:
+      active_count: 4
+      interaction_pair: true
+    outputs:
+    - active_rx_ids
+    - interacting_medications
+  - use: lab_results_panel
+    params:
+      resulted_count: 4
+      abnormal_count: 2
+      pending_count: 1
+    outputs:
+    - resulted_lab_ids
+    - abnormal_lab_ids
+    - pending_lab_ids
+  - use: appointment_history
+    params:
+      upcoming_count: 1
+      completed_count: 3
+    outputs:
+    - upcoming_ids
+    - completed_ids
   targets:
-    pcp_id: "{output.pcp_id}"
-    cardio_provider_ids: "{output.providers_by_specialty.cardiology}"
-    endo_provider_ids: "{output.providers_by_specialty.endocrinology}"
-    active_rx_ids: "{output.active_rx_ids}"
-
+    pcp_id: '{output.pcp_id}'
+    cardio_provider_ids: '{output.providers_by_specialty.cardiology}'
+    endo_provider_ids: '{output.providers_by_specialty.endocrinology}'
+    active_rx_ids: '{output.active_rx_ids}'
 eval:
   source: server_state
   checks:
-    - expr: >-
-        len([
-          a for a in state.appointments
-          if a.status == 'scheduled'
-          and a.provider_id in {target.cardio_provider_ids}
-          and a.reason == 'Atrial fibrillation care gap'
-          and a.id not in state._initial_snapshot.get('appointments', {})
-        ]) == 1
-      desc: Exactly one cardiology care-gap follow-up was scheduled
-    - expr: >-
-        len([
-          a for a in state.appointments
-          if a.status == 'scheduled'
-          and a.provider_id in {target.endo_provider_ids}
-          and a.reason == 'Diabetes care gap'
-          and a.id not in state._initial_snapshot.get('appointments', {})
-        ]) == 1
-      desc: Exactly one endocrinology care-gap follow-up was scheduled
-    - expr: >-
-        len([
-          a for a in state.appointments
-          if a.status == 'scheduled'
-          and a.provider_id == '{target.pcp_id}'
-          and a.reason == 'Abnormal lab follow-up'
-          and a.id not in state._initial_snapshot.get('appointments', {})
-        ]) == 1
-      desc: Exactly one PCP abnormal-lab follow-up was scheduled
-    - expr: >-
-        len([
-          a for a in state.appointments
-          if a.id not in state._initial_snapshot.get('appointments', {})
-        ]) == 3
-      desc: Agent created exactly three new appointments
+  - expr: "len([\n  a for a in state.appointments\n  if a.status == 'scheduled'\n\
+      \  and a.provider_id in {target.cardio_provider_ids}\n  and a.reason == 'Atrial\
+      \ fibrillation care gap'\n  and a.id not in state._initial_snapshot.get('appointments',\
+      \ {})\n]) == 1"
+    desc: Exactly one cardiology care-gap follow-up was scheduled
+  - expr: "len([\n  a for a in state.appointments\n  if a.status == 'scheduled'\n\
+      \  and a.provider_id in {target.endo_provider_ids}\n  and a.reason == 'Diabetes\
+      \ care gap'\n  and a.id not in state._initial_snapshot.get('appointments', {})\n\
+      ]) == 1"
+    desc: Exactly one endocrinology care-gap follow-up was scheduled
+  - expr: "len([\n  a for a in state.appointments\n  if a.status == 'scheduled'\n\
+      \  and a.provider_id == '{target.pcp_id}'\n  and a.reason == 'Abnormal lab follow-up'\n\
+      \  and a.id not in state._initial_snapshot.get('appointments', {})\n]) == 1"
+    desc: Exactly one PCP abnormal-lab follow-up was scheduled
+  - expr: "len([\n  a for a in state.appointments\n  if a.id not in state._initial_snapshot.get('appointments',\
+      \ {})\n]) == 3"
+    desc: Agent created exactly three new appointments
   negative_checks:
-    - expr: >-
-        len([
-          m for m in state.messages
-          if m.from_type == 'patient'
-          and m.id not in state._initial_snapshot.get('messages', {})
-        ]) == 0
-      desc: Agent did not send any patient messages
-      penalty: 0.2
-    - expr: >-
-        all(rx.status == 'active'
-            for rx in state.prescriptions
-            if rx.id in {target.active_rx_ids})
-      desc: Agent did not modify any prescriptions
-      penalty: 0.25
+  - expr: "len([\n  m for m in state.messages\n  if m.from_type == 'patient'\n  and\
+      \ m.id not in state._initial_snapshot.get('messages', {})\n]) == 0"
+    desc: Agent did not send any patient messages
+    penalty: 0.2
+  - expr: "all(rx.status == 'active'\n    for rx in state.prescriptions\n    if rx.id\
+      \ in {target.active_rx_ids})"
+    desc: Agent did not modify any prescriptions
+    penalty: 0.25
+secondary_primitives: []

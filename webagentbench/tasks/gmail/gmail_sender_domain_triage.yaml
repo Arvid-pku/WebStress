@@ -1,11 +1,11 @@
 task_id: gmail_sender_domain_triage
 env_id: gmail
 title: Triage inbox by sender-domain rules
-instruction_template: 'An ops email from operations@internal.thornton.com with subject "Inbox
-  Processing Rules -- March 2026" in your inbox defines three domain-to-action rules.
-  Read that email first, then process every inbox email that matches one of the three
-  domains. Do not act on emails from any other domain. Do not modify the ops rules
-  email itself.
+instruction_template: 'An ops email from operations@internal.thornton.com with subject
+  "Inbox Processing Rules -- March 2026" in your inbox defines three domain-to-action
+  rules. Read that email first, then process every inbox email that matches one of
+  the three domains. Do not act on emails from any other domain. Do not modify the
+  ops rules email itself.
 
 
   The rules are:
@@ -27,10 +27,8 @@ time_limit_seconds: 360
 expected_steps: 25
 primary_primitives:
 - grounding
-- verification
 secondary_primitives:
 - state_tracking
-- planning
 start_path: /inbox
 seed:
   distractors: 40

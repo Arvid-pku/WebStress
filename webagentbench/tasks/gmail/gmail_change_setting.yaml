@@ -1,13 +1,13 @@
 task_id: gmail_change_setting
 env_id: gmail
 title: Change Undo Send Delay
-instruction_template: Go to Gmail Settings and change the "Undo send" delay to 30 seconds.
+instruction_template: Go to Gmail Settings and change the "Undo send" delay to 30
+  seconds.
 difficulty: easy
 time_limit_seconds: 90
 expected_steps: 6
 primary_primitives:
 - exploration
-- verification
 start_path: /inbox
 seed:
   distractors: 5
@@ -30,3 +30,4 @@ eval:
   - expr: len(state.deleted) == 0
     desc: No emails moved to trash
     penalty: 0.15
+secondary_primitives: []

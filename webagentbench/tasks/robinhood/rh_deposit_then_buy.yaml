@@ -1,54 +1,50 @@
 task_id: rh_deposit_then_buy
 env_id: robinhood
 title: Deposit Funds Then Buy Stock
-instruction_template: "Deposit $2,000 from your Chase checking account, then buy $1,500 worth of VTI at market price."
+instruction_template: Deposit $2,000 from your Chase checking account, then buy $1,500
+  worth of VTI at market price.
 difficulty: medium
 time_limit_seconds: 180
 expected_steps: 7
 primary_primitives:
-  - planning
-  - state_tracking
+- planning
 start_path: /
-
 seed:
   distractors: 10
   steps:
-    - use: stock_universe
-      params:
-        count: 25
-        must_include: ["VTI", "SPY", "QQQ"]
-      outputs: []
-    - use: linked_banks
-      params:
-        banks:
-          - name: "Chase Checking"
-            type: "checking"
-            last_four: "4521"
-          - name: "Wells Fargo Savings"
-            type: "savings"
-            last_four: "8832"
-      outputs: []
+  - use: stock_universe
+    params:
+      count: 25
+      must_include:
+      - VTI
+      - SPY
+      - QQQ
+    outputs: []
+  - use: linked_banks
+    params:
+      banks:
+      - name: Chase Checking
+        type: checking
+        last_four: '4521'
+      - name: Wells Fargo Savings
+        type: savings
+        last_four: '8832'
+    outputs: []
   targets: {}
-
 eval:
   source: server_state
   checks:
-    - expr: >-
-        any(t.direction == 'deposit' and t.amount == 2000 and t.status == 'completed'
-            for t in state.transfers)
-      desc: A completed $2,000 deposit transfer exists
-    - expr: >-
-        any(o.symbol == 'VTI' and o.side == 'buy' and o.order_type == 'market'
-            and not o.id.startswith('ord_decoy_')
-            for o in state.orders)
-      desc: A market buy order for VTI exists (non-decoy)
-    - expr: >-
-        len([t for t in state.transfers if t.direction == 'deposit']) >= 1
-      desc: At least one deposit was completed
+  - expr: "any(t.direction == 'deposit' and t.amount == 2000 and t.status == 'completed'\n\
+      \    for t in state.transfers)"
+    desc: A completed $2,000 deposit transfer exists
+  - expr: "any(o.symbol == 'VTI' and o.side == 'buy' and o.order_type == 'market'\n\
+      \    and not o.id.startswith('ord_decoy_')\n    for o in state.orders)"
+    desc: A market buy order for VTI exists (non-decoy)
+  - expr: len([t for t in state.transfers if t.direction == 'deposit']) >= 1
+    desc: At least one deposit was completed
   negative_checks:
-    - expr: >-
-        not any(o.symbol != 'VTI' and o.side == 'buy'
-            and not o.id.startswith('ord_decoy_')
-            for o in state.orders)
-      desc: No buy orders were placed on symbols other than VTI
-      penalty: 0.25
+  - expr: "not any(o.symbol != 'VTI' and o.side == 'buy'\n    and not o.id.startswith('ord_decoy_')\n\
+      \    for o in state.orders)"
+    desc: No buy orders were placed on symbols other than VTI
+    penalty: 0.25
+secondary_primitives: []

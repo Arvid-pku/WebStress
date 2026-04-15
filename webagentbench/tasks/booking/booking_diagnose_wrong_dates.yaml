@@ -1,17 +1,17 @@
 task_id: booking_diagnose_wrong_dates
 env_id: booking
 title: Diagnose and Fix Wrong Check-In Date on Reservation
-instruction_template: "You just realized one of your upcoming hotel reservations has the wrong check-in\
-  \ date \u2014 it should be {target.correct_check_in} instead of what's currently booked. Find the incorrect\
-  \ reservation, cancel it, and rebook the same hotel (\"{target.hotel_name}\") with the correct dates.\
-  \ Keep the same room type and guest count."
+instruction_template: You just realized one of your upcoming hotel reservations has
+  the wrong check-in date — it should be {target.correct_check_in} instead of what's
+  currently booked. Find the incorrect reservation, cancel it, and rebook the same
+  hotel ("{target.hotel_name}") with the correct dates. Keep the same room type and
+  guest count.
 difficulty: hard
 time_limit_seconds: 300
 expected_steps: 22
 primary_primitives:
-- planning
-secondary_primitives:
 - state_tracking
+secondary_primitives: []
 start_path: /trips
 seed:
   distractors: 8
@@ -113,39 +113,43 @@ seed:
 eval:
   source: server_state
   checks:
-  - expr: "any(\n  r.id == '{target.wrong_res_id}' and r.status == 'cancelled'\n  for r in state.reservations\n\
-      )"
-    desc: The original reservation with wrong dates was cancelled
-  - expr: "any(\n  r.property_id == '{target.target_prop_id}' and\n  r.check_in == '2026-07-15' and\n\
-      \  r.check_out == '2026-07-19' and\n  r.status == 'confirmed'\n  for r in state.reservations\n)"
-    desc: New reservation created at the same hotel with correct check-in date
-  - expr: "any(\n  r.property_id == '{target.target_prop_id}' and\n  r.check_in == '{target.correct_check_in}'\
-      \ and\n  r.check_out == '{target.correct_check_out}' and\n  r.room_type_id == '{target.target_room_id}'\
-      \ and\n  r.room_type_name == '{target.target_room_name}'\n  for r in state.reservations\n)"
-    desc: Replacement reservation keeps the same room type
-  - expr: "any(\n  r.property_id == '{target.target_prop_id}' and\n  r.check_in == '{target.correct_check_in}'\
-      \ and\n  r.check_out == '{target.correct_check_out}' and\n  r.guests == {target.guest_count}\n \
+  - expr: "any(\n  r.id == '{target.wrong_res_id}' and r.status == 'cancelled'\n \
       \ for r in state.reservations\n)"
+    desc: The original reservation with wrong dates was cancelled
+  - expr: "any(\n  r.property_id == '{target.target_prop_id}' and\n  r.check_in ==\
+      \ '2026-07-15' and\n  r.check_out == '2026-07-19' and\n  r.status == 'confirmed'\n\
+      \  for r in state.reservations\n)"
+    desc: New reservation created at the same hotel with correct check-in date
+  - expr: "any(\n  r.property_id == '{target.target_prop_id}' and\n  r.check_in ==\
+      \ '{target.correct_check_in}' and\n  r.check_out == '{target.correct_check_out}'\
+      \ and\n  r.room_type_id == '{target.target_room_id}' and\n  r.room_type_name\
+      \ == '{target.target_room_name}'\n  for r in state.reservations\n)"
+    desc: Replacement reservation keeps the same room type
+  - expr: "any(\n  r.property_id == '{target.target_prop_id}' and\n  r.check_in ==\
+      \ '{target.correct_check_in}' and\n  r.check_out == '{target.correct_check_out}'\
+      \ and\n  r.guests == {target.guest_count}\n  for r in state.reservations\n)"
     desc: New reservation preserves the same guest count
   negative_checks:
-  - expr: "not any(\n  r.id == '{target.other_res_id}' and r.status == 'cancelled'\n  for r in state.reservations\n\
-      )"
+  - expr: "not any(\n  r.id == '{target.other_res_id}' and r.status == 'cancelled'\n\
+      \  for r in state.reservations\n)"
     desc: The other unrelated reservation was not cancelled
     penalty: 0.4
-  - expr: "not any(\n  e.action == 'reservation.create' and\n  e.payload.get('property_id') == '{target.decoy_prop_id}'\n\
-      \  for e in state.audit_log\n)"
+  - expr: "not any(\n  e.action == 'reservation.create' and\n  e.payload.get('property_id')\
+      \ == '{target.decoy_prop_id}'\n  for e in state.audit_log\n)"
     desc: No reservation was made at the decoy hotel instead
     penalty: 0.3
-  - expr: "not any(\n  r.property_id == '{target.target_prop_id}' and\n  r.check_in == '2026-07-10' and\n\
-      \  r.status == 'confirmed'\n  for r in state.reservations\n)"
+  - expr: "not any(\n  r.property_id == '{target.target_prop_id}' and\n  r.check_in\
+      \ == '2026-07-10' and\n  r.status == 'confirmed'\n  for r in state.reservations\n\
+      )"
     desc: The original wrong dates are no longer active
     penalty: 0.2
-  - expr: "sum(1 for e in state.audit_log\n  if e.action == 'reservation.create') <= 1"
+  - expr: "sum(1 for e in state.audit_log\n  if e.action == 'reservation.create')\
+      \ <= 1"
     desc: Only one new reservation was created during the fix
     penalty: 0.15
-  - expr: "not any(\n  r.property_id == '{target.target_prop_id}' and\n  r.status == 'confirmed' and\n\
-      \  r.check_in == '{target.correct_check_in}' and\n  r.check_out == '{target.correct_check_out}'\
-      \ and\n  (r.room_type_id != '{target.target_room_id}' or r.guests != {target.guest_count})\n  for\
-      \ r in state.reservations\n)"
+  - expr: "not any(\n  r.property_id == '{target.target_prop_id}' and\n  r.status\
+      \ == 'confirmed' and\n  r.check_in == '{target.correct_check_in}' and\n  r.check_out\
+      \ == '{target.correct_check_out}' and\n  (r.room_type_id != '{target.target_room_id}'\
+      \ or r.guests != {target.guest_count})\n  for r in state.reservations\n)"
     desc: Replacement was not rebooked with the wrong room type or guest count
     penalty: 0.2

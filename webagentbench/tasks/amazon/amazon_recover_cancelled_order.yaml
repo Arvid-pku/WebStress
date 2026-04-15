@@ -1,16 +1,16 @@
 task_id: amazon_recover_cancelled_order
 env_id: amazon
 title: Reorder After Accidental Cancellation
-instruction_template: 'Your order for "{target.product_name}" was accidentally cancelled. Find the same
-  product again and reorder it. Use the same shipping address ({target.address_line}) and the default
-  Visa payment method.
+instruction_template: 'Your order for "{target.product_name}" was accidentally cancelled.
+  Find the same product again and reorder it. Use the same shipping address ({target.address_line})
+  and the default Visa payment method.
 
   '
 difficulty: hard
 time_limit_seconds: 360
 expected_steps: 25
 primary_primitives:
-- planning
+- grounding
 start_path: /
 seed:
   distractors: 12
@@ -73,34 +73,35 @@ seed:
 eval:
   source: server_state
   checks:
-  - expr: 'any(not o.id.startswith(''order_initial_'') and o.id != ''{target.cancelled_order_id}'' and
-      o.status == ''confirmed'' and any(item.product_id == ''{target.product_id}'' for item in o.items)
-      for o in state.orders)
+  - expr: 'any(not o.id.startswith(''order_initial_'') and o.id != ''{target.cancelled_order_id}''
+      and o.status == ''confirmed'' and any(item.product_id == ''{target.product_id}''
+      for item in o.items) for o in state.orders)
 
       '
     desc: A new confirmed order was placed for the target product
-  - expr: 'any(not o.id.startswith(''order_initial_'') and o.id != ''{target.cancelled_order_id}'' and
-      o.shipping_address_id == ''{target.address_id}'' and any(item.product_id == ''{target.product_id}''
-      for item in o.items) for o in state.orders)
+  - expr: 'any(not o.id.startswith(''order_initial_'') and o.id != ''{target.cancelled_order_id}''
+      and o.shipping_address_id == ''{target.address_id}'' and any(item.product_id
+      == ''{target.product_id}'' for item in o.items) for o in state.orders)
 
       '
     desc: New order uses the correct shipping address (742 Evergreen Terrace)
-  - expr: 'any(not o.id.startswith(''order_initial_'') and o.id != ''{target.cancelled_order_id}'' and
-      o.payment_method_id == ''{target.payment_id}'' and any(item.product_id == ''{target.product_id}''
-      for item in o.items) for o in state.orders)
+  - expr: 'any(not o.id.startswith(''order_initial_'') and o.id != ''{target.cancelled_order_id}''
+      and o.payment_method_id == ''{target.payment_id}'' and any(item.product_id ==
+      ''{target.product_id}'' for item in o.items) for o in state.orders)
 
       '
     desc: New order uses the default Visa payment method
   negative_checks:
   - expr: 'not any(not o.id.startswith(''order_initial_'') and o.id != ''{target.cancelled_order_id}''
-      and o.status == ''confirmed'' and not any(item.product_id == ''{target.product_id}'' for item in
-      o.items) for o in state.orders)
+      and o.status == ''confirmed'' and not any(item.product_id == ''{target.product_id}''
+      for item in o.items) for o in state.orders)
 
       '
     desc: No orders placed for wrong products
     penalty: 0.3
-  - expr: 'sum(1 for o in state.orders if not o.id.startswith(''order_initial_'') and o.id != ''{target.cancelled_order_id}''
-      and o.status == ''confirmed'') <= 1
+  - expr: 'sum(1 for o in state.orders if not o.id.startswith(''order_initial_'')
+      and o.id != ''{target.cancelled_order_id}'' and o.status == ''confirmed'') <=
+      1
 
       '
     desc: Only one new order was placed
@@ -111,5 +112,4 @@ eval:
   - expr: len(state.returns) == 0
     desc: No returns filed when none required
     penalty: 0.15
-secondary_primitives:
-- grounding
+secondary_primitives: []

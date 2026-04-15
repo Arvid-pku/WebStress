@@ -75,27 +75,26 @@ eval:
   - expr: sum(1 for e in state.audit_log if e.action == 'reddit.user.block') == 1
     desc: Only one block action was used
     penalty: 0.15
-  - expr: "not any(\n  e.action == 'reddit.user.block'\n  and e.payload.get('username') != '{target.block_user}'\n\
-      \  for e in state.audit_log\n)"
+  - expr: "not any(\n  e.action == 'reddit.user.block'\n  and e.payload.get('username')\
+      \ != '{target.block_user}'\n  for e in state.audit_log\n)"
     desc: No non-target user was blocked
     penalty: 0.15
-  - expr: "not any(\n  e.action == 'reddit.post.hide'\n  and e.payload.get('post_id') != '{target.hide_id}'\n\
-      \  for e in state.audit_log\n)"
+  - expr: "not any(\n  e.action == 'reddit.post.hide'\n  and e.payload.get('post_id')\
+      \ != '{target.hide_id}'\n  for e in state.audit_log\n)"
     desc: No unrelated post was hidden
     penalty: 0.1
-  - expr: "not any(\n  e.action == 'reddit.message.delete'\n  and e.payload.get('message_id') != '{target.delete_msg_id}'\n\
-      \  for e in state.audit_log\n)"
+  - expr: "not any(\n  e.action == 'reddit.message.delete'\n  and e.payload.get('message_id')\
+      \ != '{target.delete_msg_id}'\n  for e in state.audit_log\n)"
     desc: No unrelated message was deleted
     penalty: 0.1
-  - expr: "not any(\n  e.action == 'reddit.post.save'\n  and e.payload.get('post_id') != '{target.save_id}'\n\
-      \  for e in state.audit_log\n)"
+  - expr: "not any(\n  e.action == 'reddit.post.save'\n  and e.payload.get('post_id')\
+      \ != '{target.save_id}'\n  for e in state.audit_log\n)"
     desc: No unrelated post was saved
     penalty: 0.1
-  - expr: "not any(\n  e.action in ['reddit.message.send', 'reddit.post.create']\n  for e in state.audit_log\n\
-      )"
+  - expr: "not any(\n  e.action in ['reddit.message.send', 'reddit.post.create']\n\
+      \  for e in state.audit_log\n)"
     desc: No direct messages or new posts were created during cleanup
     penalty: 0.1
 env_id: reddit
 start_path: /feed
-secondary_primitives:
-- state_tracking
+secondary_primitives: []

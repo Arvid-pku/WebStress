@@ -1,96 +1,89 @@
 task_id: pp_message_about_lab
 env_id: patient_portal
 title: Schedule Follow-Up for Abnormal Lab
-instruction_template: >-
-  Find your most recent HbA1c result. Schedule exactly one follow-up appointment
-  with the provider who ordered that result, using that provider's next available
-  slot. Use the appointment reason exactly "HbA1c result follow-up". Do not send
-  any messages.
+instruction_template: Find your most recent HbA1c result. Schedule exactly one follow-up
+  appointment with the provider who ordered that result, using that provider's next
+  available slot. Use the appointment reason exactly "HbA1c result follow-up". Do
+  not send any messages.
 difficulty: medium
 time_limit_seconds: 180
 expected_steps: 8
 primary_primitives:
-  - grounding
-  - planning
+- grounding
 start_path: /labs
-
 seed:
   distractors: 8
   steps:
-    - use: patient_profile
-      params:
-        conditions: ["Type 2 Diabetes"]
-        insurance_tier: standard
-      outputs: [pcp_id, pcp_name]
-    - use: provider_directory
-      params:
-        count: 6
-        specialties: ["pcp", "endocrinology", "cardiology", "dermatology", "billing", "admin"]
-        must_include: ["pcp", "endocrinology"]
-      outputs: [provider_ids, providers_by_specialty]
-    - use: pharmacy_list
-      params:
-        count: 2
-      outputs: [default_pharmacy_id]
-    - use: lab_results_panel
-      params:
-        resulted_count: 5
-        pending_count: 1
-        abnormal_count: 1
-        trend_test: "HbA1c"
-        trend_values: ["6.1", "6.8", "7.4"]
-      outputs: [abnormal_lab_ids, pending_lab_ids, trend_lab_ids]
+  - use: patient_profile
+    params:
+      conditions:
+      - Type 2 Diabetes
+      insurance_tier: standard
+    outputs:
+    - pcp_id
+    - pcp_name
+  - use: provider_directory
+    params:
+      count: 6
+      specialties:
+      - pcp
+      - endocrinology
+      - cardiology
+      - dermatology
+      - billing
+      - admin
+      must_include:
+      - pcp
+      - endocrinology
+    outputs:
+    - provider_ids
+    - providers_by_specialty
+  - use: pharmacy_list
+    params:
+      count: 2
+    outputs:
+    - default_pharmacy_id
+  - use: lab_results_panel
+    params:
+      resulted_count: 5
+      pending_count: 1
+      abnormal_count: 1
+      trend_test: HbA1c
+      trend_values:
+      - '6.1'
+      - '6.8'
+      - '7.4'
+    outputs:
+    - abnormal_lab_ids
+    - pending_lab_ids
+    - trend_lab_ids
   targets:
-    pcp_id: "{output.pcp_id}"
-
+    pcp_id: '{output.pcp_id}'
 eval:
   source: server_state
   checks:
-    - expr: >-
-        len([
-          a for a in state.appointments
-          if a.status == 'scheduled'
-          and a.provider_id == max(
-            [lab for lab in state.lab_results if lab.test_name == 'HbA1c'],
-            key=lambda lab: lab.collected_at,
-          ).ordered_by
-          and a.reason == 'HbA1c result follow-up'
-          and a.id not in state._initial_snapshot.get('appointments', {})
-        ]) == 1
-      desc: Exactly one follow-up appointment was scheduled with the ordering provider of the latest HbA1c result
-    - expr: >-
-        any(
-          a.status == 'scheduled'
-          and a.provider_id == max(
-            [lab for lab in state.lab_results if lab.test_name == 'HbA1c'],
-            key=lambda lab: lab.collected_at,
-          ).ordered_by
-          and a.reason == 'HbA1c result follow-up'
-          and a.datetime == min(
-            slot['datetime']
-            for slot in state._initial_snapshot['providers'][
-              max(
-                [lab for lab in state.lab_results if lab.test_name == 'HbA1c'],
-                key=lambda lab: lab.collected_at,
-              ).ordered_by
-            ]['available_slots']
-          )
-          and a.id not in state._initial_snapshot.get('appointments', {})
-          for a in state.appointments
-        )
-      desc: The follow-up used the ordering provider's next available slot
-    - expr: >-
-        len([
-          a for a in state.appointments
-          if a.id not in state._initial_snapshot.get('appointments', {})
-        ]) == 1
-      desc: Agent created exactly one new appointment
+  - expr: "len([\n  a for a in state.appointments\n  if a.status == 'scheduled'\n\
+      \  and a.provider_id == max(\n    [lab for lab in state.lab_results if lab.test_name\
+      \ == 'HbA1c'],\n    key=lambda lab: lab.collected_at,\n  ).ordered_by\n  and\
+      \ a.reason == 'HbA1c result follow-up'\n  and a.id not in state._initial_snapshot.get('appointments',\
+      \ {})\n]) == 1"
+    desc: Exactly one follow-up appointment was scheduled with the ordering provider
+      of the latest HbA1c result
+  - expr: "any(\n  a.status == 'scheduled'\n  and a.provider_id == max(\n    [lab\
+      \ for lab in state.lab_results if lab.test_name == 'HbA1c'],\n    key=lambda\
+      \ lab: lab.collected_at,\n  ).ordered_by\n  and a.reason == 'HbA1c result follow-up'\n\
+      \  and a.datetime == min(\n    slot['datetime']\n    for slot in state._initial_snapshot['providers'][\n\
+      \      max(\n        [lab for lab in state.lab_results if lab.test_name == 'HbA1c'],\n\
+      \        key=lambda lab: lab.collected_at,\n      ).ordered_by\n    ]['available_slots']\n\
+      \  )\n  and a.id not in state._initial_snapshot.get('appointments', {})\n  for\
+      \ a in state.appointments\n)"
+    desc: The follow-up used the ordering provider's next available slot
+  - expr: "len([\n  a for a in state.appointments\n  if a.id not in state._initial_snapshot.get('appointments',\
+      \ {})\n]) == 1"
+    desc: Agent created exactly one new appointment
   negative_checks:
-    - expr: >-
-        len([
-          m for m in state.messages
-          if m.from_type == 'patient'
-          and m.id not in state._initial_snapshot.get('messages', {})
-        ]) == 0
-      desc: Agent did not send any patient messages
-      penalty: 0.2
+  - expr: "len([\n  m for m in state.messages\n  if m.from_type == 'patient'\n  and\
+      \ m.id not in state._initial_snapshot.get('messages', {})\n]) == 0"
+    desc: Agent did not send any patient messages
+    penalty: 0.2
+secondary_primitives: []

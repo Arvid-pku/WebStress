@@ -1,73 +1,65 @@
 task_id: lms_compare_late_policies
 env_id: lms
 title: Compare Syllabus Late Policies Across Courses
-instruction_template: >-
-  Compare late submission policies across all your courses. Find which course
-  has the most lenient policy (lowest penalty per day). Then find any missing
-  (unsubmitted) assignment in that course and submit it with file
-  'late_recovery.pdf'. Do NOT submit late work in courses with stricter
-  policies.
+instruction_template: Compare late submission policies across all your courses. Find
+  which course has the most lenient policy (lowest penalty per day). Then find any
+  missing (unsubmitted) assignment in that course and submit it with file 'late_recovery.pdf'.
+  Do NOT submit late work in courses with stricter policies.
 difficulty: hard
 time_limit_seconds: 240
 expected_steps: 12
 primary_primitives:
-  - state_tracking
-  - verification
+- state_tracking
 start_path: /courses
-
 seed:
   distractors: 1
   steps:
-    - use: student_profile
-      params: {}
-      outputs:
-        - student_id
-        - advisor_name
-    - use: course_catalog
-      params:
-        count: 3
-        must_include: ["CS101", "MATH201"]
-        vary_late_policies: true
-      outputs:
-        - course_ids
-        - course_codes
-        - strictest_late_policy_course_id
-        - most_lenient_late_policy_course_id
-    - use: enrollment_set
-      params: {}
-      outputs:
-        - enrollment_ids
-    - use: assignment_battery
-      params:
-        per_course_count: 6
-        graded_fraction: 0.5
-      outputs:
-        - assignment_ids
-        - missing_assignment_in_lenient_course_id
+  - use: student_profile
+    params: {}
+    outputs:
+    - student_id
+    - advisor_name
+  - use: course_catalog
+    params:
+      count: 3
+      must_include:
+      - CS101
+      - MATH201
+      vary_late_policies: true
+    outputs:
+    - course_ids
+    - course_codes
+    - strictest_late_policy_course_id
+    - most_lenient_late_policy_course_id
+  - use: enrollment_set
+    params: {}
+    outputs:
+    - enrollment_ids
+  - use: assignment_battery
+    params:
+      per_course_count: 6
+      graded_fraction: 0.5
+    outputs:
+    - assignment_ids
+    - missing_assignment_in_lenient_course_id
   targets:
     most_lenient_course_id: '{output.most_lenient_late_policy_course_id}'
     strictest_course_id: '{output.strictest_late_policy_course_id}'
     missing_assignment_id: '{output.missing_assignment_in_lenient_course_id}'
-
 eval:
   source: server_state
   checks:
-    - expr: >-
-        state.get_assignment('{target.missing_assignment_id}') is not None
-        and state.get_assignment('{target.missing_assignment_id}').submission_status in ('submitted', 'late')
-        and state.get_assignment('{target.missing_assignment_id}').file_name == 'late_recovery.pdf'
-      desc: Missing assignment in the most lenient course was submitted with late_recovery.pdf
+  - expr: state.get_assignment('{target.missing_assignment_id}') is not None and state.get_assignment('{target.missing_assignment_id}').submission_status
+      in ('submitted', 'late') and state.get_assignment('{target.missing_assignment_id}').file_name
+      == 'late_recovery.pdf'
+    desc: Missing assignment in the most lenient course was submitted with late_recovery.pdf
   negative_checks:
-    - expr: >-
-        not any(
-          a.submission_status in ('submitted', 'late')
-          and a.file_name == 'late_recovery.pdf'
-          and a.course_id != '{target.most_lenient_course_id}'
-          for a in state.assignments
-        )
-      desc: No late_recovery.pdf submitted in a course with a stricter policy
-      penalty: 0.5
-    - expr: >-
-        all(e.status != 'dropped' for e in state.enrollments)
-      desc: No courses were dropped during comparison
-      penalty: 0.3
+  - expr: "not any(\n  a.submission_status in ('submitted', 'late')\n  and a.file_name\
+      \ == 'late_recovery.pdf'\n  and a.course_id != '{target.most_lenient_course_id}'\n\
+      \  for a in state.assignments\n)"
+    desc: No late_recovery.pdf submitted in a course with a stricter policy
+    penalty: 0.5
+  - expr: all(e.status != 'dropped' for e in state.enrollments)
+    desc: No courses were dropped during comparison
+    penalty: 0.3
+secondary_primitives: []

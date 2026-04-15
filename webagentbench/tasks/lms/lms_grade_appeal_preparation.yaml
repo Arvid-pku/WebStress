@@ -1,115 +1,101 @@
 task_id: lms_grade_appeal_preparation
 env_id: lms
 title: Grade Appeal — Resubmit Disputed Assignments and Post Notice
-instruction_template: >-
-  Prepare a grade appeal for {target.course_code}. Review every graded
-  assignment's score and rubric. Find the two assignments where your score is
-  furthest below the rubric's maximum. Resubmit both with files
-  "appeal_evidence_1.pdf" and "appeal_evidence_2.pdf" (largest gap first).
-  Then post a formal dispute notice in the course's discussion forum stating
-  which assignments you are disputing.
+instruction_template: Prepare a grade appeal for {target.course_code}. Review every
+  graded assignment's score and rubric. Find the two assignments where your score
+  is furthest below the rubric's maximum. Resubmit both with files "appeal_evidence_1.pdf"
+  and "appeal_evidence_2.pdf" (largest gap first). Then post a formal dispute notice
+  in the course's discussion forum stating which assignments you are disputing.
 difficulty: frontier
 time_limit_seconds: 600
 expected_steps: 40
 primary_primitives:
-  - verification
-  - state_tracking
-  - exploration
-  - planning
+- verification
 start_path: /courses
-
 seed:
   distractors: 2
   steps:
-    - use: student_profile
-      params: {}
-      outputs:
-        - student_id
-    - use: course_catalog
-      params:
-        count: 3
-        must_include: ["CS201"]
-      outputs:
-        - course_ids
-        - course_codes
-        - course_code
-        - target_course_id
-    - use: enrollment_set
-      params: {}
-      outputs:
-        - enrollment_ids
-    - use: assignment_battery
-      params:
-        per_course_count: 7
-        graded_fraction: 0.7
-        late_count: 1
-      outputs:
-        - assignment_ids
-        - decoy_assignment_id
-    - use: grade_book
-      params: {}
-      outputs:
-        - grade_ids
-        - current_weighted_scores
-        - most_disputed_assignment_ids
-    - use: discussion_forums
-      params:
-        count: 2
-        posts_per: 3
-      outputs:
-        - discussion_ids
-        - target_discussion_id
-    - use: peer_review_assignments
-      params:
-        count: 2
-        statuses: ["submitted", "submitted"]
-      outputs:
-        - review_ids
+  - use: student_profile
+    params: {}
+    outputs:
+    - student_id
+  - use: course_catalog
+    params:
+      count: 3
+      must_include:
+      - CS201
+    outputs:
+    - course_ids
+    - course_codes
+    - course_code
+    - target_course_id
+  - use: enrollment_set
+    params: {}
+    outputs:
+    - enrollment_ids
+  - use: assignment_battery
+    params:
+      per_course_count: 7
+      graded_fraction: 0.7
+      late_count: 1
+    outputs:
+    - assignment_ids
+    - decoy_assignment_id
+  - use: grade_book
+    params: {}
+    outputs:
+    - grade_ids
+    - current_weighted_scores
+    - most_disputed_assignment_ids
+  - use: discussion_forums
+    params:
+      count: 2
+      posts_per: 3
+    outputs:
+    - discussion_ids
+    - target_discussion_id
+  - use: peer_review_assignments
+    params:
+      count: 2
+      statuses:
+      - submitted
+      - submitted
+    outputs:
+    - review_ids
   targets:
     course_code: '{output.course_code}'
     target_course_id: '{output.target_course_id}'
     most_disputed_assignment_ids: '{output.most_disputed_assignment_ids}'
     target_discussion_id: '{output.target_discussion_id}'
     decoy_assignment_id: '{output.decoy_assignment_id}'
-
 eval:
   source: server_state
   checks:
-    - expr: >-
-        (len('{target.most_disputed_assignment_ids}'.split(',')) >= 2
-         and state.get_assignment('{target.most_disputed_assignment_ids}'.split(',')[0].strip()) is not None
-         and state.get_assignment('{target.most_disputed_assignment_ids}'.split(',')[0].strip()).submission_status
-             in ('submitted', 'late')
-         and state.get_assignment('{target.most_disputed_assignment_ids}'.split(',')[0].strip()).file_name
-             == 'appeal_evidence_1.pdf')
-      desc: First disputed assignment resubmitted with appeal_evidence_1.pdf
-    - expr: >-
-        (state.get_assignment('{target.most_disputed_assignment_ids}'.split(',')[1].strip()) is not None
-         and state.get_assignment('{target.most_disputed_assignment_ids}'.split(',')[1].strip()).submission_status
-             in ('submitted', 'late')
-         and state.get_assignment('{target.most_disputed_assignment_ids}'.split(',')[1].strip()).file_name
-             == 'appeal_evidence_2.pdf')
-      desc: Second disputed assignment resubmitted with appeal_evidence_2.pdf
-    - expr: >-
-        any(p.discussion_id == '{target.target_discussion_id}'
-            and p.author_id == state.student.id
-            and len(p.body.strip()) > 10
-            for p in state.discussion_posts)
-      desc: A dispute notice was posted in the course discussion forum
+  - expr: "(len('{target.most_disputed_assignment_ids}'.split(',')) >= 2\n and state.get_assignment('{target.most_disputed_assignment_ids}'.split(',')[0].strip())\
+      \ is not None\n and state.get_assignment('{target.most_disputed_assignment_ids}'.split(',')[0].strip()).submission_status\n\
+      \     in ('submitted', 'late')\n and state.get_assignment('{target.most_disputed_assignment_ids}'.split(',')[0].strip()).file_name\n\
+      \     == 'appeal_evidence_1.pdf')"
+    desc: First disputed assignment resubmitted with appeal_evidence_1.pdf
+  - expr: "(state.get_assignment('{target.most_disputed_assignment_ids}'.split(',')[1].strip())\
+      \ is not None\n and state.get_assignment('{target.most_disputed_assignment_ids}'.split(',')[1].strip()).submission_status\n\
+      \     in ('submitted', 'late')\n and state.get_assignment('{target.most_disputed_assignment_ids}'.split(',')[1].strip()).file_name\n\
+      \     == 'appeal_evidence_2.pdf')"
+    desc: Second disputed assignment resubmitted with appeal_evidence_2.pdf
+  - expr: "any(p.discussion_id == '{target.target_discussion_id}'\n    and p.author_id\
+      \ == state.student.id\n    and len(p.body.strip()) > 10\n    for p in state.discussion_posts)"
+    desc: A dispute notice was posted in the course discussion forum
   negative_checks:
-    - expr: >-
-        (state.get_assignment('{target.decoy_assignment_id}') is None
-        or state.get_assignment('{target.decoy_assignment_id}').submission_status not in ('submitted', 'late')
-        or state.get_assignment('{target.decoy_assignment_id}').file_name not in ('appeal_evidence_1.pdf', 'appeal_evidence_2.pdf'))
-      desc: Decoy assignment was not resubmitted with appeal evidence files
-      penalty: 0.25
-    - expr: >-
-        all(e.status != 'dropped' for e in state.enrollments)
-      desc: No courses were dropped
-      penalty: 0.3
-    - expr: >-
-        len([a for a in state.assignments
-             if a.file_name in ('appeal_evidence_1.pdf', 'appeal_evidence_2.pdf')
-             and a.submission_status in ('submitted', 'late')]) <= 2
-      desc: Exactly two assignments were submitted with appeal evidence files
-      penalty: 0.15
+  - expr: (state.get_assignment('{target.decoy_assignment_id}') is None or state.get_assignment('{target.decoy_assignment_id}').submission_status
+      not in ('submitted', 'late') or state.get_assignment('{target.decoy_assignment_id}').file_name
+      not in ('appeal_evidence_1.pdf', 'appeal_evidence_2.pdf'))
+    desc: Decoy assignment was not resubmitted with appeal evidence files
+    penalty: 0.25
+  - expr: all(e.status != 'dropped' for e in state.enrollments)
+    desc: No courses were dropped
+    penalty: 0.3
+  - expr: "len([a for a in state.assignments\n     if a.file_name in ('appeal_evidence_1.pdf',\
+      \ 'appeal_evidence_2.pdf')\n     and a.submission_status in ('submitted', 'late')])\
+      \ <= 2"
+    desc: Exactly two assignments were submitted with appeal evidence files
+    penalty: 0.15
+secondary_primitives: []

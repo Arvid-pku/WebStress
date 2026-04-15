@@ -1,137 +1,111 @@
 task_id: pp_reconcile_billing
 env_id: patient_portal
 title: Reconcile Claims to Appointments
-instruction_template: >-
-  Match each insurance claim to its corresponding appointment. After identifying
-  the completed appointments from the last 90 days that do not have a claim,
-  schedule exactly one billing-department appointment in the next available slot
-  with the reason exactly "Missing claim review". Do not send any messages, do
+instruction_template: Match each insurance claim to its corresponding appointment.
+  After identifying the completed appointments from the last 90 days that do not have
+  a claim, schedule exactly one billing-department appointment in the next available
+  slot with the reason exactly "Missing claim review". Do not send any messages, do
   not appeal or pay any claims, and do not cancel any existing appointments.
 difficulty: hard
 time_limit_seconds: 360
 expected_steps: 18
 primary_primitives:
-  - grounding
-  - planning
-  - state_tracking
-  - verification
+- state_tracking
 start_path: /billing
-
 seed:
   distractors: 12
   steps:
-    - use: patient_profile
-      params:
-        conditions: ["Hypertension"]
-        insurance_tier: standard
-      outputs: [pcp_id, pcp_name]
-    - use: provider_directory
-      params:
-        count: 6
-        specialties: ["pcp", "cardiology", "orthopedics", "endocrinology", "billing", "admin"]
-        must_include: ["pcp", "billing"]
-      outputs: [provider_ids, providers_by_specialty]
-    - use: appointment_history
-      params:
-        upcoming_count: 2
-        completed_count: 4
-        cancelled_count: 1
-      outputs: [upcoming_ids, completed_ids, cancelled_ids]
-    - use: insurance_claims
-      params:
-        approved_count: 1
-        denied_count: 1
-        processing_count: 1
-        with_eob: true
-      outputs: [approved_claim_ids, denied_claim_ids, processing_claim_ids]
+  - use: patient_profile
+    params:
+      conditions:
+      - Hypertension
+      insurance_tier: standard
+    outputs:
+    - pcp_id
+    - pcp_name
+  - use: provider_directory
+    params:
+      count: 6
+      specialties:
+      - pcp
+      - cardiology
+      - orthopedics
+      - endocrinology
+      - billing
+      - admin
+      must_include:
+      - pcp
+      - billing
+    outputs:
+    - provider_ids
+    - providers_by_specialty
+  - use: appointment_history
+    params:
+      upcoming_count: 2
+      completed_count: 4
+      cancelled_count: 1
+    outputs:
+    - upcoming_ids
+    - completed_ids
+    - cancelled_ids
+  - use: insurance_claims
+    params:
+      approved_count: 1
+      denied_count: 1
+      processing_count: 1
+      with_eob: true
+    outputs:
+    - approved_claim_ids
+    - denied_claim_ids
+    - processing_claim_ids
   targets:
-    billing_provider_ids: "{output.providers_by_specialty.billing}"
-    upcoming_ids: "{output.upcoming_ids}"
-    completed_ids: "{output.completed_ids}"
-    approved_claim_ids: "{output.approved_claim_ids}"
-    denied_claim_ids: "{output.denied_claim_ids}"
-    processing_claim_ids: "{output.processing_claim_ids}"
-
+    billing_provider_ids: '{output.providers_by_specialty.billing}'
+    upcoming_ids: '{output.upcoming_ids}'
+    completed_ids: '{output.completed_ids}'
+    approved_claim_ids: '{output.approved_claim_ids}'
+    denied_claim_ids: '{output.denied_claim_ids}'
+    processing_claim_ids: '{output.processing_claim_ids}'
 eval:
   source: server_state
   checks:
-    - expr: >-
-        len([
-          aid for aid in {target.completed_ids}
-          if aid not in {
-            c['appointment_id']
-            for c in state._initial_snapshot.get('claims', {}).values()
-          }
-        ]) >= 1
-      desc: The seeded state contains at least one completed appointment missing a claim
-    - expr: >-
-        len([
-          a for a in state.appointments
-          if a.status == 'scheduled'
-          and a.id not in {target.upcoming_ids}
-        ]) == 1
-      desc: Exactly one new appointment was scheduled
-    - expr: >-
-        len([
-          a for a in state.appointments
-          if a.status == 'scheduled'
-          and a.id not in {target.upcoming_ids}
-          and a.provider_id in {target.billing_provider_ids}
-          and a.reason == 'Missing claim review'
-        ]) == 1
-      desc: Exactly one billing review appointment was scheduled with the required reason
-    - expr: >-
-        any(
-          a.status == 'scheduled'
-          and a.id not in {target.upcoming_ids}
-          and a.provider_id in {target.billing_provider_ids}
-          and a.reason == 'Missing claim review'
-          and a.datetime.isoformat() <= min(
-            slot.datetime.isoformat()
-            for slot in state.get_provider(a.provider_id).available_slots
-          )
-          for a in state.appointments
-        )
-      desc: The billing review used the next available billing slot
-    - expr: >-
-        all(
-          c.status == state._initial_snapshot['claims'][c.id]['status']
-          for c in state.claims
-          if c.id in state._initial_snapshot.get('claims', {})
-        )
-      desc: Existing claim statuses were not modified
+  - expr: "len([\n  aid for aid in {target.completed_ids}\n  if aid not in {\n   \
+      \ c['appointment_id']\n    for c in state._initial_snapshot.get('claims', {}).values()\n\
+      \  }\n]) >= 1"
+    desc: The seeded state contains at least one completed appointment missing a claim
+  - expr: "len([\n  a for a in state.appointments\n  if a.status == 'scheduled'\n\
+      \  and a.id not in {target.upcoming_ids}\n]) == 1"
+    desc: Exactly one new appointment was scheduled
+  - expr: "len([\n  a for a in state.appointments\n  if a.status == 'scheduled'\n\
+      \  and a.id not in {target.upcoming_ids}\n  and a.provider_id in {target.billing_provider_ids}\n\
+      \  and a.reason == 'Missing claim review'\n]) == 1"
+    desc: Exactly one billing review appointment was scheduled with the required reason
+  - expr: "any(\n  a.status == 'scheduled'\n  and a.id not in {target.upcoming_ids}\n\
+      \  and a.provider_id in {target.billing_provider_ids}\n  and a.reason == 'Missing\
+      \ claim review'\n  and a.datetime.isoformat() <= min(\n    slot.datetime.isoformat()\n\
+      \    for slot in state.get_provider(a.provider_id).available_slots\n  )\n  for\
+      \ a in state.appointments\n)"
+    desc: The billing review used the next available billing slot
+  - expr: "all(\n  c.status == state._initial_snapshot['claims'][c.id]['status']\n\
+      \  for c in state.claims\n  if c.id in state._initial_snapshot.get('claims',\
+      \ {})\n)"
+    desc: Existing claim statuses were not modified
   negative_checks:
-    - expr: >-
-        all(
-          state.get_appointment(aid) is not None
-          and state.get_appointment(aid).status != 'cancelled'
-          for aid in {target.upcoming_ids}
-        )
-      desc: Existing appointments were not cancelled
-      penalty: 0.2
-    - expr: >-
-        not any(
-          m.from_type == 'patient'
-          and m.id not in state._initial_snapshot.get('messages', {})
-          for m in state.messages
-        )
-      desc: No patient messages were sent
-      penalty: 0.2
-    - expr: >-
-        not any(
-          m.from_type == 'patient'
-          and m.category == 'billing'
-          and m.id not in state._initial_snapshot.get('messages', {})
-          for m in state.messages
-        )
-      desc: No billing-category patient messages were sent
-      penalty: 0.1
-    - expr: >-
-        not any(
-          a.status == 'scheduled'
-          and a.id not in {target.upcoming_ids}
-          and a.provider_id not in {target.billing_provider_ids}
-          for a in state.appointments
-        )
-      desc: No unrelated follow-up appointments were scheduled
-      penalty: 0.2
+  - expr: "all(\n  state.get_appointment(aid) is not None\n  and state.get_appointment(aid).status\
+      \ != 'cancelled'\n  for aid in {target.upcoming_ids}\n)"
+    desc: Existing appointments were not cancelled
+    penalty: 0.2
+  - expr: "not any(\n  m.from_type == 'patient'\n  and m.id not in state._initial_snapshot.get('messages',\
+      \ {})\n  for m in state.messages\n)"
+    desc: No patient messages were sent
+    penalty: 0.2
+  - expr: "not any(\n  m.from_type == 'patient'\n  and m.category == 'billing'\n \
+      \ and m.id not in state._initial_snapshot.get('messages', {})\n  for m in state.messages\n\
+      )"
+    desc: No billing-category patient messages were sent
+    penalty: 0.1
+  - expr: "not any(\n  a.status == 'scheduled'\n  and a.id not in {target.upcoming_ids}\n\
+      \  and a.provider_id not in {target.billing_provider_ids}\n  for a in state.appointments\n\
+      )"
+    desc: No unrelated follow-up appointments were scheduled
+    penalty: 0.2
+secondary_primitives: []

@@ -1,109 +1,99 @@
 task_id: lms_course_selection_next_semester
 env_id: lms
 title: Course Selection — Enroll If Eligible
-instruction_template: >-
-  Plan course selection for next semester. Check whether your GPA ({target.gpa})
-  meets the 2.5 minimum for advanced courses, and verify you have completed
-  at least 3 modules in your current courses (prerequisite progress). If your
-  GPA is 2.5 or above AND you have 3+ completed modules, submit
-  "course_plan.pdf" for your next unsubmitted assignment. If either condition
-  is not met, mark all announcements as read to confirm you have reviewed
-  the requirements.
+instruction_template: Plan course selection for next semester. Check whether your
+  GPA ({target.gpa}) meets the 2.5 minimum for advanced courses, and verify you have
+  completed at least 3 modules in your current courses (prerequisite progress). If
+  your GPA is 2.5 or above AND you have 3+ completed modules, submit "course_plan.pdf"
+  for your next unsubmitted assignment. If either condition is not met, mark all announcements
+  as read to confirm you have reviewed the requirements.
 difficulty: frontier
 time_limit_seconds: 600
 expected_steps: 40
 primary_primitives:
-  - planning
-  - state_tracking
-  - verification
-  - exploration
+- planning
 start_path: /dashboard
-
 seed:
   distractors: 2
   steps:
-    - use: student_profile
-      params:
-        gpa: "2.75"
-      outputs:
-        - student_id
-        - advisor_name
-        - gpa
-    - use: course_catalog
-      params:
-        count: 4
-        must_include: ["CS201", "MATH201", "ENG102"]
-      outputs:
-        - course_ids
-        - course_codes
-    - use: enrollment_set
-      params: {}
-      outputs:
-        - enrollment_ids
-    - use: assignment_battery
-      params:
-        per_course_count: 6
-        graded_fraction: 0.5
-      outputs:
-        - assignment_ids
-        - course_plan_assignment_id
-    - use: grade_book
-      params: {}
-      outputs:
-        - grade_ids
-        - current_weighted_scores
-    - use: module_sequence
-      params:
-        count: 4
-        chain_type: linear
-        completed_count: 3
-      outputs:
-        - module_ids
-    - use: calendar_events
-      params:
-        include_recurring: false
-      outputs:
-        - event_ids
-    - use: announcements_feed
-      params:
-        count: 4
-        unread_count: 2
-      outputs:
-        - announcement_ids
-        - unread_announcement_ids
+  - use: student_profile
+    params:
+      gpa: '2.75'
+    outputs:
+    - student_id
+    - advisor_name
+    - gpa
+  - use: course_catalog
+    params:
+      count: 4
+      must_include:
+      - CS201
+      - MATH201
+      - ENG102
+    outputs:
+    - course_ids
+    - course_codes
+  - use: enrollment_set
+    params: {}
+    outputs:
+    - enrollment_ids
+  - use: assignment_battery
+    params:
+      per_course_count: 6
+      graded_fraction: 0.5
+    outputs:
+    - assignment_ids
+    - course_plan_assignment_id
+  - use: grade_book
+    params: {}
+    outputs:
+    - grade_ids
+    - current_weighted_scores
+  - use: module_sequence
+    params:
+      count: 4
+      chain_type: linear
+      completed_count: 3
+    outputs:
+    - module_ids
+  - use: calendar_events
+    params:
+      include_recurring: false
+    outputs:
+    - event_ids
+  - use: announcements_feed
+    params:
+      count: 4
+      unread_count: 2
+    outputs:
+    - announcement_ids
+    - unread_announcement_ids
   targets:
     gpa: '{output.gpa}'
     course_plan_assignment_id: '{output.course_plan_assignment_id}'
-
 eval:
   source: server_state
   checks:
-    - expr: >-
-        (float('{target.gpa}') >= 2.5
-        and sum(1 for m in state.modules if m.status == 'completed') >= 3
-        and state.get_assignment('{target.course_plan_assignment_id}') is not None
-        and state.get_assignment('{target.course_plan_assignment_id}').submission_status in ('submitted', 'late')
-        and state.get_assignment('{target.course_plan_assignment_id}').file_name == 'course_plan.pdf')
-        or (
-        (float('{target.gpa}') < 2.5
-         or sum(1 for m in state.modules if m.status == 'completed') < 3)
-        and all(a.is_read for a in state.announcements))
-      desc: Submitted course_plan.pdf IFF eligible, OR all announcements read IFF not eligible
+  - expr: "(float('{target.gpa}') >= 2.5 and sum(1 for m in state.modules if m.status\
+      \ == 'completed') >= 3 and state.get_assignment('{target.course_plan_assignment_id}')\
+      \ is not None and state.get_assignment('{target.course_plan_assignment_id}').submission_status\
+      \ in ('submitted', 'late') and state.get_assignment('{target.course_plan_assignment_id}').file_name\
+      \ == 'course_plan.pdf') or ( (float('{target.gpa}') < 2.5\n or sum(1 for m in\
+      \ state.modules if m.status == 'completed') < 3)\nand all(a.is_read for a in\
+      \ state.announcements))"
+    desc: Submitted course_plan.pdf IFF eligible, OR all announcements read IFF not
+      eligible
   negative_checks:
-    - expr: >-
-        all(e.status != 'dropped' for e in state.enrollments)
-      desc: No courses were dropped
-      penalty: 0.3
-    - expr: >-
-        (len([a for a in state.assignments
-             if a.file_name == 'course_plan.pdf'
-             and a.submission_status in ('submitted', 'late')]) <= 1)
-      desc: At most one course_plan.pdf was submitted
-      penalty: 0.15
-    - expr: >-
-        (len([a for a in state.assignments
-             if a.submission_status in ('submitted', 'late')
-             and a.file_name is not None
-             and a.file_name not in ('course_plan.pdf', 'submission.pdf')]) == 0)
-      desc: No extraneous non-default files were submitted
-      penalty: 0.1
+  - expr: all(e.status != 'dropped' for e in state.enrollments)
+    desc: No courses were dropped
+    penalty: 0.3
+  - expr: "(len([a for a in state.assignments\n     if a.file_name == 'course_plan.pdf'\n\
+      \     and a.submission_status in ('submitted', 'late')]) <= 1)"
+    desc: At most one course_plan.pdf was submitted
+    penalty: 0.15
+  - expr: "(len([a for a in state.assignments\n     if a.submission_status in ('submitted',\
+      \ 'late')\n     and a.file_name is not None\n     and a.file_name not in ('course_plan.pdf',\
+      \ 'submission.pdf')]) == 0)"
+    desc: No extraneous non-default files were submitted
+    penalty: 0.1
+secondary_primitives: []

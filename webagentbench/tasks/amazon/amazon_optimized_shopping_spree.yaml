@@ -1,10 +1,11 @@
 task_id: amazon_optimized_shopping_spree
 env_id: amazon
 title: Buy 5 Items from 5 Categories Under $500
-instruction_template: 'Find and purchase exactly 5 items, each from a different category, with each item
-  having a rating of at least 4.0. Your total order must stay under $500. The five categories to shop
-  from are: Electronics, Books, Home & Kitchen, Sports & Outdoors, and Office Supplies. Add one item from
-  each category to your cart, verify the total is under $500, then complete checkout using the shipping
+instruction_template: 'Find and purchase exactly 5 items, each from a different category,
+  with each item having a rating of at least 4.0. Your total order must stay under
+  $500. The five categories to shop from are: Electronics, Books, Home & Kitchen,
+  Sports & Outdoors, and Office Supplies. Add one item from each category to your
+  cart, verify the total is under $500, then complete checkout using the shipping
   address for Jordan Parker at 742 Evergreen Terrace and the Visa card ending in 4242.
 
   '
@@ -145,28 +146,28 @@ eval:
 
       '
     desc: A new order contains at least 5 items
-  - expr: 'any(any(item.product_id == ''{target.elec_id}'' for item in order.items) for order in state.orders
-      if not order.id.startswith(''order_initial_''))
+  - expr: 'any(any(item.product_id == ''{target.elec_id}'' for item in order.items)
+      for order in state.orders if not order.id.startswith(''order_initial_''))
 
       '
     desc: Electronics item is in the order
-  - expr: 'any(any(item.product_id == ''{target.book_id}'' for item in order.items) for order in state.orders
-      if not order.id.startswith(''order_initial_''))
+  - expr: 'any(any(item.product_id == ''{target.book_id}'' for item in order.items)
+      for order in state.orders if not order.id.startswith(''order_initial_''))
 
       '
     desc: Books item is in the order
-  - expr: 'any(any(item.product_id == ''{target.home_id}'' for item in order.items) for order in state.orders
-      if not order.id.startswith(''order_initial_''))
+  - expr: 'any(any(item.product_id == ''{target.home_id}'' for item in order.items)
+      for order in state.orders if not order.id.startswith(''order_initial_''))
 
       '
     desc: Home & Kitchen item is in the order
-  - expr: 'any(any(item.product_id == ''{target.sport_id}'' for item in order.items) for order in state.orders
-      if not order.id.startswith(''order_initial_''))
+  - expr: 'any(any(item.product_id == ''{target.sport_id}'' for item in order.items)
+      for order in state.orders if not order.id.startswith(''order_initial_''))
 
       '
     desc: Sports & Outdoors item is in the order
-  - expr: 'any(any(item.product_id == ''{target.office_id}'' for item in order.items) for order in state.orders
-      if not order.id.startswith(''order_initial_''))
+  - expr: 'any(any(item.product_id == ''{target.office_id}'' for item in order.items)
+      for order in state.orders if not order.id.startswith(''order_initial_''))
 
       '
     desc: Office Supplies item is in the order
@@ -176,14 +177,15 @@ eval:
       '
     desc: Order total is under $500
   negative_checks:
-  - expr: sum(1 for o in state.orders if not o.id.startswith('order_initial_')) <= 1
+  - expr: sum(1 for o in state.orders if not o.id.startswith('order_initial_')) <=
+      1
     desc: Only one new order placed for all items
     penalty: 0.15
   - expr: len(state.cart_items) == 0
     desc: Cart is empty after checkout
     penalty: 0.1
-  - expr: 'any(len(set(next((p.category for p in state.products if p.id == item.product_id), "unknown")
-      for item in order.items)) >= 5 for order in state.orders if not order.id.startswith(''order_initial_'')
+  - expr: 'any(len(set(next((p.category for p in state.products if p.id == item.product_id),
+      "unknown") for item in order.items)) >= 5 for order in state.orders if not order.id.startswith(''order_initial_'')
       and len(order.items) >= 5)
 
       '
@@ -195,5 +197,4 @@ eval:
   - expr: not any(e.action.startswith('amazon.wishlist.') for e in state.audit_log)
     desc: No off-task wishlist mutations were made
     penalty: 0.1
-secondary_primitives:
-- state_tracking
+secondary_primitives: []

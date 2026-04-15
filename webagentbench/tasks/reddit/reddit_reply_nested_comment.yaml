@@ -1,15 +1,15 @@
 task_id: reddit_reply_nested_comment
 env_id: reddit
 title: Reply to a Nested Comment
-instruction_template: 'Navigate to r/{target.subreddit_name} and open the post titled "{target.post_title}". Find the comment
-  by u/{target.reply_author} that says "{target.reply_snippet}". Reply to that specific comment with exactly: "{target.reply_text}"
-  Do not reply to any other comments.'
+instruction_template: 'Navigate to r/{target.subreddit_name} and open the post titled
+  "{target.post_title}". Find the comment by u/{target.reply_author} that says "{target.reply_snippet}".
+  Reply to that specific comment with exactly: "{target.reply_text}" Do not reply
+  to any other comments.'
 difficulty: medium
 time_limit_seconds: 240
 expected_steps: 15
 primary_primitives:
 - grounding
-- exploration
 start_path: /feed
 seed:
   distractors: 5
@@ -49,15 +49,19 @@ seed:
     reply_author: CodeMonkey_X
     reply_snippet: Tabs are objectively superior to spaces
     target_comment_id: '{output.comment_id}'
-    reply_text: The real answer is to use whatever your team's linter enforces. Consistency matters more than the choice itself.
+    reply_text: The real answer is to use whatever your team's linter enforces. Consistency
+      matters more than the choice itself.
 eval:
   source: server_state
   checks:
-  - expr: any(c.parent_id == '{target.target_comment_id}' and c.body == "The real answer is to use whatever your team's linter
-      enforces. Consistency matters more than the choice itself." and c.author_name == state.owner_username for c in state.comments)
+  - expr: any(c.parent_id == '{target.target_comment_id}' and c.body == "The real
+      answer is to use whatever your team's linter enforces. Consistency matters more
+      than the choice itself." and c.author_name == state.owner_username for c in
+      state.comments)
     desc: Exact reply posted to correct comment
   negative_checks:
-  - expr: sum(1 for c in state.comments if c.author_name == state.owner_username and c.post_id == '{target.post_id}') <= 9
+  - expr: sum(1 for c in state.comments if c.author_name == state.owner_username and
+      c.post_id == '{target.post_id}') <= 9
     desc: No excessive comments on the post
     penalty: 0.2
   - expr: len(state.sent_messages) <= 6
@@ -66,3 +70,4 @@ eval:
   - expr: len(state.blocked_users) == 0
     desc: No users blocked when none required
     penalty: 0.15
+secondary_primitives: []

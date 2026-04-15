@@ -1,15 +1,14 @@
 task_id: lms_exam_conflict
 env_id: lms
 title: Resolve Exam Scheduling Conflict by Dropping Lower-Grade Course
-instruction_template: Check the calendar for upcoming exam dates. Find any two exams scheduled on the same day. Once you identify
-  the conflict, drop the course with the lower weighted grade to resolve the scheduling conflict.
+instruction_template: Check the calendar for upcoming exam dates. Find any two exams
+  scheduled on the same day. Once you identify the conflict, drop the course with
+  the lower weighted grade to resolve the scheduling conflict.
 difficulty: expert
 time_limit_seconds: 300
 expected_steps: 18
 primary_primitives:
 - state_tracking
-- exploration
-- planning
 start_path: /calendar
 seed:
   distractors: 1
@@ -65,14 +64,17 @@ seed:
 eval:
   source: server_state
   checks:
-  - expr: (state.get_enrollment_for_course('{target.lower_grade_conflict_course_id}') is not None and state.get_enrollment_for_course('{target.lower_grade_conflict_course_id}').status
+  - expr: (state.get_enrollment_for_course('{target.lower_grade_conflict_course_id}')
+      is not None and state.get_enrollment_for_course('{target.lower_grade_conflict_course_id}').status
       == 'dropped')
     desc: The lower-grade conflicting course was dropped
   negative_checks:
   - expr: sum(1 for e in state.enrollments if e.status == 'dropped') <= 1
     desc: Only one course was dropped (not multiple)
     penalty: 0.3
-  - expr: "not any(e.status == 'dropped'\n        and e.course_id not in\n            [cid.strip() for cid in '{target.conflicting_course_ids}'.split(',')]\n\
+  - expr: "not any(e.status == 'dropped'\n        and e.course_id not in\n       \
+      \     [cid.strip() for cid in '{target.conflicting_course_ids}'.split(',')]\n\
       \        for e in state.enrollments)"
     desc: No non-conflicting course was dropped
     penalty: 0.3
+secondary_primitives: []

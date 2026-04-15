@@ -10,7 +10,6 @@ time_limit_seconds: 150
 expected_steps: 7
 primary_primitives:
 - grounding
-- planning
 start_path: /home
 seed:
   distractors: 5
@@ -63,3 +62,4 @@ eval:
       ) <= 1\n"
     desc: Only the target property was added to the list
     penalty: 0.1
+secondary_primitives: []

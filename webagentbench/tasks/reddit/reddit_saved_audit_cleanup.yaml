@@ -12,7 +12,8 @@ instruction_template: '1. Go to your Saved page. Unsave any posts from r/memes.
   4. Go to Settings and set default feed sort to "top" and comment sort to "new".
 
 
-  5. Send a message to u/{target.msg_to} with subject "{target.msg_subject}" and body exactly: "{target.msg_body}"
+  5. Send a message to u/{target.msg_to} with subject "{target.msg_subject}" and body
+  exactly: "{target.msg_body}"
 
 
   Do not unsave posts from other subreddits.'
@@ -63,12 +64,13 @@ seed:
     save2_id: '{output.save2_id}'
     msg_to: NeuralNexus
     msg_subject: Health and tech roundup
-    msg_body: Found two great posts today - one on Intel 18A and one on walking and longevity. Check them
-      out!
+    msg_body: Found two great posts today - one on Intel 18A and one on walking and
+      longevity. Check them out!
 eval:
   source: server_state
   checks:
-  - expr: not any(p.subreddit_name == 'memes' and p.id in state.saved_post_ids for p in state.posts)
+  - expr: not any(p.subreddit_name == 'memes' and p.id in state.saved_post_ids for
+      p in state.posts)
     desc: Memes posts unsaved
   - expr: '''{target.save1_id}'' in state.saved_post_ids'
     desc: Intel post saved
@@ -89,7 +91,8 @@ eval:
   - expr: len(state.sent_messages) <= 3
     desc: No excessive messages sent
     penalty: 0.15
-  - expr: sum(1 for p in state.posts if p.author_name == state.owner_username) == 0
+  - expr: sum(1 for p in state.posts if p.author_name == state.owner_username) ==
+      0
     desc: No posts created when none required
     penalty: 0.15
   - expr: len(state.blocked_users) == 0
@@ -97,5 +100,4 @@ eval:
     penalty: 0.15
 env_id: reddit
 start_path: /feed
-secondary_primitives:
-- planning
+secondary_primitives: []

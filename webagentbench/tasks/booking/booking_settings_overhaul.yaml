@@ -2,8 +2,9 @@ task_id: booking_settings_overhaul
 env_id: booking
 title: 'Update Account Settings: Currency, Language, and Notifications'
 instruction_template: 'Go to your account settings and make the following changes:
-  (1) Change the currency to "{target.new_currency}", (2) Change the language to "{target.new_language}", (3) Disable
-  deal alerts, (4) Enable the newsletter. Make sure all four changes are saved.
+  (1) Change the currency to "{target.new_currency}", (2) Change the language to "{target.new_language}",
+  (3) Disable deal alerts, (4) Enable the newsletter. Make sure all four changes are
+  saved.
 
   '
 difficulty: medium
@@ -11,7 +12,6 @@ time_limit_seconds: 180
 expected_steps: 10
 primary_primitives:
 - planning
-- grounding
 start_path: /home
 seed:
   distractors: 5
@@ -58,3 +58,4 @@ eval:
   - expr: state.settings.two_factor_enabled == False
     desc: Two-factor authentication was not accidentally enabled
     penalty: 0.15
+secondary_primitives: []

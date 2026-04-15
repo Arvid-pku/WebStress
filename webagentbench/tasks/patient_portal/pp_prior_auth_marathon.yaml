@@ -1,125 +1,115 @@
 task_id: pp_prior_auth_marathon
 env_id: patient_portal
 title: Prior Authorization Marathon
-instruction_template: >-
-  You need three procedures:
-  1) MRI (radiology department),
-  2) Nerve conduction study (neurology department),
-  3) Cortisone injection (orthopedics department).
-  For each one, verify the referral is approved and that any required pre-authorization
-  is already cleared, then schedule exactly one appointment with that department.
-  Do not send any messages and do not schedule anything without an approved referral.
+instruction_template: 'You need three procedures: 1) MRI (radiology department), 2)
+  Nerve conduction study (neurology department), 3) Cortisone injection (orthopedics
+  department). For each one, verify the referral is approved and that any required
+  pre-authorization is already cleared, then schedule exactly one appointment with
+  that department. Do not send any messages and do not schedule anything without an
+  approved referral.'
 difficulty: frontier
 time_limit_seconds: 600
 expected_steps: 50
 primary_primitives:
-  - grounding
-  - planning
-  - state_tracking
-  - verification
-  - backtracking
-  - patience
-  - exploration
+- planning
 start_path: /
-
 seed:
   distractors: 10
   steps:
-    - use: patient_profile
-      params:
-        conditions: ["Herniated Disc", "Carpal Tunnel", "Shoulder Bursitis"]
-        insurance_tier: basic
-      outputs: [pcp_id, pcp_name, conditions_list]
-    - use: provider_directory
-      params:
-        count: 8
-        specialties: ["pcp", "radiology", "neurology", "orthopedics", "cardiology", "billing"]
-        must_include: ["pcp", "radiology", "neurology", "orthopedics"]
-      outputs: [provider_ids, providers_by_specialty]
-    - use: pharmacy_list
-      params:
-        count: 2
-      outputs: [default_pharmacy_id]
-    - use: referral_chain
-      params:
-        approved_count: 3
-        pending_count: 0
-        with_prior_auth: true
-        must_have_specialties: ["radiology", "neurology", "orthopedics"]
-      outputs: [approved_ref_ids, pending_ref_ids, prior_auth_ref_id]
-    - use: appointment_history
-      params:
-        upcoming_count: 2
-        completed_count: 4
-      outputs: [upcoming_ids, completed_ids]
+  - use: patient_profile
+    params:
+      conditions:
+      - Herniated Disc
+      - Carpal Tunnel
+      - Shoulder Bursitis
+      insurance_tier: basic
+    outputs:
+    - pcp_id
+    - pcp_name
+    - conditions_list
+  - use: provider_directory
+    params:
+      count: 8
+      specialties:
+      - pcp
+      - radiology
+      - neurology
+      - orthopedics
+      - cardiology
+      - billing
+      must_include:
+      - pcp
+      - radiology
+      - neurology
+      - orthopedics
+    outputs:
+    - provider_ids
+    - providers_by_specialty
+  - use: pharmacy_list
+    params:
+      count: 2
+    outputs:
+    - default_pharmacy_id
+  - use: referral_chain
+    params:
+      approved_count: 3
+      pending_count: 0
+      with_prior_auth: true
+      must_have_specialties:
+      - radiology
+      - neurology
+      - orthopedics
+    outputs:
+    - approved_ref_ids
+    - pending_ref_ids
+    - prior_auth_ref_id
+  - use: appointment_history
+    params:
+      upcoming_count: 2
+      completed_count: 4
+    outputs:
+    - upcoming_ids
+    - completed_ids
   targets:
-    pcp_id: "{output.pcp_id}"
-    pcp_name: "{output.pcp_name}"
-    radiology_provider_ids: "{output.providers_by_specialty.radiology}"
-    neurology_provider_ids: "{output.providers_by_specialty.neurology}"
-    ortho_provider_ids: "{output.providers_by_specialty.orthopedics}"
-    approved_ref_ids: "{output.approved_ref_ids}"
-    upcoming_ids: "{output.upcoming_ids}"
-
+    pcp_id: '{output.pcp_id}'
+    pcp_name: '{output.pcp_name}'
+    radiology_provider_ids: '{output.providers_by_specialty.radiology}'
+    neurology_provider_ids: '{output.providers_by_specialty.neurology}'
+    ortho_provider_ids: '{output.providers_by_specialty.orthopedics}'
+    approved_ref_ids: '{output.approved_ref_ids}'
+    upcoming_ids: '{output.upcoming_ids}'
 eval:
   source: server_state
   checks:
-    - expr: >-
-        len([
-          a for a in state.appointments
-          if a.status == 'scheduled'
-          and a.id not in state._initial_snapshot.get('appointments', {})
-        ]) == 3
-      desc: Exactly three new procedure appointments were scheduled
-    - expr: >-
-        len([
-          a for a in state.appointments
-          if a.status == 'scheduled'
-          and a.provider_id in {target.radiology_provider_ids}
-          and a.id not in state._initial_snapshot.get('appointments', {})
-        ]) == 1
-      desc: Exactly one radiology procedure was scheduled
-    - expr: >-
-        len([
-          a for a in state.appointments
-          if a.status == 'scheduled'
-          and a.provider_id in {target.neurology_provider_ids}
-          and a.id not in state._initial_snapshot.get('appointments', {})
-        ]) == 1
-      desc: Exactly one neurology procedure was scheduled
-    - expr: >-
-        len([
-          a for a in state.appointments
-          if a.status == 'scheduled'
-          and a.provider_id in {target.ortho_provider_ids}
-          and a.id not in state._initial_snapshot.get('appointments', {})
-        ]) == 1
-      desc: Exactly one orthopedics procedure was scheduled
-    - expr: >-
-        all(
-          a.linked_referral_id in {target.approved_ref_ids}
-          and state.get_referral(a.linked_referral_id) is not None
-          and state.get_referral(a.linked_referral_id).status == 'approved'
-          and state.get_referral(a.linked_referral_id).prior_auth_status in ('approved', 'not_required')
-          for a in state.appointments
-          if a.status == 'scheduled'
-          and a.id not in state._initial_snapshot.get('appointments', {})
-        )
-      desc: Every newly scheduled procedure used an approved referral with any required pre-auth already cleared
+  - expr: "len([\n  a for a in state.appointments\n  if a.status == 'scheduled'\n\
+      \  and a.id not in state._initial_snapshot.get('appointments', {})\n]) == 3"
+    desc: Exactly three new procedure appointments were scheduled
+  - expr: "len([\n  a for a in state.appointments\n  if a.status == 'scheduled'\n\
+      \  and a.provider_id in {target.radiology_provider_ids}\n  and a.id not in state._initial_snapshot.get('appointments',\
+      \ {})\n]) == 1"
+    desc: Exactly one radiology procedure was scheduled
+  - expr: "len([\n  a for a in state.appointments\n  if a.status == 'scheduled'\n\
+      \  and a.provider_id in {target.neurology_provider_ids}\n  and a.id not in state._initial_snapshot.get('appointments',\
+      \ {})\n]) == 1"
+    desc: Exactly one neurology procedure was scheduled
+  - expr: "len([\n  a for a in state.appointments\n  if a.status == 'scheduled'\n\
+      \  and a.provider_id in {target.ortho_provider_ids}\n  and a.id not in state._initial_snapshot.get('appointments',\
+      \ {})\n]) == 1"
+    desc: Exactly one orthopedics procedure was scheduled
+  - expr: "all(\n  a.linked_referral_id in {target.approved_ref_ids}\n  and state.get_referral(a.linked_referral_id)\
+      \ is not None\n  and state.get_referral(a.linked_referral_id).status == 'approved'\n\
+      \  and state.get_referral(a.linked_referral_id).prior_auth_status in ('approved',\
+      \ 'not_required')\n  for a in state.appointments\n  if a.status == 'scheduled'\n\
+      \  and a.id not in state._initial_snapshot.get('appointments', {})\n)"
+    desc: Every newly scheduled procedure used an approved referral with any required
+      pre-auth already cleared
   negative_checks:
-    - expr: >-
-        len([
-          m for m in state.messages
-          if m.from_type == 'patient'
-          and m.id not in state._initial_snapshot.get('messages', {})
-        ]) == 0
-      desc: Agent did not send any patient messages
-      penalty: 0.2
-    - expr: >-
-        all(
-          state.get_appointment(aid) is not None
-          and state.get_appointment(aid).status != 'cancelled'
-          for aid in {target.upcoming_ids}
-        )
-      desc: Existing appointments were not cancelled
-      penalty: 0.15
+  - expr: "len([\n  m for m in state.messages\n  if m.from_type == 'patient'\n  and\
+      \ m.id not in state._initial_snapshot.get('messages', {})\n]) == 0"
+    desc: Agent did not send any patient messages
+    penalty: 0.2
+  - expr: "all(\n  state.get_appointment(aid) is not None\n  and state.get_appointment(aid).status\
+      \ != 'cancelled'\n  for aid in {target.upcoming_ids}\n)"
+    desc: Existing appointments were not cancelled
+    penalty: 0.15
+secondary_primitives: []

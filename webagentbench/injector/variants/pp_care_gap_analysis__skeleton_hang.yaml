@@ -1,0 +1,13 @@
+variant_id: pp_care_gap_analysis__skeleton_hang
+base_task_id: pp_care_gap_analysis
+target_primitive: backtracking
+description: >
+  The details pane shows a loading skeleton that never resolves. Only a
+  page refresh (or navigating away and back) clears it.
+injections:
+  - layer: client
+    params:
+      action: skeleton_never_resolves
+      route: "/portal/records"
+      selector: ".app-main, main, #root"
+      behavior: { mode: persistent }

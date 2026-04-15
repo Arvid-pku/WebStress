@@ -1,149 +1,127 @@
 task_id: pp_medication_reconciliation
 env_id: patient_portal
 title: Post-Hospitalization Medication Reconciliation
-instruction_template: >-
-  After a hospitalization, reconcile your medication list without composing any
-  free-form messages:
-  1) Read the discharge summary message in your inbox,
-  2) Find the medication explicitly noted in the summary as "discontinued during hospitalization",
-  3) For each active prescription named in that note, use the prescription renewal
-  request flow so it moves to pending renewal,
-  4) Schedule exactly one PCP appointment with reason
-  "Post-discharge medication reconciliation".
-  Do not directly discontinue prescriptions yourself and do not send any separate
-  clinical messages.
+instruction_template: 'After a hospitalization, reconcile your medication list without
+  composing any free-form messages: 1) Read the discharge summary message in your
+  inbox, 2) Find the medication explicitly noted in the summary as "discontinued during
+  hospitalization", 3) For each active prescription named in that note, use the prescription
+  renewal request flow so it moves to pending renewal, 4) Schedule exactly one PCP
+  appointment with reason "Post-discharge medication reconciliation". Do not directly
+  discontinue prescriptions yourself and do not send any separate clinical messages.'
 difficulty: frontier
 time_limit_seconds: 600
 expected_steps: 50
 primary_primitives:
-  - grounding
-  - planning
-  - state_tracking
-  - verification
-  - backtracking
-  - patience
-  - exploration
+- planning
 start_path: /messages
-
 seed:
   distractors: 10
   steps:
-    - use: patient_profile
-      params:
-        conditions: ["Type 2 Diabetes", "Hypertension", "Heart Failure"]
-        allergies: ["Penicillin"]
-        insurance_tier: standard
-      outputs: [pcp_id, pcp_name, conditions_list]
-    - use: provider_directory
-      params:
-        count: 6
-        specialties: ["pcp", "cardiology", "endocrinology", "neurology", "billing"]
-        must_include: ["pcp", "cardiology"]
-      outputs: [provider_ids, providers_by_specialty]
-    - use: pharmacy_list
-      params:
-        count: 2
-      outputs: [default_pharmacy_id]
-    - use: prescription_cabinet
-      params:
-        active_count: 5
-        expired_count: 1
-      outputs: [active_rx_ids]
-    - use: appointment_history
-      params:
-        upcoming_count: 1
-        completed_count: 3
-      outputs: [upcoming_ids, completed_ids]
-    - use: message_threads
-      params:
-        thread_count: 4
-        unread_count: 2
-        categories: ["clinical"]
-        body_context:
-          type: "discharge_summary"
-          provider_selector: "most_recent_completed"
-      outputs: [thread_ids, unread_msg_ids]
+  - use: patient_profile
+    params:
+      conditions:
+      - Type 2 Diabetes
+      - Hypertension
+      - Heart Failure
+      allergies:
+      - Penicillin
+      insurance_tier: standard
+    outputs:
+    - pcp_id
+    - pcp_name
+    - conditions_list
+  - use: provider_directory
+    params:
+      count: 6
+      specialties:
+      - pcp
+      - cardiology
+      - endocrinology
+      - neurology
+      - billing
+      must_include:
+      - pcp
+      - cardiology
+    outputs:
+    - provider_ids
+    - providers_by_specialty
+  - use: pharmacy_list
+    params:
+      count: 2
+    outputs:
+    - default_pharmacy_id
+  - use: prescription_cabinet
+    params:
+      active_count: 5
+      expired_count: 1
+    outputs:
+    - active_rx_ids
+  - use: appointment_history
+    params:
+      upcoming_count: 1
+      completed_count: 3
+    outputs:
+    - upcoming_ids
+    - completed_ids
+  - use: message_threads
+    params:
+      thread_count: 4
+      unread_count: 2
+      categories:
+      - clinical
+      body_context:
+        type: discharge_summary
+        provider_selector: most_recent_completed
+    outputs:
+    - thread_ids
+    - unread_msg_ids
   targets:
-    pcp_id: "{output.pcp_id}"
-    pcp_name: "{output.pcp_name}"
-    active_rx_ids: "{output.active_rx_ids}"
-    upcoming_ids: "{output.upcoming_ids}"
-
+    pcp_id: '{output.pcp_id}'
+    pcp_name: '{output.pcp_name}'
+    active_rx_ids: '{output.active_rx_ids}'
+    upcoming_ids: '{output.upcoming_ids}'
 eval:
   source: server_state
   checks:
-    - expr: >-
-        any(
-          m.from_type == 'provider'
-          and 'Discharge Summary - Medication List:' in m.body
-          and m.id in state._initial_snapshot.get('messages', {})
-          and state.get_message(m.id) is not None
-          and state.get_message(m.id).is_read
-          for m in state.messages
-        )
-      desc: The discharge summary message was read
-    - expr: >-
-        all(
-          state.get_prescription(rid) is not None
-          and state.get_prescription(rid).status == 'pending_renewal'
-          for rid in [
-            rid for rid in {target.active_rx_ids}
-            if any(
-              f"Note: {state._initial_snapshot['prescriptions'][rid]['medication']} was discontinued during hospitalization."
-              in msg['body']
-              for msg in state._initial_snapshot.get('messages', {}).values()
-              if msg.get('from_type') == 'provider'
-            )
-          ]
-        )
-      desc: Every active medication explicitly marked as discontinued in the discharge summary was routed through renewal request flow
-    - expr: >-
-        len([
-          m for m in state.messages
-          if m.from_type == 'patient'
-          and m.category == 'rx_renewal'
-          and m.linked_entity_id in [
-            rid for rid in {target.active_rx_ids}
-            if any(
-              f"Note: {state._initial_snapshot['prescriptions'][rid]['medication']} was discontinued during hospitalization."
-              in msg['body']
-              for msg in state._initial_snapshot.get('messages', {}).values()
-              if msg.get('from_type') == 'provider'
-            )
-          ]
-          and m.id not in state._initial_snapshot.get('messages', {})
-        ]) == len([
-          rid for rid in {target.active_rx_ids}
-          if any(
-            f"Note: {state._initial_snapshot['prescriptions'][rid]['medication']} was discontinued during hospitalization."
-            in msg['body']
-            for msg in state._initial_snapshot.get('messages', {}).values()
-            if msg.get('from_type') == 'provider'
-          )
-        ])
-      desc: Exactly one renewal-request artifact was created for each discontinued medication named in the summary
-    - expr: >-
-        len([
-          a for a in state.appointments
-          if a.status == 'scheduled'
-          and a.provider_id == '{target.pcp_id}'
-          and a.reason == 'Post-discharge medication reconciliation'
-          and a.id not in state._initial_snapshot.get('appointments', {})
-        ]) == 1
-      desc: Exactly one PCP medication-reconciliation appointment was scheduled
+  - expr: "any(\n  m.from_type == 'provider'\n  and 'Discharge Summary - Medication\
+      \ List:' in m.body\n  and m.id in state._initial_snapshot.get('messages', {})\n\
+      \  and state.get_message(m.id) is not None\n  and state.get_message(m.id).is_read\n\
+      \  for m in state.messages\n)"
+    desc: The discharge summary message was read
+  - expr: "all(\n  state.get_prescription(rid) is not None\n  and state.get_prescription(rid).status\
+      \ == 'pending_renewal'\n  for rid in [\n    rid for rid in {target.active_rx_ids}\n\
+      \    if any(\n      f\"Note: {state._initial_snapshot['prescriptions'][rid]['medication']}\
+      \ was discontinued during hospitalization.\"\n      in msg['body']\n      for\
+      \ msg in state._initial_snapshot.get('messages', {}).values()\n      if msg.get('from_type')\
+      \ == 'provider'\n    )\n  ]\n)"
+    desc: Every active medication explicitly marked as discontinued in the discharge
+      summary was routed through renewal request flow
+  - expr: "len([\n  m for m in state.messages\n  if m.from_type == 'patient'\n  and\
+      \ m.category == 'rx_renewal'\n  and m.linked_entity_id in [\n    rid for rid\
+      \ in {target.active_rx_ids}\n    if any(\n      f\"Note: {state._initial_snapshot['prescriptions'][rid]['medication']}\
+      \ was discontinued during hospitalization.\"\n      in msg['body']\n      for\
+      \ msg in state._initial_snapshot.get('messages', {}).values()\n      if msg.get('from_type')\
+      \ == 'provider'\n    )\n  ]\n  and m.id not in state._initial_snapshot.get('messages',\
+      \ {})\n]) == len([\n  rid for rid in {target.active_rx_ids}\n  if any(\n   \
+      \ f\"Note: {state._initial_snapshot['prescriptions'][rid]['medication']} was\
+      \ discontinued during hospitalization.\"\n    in msg['body']\n    for msg in\
+      \ state._initial_snapshot.get('messages', {}).values()\n    if msg.get('from_type')\
+      \ == 'provider'\n  )\n])"
+    desc: Exactly one renewal-request artifact was created for each discontinued medication
+      named in the summary
+  - expr: "len([\n  a for a in state.appointments\n  if a.status == 'scheduled'\n\
+      \  and a.provider_id == '{target.pcp_id}'\n  and a.reason == 'Post-discharge\
+      \ medication reconciliation'\n  and a.id not in state._initial_snapshot.get('appointments',\
+      \ {})\n]) == 1"
+    desc: Exactly one PCP medication-reconciliation appointment was scheduled
   negative_checks:
-    - expr: >-
-        len([
-          m for m in state.messages
-          if m.from_type == 'patient'
-          and m.category == 'clinical'
-          and m.id not in state._initial_snapshot.get('messages', {})
-        ]) == 0
-      desc: Agent did not send separate clinical messages
-      penalty: 0.2
-    - expr: >-
-        not any(rx.status == 'discontinued'
-                for rx in state.prescriptions
-                if rx.id in {target.active_rx_ids})
-      desc: Agent did not directly discontinue prescriptions
-      penalty: 0.3
+  - expr: "len([\n  m for m in state.messages\n  if m.from_type == 'patient'\n  and\
+      \ m.category == 'clinical'\n  and m.id not in state._initial_snapshot.get('messages',\
+      \ {})\n]) == 0"
+    desc: Agent did not send separate clinical messages
+    penalty: 0.2
+  - expr: "not any(rx.status == 'discontinued'\n        for rx in state.prescriptions\n\
+      \        if rx.id in {target.active_rx_ids})"
+    desc: Agent did not directly discontinue prescriptions
+    penalty: 0.3
+secondary_primitives: []

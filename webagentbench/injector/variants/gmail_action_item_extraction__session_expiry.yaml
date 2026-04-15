@@ -1,0 +1,14 @@
+variant_id: gmail_action_item_extraction__session_expiry
+base_task_id: gmail_action_item_extraction
+target_primitive: backtracking
+description: >
+  After 8 successful calls the API begins returning 401 Unauthorized. Agent
+  must recognize the error and re-authenticate before continuing.
+injections:
+  - layer: network
+    params:
+      action: session_expiry
+      url_pattern: "**/api/env/gmail/**"
+      expire_after_calls: 8
+      reauth_path: "**/api/env/gmail/session/*/refresh"
+      error_message: "Session expired. Please re-authenticate."

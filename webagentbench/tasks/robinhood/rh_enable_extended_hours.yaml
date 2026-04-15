@@ -1,30 +1,26 @@
 task_id: rh_enable_extended_hours
 env_id: robinhood
 title: Enable Extended Hours Trading
-instruction_template: "Enable extended hours trading in your account settings."
+instruction_template: Enable extended hours trading in your account settings.
 difficulty: easy
 time_limit_seconds: 90
 expected_steps: 4
 primary_primitives:
-  - grounding
-  - exploration
+- grounding
 start_path: /
-
 seed:
   distractors: 5
   steps: []
   targets: {}
-
 eval:
   source: server_state
   checks:
-    - expr: "state.settings.extended_hours_enabled == True"
-      desc: Extended hours trading is enabled in settings
-    - expr: "bool(state.settings.extended_hours_enabled)"
-      desc: Extended hours setting is truthy
+  - expr: state.settings.extended_hours_enabled == True
+    desc: Extended hours trading is enabled in settings
+  - expr: bool(state.settings.extended_hours_enabled)
+    desc: Extended hours setting is truthy
   negative_checks:
-    - expr: >-
-        len(state.orders) == 0
-        or all(o.id.startswith('ord_decoy_') for o in state.orders)
-      desc: Agent did not place any orders (task only required toggling a setting)
-      penalty: 0.15
+  - expr: len(state.orders) == 0 or all(o.id.startswith('ord_decoy_') for o in state.orders)
+    desc: Agent did not place any orders (task only required toggling a setting)
+    penalty: 0.15
+secondary_primitives: []

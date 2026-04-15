@@ -28,6 +28,8 @@ logger = logging.getLogger(__name__)
 _SESSION_NETWORK: dict[str, list[dict]] = {}   # session_id → network injections
 _SESSION_CLIENT: dict[str, list[dict]] = {}    # session_id → client injections
 _CALL_COUNTERS: dict[str, dict[str, int]] = {} # session_id → per-pattern counters
+_EXPIRED_SESSIONS: dict[str, set[int]] = {}    # session_id → expired inj indices
+_RATE_LIMITED: dict[str, dict[int, float]] = {}  # session_id → {inj_idx: cooldown_until_call}
 
 
 def register_session_degradation(session_id: str, injections: list[dict]) -> None:
@@ -52,6 +54,8 @@ def unregister_session_degradation(session_id: str) -> None:
     _SESSION_NETWORK.pop(session_id, None)
     _SESSION_CLIENT.pop(session_id, None)
     _CALL_COUNTERS.pop(session_id, None)
+    _EXPIRED_SESSIONS.pop(session_id, None)
+    _RATE_LIMITED.pop(session_id, None)
 
 
 def clear_all_degradations() -> None:
@@ -59,6 +63,8 @@ def clear_all_degradations() -> None:
     _SESSION_NETWORK.clear()
     _SESSION_CLIENT.clear()
     _CALL_COUNTERS.clear()
+    _EXPIRED_SESSIONS.clear()
+    _RATE_LIMITED.clear()
 
 
 def get_client_injections(session_id: str) -> list[dict]:
@@ -198,6 +204,57 @@ def _progressive_delay_ms(
     return current_delay
 
 
+def _seeded_quantile(seed: int, call_index: int) -> float:
+    """Return a deterministic pseudo-uniform [0, 1) draw for (seed, call_index)."""
+    h = hashlib.md5(f"{seed}:q:{call_index}".encode()).hexdigest()
+    return int(h[:8], 16) / 0x100000000
+
+
+def _tail_latency_ms(
+    seed: int,
+    call_index: int,
+    p50_ms: int,
+    p95_ms: int,
+    p99_ms: int,
+) -> int:
+    """Sample a delay from a piecewise distribution anchored at (p50, p95, p99).
+
+    Quantile q in [0, 1) maps linearly between (0, 0), (0.5, p50), (0.95, p95),
+    (0.99, p99), (1.0, p99 * 1.5). Produces a right-skewed tail that mirrors
+    real-world HTTP latency without any floating-point randomness.
+    """
+    q = _seeded_quantile(seed, call_index)
+    anchors = [
+        (0.0, 0),
+        (0.5, p50_ms),
+        (0.95, p95_ms),
+        (0.99, p99_ms),
+        (1.0, int(p99_ms * 1.5)),
+    ]
+    for i in range(1, len(anchors)):
+        q0, v0 = anchors[i - 1]
+        q1, v1 = anchors[i]
+        if q < q1:
+            span = q1 - q0 or 1e-9
+            frac = (q - q0) / span
+            return int(v0 + (v1 - v0) * frac)
+    return int(p99_ms * 1.5)
+
+
+def _in_correlated_window(call_num: int, start: int, duration: int) -> bool:
+    """Is the 1-indexed call inside the slow window?"""
+    if duration <= 0:
+        return False
+    return start < call_num <= start + duration
+
+
+def _method_matches(method: str, allowed: Any) -> bool:
+    """True if method matches any entry in ``allowed`` (or allowed is empty)."""
+    if not allowed:
+        return True
+    return method.upper() in {str(m).upper() for m in allowed}
+
+
 def _extract_session_from_referer(referer: str) -> str | None:
     """Extract session ID from the Referer header.
 
@@ -259,6 +316,17 @@ class DegradationMiddleware(BaseHTTPMiddleware):
         method = request.method
         injections = _SESSION_NETWORK[session_id]
 
+        # Pre-pass: clear session_expiry on reauth path matches.
+        for inj_idx, inj in enumerate(injections):
+            params = inj.get("params", {})
+            if params.get("action") != "session_expiry":
+                continue
+            reauth = params.get("reauth_path")
+            if reauth and _url_matches_pattern(url, reauth):
+                expired = _EXPIRED_SESSIONS.get(session_id)
+                if expired is not None:
+                    expired.discard(inj_idx)
+
         for inj_idx, inj in enumerate(injections):
             params = inj.get("params", {})
             action = params.get("action", "")
@@ -285,6 +353,22 @@ class DegradationMiddleware(BaseHTTPMiddleware):
                 delay_methods = params.get("methods")
                 if delay_methods and method not in set(delay_methods):
                     continue
+            elif action == "misleading_success":
+                ms_methods = set(params.get("methods", ["POST", "PUT"]))
+                if method not in ms_methods:
+                    continue
+            elif action == "concurrent_modification":
+                cm_methods = set(params.get("methods", ["PUT", "PATCH", "POST"]))
+                if method not in cm_methods:
+                    continue
+            elif action == "rate_limit":
+                rl_methods = params.get("methods")
+                if rl_methods and method not in set(rl_methods):
+                    continue
+            elif action == "session_expiry":
+                se_methods = params.get("methods")
+                if se_methods and method not in set(se_methods):
+                    continue
 
             behavior = params.get("behavior", {})
             mode = behavior.get("mode", "once")
@@ -308,6 +392,26 @@ class DegradationMiddleware(BaseHTTPMiddleware):
                 elif mode == "intermittent":
                     prob = behavior.get("probability", 0.3)
                     should_delay = _seeded_should_fire(beh_seed, call_num, prob)
+                elif mode == "tail_latency":
+                    sampled = _tail_latency_ms(
+                        beh_seed,
+                        call_num,
+                        int(behavior.get("p50_ms", 100)),
+                        int(behavior.get("p95_ms", 2000)),
+                        int(behavior.get("p99_ms", 5000)),
+                    )
+                    if sampled > 0:
+                        delay_ms = sampled
+                        should_delay = True
+                elif mode == "correlated_window":
+                    start = int(behavior.get("window_start_call", 3))
+                    duration = int(behavior.get("window_duration_calls", 4))
+                    if _in_correlated_window(call_num, start, duration):
+                        delay_ms = int(behavior.get("slow_ms", delay_ms))
+                        should_delay = True
+                elif mode == "write_only_slow":
+                    # Already method-filtered above; always apply the delay.
+                    should_delay = True
                 else:  # once — always delay
                     should_delay = True
 
@@ -383,6 +487,83 @@ class DegradationMiddleware(BaseHTTPMiddleware):
                     return JSONResponse(
                         status_code=200,
                         content=stale_body,
+                    )
+
+            elif action == "misleading_success":
+                # Server returns a louder lie: 200 with a body that claims the
+                # write succeeded ("toast: Email sent") but the write is
+                # skipped. Inverse of silent_fail: crueler because the toast
+                # actively misleads.
+                success_body = params.get(
+                    "success_body",
+                    {"success": True, "message": "Saved."},
+                )
+                should_mislead = False
+                if mode == "intermittent":
+                    prob = behavior.get("probability", 0.3)
+                    should_mislead = _seeded_should_fire(beh_seed, call_num, prob)
+                else:
+                    fail_count = params.get("fail_count", 1)
+                    should_mislead = call_num <= fail_count
+                if should_mislead:
+                    return JSONResponse(status_code=200, content=success_body)
+
+            elif action == "concurrent_modification":
+                conflict_count = params.get("conflict_count", 1)
+                if call_num <= conflict_count:
+                    body: dict[str, Any] = {
+                        "error": params.get(
+                            "conflict_message",
+                            "This record was modified by another session. Reload and retry.",
+                        ),
+                        "status": 409,
+                        "retryable": True,
+                    }
+                    snapshot = params.get("latest_snapshot")
+                    if snapshot is not None:
+                        body["latest"] = snapshot
+                    return JSONResponse(status_code=409, content=body)
+
+            elif action == "rate_limit":
+                burst_limit = int(params.get("burst_limit", 3))
+                retry_after = int(params.get("retry_after_seconds", 5))
+                cooldown_calls = int(params.get("cooldown_calls", 3))
+                rl = _RATE_LIMITED.setdefault(session_id, {})
+                cooldown_until_call = rl.get(inj_idx, 0)
+                if call_num <= burst_limit:
+                    # Let first N calls pass; record when the window closes.
+                    rl[inj_idx] = call_num + cooldown_calls
+                elif call_num <= cooldown_until_call:
+                    return JSONResponse(
+                        status_code=429,
+                        content={
+                            "error": params.get(
+                                "error_message",
+                                "Rate limit exceeded. Please wait before retrying.",
+                            ),
+                            "status": 429,
+                            "retryable": True,
+                        },
+                        headers={"Retry-After": str(retry_after)},
+                    )
+                # If we're past the cooldown, allow through (silently reset).
+
+            elif action == "session_expiry":
+                expire_after = int(params.get("expire_after_calls", 5))
+                expired = _EXPIRED_SESSIONS.setdefault(session_id, set())
+                if call_num > expire_after:
+                    expired.add(inj_idx)
+                if inj_idx in expired:
+                    return JSONResponse(
+                        status_code=401,
+                        content={
+                            "error": params.get(
+                                "error_message",
+                                "Session expired. Please re-authenticate.",
+                            ),
+                            "status": 401,
+                            "retryable": True,
+                        },
                     )
 
         return await call_next(request)

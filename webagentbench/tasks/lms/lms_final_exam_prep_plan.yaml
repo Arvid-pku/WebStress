@@ -1,113 +1,94 @@
 task_id: lms_final_exam_prep_plan
 env_id: lms
 title: Final Exam Prep — Drop Impossible Courses, Submit for Achievable Ones
-instruction_template: >-
-  For each course: find the final exam date, check the exam weight, determine
-  your current grade, and compute the minimum final score needed for a B
-  (80%). For any course where achieving a B requires more than 95% on the
-  final (nearly impossible), drop that course. For the remaining courses,
-  submit "exam_prep.pdf" for the final exam assignment to reserve your study
-  slot.
+instruction_template: 'For each course: find the final exam date, check the exam weight,
+  determine your current grade, and compute the minimum final score needed for a B
+  (80%). For any course where achieving a B requires more than 95% on the final (nearly
+  impossible), drop that course. For the remaining courses, submit "exam_prep.pdf"
+  for the final exam assignment to reserve your study slot.'
 difficulty: frontier
 time_limit_seconds: 600
 expected_steps: 40
 primary_primitives:
-  - state_tracking
-  - planning
-  - verification
+- state_tracking
 start_path: /dashboard
-
 seed:
   distractors: 2
   steps:
-    - use: student_profile
-      params: {}
-      outputs:
-        - student_id
-    - use: course_catalog
-      params:
-        count: 4
-        must_include: ["CS101", "MATH201", "ENG102", "PHYS201"]
-        vary_late_policies: true
-      outputs:
-        - course_ids
-        - course_codes
-    - use: enrollment_set
-      params: {}
-      outputs:
-        - enrollment_ids
-    - use: assignment_battery
-      params:
-        per_course_count: 7
-        graded_fraction: 0.6
-      outputs:
-        - assignment_ids
-    - use: grade_book
-      params: {}
-      outputs:
-        - grade_ids
-        - current_weighted_scores
-        - impossible_b_course_ids
-        - final_exam_assignment_ids
-        - achievable_course_ids
-    - use: calendar_events
-      params:
-        include_recurring: false
-      outputs:
-        - event_ids
+  - use: student_profile
+    params: {}
+    outputs:
+    - student_id
+  - use: course_catalog
+    params:
+      count: 4
+      must_include:
+      - CS101
+      - MATH201
+      - ENG102
+      - PHYS201
+      vary_late_policies: true
+    outputs:
+    - course_ids
+    - course_codes
+  - use: enrollment_set
+    params: {}
+    outputs:
+    - enrollment_ids
+  - use: assignment_battery
+    params:
+      per_course_count: 7
+      graded_fraction: 0.6
+    outputs:
+    - assignment_ids
+  - use: grade_book
+    params: {}
+    outputs:
+    - grade_ids
+    - current_weighted_scores
+    - impossible_b_course_ids
+    - final_exam_assignment_ids
+    - achievable_course_ids
+  - use: calendar_events
+    params:
+      include_recurring: false
+    outputs:
+    - event_ids
   targets:
     impossible_b_course_ids: '{output.impossible_b_course_ids}'
     final_exam_assignment_ids: '{output.final_exam_assignment_ids}'
     achievable_course_ids: '{output.achievable_course_ids}'
     course_codes: '{output.course_codes}'
-
 eval:
   source: server_state
   checks:
-    - expr: >-
-        all(
-            state.get_enrollment_for_course(cid) is not None
-            and state.get_enrollment_for_course(cid).status == 'dropped'
-            for cid in '{target.impossible_b_course_ids}'.split(',')
-            if cid.strip()
-        )
-      desc: All impossible-B courses were dropped
-    - expr: >-
-        all(
-            state.get_assignment(aid) is not None
-            and state.get_assignment(aid).submission_status in ('submitted', 'late')
-            and state.get_assignment(aid).file_name == 'exam_prep.pdf'
-            for aid in '{target.final_exam_assignment_ids}'.split(',')
-            if aid.strip()
-        )
-      desc: Final exam assignments submitted for achievable courses
-    - expr: >-
-        all(
-            state.get_enrollment_for_course(cid) is not None
-            and state.get_enrollment_for_course(cid).status == 'enrolled'
-            for cid in '{target.achievable_course_ids}'.split(',')
-            if cid.strip()
-        )
-      desc: Achievable courses were NOT dropped
+  - expr: "all(\n    state.get_enrollment_for_course(cid) is not None\n    and state.get_enrollment_for_course(cid).status\
+      \ == 'dropped'\n    for cid in '{target.impossible_b_course_ids}'.split(',')\n\
+      \    if cid.strip()\n)"
+    desc: All impossible-B courses were dropped
+  - expr: "all(\n    state.get_assignment(aid) is not None\n    and state.get_assignment(aid).submission_status\
+      \ in ('submitted', 'late')\n    and state.get_assignment(aid).file_name == 'exam_prep.pdf'\n\
+      \    for aid in '{target.final_exam_assignment_ids}'.split(',')\n    if aid.strip()\n\
+      )"
+    desc: Final exam assignments submitted for achievable courses
+  - expr: "all(\n    state.get_enrollment_for_course(cid) is not None\n    and state.get_enrollment_for_course(cid).status\
+      \ == 'enrolled'\n    for cid in '{target.achievable_course_ids}'.split(',')\n\
+      \    if cid.strip()\n)"
+    desc: Achievable courses were NOT dropped
   negative_checks:
-    - expr: >-
-        not any(e.status == 'dropped'
-                and e.course_id in
-                    [cid.strip() for cid in '{target.achievable_course_ids}'.split(',')]
-                for e in state.enrollments)
-      desc: No achievable course was dropped
-      penalty: 0.3
-    - expr: >-
-        not any(a.submission_status in ('submitted', 'late')
-                and a.file_name == 'exam_prep.pdf'
-                and a.course_id in
-                    [cid.strip() for cid in '{target.impossible_b_course_ids}'.split(',')]
-                for a in state.assignments)
-      desc: No exam_prep.pdf was submitted for impossible-B courses
-      penalty: 0.25
-    - expr: >-
-        len([a for a in state.assignments
-             if a.file_name == 'exam_prep.pdf'
-             and a.submission_status in ('submitted', 'late')]) <= len([aid.strip() for aid in '{target.final_exam_assignment_ids}'.split(',') if aid.strip()])
-      desc: No more exam_prep submissions than achievable courses
-      penalty: 0.15
+  - expr: "not any(e.status == 'dropped'\n        and e.course_id in\n           \
+      \ [cid.strip() for cid in '{target.achievable_course_ids}'.split(',')]\n   \
+      \     for e in state.enrollments)"
+    desc: No achievable course was dropped
+    penalty: 0.3
+  - expr: "not any(a.submission_status in ('submitted', 'late')\n        and a.file_name\
+      \ == 'exam_prep.pdf'\n        and a.course_id in\n            [cid.strip() for\
+      \ cid in '{target.impossible_b_course_ids}'.split(',')]\n        for a in state.assignments)"
+    desc: No exam_prep.pdf was submitted for impossible-B courses
+    penalty: 0.25
+  - expr: "len([a for a in state.assignments\n     if a.file_name == 'exam_prep.pdf'\n\
+      \     and a.submission_status in ('submitted', 'late')]) <= len([aid.strip()\
+      \ for aid in '{target.final_exam_assignment_ids}'.split(',') if aid.strip()])"
+    desc: No more exam_prep submissions than achievable courses
+    penalty: 0.15
+secondary_primitives: []

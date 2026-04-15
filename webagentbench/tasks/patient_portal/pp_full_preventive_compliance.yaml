@@ -1,172 +1,136 @@
 task_id: pp_full_preventive_compliance
 env_id: patient_portal
 title: Full Preventive Care Compliance
-instruction_template: >-
-  Complete all overdue preventive care actions using only appointments, refills,
-  and renewal requests:
-  1) Review your applicable screenings list and schedule appointments for any where
-  the next_due date has passed,
-  2) Schedule appointments for all due or overdue immunizations,
-  3) Identify all prescriptions expiring within 30 days that still have refills
-  remaining and request refills,
-  4) For the prescription with zero refills remaining, use the renewal request flow.
-  Do not send any separate clinical summary messages.
+instruction_template: 'Complete all overdue preventive care actions using only appointments,
+  refills, and renewal requests: 1) Review your applicable screenings list and schedule
+  appointments for any where the next_due date has passed, 2) Schedule appointments
+  for all due or overdue immunizations, 3) Identify all prescriptions expiring within
+  30 days that still have refills remaining and request refills, 4) For the prescription
+  with zero refills remaining, use the renewal request flow. Do not send any separate
+  clinical summary messages.'
 difficulty: frontier
 time_limit_seconds: 600
 expected_steps: 60
 primary_primitives:
-  - grounding
-  - planning
-  - state_tracking
-  - verification
-  - backtracking
-  - patience
-  - exploration
+- planning
 start_path: /
-
 seed:
   distractors: 10
   steps:
-    - use: patient_profile
-      params:
-        conditions: ["Hypertension", "Type 2 Diabetes"]
-        insurance_tier: standard
-      outputs: [pcp_id, pcp_name, applicable_screening_names]
-    - use: provider_directory
-      params:
-        count: 6
-        specialties: ["pcp", "cardiology", "endocrinology", "dermatology", "billing"]
-        must_include: ["pcp"]
-      outputs: [provider_ids, providers_by_specialty]
-    - use: pharmacy_list
-      params:
-        count: 2
-      outputs: [default_pharmacy_id]
-    - use: prescription_cabinet
-      params:
-        active_count: 3
-        expiring_soon_count: 3
-        zero_refill_count: 1
-      outputs: [active_rx_ids, expiring_rx_ids, zero_refill_rx_id]
-    - use: immunization_record
-      params:
-        completed_count: 2
-        due_count: 2
-        series_incomplete: true
-      outputs: [due_imm_ids, due_vaccine_names, incomplete_series_imm_id]
-    - use: appointment_history
-      params:
-        upcoming_count: 1
-        completed_count: 2
-      outputs: [upcoming_ids]
+  - use: patient_profile
+    params:
+      conditions:
+      - Hypertension
+      - Type 2 Diabetes
+      insurance_tier: standard
+    outputs:
+    - pcp_id
+    - pcp_name
+    - applicable_screening_names
+  - use: provider_directory
+    params:
+      count: 6
+      specialties:
+      - pcp
+      - cardiology
+      - endocrinology
+      - dermatology
+      - billing
+      must_include:
+      - pcp
+    outputs:
+    - provider_ids
+    - providers_by_specialty
+  - use: pharmacy_list
+    params:
+      count: 2
+    outputs:
+    - default_pharmacy_id
+  - use: prescription_cabinet
+    params:
+      active_count: 3
+      expiring_soon_count: 3
+      zero_refill_count: 1
+    outputs:
+    - active_rx_ids
+    - expiring_rx_ids
+    - zero_refill_rx_id
+  - use: immunization_record
+    params:
+      completed_count: 2
+      due_count: 2
+      series_incomplete: true
+    outputs:
+    - due_imm_ids
+    - due_vaccine_names
+    - incomplete_series_imm_id
+  - use: appointment_history
+    params:
+      upcoming_count: 1
+      completed_count: 2
+    outputs:
+    - upcoming_ids
   targets:
-    pcp_id: "{output.pcp_id}"
-    pcp_name: "{output.pcp_name}"
-    expiring_rx_ids: "{output.expiring_rx_ids}"
-    zero_refill_rx_id: "{output.zero_refill_rx_id}"
-    due_vaccine_names: "{output.due_vaccine_names}"
-    active_rx_ids: "{output.active_rx_ids}"
-    upcoming_ids: "{output.upcoming_ids}"
-    applicable_screening_names: "{output.applicable_screening_names}"
-
+    pcp_id: '{output.pcp_id}'
+    pcp_name: '{output.pcp_name}'
+    expiring_rx_ids: '{output.expiring_rx_ids}'
+    zero_refill_rx_id: '{output.zero_refill_rx_id}'
+    due_vaccine_names: '{output.due_vaccine_names}'
+    active_rx_ids: '{output.active_rx_ids}'
+    upcoming_ids: '{output.upcoming_ids}'
+    applicable_screening_names: '{output.applicable_screening_names}'
 eval:
   source: server_state
   checks:
-    - expr: >-
-        len([
-          a for a in state.appointments
-          if a.status == 'scheduled'
-          and a.id not in state._initial_snapshot.get('appointments', {})
-        ]) == (
-          len([
-            screening for screening in state.patient.applicable_screenings
-            if screening.next_due is not None
-            and screening.next_due < state.created_at.date()
-          ])
-          + len([
-            imm for imm in state.immunizations
-            if imm.next_due_at is not None
-            and imm.next_due_at <= state.created_at
-          ])
-        )
-      desc: One appointment was scheduled for each overdue screening and due immunization
-    - expr: >-
-        all(
-          sum(
-            1
-            for screening in state.patient.applicable_screenings
-            if screening.next_due is not None
-            and screening.next_due < state.created_at.date()
-            and screening.screening_name.lower() in a.reason.lower()
-          )
-          + sum(
-            1
-            for imm in state.immunizations
-            if imm.next_due_at is not None
-            and imm.next_due_at <= state.created_at
-            and imm.vaccine_name.lower() in a.reason.lower()
-          ) == 1
-          for a in state.appointments
-          if a.status == 'scheduled'
-          and a.id not in state._initial_snapshot.get('appointments', {})
-        )
-      desc: Each new appointment corresponds to exactly one overdue screening or due immunization
-    - expr: >-
-        all(
-          state.get_prescription(rid).status == 'active'
-          and state.get_prescription(rid).refills_remaining
-              == state._initial_snapshot['prescriptions'][rid]['refills_remaining'] - 1
-          and state.get_prescription(rid).last_filled.isoformat()
-              != state._initial_snapshot['prescriptions'][rid]['last_filled']
-          for rid in {target.active_rx_ids}
-          if state._initial_snapshot['prescriptions'][rid]['refills_remaining'] > 0
-          and (state.get_prescription(rid).expires_at - state.created_at).days <= 30
-        )
-      desc: Expiring prescriptions with remaining refills were refilled once
-    - expr: >-
-        state.get_prescription('{target.zero_refill_rx_id}') is not None
-        and state.get_prescription('{target.zero_refill_rx_id}').status == 'pending_renewal'
-        and len([
-          m for m in state.messages
-          if m.from_type == 'patient'
-          and m.category == 'rx_renewal'
-          and m.linked_entity_id == '{target.zero_refill_rx_id}'
-          and m.id not in state._initial_snapshot.get('messages', {})
-        ]) == 1
-      desc: The zero-refill prescription was moved to pending renewal with one renewal-request artifact
+  - expr: "len([\n  a for a in state.appointments\n  if a.status == 'scheduled'\n\
+      \  and a.id not in state._initial_snapshot.get('appointments', {})\n]) == (\n\
+      \  len([\n    screening for screening in state.patient.applicable_screenings\n\
+      \    if screening.next_due is not None\n    and screening.next_due < state.created_at.date()\n\
+      \  ])\n  + len([\n    imm for imm in state.immunizations\n    if imm.next_due_at\
+      \ is not None\n    and imm.next_due_at <= state.created_at\n  ])\n)"
+    desc: One appointment was scheduled for each overdue screening and due immunization
+  - expr: "all(\n  sum(\n    1\n    for screening in state.patient.applicable_screenings\n\
+      \    if screening.next_due is not None\n    and screening.next_due < state.created_at.date()\n\
+      \    and screening.screening_name.lower() in a.reason.lower()\n  )\n  + sum(\n\
+      \    1\n    for imm in state.immunizations\n    if imm.next_due_at is not None\n\
+      \    and imm.next_due_at <= state.created_at\n    and imm.vaccine_name.lower()\
+      \ in a.reason.lower()\n  ) == 1\n  for a in state.appointments\n  if a.status\
+      \ == 'scheduled'\n  and a.id not in state._initial_snapshot.get('appointments',\
+      \ {})\n)"
+    desc: Each new appointment corresponds to exactly one overdue screening or due
+      immunization
+  - expr: "all(\n  state.get_prescription(rid).status == 'active'\n  and state.get_prescription(rid).refills_remaining\n\
+      \      == state._initial_snapshot['prescriptions'][rid]['refills_remaining']\
+      \ - 1\n  and state.get_prescription(rid).last_filled.isoformat()\n      != state._initial_snapshot['prescriptions'][rid]['last_filled']\n\
+      \  for rid in {target.active_rx_ids}\n  if state._initial_snapshot['prescriptions'][rid]['refills_remaining']\
+      \ > 0\n  and (state.get_prescription(rid).expires_at - state.created_at).days\
+      \ <= 30\n)"
+    desc: Expiring prescriptions with remaining refills were refilled once
+  - expr: "state.get_prescription('{target.zero_refill_rx_id}') is not None and state.get_prescription('{target.zero_refill_rx_id}').status\
+      \ == 'pending_renewal' and len([\n  m for m in state.messages\n  if m.from_type\
+      \ == 'patient'\n  and m.category == 'rx_renewal'\n  and m.linked_entity_id ==\
+      \ '{target.zero_refill_rx_id}'\n  and m.id not in state._initial_snapshot.get('messages',\
+      \ {})\n]) == 1"
+    desc: The zero-refill prescription was moved to pending renewal with one renewal-request
+      artifact
   negative_checks:
-    - expr: >-
-        not any(
-          m.from_type == 'patient'
-          and m.id not in state._initial_snapshot.get('messages', {})
-          and not (
-            m.category == 'rx_renewal'
-            and m.linked_entity_id == '{target.zero_refill_rx_id}'
-          )
-          for m in state.messages
-        )
-      desc: No extra patient messages were sent beyond the zero-refill renewal request artifact
-      penalty: 0.2
-    - expr: >-
-        not any(rx.status == 'discontinued'
-                for rx in state.prescriptions
-                if rx.id in {target.active_rx_ids})
-      desc: No prescriptions were prematurely discontinued
-      penalty: 0.3
-    - expr: >-
-        not any(
-          rx.status == 'pending_renewal'
-          and rx.id in {target.active_rx_ids}
-          and rx.id != '{target.zero_refill_rx_id}'
-          for rx in state.prescriptions
-        )
-      desc: Prescriptions with remaining refills were not routed to pending renewal
-      penalty: 0.25
-    - expr: >-
-        all(
-          state.get_appointment(aid) is not None
-          and state.get_appointment(aid).status != 'cancelled'
-          for aid in {target.upcoming_ids}
-        )
-      desc: Existing appointments were not cancelled
-      penalty: 0.2
+  - expr: "not any(\n  m.from_type == 'patient'\n  and m.id not in state._initial_snapshot.get('messages',\
+      \ {})\n  and not (\n    m.category == 'rx_renewal'\n    and m.linked_entity_id\
+      \ == '{target.zero_refill_rx_id}'\n  )\n  for m in state.messages\n)"
+    desc: No extra patient messages were sent beyond the zero-refill renewal request
+      artifact
+    penalty: 0.2
+  - expr: "not any(rx.status == 'discontinued'\n        for rx in state.prescriptions\n\
+      \        if rx.id in {target.active_rx_ids})"
+    desc: No prescriptions were prematurely discontinued
+    penalty: 0.3
+  - expr: "not any(\n  rx.status == 'pending_renewal'\n  and rx.id in {target.active_rx_ids}\n\
+      \  and rx.id != '{target.zero_refill_rx_id}'\n  for rx in state.prescriptions\n\
+      )"
+    desc: Prescriptions with remaining refills were not routed to pending renewal
+    penalty: 0.25
+  - expr: "all(\n  state.get_appointment(aid) is not None\n  and state.get_appointment(aid).status\
+      \ != 'cancelled'\n  for aid in {target.upcoming_ids}\n)"
+    desc: Existing appointments were not cancelled
+    penalty: 0.2
+secondary_primitives: []

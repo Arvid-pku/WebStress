@@ -2,12 +2,13 @@ task_id: reddit_inbox_triage_and_engage
 title: Inbox Triage and Targeted Engagement
 instruction_template: '1. Mark all notifications as read.
 
-  2. Go to Messages. Read all unread messages. Reply to u/{target.reply_from} (subject: "{target.reply_subject}")
-  with exactly: "{target.reply_body}"
+  2. Go to Messages. Read all unread messages. Reply to u/{target.reply_from} (subject:
+  "{target.reply_subject}") with exactly: "{target.reply_body}"
 
   3. Delete the message with subject "{target.delete_subject}".
 
-  4. Navigate to r/{target.sub} and find "{target.post_title}". Upvote it and comment with exactly: "{target.comment_text}"
+  4. Navigate to r/{target.sub} and find "{target.post_title}". Upvote it and comment
+  with exactly: "{target.comment_text}"
 
   5. Save that post.
 
@@ -62,14 +63,15 @@ seed:
     sub: '{output.subreddit_name}'
     post_title: '{output.post_title}'
     post_id: '{output.post_id}'
-    comment_text: This is a great explainer. The relationship between ISO and noise is something beginners
-      always struggle with.
+    comment_text: This is a great explainer. The relationship between ISO and noise
+      is something beginners always struggle with.
 eval:
   source: server_state
   checks:
   - expr: state.unread_notification_count() == 0
     desc: Notifications cleared
-  - expr: any(m.to_user == '{target.reply_from}' and "Count me in" in m.body for m in state.sent_messages)
+  - expr: any(m.to_user == '{target.reply_from}' and "Count me in" in m.body for m
+      in state.sent_messages)
     desc: Reply sent
   - expr: not any(m.id == '{target.delete_msg_id}' for m in state.messages)
     desc: Spam deleted
@@ -77,7 +79,8 @@ eval:
     desc: Post upvoted
   - expr: '''{target.post_id}'' in state.saved_post_ids'
     desc: Post saved
-  - expr: any(c.post_id == '{target.post_id}' and "ISO and noise" in c.body for c in state.comments)
+  - expr: any(c.post_id == '{target.post_id}' and "ISO and noise" in c.body for c
+      in state.comments)
     desc: Comment posted
   negative_checks:
   - expr: len(state.messages) >= 4
@@ -86,7 +89,8 @@ eval:
   - expr: len(state.sent_messages) <= 9
     desc: No excessive messages sent
     penalty: 0.15
-  - expr: sum(1 for p in state.posts if p.author_name == state.owner_username) == 0
+  - expr: sum(1 for p in state.posts if p.author_name == state.owner_username) ==
+      0
     desc: No posts created when none required
     penalty: 0.15
   - expr: len(state.blocked_users) == 0
@@ -94,5 +98,4 @@ eval:
     penalty: 0.15
 env_id: reddit
 start_path: /feed
-secondary_primitives:
-- state_tracking
+secondary_primitives: []

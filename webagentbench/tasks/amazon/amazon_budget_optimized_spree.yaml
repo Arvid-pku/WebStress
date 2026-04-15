@@ -1,9 +1,10 @@
 task_id: amazon_budget_optimized_spree
 env_id: amazon
 title: Buy Highest-Rated Product Under $60 from 5 Categories
-instruction_template: 'Shop across five categories: Electronics, Books, Home & Kitchen, Clothing, and
-  Sports & Outdoors. In each category, find the highest-rated product that costs less than $60.00. Add
-  all five winners to your cart and complete checkout in a single order. Your total must stay under $250.00.
+instruction_template: 'Shop across five categories: Electronics, Books, Home & Kitchen,
+  Clothing, and Sports & Outdoors. In each category, find the highest-rated product
+  that costs less than $60.00. Add all five winners to your cart and complete checkout
+  in a single order. Your total must stay under $250.00.
 
   '
 difficulty: frontier
@@ -11,8 +12,7 @@ time_limit_seconds: 540
 expected_steps: 50
 primary_primitives:
 - planning
-secondary_primitives:
-- state_tracking
+secondary_primitives: []
 start_path: /
 seed:
   distractors: 20
@@ -163,28 +163,28 @@ eval:
   checks:
   - expr: any(not o.id.startswith('order_initial_') for o in state.orders)
     desc: An order was placed
-  - expr: 'any(any(item.product_id == ''{target.product_id_cat1}'' for item in o.items) for o in state.orders
-      if not o.id.startswith(''order_initial_''))
+  - expr: 'any(any(item.product_id == ''{target.product_id_cat1}'' for item in o.items)
+      for o in state.orders if not o.id.startswith(''order_initial_''))
 
       '
     desc: Electronics winner purchased
-  - expr: 'any(any(item.product_id == ''{target.product_id_cat2}'' for item in o.items) for o in state.orders
-      if not o.id.startswith(''order_initial_''))
+  - expr: 'any(any(item.product_id == ''{target.product_id_cat2}'' for item in o.items)
+      for o in state.orders if not o.id.startswith(''order_initial_''))
 
       '
     desc: Books winner purchased
-  - expr: 'any(any(item.product_id == ''{target.product_id_cat3}'' for item in o.items) for o in state.orders
-      if not o.id.startswith(''order_initial_''))
+  - expr: 'any(any(item.product_id == ''{target.product_id_cat3}'' for item in o.items)
+      for o in state.orders if not o.id.startswith(''order_initial_''))
 
       '
     desc: Home & Kitchen winner purchased
-  - expr: 'any(any(item.product_id == ''{target.product_id_cat4}'' for item in o.items) for o in state.orders
-      if not o.id.startswith(''order_initial_''))
+  - expr: 'any(any(item.product_id == ''{target.product_id_cat4}'' for item in o.items)
+      for o in state.orders if not o.id.startswith(''order_initial_''))
 
       '
     desc: Clothing winner purchased
-  - expr: 'any(any(item.product_id == ''{target.product_id_cat5}'' for item in o.items) for o in state.orders
-      if not o.id.startswith(''order_initial_''))
+  - expr: 'any(any(item.product_id == ''{target.product_id_cat5}'' for item in o.items)
+      for o in state.orders if not o.id.startswith(''order_initial_''))
 
       '
     desc: Sports winner purchased
@@ -199,10 +199,12 @@ eval:
   - expr: len(state.cart_items) == 0
     desc: Cart empty after checkout
   negative_checks:
-  - expr: sum(1 for o in state.orders if not o.id.startswith('order_initial_')) <= 1
+  - expr: sum(1 for o in state.orders if not o.id.startswith('order_initial_')) <=
+      1
     desc: Only one order placed
     penalty: 0.15
-  - expr: 'all(all(item.unit_price < 60 for item in o.items) for o in state.orders if not o.id.startswith(''order_initial_''))
+  - expr: 'all(all(item.unit_price < 60 for item in o.items) for o in state.orders
+      if not o.id.startswith(''order_initial_''))
 
       '
     desc: All items under $60

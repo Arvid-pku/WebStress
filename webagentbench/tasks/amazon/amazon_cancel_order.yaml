@@ -1,9 +1,10 @@
 task_id: amazon_cancel_order
 env_id: amazon
 title: Place an Order Then Cancel It
-instruction_template: 'Search for "{target.product_name}", add it to your cart, and complete the purchase using the shipping
-  address for Jordan Parker at 742 Evergreen Terrace and the Visa card ending in 4242. Then immediately go to your orders
-  and cancel the order you just placed.
+instruction_template: 'Search for "{target.product_name}", add it to your cart, and
+  complete the purchase using the shipping address for Jordan Parker at 742 Evergreen
+  Terrace and the Visa card ending in 4242. Then immediately go to your orders and
+  cancel the order you just placed.
 
   '
 difficulty: medium
@@ -11,8 +12,6 @@ time_limit_seconds: 280
 expected_steps: 22
 primary_primitives:
 - planning
-- grounding
-- state_tracking
 start_path: /
 seed:
   distractors: 10
@@ -53,18 +52,20 @@ eval:
   checks:
   - expr: any(not o.id.startswith('order_initial_') for o in state.orders)
     desc: A new order exists
-  - expr: 'any(any(item.product_id == ''{target.product_id}'' for item in order.items) for order in state.orders if not order.id.startswith(''order_initial_''))
+  - expr: 'any(any(item.product_id == ''{target.product_id}'' for item in order.items)
+      for order in state.orders if not order.id.startswith(''order_initial_''))
 
       '
     desc: An order was placed for the target product
-  - expr: 'any(order.status == ''cancelled'' and any(item.product_id == ''{target.product_id}'' for item in order.items) for
-      order in state.orders if not order.id.startswith(''order_initial_''))
+  - expr: 'any(order.status == ''cancelled'' and any(item.product_id == ''{target.product_id}''
+      for item in order.items) for order in state.orders if not order.id.startswith(''order_initial_''))
 
       '
     desc: The order containing the target product was cancelled
   negative_checks:
-  - expr: 'sum(1 for o in state.orders if not o.id.startswith(''order_initial_'') and any(item.product_id == ''{target.product_id}''
-      for item in o.items)) <= 1
+  - expr: 'sum(1 for o in state.orders if not o.id.startswith(''order_initial_'')
+      and any(item.product_id == ''{target.product_id}'' for item in o.items)) <=
+      1
 
       '
     desc: Product was only ordered once
@@ -75,3 +76,4 @@ eval:
   - expr: len(state.returns) == 0
     desc: No returns filed when none required
     penalty: 0.15
+secondary_primitives: []

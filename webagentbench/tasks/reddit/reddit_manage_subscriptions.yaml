@@ -1,16 +1,14 @@
 task_id: reddit_manage_subscriptions
 env_id: reddit
 title: Manage Community Subscriptions
-instruction_template: Subscribe to r/MachineLearning and r/Piracy. Then unsubscribe from r/memes. Do not change any other
-  subscriptions.
+instruction_template: Subscribe to r/MachineLearning and r/Piracy. Then unsubscribe
+  from r/memes. Do not change any other subscriptions.
 difficulty: medium
 time_limit_seconds: 240
 expected_steps: 15
 primary_primitives:
 - planning
-- grounding
-secondary_primitives:
-- state_tracking
+secondary_primitives: []
 start_path: /feed
 seed:
   distractors: 4

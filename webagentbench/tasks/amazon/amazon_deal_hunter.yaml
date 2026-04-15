@@ -1,10 +1,11 @@
 task_id: amazon_deal_hunter
 env_id: amazon
 title: Find and Buy the Best Deal
-instruction_template: 'Browse products and find items that are on sale (where the list price is higher
-  than the current price). Among all products on sale, find the one with the biggest discount percentage
-  and buy it. Add it to your cart and complete checkout using the shipping address for {target.shipping_name}
-  at {target.shipping_street} and the {target.payment_type} card ending in {target.payment_last_four}.
+instruction_template: 'Browse products and find items that are on sale (where the
+  list price is higher than the current price). Among all products on sale, find the
+  one with the biggest discount percentage and buy it. Add it to your cart and complete
+  checkout using the shipping address for {target.shipping_name} at {target.shipping_street}
+  and the {target.payment_type} card ending in {target.payment_last_four}.
 
   '
 difficulty: hard
@@ -49,26 +50,28 @@ seed:
 eval:
   source: server_state
   checks:
-  - expr: "sum(\n  1 for order in state.orders\n  if not order.id.startswith('order_initial_')\n  and\
-      \ order.status == 'confirmed'\n  and len(order.items) == 1\n  and order.items[0].product_id == '{target.deal_product_id}'\n\
-      \  and order.items[0].quantity == 1\n) == 1\n"
+  - expr: "sum(\n  1 for order in state.orders\n  if not order.id.startswith('order_initial_')\n\
+      \  and order.status == 'confirmed'\n  and len(order.items) == 1\n  and order.items[0].product_id\
+      \ == '{target.deal_product_id}'\n  and order.items[0].quantity == 1\n) == 1\n"
     desc: Exactly one confirmed order was placed for the best-discount item
-  - expr: "any(\n  not order.id.startswith('order_initial_')\n  and order.status == 'confirmed'\n  and\
-      \ len(order.items) == 1\n  and abs(order.items[0].unit_price - {target.sale_price}) < 0.01\n  for\
-      \ order in state.orders\n)\n"
+  - expr: "any(\n  not order.id.startswith('order_initial_')\n  and order.status ==\
+      \ 'confirmed'\n  and len(order.items) == 1\n  and abs(order.items[0].unit_price\
+      \ - {target.sale_price}) < 0.01\n  for order in state.orders\n)\n"
     desc: Order used the discounted sale price, not the list price
-  - expr: "any(\n  not order.id.startswith('order_initial_')\n  and order.status == 'confirmed'\n  and\
-      \ any(\n    addr.id == order.shipping_address_id\n    and addr.full_name == '{target.shipping_name}'\n\
-      \    and addr.street_address == '{target.shipping_street}'\n    for addr in state.addresses\n  )\n\
-      \  for order in state.orders\n)\n"
+  - expr: "any(\n  not order.id.startswith('order_initial_')\n  and order.status ==\
+      \ 'confirmed'\n  and any(\n    addr.id == order.shipping_address_id\n    and\
+      \ addr.full_name == '{target.shipping_name}'\n    and addr.street_address ==\
+      \ '{target.shipping_street}'\n    for addr in state.addresses\n  )\n  for order\
+      \ in state.orders\n)\n"
     desc: Order uses the required shipping address
-  - expr: "any(\n  not order.id.startswith('order_initial_')\n  and order.status == 'confirmed'\n  and\
-      \ any(\n    pm.id == order.payment_method_id\n    and pm.card_type == '{target.payment_type}'\n\
-      \    and pm.last_four == '{target.payment_last_four}'\n    for pm in state.payment_methods\n  )\n\
-      \  for order in state.orders\n)\n"
+  - expr: "any(\n  not order.id.startswith('order_initial_')\n  and order.status ==\
+      \ 'confirmed'\n  and any(\n    pm.id == order.payment_method_id\n    and pm.card_type\
+      \ == '{target.payment_type}'\n    and pm.last_four == '{target.payment_last_four}'\n\
+      \    for pm in state.payment_methods\n  )\n  for order in state.orders\n)\n"
     desc: Order uses the required Visa card ending in 4242
   negative_checks:
-  - expr: 'sum(1 for order in state.orders if not order.id.startswith(''order_initial_'')) == 1
+  - expr: 'sum(1 for order in state.orders if not order.id.startswith(''order_initial_''))
+      == 1
 
       '
     desc: Only one new order was created
@@ -84,12 +87,13 @@ eval:
   - expr: sum(1 for e in state.audit_log if e.action == 'amazon.checkout') == 1
     desc: Deal-hunter workflow used a single checkout flow
     penalty: 0.1
-  - expr: "not any(\n  e.action in [\n    'amazon.address.add',\n    'amazon.address.update',\n    'amazon.address.remove',\n\
-      \    'amazon.payment.add',\n    'amazon.payment.remove'\n  ]\n  for e in state.audit_log)"
+  - expr: "not any(\n  e.action in [\n    'amazon.address.add',\n    'amazon.address.update',\n\
+      \    'amazon.address.remove',\n    'amazon.payment.add',\n    'amazon.payment.remove'\n\
+      \  ]\n  for e in state.audit_log)"
     desc: Deal-hunter workflow reused existing address and payment details
     penalty: 0.1
-  - expr: "not any(\n  e.action in ['amazon.return.create', 'amazon.review.add']\n  for e in state.audit_log)"
+  - expr: "not any(\n  e.action in ['amazon.return.create', 'amazon.review.add']\n\
+      \  for e in state.audit_log)"
     desc: Deal-hunter workflow did not create unrelated returns or reviews
     penalty: 0.1
-secondary_primitives:
-- planning
+secondary_primitives: []

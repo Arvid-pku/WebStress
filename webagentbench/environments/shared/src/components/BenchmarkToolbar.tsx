@@ -83,21 +83,78 @@ function ensureRecorderScript() {
   document.head.appendChild(script);
 }
 
-function applyClientInjections(injections: Array<{ params?: Record<string, unknown> }>) {
-  for (const injection of injections) {
-    const params = injection.params ?? {};
-    const action = typeof params.action === "string" ? params.action : "";
+type Teardown = () => void;
 
+function seededQuantile(seed: number, index: number): number {
+  let h = (seed ^ Math.imul(index, 2654435761)) >>> 0;
+  h = Math.imul(h ^ (h >>> 15), 0x85ebca6b);
+  h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35);
+  h ^= h >>> 16;
+  return (h >>> 0) / 0x100000000;
+}
+
+function sessionSeed(): number {
+  try {
+    const s = new URLSearchParams(window.location.search).get("session") ?? "";
+    let h = 0;
+    for (let i = 0; i < s.length; i++) h = (Math.imul(h, 31) + s.charCodeAt(i)) & 0x7fffffff;
+    return h || 42;
+  } catch {
+    return 42;
+  }
+}
+
+function shiftDateString(value: string, offsetDays: number): string {
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value;
+  d.setUTCDate(d.getUTCDate() + offsetDays);
+  return d.toISOString().slice(0, 10);
+}
+
+/**
+ * Apply client-side degradation injections. Returns a teardown that removes
+ * every global listener, element, and timer this call installed.
+ *
+ * All effects are deterministic via the session seed plus a per-action counter.
+ * Actions use document-level event delegation so they survive SPA nav without
+ * requiring a MutationObserver re-apply.
+ */
+function applyClientInjections(
+  injections: Array<{ params?: Record<string, unknown> }>,
+): Teardown {
+  const teardowns: Teardown[] = [];
+  const seed = sessionSeed();
+
+  const listen = <K extends keyof DocumentEventMap>(
+    target: EventTarget,
+    type: K | string,
+    fn: EventListener,
+    opts?: AddEventListenerOptions | boolean,
+  ) => {
+    target.addEventListener(type as string, fn, opts);
+    teardowns.push(() => target.removeEventListener(type as string, fn, opts));
+  };
+
+  const addNode = (node: Node) => {
+    teardowns.push(() => {
+      try { node.parentNode?.removeChild(node); } catch { /* ignore */ }
+    });
+  };
+
+  for (let i = 0; i < injections.length; i++) {
+    const params = injections[i].params ?? {};
+    const action = typeof params.action === "string" ? params.action : "";
+    const actionSeed = seed ^ ((i + 1) * 0x9e3779b1);
+
+    // ----- Legacy actions (preserved) -----
     if (action === "scramble_aria") {
       const selector = typeof params.selector === "string" ? params.selector : "[aria-label]";
       const elements = Array.from(document.querySelectorAll<HTMLElement>(selector));
       if (elements.length > 1) {
-        const labels = elements.map((element) => element.getAttribute("aria-label"));
-        elements.forEach((element, index) => {
-          const nextLabel = labels[(index + 1) % labels.length];
-          if (nextLabel) {
-            element.setAttribute("aria-label", nextLabel);
-          }
+        const labels = elements.map((el) => el.getAttribute("aria-label"));
+        elements.forEach((el, idx) => {
+          const next = labels[(idx + 1) % labels.length];
+          if (next) el.setAttribute("aria-label", next);
         });
       }
     } else if (action === "hide_affordance") {
@@ -106,9 +163,7 @@ function applyClientInjections(injections: Array<{ params?: Record<string, unkno
       const element = selector ? document.querySelector<HTMLElement>(selector) : null;
       if (element) {
         element.style.display = "none";
-        element.parentElement?.addEventListener(trigger, () => {
-          element.style.display = "";
-        }, { once: true });
+        element.parentElement?.addEventListener(trigger, () => { element.style.display = ""; }, { once: true });
       }
     } else if (action === "false_banner") {
       const message = typeof params.message === "string" ? params.message : "";
@@ -121,6 +176,7 @@ function applyClientInjections(injections: Array<{ params?: Record<string, unkno
       const target = insertBeforeSelector ? document.querySelector(insertBeforeSelector) : document.body.firstChild;
       if (target?.parentNode) {
         target.parentNode.insertBefore(banner, target);
+        addNode(banner);
       }
     } else if (action === "swap_labels") {
       const selectorA = typeof params.selector_a === "string" ? params.selector_a : "";
@@ -140,6 +196,7 @@ function applyClientInjections(injections: Array<{ params?: Record<string, unkno
         decoy.removeAttribute("onclick");
         decoy.setAttribute("data-decoy", "true");
         real.parentNode?.insertBefore(decoy, real);
+        addNode(decoy);
       }
     } else if (action === "set_feature_flag") {
       const flag = typeof params.flag === "string" ? params.flag : "";
@@ -151,7 +208,391 @@ function applyClientInjections(injections: Array<{ params?: Record<string, unkno
         w.__wabFeatureFlags = flags;
       }
     }
+
+    // ----- Action fidelity -----
+    else if (action === "click_swallow") {
+      const selector = String(params.selector ?? "button");
+      const swallowCount = Number(params.swallow_count ?? 1);
+      const counter = { n: 0 };
+      const handler = (e: Event) => {
+        const t = e.target as HTMLElement | null;
+        if (!t || !t.closest(selector)) return;
+        if (counter.n < swallowCount) {
+          counter.n += 1;
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+        }
+      };
+      listen(document, "click", handler as EventListener, true);
+    }
+
+    else if (action === "adjacent_selection") {
+      const selector = String(params.selector ?? "input[type=date], select, input[type=radio]");
+      const offset = Number(params.offset ?? -1);
+      const triggerCount = Number(params.trigger_count ?? 2);
+      const counter = { n: 0 };
+      const handler = (e: Event) => {
+        const el = e.target as HTMLElement | null;
+        if (!el || !el.matches || !el.matches(selector)) return;
+        if (counter.n >= triggerCount) return;
+        counter.n += 1;
+        if (el instanceof HTMLSelectElement) {
+          const newIdx = Math.max(0, Math.min(el.options.length - 1, el.selectedIndex + offset));
+          if (newIdx !== el.selectedIndex) {
+            el.selectedIndex = newIdx;
+            el.dispatchEvent(new Event("change", { bubbles: true }));
+          }
+        } else if (el instanceof HTMLInputElement && el.type === "date") {
+          const shifted = shiftDateString(el.value, offset);
+          if (shifted !== el.value) {
+            el.value = shifted;
+            el.dispatchEvent(new Event("input", { bubbles: true }));
+          }
+        } else if (el instanceof HTMLInputElement && el.type === "radio") {
+          const all = Array.from(document.querySelectorAll<HTMLInputElement>(
+            `input[type=radio][name="${el.name}"]`,
+          ));
+          const idx = all.indexOf(el);
+          const neighbor = all[Math.max(0, Math.min(all.length - 1, idx + offset))];
+          if (neighbor && neighbor !== el) {
+            el.checked = false;
+            neighbor.checked = true;
+            neighbor.dispatchEvent(new Event("change", { bubbles: true }));
+          }
+        }
+      };
+      listen(document, "change", handler as EventListener, true);
+    }
+
+    else if (action === "input_corruption") {
+      const selector = String(params.selector ?? "input[type=text], textarea");
+      const mode = String(params.mode ?? "drop_every_n");
+      const n = Math.max(1, Number(params.n ?? 7));
+      const truncateChars = Math.max(0, Number(params.truncate_chars ?? 2));
+      const autocorrectMap = (params.autocorrect_map ?? {}) as Record<string, string>;
+
+      if (mode === "drop_every_n" || mode === "swap_adjacent") {
+        const handler = (e: Event) => {
+          const el = e.target as HTMLInputElement | HTMLTextAreaElement | null;
+          if (!el || !el.matches || !el.matches(selector)) return;
+          const v = el.value;
+          if (mode === "drop_every_n") {
+            if (v.length > 0 && v.length % n === 0) {
+              el.value = v.slice(0, -1);
+            }
+          } else {
+            if (v.length >= 2 && v.length % n === 0) {
+              el.value = v.slice(0, -2) + v[v.length - 1] + v[v.length - 2];
+            }
+          }
+        };
+        listen(document, "input", handler as EventListener, true);
+      } else if (mode === "truncate_on_blur") {
+        const handler = (e: Event) => {
+          const el = e.target as HTMLInputElement | HTMLTextAreaElement | null;
+          if (!el || !el.matches || !el.matches(selector)) return;
+          if (el.value.length > truncateChars) {
+            el.value = el.value.slice(0, el.value.length - truncateChars);
+          }
+        };
+        listen(document, "blur", handler as EventListener, true);
+      } else if (mode === "autocorrect_overwrite") {
+        const handler = (e: Event) => {
+          const el = e.target as HTMLInputElement | HTMLTextAreaElement | null;
+          if (!el || !el.matches || !el.matches(selector)) return;
+          let v = el.value;
+          for (const [from, to] of Object.entries(autocorrectMap)) {
+            v = v.split(from).join(to);
+          }
+          if (v !== el.value) el.value = v;
+        };
+        listen(document, "blur", handler as EventListener, true);
+      }
+    }
+
+    else if (action === "save_drift") {
+      const formSelector = String(params.form_selector ?? "form");
+      const field = String(params.field ?? "");
+      const offset = Number(params.offset ?? -1);
+      const offsetDays = Number(params.offset_days ?? NaN);
+      const applyCount = Math.max(1, Number(params.apply_count ?? 1));
+      const counter = { n: 0 };
+      const handler = (e: Event) => {
+        const form = e.target as HTMLFormElement | null;
+        if (!form || !form.matches || !form.matches(formSelector)) return;
+        if (counter.n >= applyCount) return;
+        if (!field) return;
+        const input = form.elements.namedItem(field) as HTMLInputElement | RadioNodeList | null;
+        const el = input instanceof HTMLInputElement ? input : null;
+        if (!el) return;
+        counter.n += 1;
+        if (!Number.isNaN(offsetDays) && el.type === "date") {
+          el.value = shiftDateString(el.value, offsetDays);
+        } else if (el instanceof HTMLInputElement && el.type === "number") {
+          const parsed = Number(el.value);
+          if (!Number.isNaN(parsed)) el.value = String(parsed + offset);
+        } else if (/^-?\d+$/.test(el.value)) {
+          el.value = String(Number(el.value) + offset);
+        } else {
+          // Fallback: toggle last char index (not ideal for text, but deterministic)
+          el.value = el.value + (offset >= 0 ? " " : "");
+        }
+      };
+      listen(document, "submit", handler as EventListener, true);
+    }
+
+    else if (action === "double_submit_trap") {
+      const selector = String(params.selector ?? "button[type=submit]");
+      const windowMs = Math.max(50, Number(params.window_ms ?? 2000));
+      const lastClickAt: WeakMap<Element, number> = new WeakMap();
+      const handler = (e: Event) => {
+        const t = e.target as HTMLElement | null;
+        const btn = t?.closest(selector) as HTMLElement | null;
+        if (!btn) return;
+        const now = Date.now();
+        const prev = lastClickAt.get(btn) ?? 0;
+        lastClickAt.set(btn, now);
+        if (now - prev < windowMs) {
+          // Second click within window — dispatch a phantom submit after tick
+          const timer = window.setTimeout(() => {
+            try { btn.click(); } catch { /* ignore */ }
+          }, 15);
+          teardowns.push(() => window.clearTimeout(timer));
+        }
+      };
+      listen(document, "click", handler as EventListener, true);
+    }
+
+    // ----- Path constraints -----
+    else if (action === "restrict_affordance_set") {
+      const target = String(params.target ?? "article, .card, .list-row");
+      const keep = String(params.keep ?? "image");
+      const disableStyle = String(params.disable_style ?? "no_op");
+      const KNOWN: Record<string, string[]> = {
+        image: ["img", ".thumb", ".avatar", "[data-affordance=image]"],
+        title: ["h1", "h2", "h3", ".title", "[data-affordance=title]"],
+        menu: ["[role=menu]", "[aria-haspopup]", "[data-affordance=menu]"],
+        primary_button: ["button.primary", "[data-affordance=primary]"],
+      };
+
+      const handler = (e: Event) => {
+        const el = e.target as HTMLElement | null;
+        if (!el) return;
+        const row = el.closest(target);
+        if (!row) return;
+        const keepSelectors = KNOWN[keep] || [];
+        const keptEl = keepSelectors
+          .map((s) => row.querySelector(s))
+          .find((n): n is HTMLElement => !!n);
+        if (keptEl && (el === keptEl || keptEl.contains(el))) return;
+        // Agent clicked a non-keep affordance → no_op / visual_hint_removed / aria_only
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        if (disableStyle === "visual_hint_removed") {
+          (el.style as CSSStyleDeclaration).cursor = "default";
+        } else if (disableStyle === "aria_only") {
+          el.setAttribute("aria-hidden", "true");
+        }
+      };
+      listen(document, "click", handler as EventListener, true);
+    }
+
+    // ----- Perceptual noise -----
+    else if (action === "intercepting_overlay") {
+      const region = String(params.region ?? "body");
+      const opacity = Number(params.opacity ?? 0.02);
+      const host = document.querySelector<HTMLElement>(region);
+      if (host) {
+        const prevPos = host.style.position;
+        if (!host.style.position || host.style.position === "static") {
+          host.style.position = "relative";
+        }
+        const overlay = document.createElement("div");
+        overlay.className = "wab-intercept-overlay";
+        overlay.style.cssText = `
+          position: absolute; inset: 0; z-index: 9000;
+          background: rgba(0,0,0,${opacity});
+          cursor: default;`;
+        const corner = document.createElement("button");
+        corner.type = "button";
+        corner.textContent = "×";
+        corner.setAttribute("aria-label", "Dismiss overlay");
+        corner.style.cssText = `
+          position: absolute; top: 4px; right: 4px; width: 18px; height: 18px;
+          font-size: 12px; line-height: 14px; padding: 0; border: 1px solid #ccc;
+          background: rgba(255,255,255,0.9); cursor: pointer;`;
+        overlay.appendChild(corner);
+        host.appendChild(overlay);
+        addNode(overlay);
+        teardowns.push(() => { host.style.position = prevPos; });
+
+        const dismiss = () => {
+          try { overlay.remove(); } catch { /* ignore */ }
+        };
+        corner.addEventListener("click", (e) => { e.stopPropagation(); dismiss(); });
+        listen(document, "keydown", ((e: KeyboardEvent) => {
+          if (e.key === "Escape") dismiss();
+        }) as EventListener);
+      }
+    }
+
+    else if (action === "skeleton_never_resolves") {
+      const routeFragment = String(params.route ?? "");
+      const target = String(params.selector ?? ".app-main, main, #root");
+      const render = () => {
+        if (routeFragment && !window.location.pathname.includes(routeFragment.replace(/\/:[^/]+/g, ""))) return;
+        const host = document.querySelector<HTMLElement>(target);
+        if (!host) return;
+        if (host.querySelector(".wab-skeleton-cover")) return;
+        const cover = document.createElement("div");
+        cover.className = "wab-skeleton-cover";
+        cover.setAttribute("role", "status");
+        cover.innerHTML = `<div class="wab-skeleton-spinner" aria-label="Loading" style="
+          display:flex; align-items:center; justify-content:center;
+          position:absolute; inset:0; background:rgba(255,255,255,0.85); z-index:9001;">
+          <div style="padding:24px; text-align:center; color:#555;">
+            <div style="width:32px;height:32px;border:3px solid #ddd;border-top-color:#333;border-radius:50%;
+            margin:0 auto 12px; animation:wab-spin 1s linear infinite;"></div>
+            Loading...
+          </div>
+        </div>`;
+        const prevPos = host.style.position;
+        if (!host.style.position || host.style.position === "static") host.style.position = "relative";
+        host.appendChild(cover);
+        addNode(cover);
+        teardowns.push(() => { host.style.position = prevPos; });
+      };
+      render();
+      // Re-apply on navigation (SPA): observe URL changes lightly.
+      let lastPath = window.location.pathname;
+      const interval = window.setInterval(() => {
+        if (window.location.pathname !== lastPath) {
+          lastPath = window.location.pathname;
+          render();
+        }
+      }, 250);
+      teardowns.push(() => window.clearInterval(interval));
+    }
+
+    else if (action === "distractor_modal") {
+      const kind = String(params.kind ?? "newsletter");
+      const afterNav = Math.max(0, Number(params.after_nav ?? 1));
+      const nav = { count: 0 };
+      const shown = { value: false };
+      const show = () => {
+        if (shown.value) return;
+        shown.value = true;
+        const backdrop = document.createElement("div");
+        backdrop.className = "wab-distractor-backdrop";
+        backdrop.style.cssText = `
+          position: fixed; inset: 0; background: rgba(0,0,0,0.25); z-index: 9800;
+          display: flex; align-items: center; justify-content: center;`;
+        const modal = document.createElement("div");
+        modal.className = `wab-distractor-modal wab-distractor-${kind}`;
+        modal.setAttribute("role", "dialog");
+        modal.style.cssText = `
+          background:#fff; border-radius:6px; padding:24px; width:min(440px, 90vw);
+          box-shadow:0 10px 32px rgba(0,0,0,0.25); position:relative;`;
+        const close = document.createElement("button");
+        close.type = "button";
+        close.setAttribute("aria-label", "Close");
+        close.textContent = "×";
+        close.style.cssText = `
+          position:absolute; top:6px; right:6px; width:12px; height:12px;
+          font-size:10px; line-height:10px; border:none; background:transparent;
+          cursor:pointer; padding:0; color:#888;`;
+        const body = document.createElement("div");
+        if (kind === "newsletter") {
+          body.innerHTML = `
+            <h3 style="margin:0 0 8px;">Before you continue…</h3>
+            <p style="margin:0 0 12px; color:#444;">
+              Join our newsletter for weekly insights. No spam.
+            </p>
+            <input type="email" placeholder="you@example.com" style="width:100%; padding:8px; margin-bottom:8px; border:1px solid #ccc; border-radius:4px;">
+            <button type="button" style="padding:8px 12px; background:#1a73e8; color:#fff; border:none; border-radius:4px;">Subscribe</button>`;
+        } else if (kind === "cookie") {
+          body.innerHTML = `
+            <h3 style="margin:0 0 8px;">We value your privacy</h3>
+            <p style="margin:0 0 12px; color:#444;">
+              We use cookies to enhance your browsing experience, serve personalized ads or content,
+              and analyze our traffic. By clicking "Accept All", you consent to our use of cookies.
+            </p>
+            <div style="display:flex; gap:8px;">
+              <button type="button" style="flex:1; padding:8px; background:#1a73e8; color:#fff; border:none; border-radius:4px;">Accept All</button>
+              <button type="button" style="flex:1; padding:8px; background:#eee; border:1px solid #ccc; border-radius:4px;">Manage</button>
+            </div>`;
+        } else {
+          body.innerHTML = `
+            <h3 style="margin:0 0 8px;">Quick 1-minute survey?</h3>
+            <p style="margin:0 0 12px; color:#444;">
+              Help us improve. Your feedback matters.
+            </p>
+            <button type="button" style="padding:8px 12px; background:#28a745; color:#fff; border:none; border-radius:4px;">Start Survey</button>`;
+        }
+        modal.appendChild(close);
+        modal.appendChild(body);
+        backdrop.appendChild(modal);
+        document.body.appendChild(backdrop);
+        addNode(backdrop);
+        const dismiss = () => { try { backdrop.remove(); } catch { /* ignore */ } };
+        close.addEventListener("click", dismiss);
+        backdrop.addEventListener("click", (e) => { if (e.target === backdrop) dismiss(); });
+        listen(document, "keydown", ((e: KeyboardEvent) => { if (e.key === "Escape") dismiss(); }) as EventListener);
+      };
+      // Show after Nth navigation (path change)
+      let lastPath = window.location.pathname;
+      if (afterNav === 0) show();
+      const interval = window.setInterval(() => {
+        if (window.location.pathname !== lastPath) {
+          lastPath = window.location.pathname;
+          nav.count += 1;
+          if (nav.count >= afterNav) show();
+        }
+      }, 250);
+      teardowns.push(() => window.clearInterval(interval));
+    }
+
+    else if (action === "label_input_misalignment") {
+      const containerSelector = String(params.container ?? "form");
+      const offset = Number(params.offset ?? 1);
+      const containers = Array.from(document.querySelectorAll<HTMLElement>(containerSelector));
+      for (const form of containers) {
+        const inputs = Array.from(form.querySelectorAll<HTMLInputElement>("input[id], textarea[id], select[id]"));
+        const ids = inputs.map((el) => el.id);
+        if (ids.length < 2) continue;
+        const labels = Array.from(form.querySelectorAll<HTMLLabelElement>("label[for]"));
+        const originals: Array<[HTMLLabelElement, string]> = [];
+        for (const label of labels) {
+          const idx = ids.indexOf(label.htmlFor);
+          if (idx < 0) continue;
+          const target = ids[(idx + offset + ids.length) % ids.length];
+          originals.push([label, label.htmlFor]);
+          label.htmlFor = target;
+        }
+        teardowns.push(() => {
+          for (const [lab, prev] of originals) lab.htmlFor = prev;
+        });
+      }
+    }
+
+    // unknown action → ignore silently to be forward-compatible
   }
+
+  return () => {
+    for (const t of teardowns) {
+      try { t(); } catch { /* ignore */ }
+    }
+  };
+}
+
+// Inject a tiny CSS keyframe for the skeleton spinner (idempotent)
+if (typeof document !== "undefined" && !document.getElementById("wab-bench-keyframes")) {
+  const style = document.createElement("style");
+  style.id = "wab-bench-keyframes";
+  style.textContent = `@keyframes wab-spin { to { transform: rotate(360deg); } }`;
+  document.head.appendChild(style);
 }
 
 export function BenchmarkToolbar({ envId, sessionId }: BenchmarkToolbarProps) {
@@ -206,26 +647,40 @@ export function BenchmarkToolbar({ envId, sessionId }: BenchmarkToolbarProps) {
       return;
     }
 
-    applyClientInjections(clientInjections);
+    const teardown = applyClientInjections(clientInjections);
 
-    const hasPersistent = clientInjections.some((injection) => {
+    // Legacy "persistent" re-apply for old DOM-mutation actions that were not
+    // delegated. New actions already install document-level delegated listeners
+    // so they survive SPA nav without a re-apply.
+    const needsReapply = clientInjections.some((injection) => {
+      const action = (injection.params ?? {}).action;
+      const legacy = ["swap_labels", "add_decoy", "scramble_aria", "hide_affordance"];
       const behavior = injection.params?.behavior;
-      return typeof behavior === "object" && behavior !== null && (behavior as { mode?: string }).mode === "persistent";
+      const mode = typeof behavior === "object" && behavior !== null
+        ? (behavior as { mode?: string }).mode
+        : undefined;
+      return mode === "persistent" && typeof action === "string" && legacy.includes(action);
     });
 
-    if (!hasPersistent) {
-      return;
+    if (!needsReapply) {
+      return teardown;
     }
 
+    let nestedTeardown: Teardown = () => undefined;
     const observer = new MutationObserver((mutations) => {
       const significant = mutations.some((mutation) => mutation.type === "childList" && mutation.addedNodes.length > 2);
       if (significant) {
-        applyClientInjections(clientInjections);
+        nestedTeardown();
+        nestedTeardown = applyClientInjections(clientInjections);
       }
     });
 
     observer.observe(document.body, { childList: true, subtree: true });
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      nestedTeardown();
+      teardown();
+    };
   }, [clientInjections, location.pathname, location.search]);
 
   useEffect(() => {

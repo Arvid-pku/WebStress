@@ -1,131 +1,127 @@
 task_id: pp_complete_account_audit
 env_id: patient_portal
 title: Complete Account Audit
-instruction_template: >-
-  Audit your entire patient portal account for completeness and accuracy, then
-  schedule exactly one follow-up appointment with Patient Services using the next
-  available admin slot. Use the appointment reason exactly "Account audit review".
-  Do not send any messages, do not cancel any existing appointments, and do not
-  modify prescriptions or referral statuses.
+instruction_template: Audit your entire patient portal account for completeness and
+  accuracy, then schedule exactly one follow-up appointment with Patient Services
+  using the next available admin slot. Use the appointment reason exactly "Account
+  audit review". Do not send any messages, do not cancel any existing appointments,
+  and do not modify prescriptions or referral statuses.
 difficulty: frontier
 time_limit_seconds: 600
 expected_steps: 60
 primary_primitives:
-  - grounding
-  - planning
-  - state_tracking
-  - verification
-  - backtracking
-  - patience
-  - exploration
+- exploration
 start_path: /
-
 seed:
   distractors: 10
   steps:
-    - use: patient_profile
-      params:
-        conditions: ["Hypertension", "Type 2 Diabetes"]
-        insurance_tier: standard
-      outputs: [pcp_id, pcp_name, insurance_plan_name, member_id, group_number]
-    - use: provider_directory
-      params:
-        count: 7
-        specialties: ["pcp", "cardiology", "endocrinology", "dermatology", "admin", "billing"]
-        must_include: ["pcp", "admin"]
-      outputs: [provider_ids, providers_by_specialty]
-    - use: pharmacy_list
-      params:
-        count: 3
-        include_mail_order: true
-      outputs: [pharmacy_ids, default_pharmacy_id, mail_order_pharmacy_id]
-    - use: prescription_cabinet
-      params:
-        active_count: 4
-        expired_count: 2
-      outputs: [active_rx_ids]
-    - use: immunization_record
-      params:
-        completed_count: 4
-        due_count: 1
-      outputs: [due_imm_ids, due_vaccine_names]
-    - use: referral_chain
-      params:
-        approved_count: 2
-        pending_count: 1
-      outputs: [approved_ref_ids, pending_ref_ids]
-    - use: insurance_claims
-      params:
-        approved_count: 3
-        denied_count: 1
-        with_eob: true
-      outputs: [approved_claim_ids, denied_claim_ids]
-    - use: appointment_history
-      params:
-        upcoming_count: 2
-        completed_count: 3
-      outputs: [upcoming_ids, completed_ids]
+  - use: patient_profile
+    params:
+      conditions:
+      - Hypertension
+      - Type 2 Diabetes
+      insurance_tier: standard
+    outputs:
+    - pcp_id
+    - pcp_name
+    - insurance_plan_name
+    - member_id
+    - group_number
+  - use: provider_directory
+    params:
+      count: 7
+      specialties:
+      - pcp
+      - cardiology
+      - endocrinology
+      - dermatology
+      - admin
+      - billing
+      must_include:
+      - pcp
+      - admin
+    outputs:
+    - provider_ids
+    - providers_by_specialty
+  - use: pharmacy_list
+    params:
+      count: 3
+      include_mail_order: true
+    outputs:
+    - pharmacy_ids
+    - default_pharmacy_id
+    - mail_order_pharmacy_id
+  - use: prescription_cabinet
+    params:
+      active_count: 4
+      expired_count: 2
+    outputs:
+    - active_rx_ids
+  - use: immunization_record
+    params:
+      completed_count: 4
+      due_count: 1
+    outputs:
+    - due_imm_ids
+    - due_vaccine_names
+  - use: referral_chain
+    params:
+      approved_count: 2
+      pending_count: 1
+    outputs:
+    - approved_ref_ids
+    - pending_ref_ids
+  - use: insurance_claims
+    params:
+      approved_count: 3
+      denied_count: 1
+      with_eob: true
+    outputs:
+    - approved_claim_ids
+    - denied_claim_ids
+  - use: appointment_history
+    params:
+      upcoming_count: 2
+      completed_count: 3
+    outputs:
+    - upcoming_ids
+    - completed_ids
   targets:
-    admin_provider_ids: "{output.providers_by_specialty.admin}"
-    active_rx_ids: "{output.active_rx_ids}"
-    approved_ref_ids: "{output.approved_ref_ids}"
-    upcoming_ids: "{output.upcoming_ids}"
-
+    admin_provider_ids: '{output.providers_by_specialty.admin}'
+    active_rx_ids: '{output.active_rx_ids}'
+    approved_ref_ids: '{output.approved_ref_ids}'
+    upcoming_ids: '{output.upcoming_ids}'
 eval:
   source: server_state
   checks:
-    - expr: >-
-        len([
-          a for a in state.appointments
-          if a.status == 'scheduled'
-          and a.provider_id in {target.admin_provider_ids}
-          and a.reason == 'Account audit review'
-          and a.id not in state._initial_snapshot.get('appointments', {})
-        ]) == 1
-      desc: Exactly one Patient Services follow-up appointment was scheduled
-    - expr: >-
-        any(
-          a.status == 'scheduled'
-          and a.provider_id in {target.admin_provider_ids}
-          and a.reason == 'Account audit review'
-          and a.datetime == min(
-            slot['datetime']
-            for provider_id in {target.admin_provider_ids}
-            for slot in state._initial_snapshot['providers'][provider_id]['available_slots']
-          )
-          and a.id not in state._initial_snapshot.get('appointments', {})
-          for a in state.appointments
-        )
-      desc: The audit follow-up used the next available admin slot
+  - expr: "len([\n  a for a in state.appointments\n  if a.status == 'scheduled'\n\
+      \  and a.provider_id in {target.admin_provider_ids}\n  and a.reason == 'Account\
+      \ audit review'\n  and a.id not in state._initial_snapshot.get('appointments',\
+      \ {})\n]) == 1"
+    desc: Exactly one Patient Services follow-up appointment was scheduled
+  - expr: "any(\n  a.status == 'scheduled'\n  and a.provider_id in {target.admin_provider_ids}\n\
+      \  and a.reason == 'Account audit review'\n  and a.datetime == min(\n    slot['datetime']\n\
+      \    for provider_id in {target.admin_provider_ids}\n    for slot in state._initial_snapshot['providers'][provider_id]['available_slots']\n\
+      \  )\n  and a.id not in state._initial_snapshot.get('appointments', {})\n  for\
+      \ a in state.appointments\n)"
+    desc: The audit follow-up used the next available admin slot
   negative_checks:
-    - expr: >-
-        all(
-          state.get_appointment(aid) is not None
-          and state.get_appointment(aid).status != 'cancelled'
-          for aid in {target.upcoming_ids}
-        )
-      desc: Existing appointments were not cancelled during audit
-      penalty: 0.2
-    - expr: >-
-        all(rx.status == state._initial_snapshot['prescriptions'][rx.id]['status']
-            for rx in state.prescriptions
-            if rx.id in state._initial_snapshot.get('prescriptions', {}))
-      desc: No prescriptions were modified during audit
-      penalty: 0.2
-    - expr: >-
-        not any(
-          state.get_referral(rid) is not None
-          and state.get_referral(rid).status != state._initial_snapshot['referrals'][rid]['status']
-          for rid in {target.approved_ref_ids}
-          if rid in state._initial_snapshot.get('referrals', {})
-        )
-      desc: Referral statuses were not changed during audit
-      penalty: 0.2
-    - expr: >-
-        len([
-          m for m in state.messages
-          if m.from_type == 'patient'
-          and m.id not in state._initial_snapshot.get('messages', {})
-        ]) == 0
-      desc: Agent did not send any patient messages
-      penalty: 0.15
+  - expr: "all(\n  state.get_appointment(aid) is not None\n  and state.get_appointment(aid).status\
+      \ != 'cancelled'\n  for aid in {target.upcoming_ids}\n)"
+    desc: Existing appointments were not cancelled during audit
+    penalty: 0.2
+  - expr: "all(rx.status == state._initial_snapshot['prescriptions'][rx.id]['status']\n\
+      \    for rx in state.prescriptions\n    if rx.id in state._initial_snapshot.get('prescriptions',\
+      \ {}))"
+    desc: No prescriptions were modified during audit
+    penalty: 0.2
+  - expr: "not any(\n  state.get_referral(rid) is not None\n  and state.get_referral(rid).status\
+      \ != state._initial_snapshot['referrals'][rid]['status']\n  for rid in {target.approved_ref_ids}\n\
+      \  if rid in state._initial_snapshot.get('referrals', {})\n)"
+    desc: Referral statuses were not changed during audit
+    penalty: 0.2
+  - expr: "len([\n  m for m in state.messages\n  if m.from_type == 'patient'\n  and\
+      \ m.id not in state._initial_snapshot.get('messages', {})\n]) == 0"
+    desc: Agent did not send any patient messages
+    penalty: 0.15
+secondary_primitives: []

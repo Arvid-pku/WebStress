@@ -157,8 +157,8 @@ eval:
     desc: Notifications read
   - expr: state.unread_message_count() == 0
     desc: Messages read
-  - expr: 'any(m.to_user == ''{target.r_from}'' and m.subject == ''Re: {target.r_sub}'' and m.body ==
-      ''{target.r_body}'' for m in state.sent_messages)'
+  - expr: 'any(m.to_user == ''{target.r_from}'' and m.subject == ''Re: {target.r_sub}''
+      and m.body == ''{target.r_body}'' for m in state.sent_messages)'
     desc: Inbox reply sent with the exact required subject and body
   - expr: not any(m.id == '{target.del_id}' for m in state.messages)
     desc: Spam message deleted
@@ -166,13 +166,14 @@ eval:
     desc: Worldnews post upvoted
   - expr: '''{target.wn_id}'' in state.saved_post_ids'
     desc: Worldnews post saved
-  - expr: any(c.post_id == '{target.prog_id}' and c.body == '{target.c2}' and c.author_name == state.owner_username
-      for c in state.comments)
+  - expr: any(c.post_id == '{target.prog_id}' and c.body == '{target.c2}' and c.author_name
+      == state.owner_username for c in state.comments)
     desc: Exact programming comment posted
   - expr: any(s.name == 'MachineLearning' and s.is_subscribed for s in state.subreddits)
     desc: Joined r/MachineLearning
-  - expr: any(p.subreddit_name == 'MachineLearning' and p.title == '{target.post_title}' and p.body ==
-      '{target.post_body}' and p.author_name == state.owner_username for p in state.posts)
+  - expr: any(p.subreddit_name == 'MachineLearning' and p.title == '{target.post_title}'
+      and p.body == '{target.post_body}' and p.author_name == state.owner_username
+      for p in state.posts)
     desc: Exact MachineLearning post created
   - expr: state.settings.theme == 'dark'
     desc: Theme dark
@@ -190,7 +191,8 @@ eval:
   - expr: len(state.sent_messages) <= 3
     desc: No extra messages sent beyond the required reply
     penalty: 0.15
-  - expr: sum(1 for p in state.posts if p.author_name == state.owner_username) <= 4
+  - expr: sum(1 for p in state.posts if p.author_name == state.owner_username) <=
+      4
     desc: No extra posts created beyond the required MachineLearning post
     penalty: 0.15
   - expr: len(state.blocked_users) == 0
@@ -198,5 +200,4 @@ eval:
     penalty: 0.15
 env_id: reddit
 start_path: /feed
-secondary_primitives:
-- state_tracking
+secondary_primitives: []

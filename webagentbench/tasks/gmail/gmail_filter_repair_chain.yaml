@@ -16,9 +16,6 @@ time_limit_seconds: 360
 expected_steps: 28
 primary_primitives:
 - backtracking
-- verification
-- grounding
-- planning
 start_path: /inbox
 seed:
   distractors: 40
@@ -65,3 +62,4 @@ eval:
   - expr: state.get_email('{target.test_email_id}') is not None and not state.get_email('{target.test_email_id}').deleted
     desc: Test email was not deleted
     penalty: 0.15
+secondary_primitives: []

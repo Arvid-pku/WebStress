@@ -1,164 +1,146 @@
 task_id: pp_chronic_disease_setup
 env_id: patient_portal
 title: Chronic Disease Monitoring Setup
-instruction_template: >-
-  Establish a chronic disease monitoring plan for your conditions
-  ({target.conditions_list}) using only appointments:
-  1) Schedule exactly one monitoring appointment with reason "HbA1c monitoring",
-  2) Schedule exactly one monitoring appointment with reason "Kidney function monitoring",
-  3) Schedule exactly one PCP appointment with reason "Monthly blood pressure review",
-  4) Schedule exactly one cardiology appointment with reason "Annual cardiology monitoring",
-  5) Schedule exactly one endocrinology appointment with reason "Annual endocrinology monitoring".
-  Do not send any messages and do not modify any prescriptions.
+instruction_template: 'Establish a chronic disease monitoring plan for your conditions
+  ({target.conditions_list}) using only appointments: 1) Schedule exactly one monitoring
+  appointment with reason "HbA1c monitoring", 2) Schedule exactly one monitoring appointment
+  with reason "Kidney function monitoring", 3) Schedule exactly one PCP appointment
+  with reason "Monthly blood pressure review", 4) Schedule exactly one cardiology
+  appointment with reason "Annual cardiology monitoring", 5) Schedule exactly one
+  endocrinology appointment with reason "Annual endocrinology monitoring". Do not
+  send any messages and do not modify any prescriptions.'
 difficulty: frontier
 time_limit_seconds: 600
 expected_steps: 55
 primary_primitives:
-  - grounding
-  - planning
-  - state_tracking
-  - verification
-  - backtracking
-  - patience
-  - exploration
+- planning
 start_path: /
-
 seed:
   distractors: 10
   steps:
-    - use: patient_profile
-      params:
-        conditions: ["Type 2 Diabetes", "Hypertension", "Chronic Kidney Disease"]
-        insurance_tier: standard
-      outputs: [pcp_id, pcp_name, conditions_list]
-    - use: provider_directory
-      params:
-        count: 7
-        specialties: ["pcp", "cardiology", "endocrinology", "neurology", "radiology", "billing"]
-        must_include: ["pcp", "cardiology", "endocrinology"]
-      outputs: [provider_ids, providers_by_specialty]
-    - use: pharmacy_list
-      params:
-        count: 2
-      outputs: [default_pharmacy_id]
-    - use: prescription_cabinet
-      params:
-        active_count: 5
-        expiring_soon_count: 1
-      outputs: [active_rx_ids, expiring_rx_ids]
-    - use: referral_chain
-      params:
-        approved_count: 2
-        pending_count: 1
-        with_prior_auth: true
-        must_have_specialties: ["cardiology", "endocrinology"]
-      outputs: [approved_ref_ids, prior_auth_ref_id]
-    - use: lab_results_panel
-      params:
-        resulted_count: 3
-        trend_test: "HbA1c"
-        trend_values: ["6.8", "7.2", "7.5"]
-      outputs: [resulted_lab_ids, trend_lab_ids]
-    - use: appointment_history
-      params:
-        upcoming_count: 1
-        completed_count: 3
-      outputs: [upcoming_ids]
+  - use: patient_profile
+    params:
+      conditions:
+      - Type 2 Diabetes
+      - Hypertension
+      - Chronic Kidney Disease
+      insurance_tier: standard
+    outputs:
+    - pcp_id
+    - pcp_name
+    - conditions_list
+  - use: provider_directory
+    params:
+      count: 7
+      specialties:
+      - pcp
+      - cardiology
+      - endocrinology
+      - neurology
+      - radiology
+      - billing
+      must_include:
+      - pcp
+      - cardiology
+      - endocrinology
+    outputs:
+    - provider_ids
+    - providers_by_specialty
+  - use: pharmacy_list
+    params:
+      count: 2
+    outputs:
+    - default_pharmacy_id
+  - use: prescription_cabinet
+    params:
+      active_count: 5
+      expiring_soon_count: 1
+    outputs:
+    - active_rx_ids
+    - expiring_rx_ids
+  - use: referral_chain
+    params:
+      approved_count: 2
+      pending_count: 1
+      with_prior_auth: true
+      must_have_specialties:
+      - cardiology
+      - endocrinology
+    outputs:
+    - approved_ref_ids
+    - prior_auth_ref_id
+  - use: lab_results_panel
+    params:
+      resulted_count: 3
+      trend_test: HbA1c
+      trend_values:
+      - '6.8'
+      - '7.2'
+      - '7.5'
+    outputs:
+    - resulted_lab_ids
+    - trend_lab_ids
+  - use: appointment_history
+    params:
+      upcoming_count: 1
+      completed_count: 3
+    outputs:
+    - upcoming_ids
   targets:
-    pcp_id: "{output.pcp_id}"
-    pcp_name: "{output.pcp_name}"
-    conditions_list: "{output.conditions_list}"
-    cardio_provider_ids: "{output.providers_by_specialty.cardiology}"
-    endo_provider_ids: "{output.providers_by_specialty.endocrinology}"
-    active_rx_ids: "{output.active_rx_ids}"
-    approved_ref_ids: "{output.approved_ref_ids}"
-    upcoming_ids: "{output.upcoming_ids}"
-
+    pcp_id: '{output.pcp_id}'
+    pcp_name: '{output.pcp_name}'
+    conditions_list: '{output.conditions_list}'
+    cardio_provider_ids: '{output.providers_by_specialty.cardiology}'
+    endo_provider_ids: '{output.providers_by_specialty.endocrinology}'
+    active_rx_ids: '{output.active_rx_ids}'
+    approved_ref_ids: '{output.approved_ref_ids}'
+    upcoming_ids: '{output.upcoming_ids}'
 eval:
   source: server_state
   checks:
-    - expr: >-
-        len([
-          a for a in state.appointments
-          if a.status == 'scheduled'
-          and a.id not in state._initial_snapshot.get('appointments', {})
-        ]) == 5
-      desc: Exactly five new monitoring appointments were scheduled
-    - expr: >-
-        len([
-          a for a in state.appointments
-          if a.status == 'scheduled'
-          and a.reason == 'HbA1c monitoring'
-          and a.id not in state._initial_snapshot.get('appointments', {})
-        ]) == 1
-      desc: Exactly one HbA1c monitoring appointment was scheduled
-    - expr: >-
-        len([
-          a for a in state.appointments
-          if a.status == 'scheduled'
-          and a.reason == 'Kidney function monitoring'
-          and a.id not in state._initial_snapshot.get('appointments', {})
-        ]) == 1
-      desc: Exactly one kidney function monitoring appointment was scheduled
-    - expr: >-
-        len([
-          a for a in state.appointments
-          if a.status == 'scheduled'
-          and a.provider_id == '{target.pcp_id}'
-          and a.reason == 'Monthly blood pressure review'
-          and a.id not in state._initial_snapshot.get('appointments', {})
-        ]) == 1
-      desc: Exactly one PCP blood-pressure review appointment was scheduled
-    - expr: >-
-        len([
-          a for a in state.appointments
-          if a.status == 'scheduled'
-          and a.provider_id in {target.cardio_provider_ids}
-          and a.reason == 'Annual cardiology monitoring'
-          and a.id not in state._initial_snapshot.get('appointments', {})
-        ]) == 1
-      desc: Exactly one annual cardiology monitoring appointment was scheduled
-    - expr: >-
-        len([
-          a for a in state.appointments
-          if a.status == 'scheduled'
-          and a.provider_id in {target.endo_provider_ids}
-          and a.reason == 'Annual endocrinology monitoring'
-          and a.id not in state._initial_snapshot.get('appointments', {})
-        ]) == 1
-      desc: Exactly one annual endocrinology monitoring appointment was scheduled
-    - expr: >-
-        all(rx.status == 'active'
-            for rx in state.prescriptions
-            if rx.id in {target.active_rx_ids})
-      desc: All monitoring-related prescriptions remain active
-    - expr: >-
-        all(
-          state.get_referral(rid) is not None
-          and state.get_referral(rid).status == 'approved'
-          for rid in {target.approved_ref_ids}
-        )
-      desc: Specialist referrals remain approved
+  - expr: "len([\n  a for a in state.appointments\n  if a.status == 'scheduled'\n\
+      \  and a.id not in state._initial_snapshot.get('appointments', {})\n]) == 5"
+    desc: Exactly five new monitoring appointments were scheduled
+  - expr: "len([\n  a for a in state.appointments\n  if a.status == 'scheduled'\n\
+      \  and a.reason == 'HbA1c monitoring'\n  and a.id not in state._initial_snapshot.get('appointments',\
+      \ {})\n]) == 1"
+    desc: Exactly one HbA1c monitoring appointment was scheduled
+  - expr: "len([\n  a for a in state.appointments\n  if a.status == 'scheduled'\n\
+      \  and a.reason == 'Kidney function monitoring'\n  and a.id not in state._initial_snapshot.get('appointments',\
+      \ {})\n]) == 1"
+    desc: Exactly one kidney function monitoring appointment was scheduled
+  - expr: "len([\n  a for a in state.appointments\n  if a.status == 'scheduled'\n\
+      \  and a.provider_id == '{target.pcp_id}'\n  and a.reason == 'Monthly blood\
+      \ pressure review'\n  and a.id not in state._initial_snapshot.get('appointments',\
+      \ {})\n]) == 1"
+    desc: Exactly one PCP blood-pressure review appointment was scheduled
+  - expr: "len([\n  a for a in state.appointments\n  if a.status == 'scheduled'\n\
+      \  and a.provider_id in {target.cardio_provider_ids}\n  and a.reason == 'Annual\
+      \ cardiology monitoring'\n  and a.id not in state._initial_snapshot.get('appointments',\
+      \ {})\n]) == 1"
+    desc: Exactly one annual cardiology monitoring appointment was scheduled
+  - expr: "len([\n  a for a in state.appointments\n  if a.status == 'scheduled'\n\
+      \  and a.provider_id in {target.endo_provider_ids}\n  and a.reason == 'Annual\
+      \ endocrinology monitoring'\n  and a.id not in state._initial_snapshot.get('appointments',\
+      \ {})\n]) == 1"
+    desc: Exactly one annual endocrinology monitoring appointment was scheduled
+  - expr: "all(rx.status == 'active'\n    for rx in state.prescriptions\n    if rx.id\
+      \ in {target.active_rx_ids})"
+    desc: All monitoring-related prescriptions remain active
+  - expr: "all(\n  state.get_referral(rid) is not None\n  and state.get_referral(rid).status\
+      \ == 'approved'\n  for rid in {target.approved_ref_ids}\n)"
+    desc: Specialist referrals remain approved
   negative_checks:
-    - expr: >-
-        len([
-          m for m in state.messages
-          if m.from_type == 'patient'
-          and m.id not in state._initial_snapshot.get('messages', {})
-        ]) == 0
-      desc: Agent did not send any patient messages
-      penalty: 0.2
-    - expr: >-
-        all(
-          state.get_appointment(aid) is not None
-          and state.get_appointment(aid).status != 'cancelled'
-          for aid in {target.upcoming_ids}
-        )
-      desc: Existing appointments were not cancelled
-      penalty: 0.2
-    - expr: >-
-        not any(rx.status == 'discontinued'
-                for rx in state.prescriptions
-                if rx.id in {target.active_rx_ids})
-      desc: No monitoring medications were discontinued
-      penalty: 0.3
+  - expr: "len([\n  m for m in state.messages\n  if m.from_type == 'patient'\n  and\
+      \ m.id not in state._initial_snapshot.get('messages', {})\n]) == 0"
+    desc: Agent did not send any patient messages
+    penalty: 0.2
+  - expr: "all(\n  state.get_appointment(aid) is not None\n  and state.get_appointment(aid).status\
+      \ != 'cancelled'\n  for aid in {target.upcoming_ids}\n)"
+    desc: Existing appointments were not cancelled
+    penalty: 0.2
+  - expr: "not any(rx.status == 'discontinued'\n        for rx in state.prescriptions\n\
+      \        if rx.id in {target.active_rx_ids})"
+    desc: No monitoring medications were discontinued
+    penalty: 0.3
+secondary_primitives: []

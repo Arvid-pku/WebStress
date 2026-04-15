@@ -7,15 +7,15 @@ instruction_template: 'Complete this account cleanup:
   1. Go to your Saved page and unsave all posts that are from r/{target.unsave_sub}.
 
 
-  2. Go to Settings and switch theme to "dark", disable "Show online status", and set default comment
-  sort to "new".
+  2. Go to Settings and switch theme to "dark", disable "Show online status", and
+  set default comment sort to "new".
 
 
   3. Unsubscribe from r/{target.leave_sub}.
 
 
-  4. Navigate to r/{target.comment_sub} and find the post "{target.comment_post_title}". Add a comment
-  with exactly: "{target.comment_text}"
+  4. Navigate to r/{target.comment_sub} and find the post "{target.comment_post_title}".
+  Add a comment with exactly: "{target.comment_text}"
 
 
   Do not change notification settings.'
@@ -59,12 +59,13 @@ seed:
     comment_sub: news
     comment_post_title: '{output.post_title}'
     comment_post_id: '{output.post_id}'
-    comment_text: This is a landmark decision. Digital privacy has been in a legal gray area for far too
-      long.
+    comment_text: This is a landmark decision. Digital privacy has been in a legal
+      gray area for far too long.
 eval:
   source: server_state
   checks:
-  - expr: not any(p.subreddit_name == 'memes' and p.id in state.saved_post_ids for p in state.posts)
+  - expr: not any(p.subreddit_name == 'memes' and p.id in state.saved_post_ids for
+      p in state.posts)
     desc: All memes posts unsaved
   - expr: state.settings.theme == 'dark'
     desc: Theme dark
@@ -74,9 +75,9 @@ eval:
     desc: Comment sort new
   - expr: any(s.name == 'memes' and not s.is_subscribed for s in state.subreddits)
     desc: Left r/memes
-  - expr: any(c.post_id == '{target.comment_post_id}' and c.body == "This is a landmark decision. Digital
-      privacy has been in a legal gray area for far too long." and c.author_name == state.owner_username
-      for c in state.comments)
+  - expr: any(c.post_id == '{target.comment_post_id}' and c.body == "This is a landmark
+      decision. Digital privacy has been in a legal gray area for far too long." and
+      c.author_name == state.owner_username for c in state.comments)
     desc: Exact comment on news post
   negative_checks:
   - expr: state.settings.email_comment_reply == True
@@ -85,11 +86,11 @@ eval:
   - expr: len(state.sent_messages) == 0
     desc: No messages sent when none required
     penalty: 0.15
-  - expr: sum(1 for p in state.posts if p.author_name == state.owner_username) == 0
+  - expr: sum(1 for p in state.posts if p.author_name == state.owner_username) ==
+      0
     desc: No posts created when none required
     penalty: 0.15
   - expr: len(state.blocked_users) == 0
     desc: No users blocked when none required
     penalty: 0.15
-secondary_primitives:
-- state_tracking
+secondary_primitives: []

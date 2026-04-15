@@ -11,8 +11,6 @@ difficulty: medium
 time_limit_seconds: 240
 expected_steps: 14
 primary_primitives:
-- planning
-- grounding
 - state_tracking
 start_path: /home
 seed:
@@ -100,3 +98,4 @@ eval:
       \ sl in state.saved_lists\n)\n"
     desc: Only the specified property was added to the list
     penalty: 0.15
+secondary_primitives: []

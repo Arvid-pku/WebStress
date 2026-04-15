@@ -1,4 +1,3 @@
----
 task_id: rh_live_buy_the_dip
 env_id: robinhood
 title: Buy the Dip with Limit Order
@@ -9,9 +8,7 @@ time_limit_seconds: 200
 expected_steps: 8
 primary_primitives:
 - planning
-- patience
-- verification
-start_path: "/"
+start_path: /
 seed:
   distractors: 5
   steps:
@@ -42,32 +39,22 @@ seed:
 eval:
   source: server_state
   checks:
-  - expr: >-
-      len([o for o in state.orders
-           if o.symbol == 'AAPL' and o.side == 'buy'
-           and not o.id.startswith('ord_decoy_')]) == 1
+  - expr: "len([o for o in state.orders\n     if o.symbol == 'AAPL' and o.side ==\
+      \ 'buy'\n     and not o.id.startswith('ord_decoy_')]) == 1"
     desc: Exactly one AAPL buy order was placed
-  - expr: >-
-      any(o.symbol == 'AAPL' and o.side == 'buy' and o.order_type == 'limit'
-          and o.status == 'filled' and o.quantity == 10
-          and o.filled_tick is not None
-          and o.filled_price is not None and o.filled_price <= Decimal('180')
-          and not o.id.startswith('ord_decoy_')
-          for o in state.orders)
-    desc: A filled limit buy order for 10 shares of AAPL executed at the requested dip price
-  - expr: >-
-      any(o.symbol == 'AAPL' and o.side == 'buy' and o.order_type == 'limit'
-          and o.time_in_force == 'gtc' and float(o.limit_price) <= 180.0
-          and not o.id.startswith('ord_decoy_')
-          for o in state.orders)
+  - expr: "any(o.symbol == 'AAPL' and o.side == 'buy' and o.order_type == 'limit'\n\
+      \    and o.status == 'filled' and o.quantity == 10\n    and o.filled_tick is\
+      \ not None\n    and o.filled_price is not None and o.filled_price <= Decimal('180')\n\
+      \    and not o.id.startswith('ord_decoy_')\n    for o in state.orders)"
+    desc: A filled limit buy order for 10 shares of AAPL executed at the requested
+      dip price
+  - expr: "any(o.symbol == 'AAPL' and o.side == 'buy' and o.order_type == 'limit'\n\
+      \    and o.time_in_force == 'gtc' and float(o.limit_price) <= 180.0\n    and\
+      \ not o.id.startswith('ord_decoy_')\n    for o in state.orders)"
     desc: The limit order used the requested $180-or-below GTC price
-  - expr: >-
-      abs(
-        next(o.limit_price for o in state.orders
-             if o.symbol == 'AAPL' and o.side == 'buy'
-             and not o.id.startswith('ord_decoy_')) -
-        (state.get_stock('AAPL').price * Decimal('0.95'))
-      ) <= Decimal('0.01')
+  - expr: "abs(\n  next(o.limit_price for o in state.orders\n       if o.symbol ==\
+      \ 'AAPL' and o.side == 'buy'\n       and not o.id.startswith('ord_decoy_'))\
+      \ -\n  (state.get_stock('AAPL').price * Decimal('0.95'))\n) <= Decimal('0.01')"
     desc: The limit price is 5% below the current AAPL price
   negative_checks:
   - expr: not any(o.order_type == 'market' and not o.id.startswith('ord_decoy_') for

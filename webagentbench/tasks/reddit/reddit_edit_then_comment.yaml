@@ -1,17 +1,16 @@
 task_id: reddit_edit_then_comment
 env_id: reddit
 title: Edit Own Post Then Comment Elsewhere
-instruction_template: 'Find your post titled "{target.edit_post_title}" in r/{target.edit_sub} and edit its body to exactly:
-  "{target.new_body}" Then navigate to r/{target.comment_sub} and find the post titled "{target.comment_post_title}". Add
-  a top-level comment with exactly: "{target.comment_text}"'
+instruction_template: 'Find your post titled "{target.edit_post_title}" in r/{target.edit_sub}
+  and edit its body to exactly: "{target.new_body}" Then navigate to r/{target.comment_sub}
+  and find the post titled "{target.comment_post_title}". Add a top-level comment
+  with exactly: "{target.comment_text}"'
 difficulty: medium
 time_limit_seconds: 300
 expected_steps: 18
 primary_primitives:
 - planning
-- grounding
-secondary_primitives:
-- state_tracking
+secondary_primitives: []
 start_path: /feed
 seed:
   distractors: 6
@@ -41,23 +40,25 @@ seed:
     edit_post_id: '{output.edit_post_id}'
     edit_post_title: '{output.edit_post_title}'
     edit_sub: Python
-    new_body: 'Version 1.0 is now stable! Added support for JSON Schema Draft 2020-12 and YAML input. Install with: pip install
-      json-schema-cli'
+    new_body: 'Version 1.0 is now stable! Added support for JSON Schema Draft 2020-12
+      and YAML input. Install with: pip install json-schema-cli'
     comment_post_id: '{output.comment_post_id}'
     comment_post_title: '{output.comment_post_title}'
     comment_sub: '{output.comment_sub}'
-    comment_text: Completely agree. Once I started reading compiler output, I finally understood why certain patterns are
-      faster than others.
+    comment_text: Completely agree. Once I started reading compiler output, I finally
+      understood why certain patterns are faster than others.
 eval:
   source: server_state
   checks:
-  - expr: 'state.get_post(''{target.edit_post_id}'').body == ''Version 1.0 is now stable! Added support for JSON Schema Draft
-      2020-12 and YAML input. Install with: pip install json-schema-cli'''
+  - expr: 'state.get_post(''{target.edit_post_id}'').body == ''Version 1.0 is now
+      stable! Added support for JSON Schema Draft 2020-12 and YAML input. Install
+      with: pip install json-schema-cli'''
     desc: Post body updated to exact text
   - expr: state.get_post('{target.edit_post_id}').is_edited
     desc: Post marked as edited
-  - expr: any(c.post_id == '{target.comment_post_id}' and c.body == "Completely agree. Once I started reading compiler output,
-      I finally understood why certain patterns are faster than others." and c.author_name == state.owner_username for c in
+  - expr: any(c.post_id == '{target.comment_post_id}' and c.body == "Completely agree.
+      Once I started reading compiler output, I finally understood why certain patterns
+      are faster than others." and c.author_name == state.owner_username for c in
       state.comments)
     desc: Exact comment posted on assembly post
   negative_checks:
@@ -67,7 +68,8 @@ eval:
   - expr: len(state.sent_messages) == 0
     desc: No messages sent when none required
     penalty: 0.15
-  - expr: sum(1 for p in state.posts if p.author_name == state.owner_username) == 0
+  - expr: sum(1 for p in state.posts if p.author_name == state.owner_username) ==
+      0
     desc: No posts created when none required
     penalty: 0.15
   - expr: len(state.blocked_users) == 0

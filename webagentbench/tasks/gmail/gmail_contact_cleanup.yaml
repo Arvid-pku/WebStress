@@ -11,9 +11,6 @@ time_limit_seconds: 300
 expected_steps: 25
 primary_primitives:
 - exploration
-- verification
-- state_tracking
-- grounding
 start_path: /inbox
 seed:
   distractors: 40
@@ -63,3 +60,4 @@ eval:
       state.contacts)
     desc: Near-threshold contact B preserved
     penalty: 0.15
+secondary_primitives: []

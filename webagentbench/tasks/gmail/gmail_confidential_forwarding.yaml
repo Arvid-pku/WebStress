@@ -25,8 +25,6 @@ time_limit_seconds: 360
 expected_steps: 40
 primary_primitives:
 - grounding
-- planning
-- verification
 start_path: /inbox
 seed:
   distractors: 40
@@ -104,3 +102,4 @@ eval:
       state.sent)
     desc: No email to leadership-all
     penalty: 0.15
+secondary_primitives: []

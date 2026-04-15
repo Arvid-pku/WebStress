@@ -1,48 +1,55 @@
 task_id: rh_sell_shares
 env_id: robinhood
 title: Sell All Shares of a Stock
-instruction_template: "Sell all of your {target.symbol} shares."
+instruction_template: Sell all of your {target.symbol} shares.
 difficulty: easy
 time_limit_seconds: 90
 expected_steps: 5
 primary_primitives:
-  - grounding
-  - state_tracking
+- grounding
 start_path: /
-
 seed:
   distractors: 5
   steps:
-    - use: stock_universe
-      params:
-        count: 20
-        must_include: ["TSLA", "AAPL", "MSFT"]
-      outputs: []
-    - use: portfolio_basic
-      params:
-        stocks: ["TSLA", "AAPL", "MSFT"]
-        quantities: ["5", "10", "8"]
-        cost_bases: ["220.00", "175.00", "380.00"]
-      outputs: []
+  - use: stock_universe
+    params:
+      count: 20
+      must_include:
+      - TSLA
+      - AAPL
+      - MSFT
+    outputs: []
+  - use: portfolio_basic
+    params:
+      stocks:
+      - TSLA
+      - AAPL
+      - MSFT
+      quantities:
+      - '5'
+      - '10'
+      - '8'
+      cost_bases:
+      - '220.00'
+      - '175.00'
+      - '380.00'
+    outputs: []
   targets:
-    symbol: "TSLA"
+    symbol: TSLA
     quantity: 5
-
 eval:
   source: server_state
   checks:
-    - expr: >-
-        any(o.symbol == 'TSLA' and o.side == 'sell' and o.quantity == 5
-            and o.status == 'filled'
-            and not o.id.startswith('ord_decoy_')
-            for o in state.orders)
-      desc: A filled sell order for all 5 TSLA shares exists (non-decoy)
-    - expr: "state.get_position('TSLA') is None or state.get_position('TSLA').quantity == 0"
-      desc: TSLA position is fully liquidated
+  - expr: "any(o.symbol == 'TSLA' and o.side == 'sell' and o.quantity == 5\n    and\
+      \ o.status == 'filled'\n    and not o.id.startswith('ord_decoy_')\n    for o\
+      \ in state.orders)"
+    desc: A filled sell order for all 5 TSLA shares exists (non-decoy)
+  - expr: state.get_position('TSLA') is None or state.get_position('TSLA').quantity
+      == 0
+    desc: TSLA position is fully liquidated
   negative_checks:
-    - expr: >-
-        not any(o.symbol != 'TSLA' and o.side == 'sell'
-                and not o.id.startswith('ord_decoy_')
-                for o in state.orders)
-      desc: Agent did not sell shares of other symbols
-      penalty: 0.25
+  - expr: "not any(o.symbol != 'TSLA' and o.side == 'sell'\n        and not o.id.startswith('ord_decoy_')\n\
+      \        for o in state.orders)"
+    desc: Agent did not sell shares of other symbols
+    penalty: 0.25
+secondary_primitives: []

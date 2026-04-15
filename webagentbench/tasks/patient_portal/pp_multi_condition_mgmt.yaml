@@ -1,195 +1,149 @@
 task_id: pp_multi_condition_mgmt
 env_id: patient_portal
 title: Multi-Condition Coordination
-instruction_template: >-
-  Manage your chronic-condition follow-up using only objective portal actions:
-  1) Schedule one PCP appointment in the next available slot with reason exactly
-  "Hypertension medication review",
-  2) Schedule one cardiology appointment in the next available slot with reason
-  exactly "Quarterly cardiac review",
-  3) Schedule one endocrinology appointment in the next available slot with
-  reason exactly "Quarterly diabetes review".
-  The cardiology and endocrinology appointments must use approved referrals.
-  Do not send any messages, do not cancel any existing appointments, and do not
-  discontinue any prescriptions.
+instruction_template: 'Manage your chronic-condition follow-up using only objective
+  portal actions: 1) Schedule one PCP appointment in the next available slot with
+  reason exactly "Hypertension medication review", 2) Schedule one cardiology appointment
+  in the next available slot with reason exactly "Quarterly cardiac review", 3) Schedule
+  one endocrinology appointment in the next available slot with reason exactly "Quarterly
+  diabetes review". The cardiology and endocrinology appointments must use approved
+  referrals. Do not send any messages, do not cancel any existing appointments, and
+  do not discontinue any prescriptions.'
 difficulty: frontier
 time_limit_seconds: 600
 expected_steps: 45
 primary_primitives:
-  - grounding
-  - planning
-  - state_tracking
-  - verification
-  - backtracking
-  - patience
-  - exploration
+- planning
 start_path: /appointments
-
 seed:
   distractors: 10
   steps:
-    - use: patient_profile
-      params:
-        conditions: ["Type 2 Diabetes", "Hypertension", "Coronary Artery Disease"]
-        allergies: ["Sulfa"]
-        insurance_tier: standard
-      outputs: [pcp_id, pcp_name]
-    - use: provider_directory
-      params:
-        count: 7
-        specialties: ["pcp", "cardiology", "endocrinology", "neurology", "radiology", "billing"]
-        must_include: ["pcp", "cardiology", "endocrinology"]
-      outputs: [provider_ids, providers_by_specialty]
-    - use: pharmacy_list
-      params:
-        count: 2
-      outputs: [default_pharmacy_id]
-    - use: prescription_cabinet
-      params:
-        active_count: 5
-        interaction_pair: true
-      outputs: [active_rx_ids]
-    - use: referral_chain
-      params:
-        approved_count: 2
-        pending_count: 1
-        with_prior_auth: true
-        must_have_specialties: ["cardiology", "endocrinology"]
-      outputs: [approved_ref_ids, pending_ref_ids]
-    - use: appointment_history
-      params:
-        upcoming_count: 2
-        completed_count: 3
-      outputs: [upcoming_ids]
+  - use: patient_profile
+    params:
+      conditions:
+      - Type 2 Diabetes
+      - Hypertension
+      - Coronary Artery Disease
+      allergies:
+      - Sulfa
+      insurance_tier: standard
+    outputs:
+    - pcp_id
+    - pcp_name
+  - use: provider_directory
+    params:
+      count: 7
+      specialties:
+      - pcp
+      - cardiology
+      - endocrinology
+      - neurology
+      - radiology
+      - billing
+      must_include:
+      - pcp
+      - cardiology
+      - endocrinology
+    outputs:
+    - provider_ids
+    - providers_by_specialty
+  - use: pharmacy_list
+    params:
+      count: 2
+    outputs:
+    - default_pharmacy_id
+  - use: prescription_cabinet
+    params:
+      active_count: 5
+      interaction_pair: true
+    outputs:
+    - active_rx_ids
+  - use: referral_chain
+    params:
+      approved_count: 2
+      pending_count: 1
+      with_prior_auth: true
+      must_have_specialties:
+      - cardiology
+      - endocrinology
+    outputs:
+    - approved_ref_ids
+    - pending_ref_ids
+  - use: appointment_history
+    params:
+      upcoming_count: 2
+      completed_count: 3
+    outputs:
+    - upcoming_ids
   targets:
-    pcp_id: "{output.pcp_id}"
-    cardio_provider_ids: "{output.providers_by_specialty.cardiology}"
-    endo_provider_ids: "{output.providers_by_specialty.endocrinology}"
-    active_rx_ids: "{output.active_rx_ids}"
-    approved_ref_ids: "{output.approved_ref_ids}"
-    upcoming_ids: "{output.upcoming_ids}"
-
+    pcp_id: '{output.pcp_id}'
+    cardio_provider_ids: '{output.providers_by_specialty.cardiology}'
+    endo_provider_ids: '{output.providers_by_specialty.endocrinology}'
+    active_rx_ids: '{output.active_rx_ids}'
+    approved_ref_ids: '{output.approved_ref_ids}'
+    upcoming_ids: '{output.upcoming_ids}'
 eval:
   source: server_state
   checks:
-    - expr: >-
-        len([
-          a for a in state.appointments
-          if a.status == 'scheduled'
-          and a.id not in {target.upcoming_ids}
-        ]) == 3
-      desc: Exactly three new appointments were scheduled
-    - expr: >-
-        len([
-          a for a in state.appointments
-          if a.status == 'scheduled'
-          and a.id not in {target.upcoming_ids}
-          and a.provider_id == '{target.pcp_id}'
-          and a.reason == 'Hypertension medication review'
-        ]) == 1
-      desc: Exactly one PCP hypertension-review appointment was scheduled
-    - expr: >-
-        len([
-          a for a in state.appointments
-          if a.status == 'scheduled'
-          and a.id not in {target.upcoming_ids}
-          and a.provider_id in {target.cardio_provider_ids}
-          and a.reason == 'Quarterly cardiac review'
-          and a.linked_referral_id is not None
-          and state.get_referral(a.linked_referral_id) is not None
-          and state.get_referral(a.linked_referral_id).status == 'approved'
-          and state.get_referral(a.linked_referral_id).to_specialty == 'cardiology'
-        ]) == 1
-      desc: Exactly one cardiology follow-up was scheduled using an approved cardiology referral
-    - expr: >-
-        len([
-          a for a in state.appointments
-          if a.status == 'scheduled'
-          and a.id not in {target.upcoming_ids}
-          and a.provider_id in {target.endo_provider_ids}
-          and a.reason == 'Quarterly diabetes review'
-          and a.linked_referral_id is not None
-          and state.get_referral(a.linked_referral_id) is not None
-          and state.get_referral(a.linked_referral_id).status == 'approved'
-          and state.get_referral(a.linked_referral_id).to_specialty == 'endocrinology'
-        ]) == 1
-      desc: Exactly one endocrinology follow-up was scheduled using an approved endocrinology referral
-    - expr: >-
-        any(
-          a.status == 'scheduled'
-          and a.id not in {target.upcoming_ids}
-          and a.provider_id == '{target.pcp_id}'
-          and a.reason == 'Hypertension medication review'
-          and a.datetime.isoformat() <= min(
-            slot.datetime.isoformat()
-            for slot in state.get_provider(a.provider_id).available_slots
-          )
-          for a in state.appointments
-        )
-      desc: The PCP appointment used the next available PCP slot
-    - expr: >-
-        any(
-          a.status == 'scheduled'
-          and a.id not in {target.upcoming_ids}
-          and a.provider_id in {target.cardio_provider_ids}
-          and a.reason == 'Quarterly cardiac review'
-          and a.datetime.isoformat() <= min(
-            slot.datetime.isoformat()
-            for slot in state.get_provider(a.provider_id).available_slots
-          )
-          for a in state.appointments
-        )
-      desc: The cardiology appointment used the next available cardiology slot
-    - expr: >-
-        any(
-          a.status == 'scheduled'
-          and a.id not in {target.upcoming_ids}
-          and a.provider_id in {target.endo_provider_ids}
-          and a.reason == 'Quarterly diabetes review'
-          and a.datetime.isoformat() <= min(
-            slot.datetime.isoformat()
-            for slot in state.get_provider(a.provider_id).available_slots
-          )
-          for a in state.appointments
-        )
-      desc: The endocrinology appointment used the next available endocrinology slot
-    - expr: >-
-        all(
-          rx.status == 'active'
-          for rx in state.prescriptions
-          if rx.id in {target.active_rx_ids}
-        )
-      desc: All active prescriptions remained active
+  - expr: "len([\n  a for a in state.appointments\n  if a.status == 'scheduled'\n\
+      \  and a.id not in {target.upcoming_ids}\n]) == 3"
+    desc: Exactly three new appointments were scheduled
+  - expr: "len([\n  a for a in state.appointments\n  if a.status == 'scheduled'\n\
+      \  and a.id not in {target.upcoming_ids}\n  and a.provider_id == '{target.pcp_id}'\n\
+      \  and a.reason == 'Hypertension medication review'\n]) == 1"
+    desc: Exactly one PCP hypertension-review appointment was scheduled
+  - expr: "len([\n  a for a in state.appointments\n  if a.status == 'scheduled'\n\
+      \  and a.id not in {target.upcoming_ids}\n  and a.provider_id in {target.cardio_provider_ids}\n\
+      \  and a.reason == 'Quarterly cardiac review'\n  and a.linked_referral_id is\
+      \ not None\n  and state.get_referral(a.linked_referral_id) is not None\n  and\
+      \ state.get_referral(a.linked_referral_id).status == 'approved'\n  and state.get_referral(a.linked_referral_id).to_specialty\
+      \ == 'cardiology'\n]) == 1"
+    desc: Exactly one cardiology follow-up was scheduled using an approved cardiology
+      referral
+  - expr: "len([\n  a for a in state.appointments\n  if a.status == 'scheduled'\n\
+      \  and a.id not in {target.upcoming_ids}\n  and a.provider_id in {target.endo_provider_ids}\n\
+      \  and a.reason == 'Quarterly diabetes review'\n  and a.linked_referral_id is\
+      \ not None\n  and state.get_referral(a.linked_referral_id) is not None\n  and\
+      \ state.get_referral(a.linked_referral_id).status == 'approved'\n  and state.get_referral(a.linked_referral_id).to_specialty\
+      \ == 'endocrinology'\n]) == 1"
+    desc: Exactly one endocrinology follow-up was scheduled using an approved endocrinology
+      referral
+  - expr: "any(\n  a.status == 'scheduled'\n  and a.id not in {target.upcoming_ids}\n\
+      \  and a.provider_id == '{target.pcp_id}'\n  and a.reason == 'Hypertension medication\
+      \ review'\n  and a.datetime.isoformat() <= min(\n    slot.datetime.isoformat()\n\
+      \    for slot in state.get_provider(a.provider_id).available_slots\n  )\n  for\
+      \ a in state.appointments\n)"
+    desc: The PCP appointment used the next available PCP slot
+  - expr: "any(\n  a.status == 'scheduled'\n  and a.id not in {target.upcoming_ids}\n\
+      \  and a.provider_id in {target.cardio_provider_ids}\n  and a.reason == 'Quarterly\
+      \ cardiac review'\n  and a.datetime.isoformat() <= min(\n    slot.datetime.isoformat()\n\
+      \    for slot in state.get_provider(a.provider_id).available_slots\n  )\n  for\
+      \ a in state.appointments\n)"
+    desc: The cardiology appointment used the next available cardiology slot
+  - expr: "any(\n  a.status == 'scheduled'\n  and a.id not in {target.upcoming_ids}\n\
+      \  and a.provider_id in {target.endo_provider_ids}\n  and a.reason == 'Quarterly\
+      \ diabetes review'\n  and a.datetime.isoformat() <= min(\n    slot.datetime.isoformat()\n\
+      \    for slot in state.get_provider(a.provider_id).available_slots\n  )\n  for\
+      \ a in state.appointments\n)"
+    desc: The endocrinology appointment used the next available endocrinology slot
+  - expr: "all(\n  rx.status == 'active'\n  for rx in state.prescriptions\n  if rx.id\
+      \ in {target.active_rx_ids}\n)"
+    desc: All active prescriptions remained active
   negative_checks:
-    - expr: >-
-        all(
-          state.get_appointment(aid) is not None
-          and state.get_appointment(aid).status != 'cancelled'
-          for aid in {target.upcoming_ids}
-        )
-      desc: Existing appointments were not cancelled
-      penalty: 0.2
-    - expr: >-
-        not any(
-          rx.status == 'discontinued'
-          for rx in state.prescriptions
-          if rx.id in {target.active_rx_ids}
-        )
-      desc: No active prescription was discontinued
-      penalty: 0.3
-    - expr: >-
-        all(
-          state.get_referral(rid) is not None
-          and state.get_referral(rid).status == 'approved'
-          for rid in {target.approved_ref_ids}
-        )
-      desc: Approved referrals were preserved
-      penalty: 0.2
-    - expr: >-
-        not any(
-          m.from_type == 'patient'
-          and m.id not in state._initial_snapshot.get('messages', {})
-          for m in state.messages
-        )
-      desc: No new patient messages were sent
-      penalty: 0.2
+  - expr: "all(\n  state.get_appointment(aid) is not None\n  and state.get_appointment(aid).status\
+      \ != 'cancelled'\n  for aid in {target.upcoming_ids}\n)"
+    desc: Existing appointments were not cancelled
+    penalty: 0.2
+  - expr: "not any(\n  rx.status == 'discontinued'\n  for rx in state.prescriptions\n\
+      \  if rx.id in {target.active_rx_ids}\n)"
+    desc: No active prescription was discontinued
+    penalty: 0.3
+  - expr: "all(\n  state.get_referral(rid) is not None\n  and state.get_referral(rid).status\
+      \ == 'approved'\n  for rid in {target.approved_ref_ids}\n)"
+    desc: Approved referrals were preserved
+    penalty: 0.2
+  - expr: "not any(\n  m.from_type == 'patient'\n  and m.id not in state._initial_snapshot.get('messages',\
+      \ {})\n  for m in state.messages\n)"
+    desc: No new patient messages were sent
+    penalty: 0.2
+secondary_primitives: []

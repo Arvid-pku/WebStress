@@ -14,7 +14,6 @@ time_limit_seconds: 240
 expected_steps: 14
 primary_primitives:
 - planning
-- grounding
 start_path: /home
 seed:
   distractors: 6
@@ -106,3 +105,4 @@ eval:
       \  if not r.id.startswith('review_initial_')\n)\n"
     desc: No review was submitted for a different property
     penalty: 0.3
+secondary_primitives: []

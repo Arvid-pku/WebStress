@@ -1,118 +1,117 @@
 task_id: pp_full_care_transition
 env_id: patient_portal
 title: Full Care Continuity Review
-instruction_template: >-
-  Complete a continuity-of-care review across your active providers:
-  1) Schedule exactly one PCP appointment with reason "Care continuity review",
-  2) Schedule exactly one cardiology appointment with reason "Cardiology continuity visit",
-  3) Schedule exactly one endocrinology appointment with reason "Endocrinology continuity visit".
-  Do not send any messages, do not cancel any existing specialist appointments,
-  and do not modify any prescriptions.
+instruction_template: 'Complete a continuity-of-care review across your active providers:
+  1) Schedule exactly one PCP appointment with reason "Care continuity review", 2)
+  Schedule exactly one cardiology appointment with reason "Cardiology continuity visit",
+  3) Schedule exactly one endocrinology appointment with reason "Endocrinology continuity
+  visit". Do not send any messages, do not cancel any existing specialist appointments,
+  and do not modify any prescriptions.'
 difficulty: frontier
 time_limit_seconds: 600
 expected_steps: 50
 primary_primitives:
-  - grounding
-  - planning
-  - state_tracking
-  - verification
-  - backtracking
-  - patience
-  - exploration
+- planning
 start_path: /
-
 seed:
   distractors: 10
   steps:
-    - use: patient_profile
-      params:
-        conditions: ["Type 2 Diabetes", "Hypertension", "Chronic Kidney Disease"]
-        allergies: ["Penicillin", "Sulfa"]
-        insurance_tier: standard
-      outputs: [pcp_id, pcp_name, conditions_list]
-    - use: provider_directory
-      params:
-        count: 7
-        specialties: ["pcp", "cardiology", "endocrinology", "neurology", "orthopedics", "billing"]
-        must_include: ["pcp", "cardiology", "endocrinology"]
-      outputs: [provider_ids, providers_by_specialty]
-    - use: pharmacy_list
-      params:
-        count: 3
-      outputs: [pharmacy_ids, default_pharmacy_id]
-    - use: prescription_cabinet
-      params:
-        active_count: 5
-        expired_count: 1
-        interaction_pair: true
-      outputs: [active_rx_ids, interacting_medications]
-    - use: referral_chain
-      params:
-        approved_count: 2
-        pending_count: 1
-        must_have_specialties: ["cardiology", "endocrinology"]
-      outputs: [approved_ref_ids, pending_ref_ids]
-    - use: appointment_history
-      params:
-        upcoming_count: 3
-        completed_count: 3
-      outputs: [upcoming_ids, completed_ids]
+  - use: patient_profile
+    params:
+      conditions:
+      - Type 2 Diabetes
+      - Hypertension
+      - Chronic Kidney Disease
+      allergies:
+      - Penicillin
+      - Sulfa
+      insurance_tier: standard
+    outputs:
+    - pcp_id
+    - pcp_name
+    - conditions_list
+  - use: provider_directory
+    params:
+      count: 7
+      specialties:
+      - pcp
+      - cardiology
+      - endocrinology
+      - neurology
+      - orthopedics
+      - billing
+      must_include:
+      - pcp
+      - cardiology
+      - endocrinology
+    outputs:
+    - provider_ids
+    - providers_by_specialty
+  - use: pharmacy_list
+    params:
+      count: 3
+    outputs:
+    - pharmacy_ids
+    - default_pharmacy_id
+  - use: prescription_cabinet
+    params:
+      active_count: 5
+      expired_count: 1
+      interaction_pair: true
+    outputs:
+    - active_rx_ids
+    - interacting_medications
+  - use: referral_chain
+    params:
+      approved_count: 2
+      pending_count: 1
+      must_have_specialties:
+      - cardiology
+      - endocrinology
+    outputs:
+    - approved_ref_ids
+    - pending_ref_ids
+  - use: appointment_history
+    params:
+      upcoming_count: 3
+      completed_count: 3
+    outputs:
+    - upcoming_ids
+    - completed_ids
   targets:
-    pcp_id: "{output.pcp_id}"
-    cardio_provider_ids: "{output.providers_by_specialty.cardiology}"
-    endo_provider_ids: "{output.providers_by_specialty.endocrinology}"
-    active_rx_ids: "{output.active_rx_ids}"
-    upcoming_ids: "{output.upcoming_ids}"
-
+    pcp_id: '{output.pcp_id}'
+    cardio_provider_ids: '{output.providers_by_specialty.cardiology}'
+    endo_provider_ids: '{output.providers_by_specialty.endocrinology}'
+    active_rx_ids: '{output.active_rx_ids}'
+    upcoming_ids: '{output.upcoming_ids}'
 eval:
   source: server_state
   checks:
-    - expr: >-
-        len([
-          a for a in state.appointments
-          if a.status == 'scheduled'
-          and a.provider_id == '{target.pcp_id}'
-          and a.reason == 'Care continuity review'
-          and a.id not in state._initial_snapshot.get('appointments', {})
-        ]) == 1
-      desc: Exactly one PCP continuity-review appointment was scheduled
-    - expr: >-
-        len([
-          a for a in state.appointments
-          if a.status == 'scheduled'
-          and a.provider_id in {target.cardio_provider_ids}
-          and a.reason == 'Cardiology continuity visit'
-          and a.id not in state._initial_snapshot.get('appointments', {})
-        ]) == 1
-      desc: Exactly one cardiology continuity visit was scheduled
-    - expr: >-
-        len([
-          a for a in state.appointments
-          if a.status == 'scheduled'
-          and a.provider_id in {target.endo_provider_ids}
-          and a.reason == 'Endocrinology continuity visit'
-          and a.id not in state._initial_snapshot.get('appointments', {})
-        ]) == 1
-      desc: Exactly one endocrinology continuity visit was scheduled
-    - expr: >-
-        all(rx.status == 'active'
-            for rx in state.prescriptions
-            if rx.id in {target.active_rx_ids})
-      desc: All active prescriptions remain unchanged
+  - expr: "len([\n  a for a in state.appointments\n  if a.status == 'scheduled'\n\
+      \  and a.provider_id == '{target.pcp_id}'\n  and a.reason == 'Care continuity\
+      \ review'\n  and a.id not in state._initial_snapshot.get('appointments', {})\n\
+      ]) == 1"
+    desc: Exactly one PCP continuity-review appointment was scheduled
+  - expr: "len([\n  a for a in state.appointments\n  if a.status == 'scheduled'\n\
+      \  and a.provider_id in {target.cardio_provider_ids}\n  and a.reason == 'Cardiology\
+      \ continuity visit'\n  and a.id not in state._initial_snapshot.get('appointments',\
+      \ {})\n]) == 1"
+    desc: Exactly one cardiology continuity visit was scheduled
+  - expr: "len([\n  a for a in state.appointments\n  if a.status == 'scheduled'\n\
+      \  and a.provider_id in {target.endo_provider_ids}\n  and a.reason == 'Endocrinology\
+      \ continuity visit'\n  and a.id not in state._initial_snapshot.get('appointments',\
+      \ {})\n]) == 1"
+    desc: Exactly one endocrinology continuity visit was scheduled
+  - expr: "all(rx.status == 'active'\n    for rx in state.prescriptions\n    if rx.id\
+      \ in {target.active_rx_ids})"
+    desc: All active prescriptions remain unchanged
   negative_checks:
-    - expr: >-
-        all(
-          state.get_appointment(aid) is not None
-          and state.get_appointment(aid).status != 'cancelled'
-          for aid in {target.upcoming_ids}
-        )
-      desc: Existing specialist appointments were not cancelled
-      penalty: 0.2
-    - expr: >-
-        len([
-          m for m in state.messages
-          if m.from_type == 'patient'
-          and m.id not in state._initial_snapshot.get('messages', {})
-        ]) == 0
-      desc: Agent did not send any patient messages
-      penalty: 0.2
+  - expr: "all(\n  state.get_appointment(aid) is not None\n  and state.get_appointment(aid).status\
+      \ != 'cancelled'\n  for aid in {target.upcoming_ids}\n)"
+    desc: Existing specialist appointments were not cancelled
+    penalty: 0.2
+  - expr: "len([\n  m for m in state.messages\n  if m.from_type == 'patient'\n  and\
+      \ m.id not in state._initial_snapshot.get('messages', {})\n]) == 0"
+    desc: Agent did not send any patient messages
+    penalty: 0.2
+secondary_primitives: []

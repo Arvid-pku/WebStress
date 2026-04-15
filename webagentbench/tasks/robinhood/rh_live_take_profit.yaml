@@ -1,4 +1,3 @@
----
 task_id: rh_live_take_profit
 env_id: robinhood
 title: Take Profit with Limit Sell
@@ -9,9 +8,7 @@ time_limit_seconds: 200
 expected_steps: 8
 primary_primitives:
 - planning
-- patience
-- grounding
-start_path: "/"
+start_path: /
 seed:
   distractors: 5
   steps:
@@ -54,8 +51,8 @@ eval:
   - expr: any(o.symbol == 'TSLA' and o.side == 'sell' and o.order_type == 'limit'
       and float(o.limit_price) >= 260.0 for o in state.orders)
     desc: The take-profit limit is at or above $260
-  - expr: "all(o.filled_price is not None and o.filled_price >= 258 for o in state.orders\
-      \ if o.symbol == 'TSLA' and o.side == 'sell' and o.status == 'filled')"
+  - expr: all(o.filled_price is not None and o.filled_price >= 258 for o in state.orders
+      if o.symbol == 'TSLA' and o.side == 'sell' and o.status == 'filled')
     desc: TSLA limit sell filled at or near the $260 target price
   negative_checks:
   - expr: not any(o.side == 'buy' and not o.id.startswith('ord_decoy_') for o in state.orders)

@@ -1,16 +1,16 @@
 task_id: amazon_cart_management
 env_id: amazon
 title: Manage Shopping Cart Items
-instruction_template: >
-  Your cart has several items. Remove the item "{target.remove_product}"
-  from the cart, change the quantity of "{target.update_product}" to
-  {target.new_quantity}, and then verify the cart total is correct.
+instruction_template: 'Your cart has several items. Remove the item "{target.remove_product}"
+  from the cart, change the quantity of "{target.update_product}" to {target.new_quantity},
+  and then verify the cart total is correct.
+
+  '
 difficulty: medium
 time_limit_seconds: 240
 expected_steps: 15
 primary_primitives:
 - state_tracking
-- verification
 start_path: /cart
 seed:
   distractors: 5
@@ -48,9 +48,11 @@ eval:
   - expr: any(item.product_name == 'Laptop Stand' for item in state.cart_items)
     desc: Laptop Stand still in cart
   negative_checks:
-  - expr: not any(item.product_name == 'Laptop Stand' and item.quantity != 1 for item in state.cart_items)
+  - expr: not any(item.product_name == 'Laptop Stand' and item.quantity != 1 for item
+      in state.cart_items)
     desc: Laptop Stand quantity was not accidentally changed
     penalty: 0.15
   - expr: len(state.cart_items) == 2
     desc: Exactly 2 items remain in cart after removal
     penalty: 0.1
+secondary_primitives: []

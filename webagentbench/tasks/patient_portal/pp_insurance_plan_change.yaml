@@ -1,102 +1,93 @@
 task_id: pp_insurance_plan_change
 env_id: patient_portal
 title: Insurance Plan Change with Rx Audit
-instruction_template: >-
-  Your insurance has changed to a new plan. Complete the transition by:
-  1) Updating your insurance plan details to plan name "Aetna PPO Silver",
-  member ID "AET-5529103", and group number "GRP-88914",
-  2) Setting the mail-order pharmacy already in your pharmacy list as the default
-  pharmacy for the new plan.
-  Do not send any messages, do not cancel appointments, and do not discontinue
-  any medications.
+instruction_template: 'Your insurance has changed to a new plan. Complete the transition
+  by: 1) Updating your insurance plan details to plan name "Aetna PPO Silver", member
+  ID "AET-5529103", and group number "GRP-88914", 2) Setting the mail-order pharmacy
+  already in your pharmacy list as the default pharmacy for the new plan. Do not send
+  any messages, do not cancel appointments, and do not discontinue any medications.'
 difficulty: frontier
 time_limit_seconds: 600
 expected_steps: 55
 primary_primitives:
-  - grounding
-  - planning
-  - state_tracking
-  - verification
-  - backtracking
-  - patience
-  - exploration
+- planning
 start_path: /
-
 seed:
   distractors: 10
   steps:
-    - use: patient_profile
-      params:
-        conditions: ["Hypertension", "High Cholesterol"]
-        insurance_tier: basic
-      outputs: [pcp_id, pcp_name, insurance_plan_name, member_id]
-    - use: provider_directory
-      params:
-        count: 6
-        specialties: ["pcp", "cardiology", "endocrinology", "billing"]
-        must_include: ["pcp", "billing"]
-      outputs: [provider_ids, providers_by_specialty]
-    - use: pharmacy_list
-      params:
-        count: 3
-        include_mail_order: true
-      outputs: [pharmacy_ids, default_pharmacy_id, mail_order_pharmacy_id]
-    - use: prescription_cabinet
-      params:
-        active_count: 5
-        expired_count: 1
-      outputs: [active_rx_ids]
-    - use: appointment_history
-      params:
-        upcoming_count: 2
-        completed_count: 2
-      outputs: [upcoming_ids]
+  - use: patient_profile
+    params:
+      conditions:
+      - Hypertension
+      - High Cholesterol
+      insurance_tier: basic
+    outputs:
+    - pcp_id
+    - pcp_name
+    - insurance_plan_name
+    - member_id
+  - use: provider_directory
+    params:
+      count: 6
+      specialties:
+      - pcp
+      - cardiology
+      - endocrinology
+      - billing
+      must_include:
+      - pcp
+      - billing
+    outputs:
+    - provider_ids
+    - providers_by_specialty
+  - use: pharmacy_list
+    params:
+      count: 3
+      include_mail_order: true
+    outputs:
+    - pharmacy_ids
+    - default_pharmacy_id
+    - mail_order_pharmacy_id
+  - use: prescription_cabinet
+    params:
+      active_count: 5
+      expired_count: 1
+    outputs:
+    - active_rx_ids
+  - use: appointment_history
+    params:
+      upcoming_count: 2
+      completed_count: 2
+    outputs:
+    - upcoming_ids
   targets:
-    active_rx_ids: "{output.active_rx_ids}"
-    pharmacy_ids: "{output.pharmacy_ids}"
-    mail_order_pharmacy_id: "{output.mail_order_pharmacy_id}"
-    upcoming_ids: "{output.upcoming_ids}"
-
+    active_rx_ids: '{output.active_rx_ids}'
+    pharmacy_ids: '{output.pharmacy_ids}'
+    mail_order_pharmacy_id: '{output.mail_order_pharmacy_id}'
+    upcoming_ids: '{output.upcoming_ids}'
 eval:
   source: server_state
   checks:
-    - expr: >-
-        state.patient.insurance_plan.plan_name == 'Aetna PPO Silver'
-        and state.patient.insurance_plan.member_id == 'AET-5529103'
-        and state.patient.insurance_plan.group_number == 'GRP-88914'
-      desc: Insurance plan details were updated to the exact new values
-    - expr: >-
-        any(
-          p.id == '{target.mail_order_pharmacy_id}'
-          and p.is_default
-          for p in state.pharmacies
-        )
-      desc: The mail-order pharmacy was set as the default pharmacy
-    - expr: >-
-        all(rx.status == 'active'
-            for rx in state.prescriptions
-            if rx.id in {target.active_rx_ids})
-      desc: All active prescriptions remain active
+  - expr: state.patient.insurance_plan.plan_name == 'Aetna PPO Silver' and state.patient.insurance_plan.member_id
+      == 'AET-5529103' and state.patient.insurance_plan.group_number == 'GRP-88914'
+    desc: Insurance plan details were updated to the exact new values
+  - expr: "any(\n  p.id == '{target.mail_order_pharmacy_id}'\n  and p.is_default\n\
+      \  for p in state.pharmacies\n)"
+    desc: The mail-order pharmacy was set as the default pharmacy
+  - expr: "all(rx.status == 'active'\n    for rx in state.prescriptions\n    if rx.id\
+      \ in {target.active_rx_ids})"
+    desc: All active prescriptions remain active
   negative_checks:
-    - expr: >-
-        not any(rx.status == 'discontinued'
-                for rx in state.prescriptions
-                if rx.id in {target.active_rx_ids})
-      desc: No medications were discontinued during plan change
-      penalty: 0.3
-    - expr: >-
-        all(
-          state.get_appointment(aid) is not None
-          and state.get_appointment(aid).status != 'cancelled'
-          for aid in {target.upcoming_ids}
-        )
-      desc: Existing appointments were not cancelled
-      penalty: 0.2
-    - expr: >-
-        len([
-          m for m in state.messages
-          if m.from_type == 'patient'
-          and m.id not in state._initial_snapshot.get('messages', {})
-        ]) == 0
-      desc: Agent did not send any patient messages
-      penalty: 0.15
+  - expr: "not any(rx.status == 'discontinued'\n        for rx in state.prescriptions\n\
+      \        if rx.id in {target.active_rx_ids})"
+    desc: No medications were discontinued during plan change
+    penalty: 0.3
+  - expr: "all(\n  state.get_appointment(aid) is not None\n  and state.get_appointment(aid).status\
+      \ != 'cancelled'\n  for aid in {target.upcoming_ids}\n)"
+    desc: Existing appointments were not cancelled
+    penalty: 0.2
+  - expr: "len([\n  m for m in state.messages\n  if m.from_type == 'patient'\n  and\
+      \ m.id not in state._initial_snapshot.get('messages', {})\n]) == 0"
+    desc: Agent did not send any patient messages
+    penalty: 0.15
+secondary_primitives: []

@@ -1,97 +1,90 @@
 task_id: lms_course_load_analysis
 env_id: lms
 title: Course Load Analysis for Adding a Fifth Course
-instruction_template: >-
-  You're considering adding a 5th course. Analyze your current load: check
-  weighted scores, count remaining assignments, and determine if your GPA
-  ({target.gpa}) would drop below 3.0 with a C (70%) in a new 3-credit
-  course. If adding the course would keep your GPA above 3.0, mark all
-  unread announcements as read to confirm you've reviewed your standing.
-  If it would drop below 3.0, do NOT mark announcements — instead drop
-  your lowest-performing current course.
+instruction_template: 'You''re considering adding a 5th course. Analyze your current
+  load: check weighted scores, count remaining assignments, and determine if your
+  GPA ({target.gpa}) would drop below 3.0 with a C (70%) in a new 3-credit course.
+  If adding the course would keep your GPA above 3.0, mark all unread announcements
+  as read to confirm you''ve reviewed your standing. If it would drop below 3.0, do
+  NOT mark announcements — instead drop your lowest-performing current course.'
 difficulty: expert
 time_limit_seconds: 360
 expected_steps: 20
 primary_primitives:
-  - state_tracking
-  - verification
-  - planning
+- state_tracking
 start_path: /dashboard
-
 seed:
   distractors: 1
   steps:
-    - use: student_profile
-      params:
-        gpa: "3.20"
-      outputs:
-        - student_id
-        - advisor_name
-        - gpa
-    - use: course_catalog
-      params:
-        count: 4
-        must_include: ["CS101", "MATH201"]
-      outputs:
-        - course_ids
-        - course_codes
-    - use: enrollment_set
-      params: {}
-      outputs:
-        - enrollment_ids
-    - use: assignment_battery
-      params:
-        per_course_count: 6
-        graded_fraction: 0.5
-      outputs:
-        - assignment_ids
-    - use: grade_book
-      params: {}
-      outputs:
-        - grade_ids
-        - current_weighted_scores
-        - can_add_course
-        - lowest_performing_course_id
-    - use: calendar_events
-      params:
-        include_recurring: false
-      outputs:
-        - event_ids
-    - use: announcements_feed
-      params: {}
-      outputs:
-        - announcement_ids
+  - use: student_profile
+    params:
+      gpa: '3.20'
+    outputs:
+    - student_id
+    - advisor_name
+    - gpa
+  - use: course_catalog
+    params:
+      count: 4
+      must_include:
+      - CS101
+      - MATH201
+    outputs:
+    - course_ids
+    - course_codes
+  - use: enrollment_set
+    params: {}
+    outputs:
+    - enrollment_ids
+  - use: assignment_battery
+    params:
+      per_course_count: 6
+      graded_fraction: 0.5
+    outputs:
+    - assignment_ids
+  - use: grade_book
+    params: {}
+    outputs:
+    - grade_ids
+    - current_weighted_scores
+    - can_add_course
+    - lowest_performing_course_id
+  - use: calendar_events
+    params:
+      include_recurring: false
+    outputs:
+    - event_ids
+  - use: announcements_feed
+    params: {}
+    outputs:
+    - announcement_ids
   targets:
     gpa: '{output.gpa}'
-    num_courses: "4"
+    num_courses: '4'
     can_add_course: '{output.can_add_course}'
     lowest_performing_course_id: '{output.lowest_performing_course_id}'
-
 eval:
   source: server_state
   checks:
-    - expr: >-
-        (('{target.can_add_course}' == 'true'
-         and all(a.is_read == True for a in state.announcements))
-        or ('{target.can_add_course}' == 'false'
-            and state.get_enrollment_for_course('{target.lowest_performing_course_id}') is not None
-            and state.get_enrollment_for_course('{target.lowest_performing_course_id}').status == 'dropped'))
-      desc: >-
-        Mark all announcements read if GPA stays above 3.0, or drop lowest
-        course if GPA would drop below 3.0
+  - expr: "(('{target.can_add_course}' == 'true'\n and all(a.is_read == True for a\
+      \ in state.announcements))\nor ('{target.can_add_course}' == 'false'\n    and\
+      \ state.get_enrollment_for_course('{target.lowest_performing_course_id}') is\
+      \ not None\n    and state.get_enrollment_for_course('{target.lowest_performing_course_id}').status\
+      \ == 'dropped'))"
+    desc: Mark all announcements read if GPA stays above 3.0, or drop lowest course
+      if GPA would drop below 3.0
   negative_checks:
-    - expr: >-
-        '{target.can_add_course}' != 'true'
-        or all(e.status != 'dropped' for e in state.enrollments)
-      desc: Did not drop a course when GPA would stay above 3.0 (wrong branch)
-      penalty: 0.5
-    - expr: >-
-        '{target.can_add_course}' != 'false'
-        or not all(a.is_read == True for a in state.announcements)
-      desc: Did not mark all announcements read when GPA would drop below 3.0 (wrong branch)
-      penalty: 0.3
-    - expr: >-
-        '{target.can_add_course}' != 'false'
-        or sum(1 for e in state.enrollments if e.status == 'dropped') <= 1
-      desc: Only one course was dropped (not multiple)
-      penalty: 0.3
+  - expr: '''{target.can_add_course}'' != ''true'' or all(e.status != ''dropped''
+      for e in state.enrollments)'
+    desc: Did not drop a course when GPA would stay above 3.0 (wrong branch)
+    penalty: 0.5
+  - expr: '''{target.can_add_course}'' != ''false'' or not all(a.is_read == True for
+      a in state.announcements)'
+    desc: Did not mark all announcements read when GPA would drop below 3.0 (wrong
+      branch)
+    penalty: 0.3
+  - expr: '''{target.can_add_course}'' != ''false'' or sum(1 for e in state.enrollments
+      if e.status == ''dropped'') <= 1'
+    desc: Only one course was dropped (not multiple)
+    penalty: 0.3
+secondary_primitives: []

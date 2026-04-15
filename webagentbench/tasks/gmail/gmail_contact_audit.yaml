@@ -12,9 +12,6 @@ time_limit_seconds: 360
 expected_steps: 42
 primary_primitives:
 - exploration
-- verification
-- state_tracking
-- grounding
 start_path: /inbox
 seed:
   distractors: 40
@@ -73,3 +70,4 @@ eval:
   - expr: any(c.id == '{target.keep_contact_id}' for c in state.contacts)
     desc: Named keep-contact preserved
     penalty: 0.2
+secondary_primitives: []

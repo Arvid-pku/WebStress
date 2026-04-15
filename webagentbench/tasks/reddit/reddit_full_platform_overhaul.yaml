@@ -14,8 +14,8 @@ instruction_template: '1. Unsave all posts from r/memes. Unsubscribe from r/meme
 
   7. Send message to u/{target.msg_to} subject "{target.msg_sub}" body: "{target.msg_body}"
 
-  8. Settings: theme "dark", compact on, feed sort "top", comment sort "new", disable all email notifications,
-  disable show online status.
+  8. Settings: theme "dark", compact on, feed sort "top", comment sort "new", disable
+  all email notifications, disable show online status.
 
   9. Mark all messages and notifications read.'
 difficulty: frontier
@@ -162,20 +162,20 @@ eval:
     desc: Subscribed to r/dataisbeautiful
   - expr: '''CryptoSkeptic'' in state.blocked_users'
     desc: Blocked u/CryptoSkeptic
-  - expr: any(p.subreddit_name == '{target.join}' and p.title == '{target.post_title}' and p.author_name
-      == state.owner_username for p in state.posts)
+  - expr: any(p.subreddit_name == '{target.join}' and p.title == '{target.post_title}'
+      and p.author_name == state.owner_username for p in state.posts)
     desc: Post created in r/{target.join} with correct title
   - expr: state.get_post('{target.wn_id}').vote_direction == 1
     desc: Worldnews post upvoted
   - expr: '''{target.wn_id}'' in state.saved_post_ids'
     desc: Worldnews post saved
-  - expr: any(c.post_id == '{target.wn_id}' and '{target.wn_comment}' in c.body and c.author_name == state.owner_username
-      for c in state.comments)
+  - expr: any(c.post_id == '{target.wn_id}' and '{target.wn_comment}' in c.body and
+      c.author_name == state.owner_username for c in state.comments)
     desc: Commented on worldnews post
   - expr: '''{target.prog_id}'' in state.saved_post_ids'
     desc: Programming post saved
-  - expr: any(m.to_user == '{target.msg_to}' and m.subject == '{target.msg_sub}' and m.body == '{target.mb}'
-      for m in state.sent_messages)
+  - expr: any(m.to_user == '{target.msg_to}' and m.subject == '{target.msg_sub}' and
+      m.body == '{target.mb}' for m in state.sent_messages)
     desc: Message sent to u/{target.msg_to} with exact body
   - expr: state.settings.theme == 'dark'
     desc: Theme set to dark
@@ -185,8 +185,8 @@ eval:
     desc: Feed sort set to top
   - expr: state.settings.default_comment_sort == 'new'
     desc: Comment sort set to new
-  - expr: not state.settings.email_comment_reply and not state.settings.email_post_reply and not state.settings.email_mentions
-      and not state.settings.email_messages
+  - expr: not state.settings.email_comment_reply and not state.settings.email_post_reply
+      and not state.settings.email_mentions and not state.settings.email_messages
     desc: All email notifications disabled
   - expr: state.settings.show_online_status == False
     desc: Show online status disabled
@@ -198,21 +198,21 @@ eval:
   - expr: len(state.sent_messages) <= 1
     desc: No extra messages were sent
     penalty: 0.15
-  - expr: sum(1 for p in state.posts if p.author_name == state.owner_username) <= 1
+  - expr: sum(1 for p in state.posts if p.author_name == state.owner_username) <=
+      1
     desc: No extra posts were created
     penalty: 0.15
   - expr: len(state.blocked_users) == 1 and 'CryptoSkeptic' in state.blocked_users
     desc: No user other than CryptoSkeptic was blocked
     penalty: 0.15
-  - expr: not any( e.action == 'reddit.post.create' and e.payload.get('subreddit') != '{target.join}'
-      for e in state.audit_log)
+  - expr: not any( e.action == 'reddit.post.create' and e.payload.get('subreddit')
+      != '{target.join}' for e in state.audit_log)
     desc: No extra posts were created outside the MachineLearning overhaul post
     penalty: 0.15
-  - expr: not any( e.action == 'reddit.message.send' and e.payload.get('to_user') != '{target.msg_to}'
-      for e in state.audit_log)
+  - expr: not any( e.action == 'reddit.message.send' and e.payload.get('to_user')
+      != '{target.msg_to}' for e in state.audit_log)
     desc: Direct outreach was sent only to the intended user
     penalty: 0.15
 env_id: reddit
 start_path: /feed
-secondary_primitives:
-- grounding
+secondary_primitives: []

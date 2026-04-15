@@ -1,101 +1,93 @@
 task_id: pp_urgent_lab_response
 env_id: patient_portal
 title: Urgent Lab Result Response
-instruction_template: >-
-  You have a critical lab result flagged for immediate attention. Find the critical
-  lab result in your records, then schedule exactly one follow-up appointment with
-  the provider who ordered that specific lab, not your PCP unless they are the
-  ordering provider. Use that provider's next available slot and set the appointment
-  reason exactly "Critical lab follow-up". Do not send any messages or modify any
-  medications.
+instruction_template: You have a critical lab result flagged for immediate attention.
+  Find the critical lab result in your records, then schedule exactly one follow-up
+  appointment with the provider who ordered that specific lab, not your PCP unless
+  they are the ordering provider. Use that provider's next available slot and set
+  the appointment reason exactly "Critical lab follow-up". Do not send any messages
+  or modify any medications.
 difficulty: expert
 time_limit_seconds: 480
 expected_steps: 25
 primary_primitives:
-  - grounding
-  - planning
-  - state_tracking
-  - verification
-  - backtracking
+- grounding
 start_path: /labs
-
 seed:
   distractors: 8
   steps:
-    - use: patient_profile
-      params:
-        conditions: ["Type 2 Diabetes", "Chronic Kidney Disease"]
-        insurance_tier: standard
-      outputs: [pcp_id, pcp_name]
-    - use: provider_directory
-      params:
-        count: 5
-        specialties: ["pcp", "endocrinology", "cardiology", "billing"]
-        must_include: ["pcp", "endocrinology"]
-      outputs: [provider_ids, providers_by_specialty]
-    - use: pharmacy_list
-      params:
-        count: 2
-      outputs: [default_pharmacy_id]
-    - use: prescription_cabinet
-      params:
-        active_count: 4
-      outputs: [active_rx_ids]
-    - use: lab_results_panel
-      params:
-        resulted_count: 4
-        abnormal_count: 1
-        critical_count: 1
-      outputs: [resulted_lab_ids, critical_lab_id, abnormal_lab_ids]
+  - use: patient_profile
+    params:
+      conditions:
+      - Type 2 Diabetes
+      - Chronic Kidney Disease
+      insurance_tier: standard
+    outputs:
+    - pcp_id
+    - pcp_name
+  - use: provider_directory
+    params:
+      count: 5
+      specialties:
+      - pcp
+      - endocrinology
+      - cardiology
+      - billing
+      must_include:
+      - pcp
+      - endocrinology
+    outputs:
+    - provider_ids
+    - providers_by_specialty
+  - use: pharmacy_list
+    params:
+      count: 2
+    outputs:
+    - default_pharmacy_id
+  - use: prescription_cabinet
+    params:
+      active_count: 4
+    outputs:
+    - active_rx_ids
+  - use: lab_results_panel
+    params:
+      resulted_count: 4
+      abnormal_count: 1
+      critical_count: 1
+    outputs:
+    - resulted_lab_ids
+    - critical_lab_id
+    - abnormal_lab_ids
   targets:
-    pcp_id: "{output.pcp_id}"
-    critical_lab_id: "{output.critical_lab_id}"
-    active_rx_ids: "{output.active_rx_ids}"
-    endo_provider_ids: "{output.providers_by_specialty.endocrinology}"
-
+    pcp_id: '{output.pcp_id}'
+    critical_lab_id: '{output.critical_lab_id}'
+    active_rx_ids: '{output.active_rx_ids}'
+    endo_provider_ids: '{output.providers_by_specialty.endocrinology}'
 eval:
   source: server_state
   checks:
-    - expr: >-
-        len([
-          a for a in state.appointments
-          if a.status == 'scheduled'
-          and a.provider_id == state.get_lab('{target.critical_lab_id}').ordered_by
-          and a.reason == 'Critical lab follow-up'
-          and a.id not in state._initial_snapshot.get('appointments', {})
-        ]) == 1
-      desc: Exactly one follow-up appointment was scheduled with the ordering provider of the critical lab
-    - expr: >-
-        any(
-          a.status == 'scheduled'
-          and a.provider_id == state.get_lab('{target.critical_lab_id}').ordered_by
-          and a.reason == 'Critical lab follow-up'
-          and a.datetime == min(
-            slot['datetime']
-            for slot in state._initial_snapshot['providers'][state.get_lab('{target.critical_lab_id}').ordered_by]['available_slots']
-          )
-          and a.id not in state._initial_snapshot.get('appointments', {})
-          for a in state.appointments
-        )
-      desc: The critical-lab follow-up used the ordering provider's next available slot
-    - expr: >-
-        all(rx.status == 'active'
-            for rx in state.prescriptions
-            if rx.id in {target.active_rx_ids})
-      desc: Agent did not modify any medications
+  - expr: "len([\n  a for a in state.appointments\n  if a.status == 'scheduled'\n\
+      \  and a.provider_id == state.get_lab('{target.critical_lab_id}').ordered_by\n\
+      \  and a.reason == 'Critical lab follow-up'\n  and a.id not in state._initial_snapshot.get('appointments',\
+      \ {})\n]) == 1"
+    desc: Exactly one follow-up appointment was scheduled with the ordering provider
+      of the critical lab
+  - expr: "any(\n  a.status == 'scheduled'\n  and a.provider_id == state.get_lab('{target.critical_lab_id}').ordered_by\n\
+      \  and a.reason == 'Critical lab follow-up'\n  and a.datetime == min(\n    slot['datetime']\n\
+      \    for slot in state._initial_snapshot['providers'][state.get_lab('{target.critical_lab_id}').ordered_by]['available_slots']\n\
+      \  )\n  and a.id not in state._initial_snapshot.get('appointments', {})\n  for\
+      \ a in state.appointments\n)"
+    desc: The critical-lab follow-up used the ordering provider's next available slot
+  - expr: "all(rx.status == 'active'\n    for rx in state.prescriptions\n    if rx.id\
+      \ in {target.active_rx_ids})"
+    desc: Agent did not modify any medications
   negative_checks:
-    - expr: >-
-        len([
-          m for m in state.messages
-          if m.from_type == 'patient'
-          and m.id not in state._initial_snapshot.get('messages', {})
-        ]) == 0
-      desc: Agent did not send any patient messages
-      penalty: 0.2
-    - expr: >-
-        len([
-          a for a in state.appointments
-          if a.id not in state._initial_snapshot.get('appointments', {})
-        ]) == 1
-      desc: Agent created exactly one new appointment
-      penalty: 0.15
+  - expr: "len([\n  m for m in state.messages\n  if m.from_type == 'patient'\n  and\
+      \ m.id not in state._initial_snapshot.get('messages', {})\n]) == 0"
+    desc: Agent did not send any patient messages
+    penalty: 0.2
+  - expr: "len([\n  a for a in state.appointments\n  if a.id not in state._initial_snapshot.get('appointments',\
+      \ {})\n]) == 1"
+    desc: Agent created exactly one new appointment
+    penalty: 0.15
+secondary_primitives: []

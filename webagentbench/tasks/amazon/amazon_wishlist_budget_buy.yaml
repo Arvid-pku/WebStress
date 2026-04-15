@@ -1,17 +1,17 @@
 task_id: amazon_wishlist_budget_buy
 env_id: amazon
 title: Buy Wishlist Items Under Budget
-instruction_template: >
-  Go to your wishlist, move all items to your cart, then remove any items
-  that cost over $100 each. Complete the checkout for the remaining items
-  using the shipping address for Jordan Parker at 742 Evergreen Terrace and the Visa card ending in 4242.
+instruction_template: 'Go to your wishlist, move all items to your cart, then remove
+  any items that cost over $100 each. Complete the checkout for the remaining items
+  using the shipping address for Jordan Parker at 742 Evergreen Terrace and the Visa
+  card ending in 4242.
+
+  '
 difficulty: medium
 time_limit_seconds: 280
 expected_steps: 20
 primary_primitives:
-- planning
 - state_tracking
-- verification
 start_path: /wishlist
 seed:
   distractors: 10
@@ -106,26 +106,32 @@ eval:
   checks:
   - expr: any(not o.id.startswith('order_initial_') for o in state.orders)
     desc: A new order was placed
-  - expr: >
-      not any(any(item.product_id == '{target.expensive_id_1}' for item in order.items)
-      for order in state.orders if not order.id.startswith('order_initial_'))
+  - expr: 'not any(any(item.product_id == ''{target.expensive_id_1}'' for item in
+      order.items) for order in state.orders if not order.id.startswith(''order_initial_''))
+
+      '
     desc: Expensive Mechanical Keyboard was not purchased
-  - expr: >
-      not any(any(item.product_id == '{target.expensive_id_2}' for item in order.items)
-      for order in state.orders if not order.id.startswith('order_initial_'))
+  - expr: 'not any(any(item.product_id == ''{target.expensive_id_2}'' for item in
+      order.items) for order in state.orders if not order.id.startswith(''order_initial_''))
+
+      '
     desc: Expensive Premium Webcam was not purchased
-  - expr: >
-      any(any(item.product_id == '{target.cheap_id_1}' for item in order.items)
-      for order in state.orders if not order.id.startswith('order_initial_'))
+  - expr: 'any(any(item.product_id == ''{target.cheap_id_1}'' for item in order.items)
+      for order in state.orders if not order.id.startswith(''order_initial_''))
+
+      '
     desc: Desk Cable Organizer was purchased
-  - expr: >
-      any(any(item.product_id == '{target.cheap_id_2}' for item in order.items)
-      for order in state.orders if not order.id.startswith('order_initial_'))
+  - expr: 'any(any(item.product_id == ''{target.cheap_id_2}'' for item in order.items)
+      for order in state.orders if not order.id.startswith(''order_initial_''))
+
+      '
     desc: LED Desk Lamp was purchased
   negative_checks:
-  - expr: sum(1 for o in state.orders if not o.id.startswith('order_initial_')) <= 1
+  - expr: sum(1 for o in state.orders if not o.id.startswith('order_initial_')) <=
+      1
     desc: Only one new order placed
     penalty: 0.15
   - expr: len(state.cart_items) == 0
     desc: Cart is empty after checkout
     penalty: 0.1
+secondary_primitives: []

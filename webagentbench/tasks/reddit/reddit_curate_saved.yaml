@@ -1,70 +1,71 @@
 task_id: reddit_curate_saved
 env_id: reddit
 title: Curate Saved Posts Collection
-instruction_template: >
-  You previously saved a post by mistake. Go to your Saved page, find
-  the post titled "{target.unsave_post_title}" and unsave it.
+instruction_template: 'You previously saved a post by mistake. Go to your Saved page,
+  find the post titled "{target.unsave_post_title}" and unsave it.
 
-  Then navigate to r/technology and save the post titled
-  "{target.save_post_title}".
+  Then navigate to r/technology and save the post titled "{target.save_post_title}".
+
+  '
 difficulty: medium
 time_limit_seconds: 240
 expected_steps: 14
 primary_primitives:
-  - state_tracking
-  - verification
-  - grounding
+- state_tracking
 start_path: /feed
 seed:
   distractors: 6
   actors: {}
   steps:
-    # Step 1: Create the mistake post and pre-save it
-    - use: target_post
-      params:
-        subreddit: personalfinance
-        title: "Is a Roth IRA conversion worth it if I'm already in the 32% bracket?"
-        body: "My accountant suggested converting my traditional IRA but the tax hit seems brutal."
-        score: 3200
-      outputs:
-        - unsave_post_id
-        - unsave_post_title
-        - unsave_subreddit_name
-    - use: saved_posts
-      params:
-        post_ids:
-          - "{output.unsave_post_id}"
-      outputs:
-        - saved_post_ids
-    # Step 2: Create the post to save (unique title not in baseline)
-    - use: target_post
-      params:
-        subreddit: technology
-        title: "Cloudflare Blocks Largest-Ever DDoS Attack at 5.6 Tbps"
-        body: "The attack targeted a major financial services provider and lasted approximately 80 seconds before mitigation kicked in."
-        score: 9870
-        flair_text: "Security"
-      outputs:
-        - save_post_id
-        - save_post_title
-        - save_subreddit_name
+  - use: target_post
+    params:
+      subreddit: personalfinance
+      title: Is a Roth IRA conversion worth it if I'm already in the 32% bracket?
+      body: My accountant suggested converting my traditional IRA but the tax hit
+        seems brutal.
+      score: 3200
+    outputs:
+    - unsave_post_id
+    - unsave_post_title
+    - unsave_subreddit_name
+  - use: saved_posts
+    params:
+      post_ids:
+      - '{output.unsave_post_id}'
+    outputs:
+    - saved_post_ids
+  - use: target_post
+    params:
+      subreddit: technology
+      title: Cloudflare Blocks Largest-Ever DDoS Attack at 5.6 Tbps
+      body: The attack targeted a major financial services provider and lasted approximately
+        80 seconds before mitigation kicked in.
+      score: 9870
+      flair_text: Security
+    outputs:
+    - save_post_id
+    - save_post_title
+    - save_subreddit_name
   targets:
-    unsave_post_title: "{output.unsave_post_title}"
-    save_post_title: "{output.save_post_title}"
-    save_post_id: "{output.save_post_id}"
+    unsave_post_title: '{output.unsave_post_title}'
+    save_post_title: '{output.save_post_title}'
+    save_post_id: '{output.save_post_id}'
 eval:
   source: server_state
   checks:
-    - expr: "'{target.save_post_id}' in state.saved_post_ids"
-      desc: Cloudflare DDoS post was saved
-    - expr: "state.get_post('{target.save_post_id}').is_saved"
-      desc: Save flag is True on target post
-    - expr: >
-        not any(p.title == "Is a Roth IRA conversion worth it if I'm already in the 32% bracket?"
-        and p.is_saved for p in state.posts)
-      desc: Roth IRA mistake post was unsaved
+  - expr: '''{target.save_post_id}'' in state.saved_post_ids'
+    desc: Cloudflare DDoS post was saved
+  - expr: state.get_post('{target.save_post_id}').is_saved
+    desc: Save flag is True on target post
+  - expr: 'not any(p.title == "Is a Roth IRA conversion worth it if I''m already in
+      the 32% bracket?" and p.is_saved for p in state.posts)
+
+      '
+    desc: Roth IRA mistake post was unsaved
   negative_checks:
-    - expr: >
-        len(state.saved_post_ids) >= 4
-      desc: Other pre-existing saved posts were not accidentally unsaved
-      penalty: 0.2
+  - expr: 'len(state.saved_post_ids) >= 4
+
+      '
+    desc: Other pre-existing saved posts were not accidentally unsaved
+    penalty: 0.2
+secondary_primitives: []

@@ -1,17 +1,16 @@
 task_id: lms_multi_course_thresholds
 env_id: lms
 title: Multi-Course Grade Threshold Planning
-instruction_template: 'Determine the minimum average score needed on remaining assignments to achieve: B (80%) in {target.course_code_1},
-  A (90%) in {target.course_code_2}, C (70%) in {target.course_code_3}. For any course where the target is impossible (requires
-  more than 100% on remaining assignments), drop that course. For each achievable course, submit ''priority_plan.pdf'' for
-  the next unsubmitted assignment.'
+instruction_template: 'Determine the minimum average score needed on remaining assignments
+  to achieve: B (80%) in {target.course_code_1}, A (90%) in {target.course_code_2},
+  C (70%) in {target.course_code_3}. For any course where the target is impossible
+  (requires more than 100% on remaining assignments), drop that course. For each achievable
+  course, submit ''priority_plan.pdf'' for the next unsubmitted assignment.'
 difficulty: expert
 time_limit_seconds: 420
 expected_steps: 25
 primary_primitives:
 - state_tracking
-- verification
-- planning
 start_path: /dashboard
 seed:
   distractors: 1
@@ -63,20 +62,27 @@ seed:
 eval:
   source: server_state
   checks:
-  - expr: "(len([cid.strip() for cid in '{target.impossible_course_ids}'.split(',') if cid.strip()]) >= 1\nand all(\n  state.get_enrollment_for_course(cid.strip())\
-      \ is not None\n  and state.get_enrollment_for_course(cid.strip()).status == 'dropped'\n  for cid in '{target.impossible_course_ids}'.split(',')\n\
-      \  if cid.strip()))"
+  - expr: "(len([cid.strip() for cid in '{target.impossible_course_ids}'.split(',')\
+      \ if cid.strip()]) >= 1\nand all(\n  state.get_enrollment_for_course(cid.strip())\
+      \ is not None\n  and state.get_enrollment_for_course(cid.strip()).status ==\
+      \ 'dropped'\n  for cid in '{target.impossible_course_ids}'.split(',')\n  if\
+      \ cid.strip()))"
     desc: All courses with impossible targets were dropped
   - expr: "all(\n  state.get_assignment(aid.strip()) is not None\n  and state.get_assignment(aid.strip()).submission_status\
-      \ in ('submitted', 'late')\n  and state.get_assignment(aid.strip()).file_name == 'priority_plan.pdf'\n  for aid in '{target.next_unsubmitted_ids}'.split(',')\n\
+      \ in ('submitted', 'late')\n  and state.get_assignment(aid.strip()).file_name\
+      \ == 'priority_plan.pdf'\n  for aid in '{target.next_unsubmitted_ids}'.split(',')\n\
       \  if aid.strip()\n)"
-    desc: Next unsubmitted assignment in each achievable course was submitted with priority_plan.pdf
+    desc: Next unsubmitted assignment in each achievable course was submitted with
+      priority_plan.pdf
   negative_checks:
-  - expr: "not any(\n  state.get_enrollment_for_course(cid.strip()) is not None\n  and state.get_enrollment_for_course(cid.strip()).status\
-      \ == 'dropped'\n  for cid in '{target.achievable_course_ids}'.split(',')\n  if cid.strip()\n)"
+  - expr: "not any(\n  state.get_enrollment_for_course(cid.strip()) is not None\n\
+      \  and state.get_enrollment_for_course(cid.strip()).status == 'dropped'\n  for\
+      \ cid in '{target.achievable_course_ids}'.split(',')\n  if cid.strip()\n)"
     desc: No achievable course was dropped
     penalty: 0.5
-  - expr: "not any(\n  a.submission_status in ('submitted', 'late')\n  and a.file_name == 'priority_plan.pdf'\n  and a.course_id in\
-      \ [cid.strip() for cid in '{target.impossible_course_ids}'.split(',')]\n  for a in state.assignments\n)"
+  - expr: "not any(\n  a.submission_status in ('submitted', 'late')\n  and a.file_name\
+      \ == 'priority_plan.pdf'\n  and a.course_id in [cid.strip() for cid in '{target.impossible_course_ids}'.split(',')]\n\
+      \  for a in state.assignments\n)"
     desc: No submission made in impossible courses
     penalty: 0.3
+secondary_primitives: []

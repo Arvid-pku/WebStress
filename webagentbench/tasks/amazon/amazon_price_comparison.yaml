@@ -1,17 +1,17 @@
 task_id: amazon_price_comparison
 env_id: amazon
 title: Compare Products and Buy Best Value in Price Range
-instruction_template: >
-  Search for products in the "{target.category}" category. Compare at least 3
-  products and purchase the one that is priced between $50 and $100 and has the
-  highest customer rating. Use the shipping address for Jordan Parker at 742 Evergreen Terrace and the Visa card ending in 4242.
+instruction_template: 'Search for products in the "{target.category}" category. Compare
+  at least 3 products and purchase the one that is priced between $50 and $100 and
+  has the highest customer rating. Use the shipping address for Jordan Parker at 742
+  Evergreen Terrace and the Visa card ending in 4242.
+
+  '
 difficulty: medium
 time_limit_seconds: 300
 expected_steps: 23
 primary_primitives:
-- planning
-- verification
-- state_tracking
+- grounding
 start_path: /
 seed:
   distractors: 12
@@ -98,25 +98,31 @@ eval:
   checks:
   - expr: any(not o.id.startswith('order_initial_') for o in state.orders)
     desc: A new order was placed
-  - expr: >
-      any(any(item.product_id == '{target.best_value_id}' for item in order.items)
-      for order in state.orders if not order.id.startswith('order_initial_'))
+  - expr: 'any(any(item.product_id == ''{target.best_value_id}'' for item in order.items)
+      for order in state.orders if not order.id.startswith(''order_initial_''))
+
+      '
     desc: Purchased the highest-rated product in the $50-$100 range
-  - expr: >
-      any(any(50 <= item.unit_price <= 100 for item in order.items)
-      for order in state.orders if not order.id.startswith('order_initial_'))
+  - expr: 'any(any(50 <= item.unit_price <= 100 for item in order.items) for order
+      in state.orders if not order.id.startswith(''order_initial_''))
+
+      '
     desc: Purchased product is in the $50-$100 price range
-  - expr: any(order.status == 'confirmed' and any(item.product_id == '{target.best_value_id}' for item in order.items) for order in state.orders if not order.id.startswith('order_initial_'))
+  - expr: any(order.status == 'confirmed' and any(item.product_id == '{target.best_value_id}'
+      for item in order.items) for order in state.orders if not order.id.startswith('order_initial_'))
     desc: Order containing the target product is confirmed
   negative_checks:
-  - expr: sum(1 for o in state.orders if not o.id.startswith('order_initial_')) <= 1
+  - expr: sum(1 for o in state.orders if not o.id.startswith('order_initial_')) <=
+      1
     desc: Only one new order placed
     penalty: 0.15
-  - expr: >
-      all(any(item.product_id == '{target.best_value_id}' for item in order.items)
-      for order in state.orders if not order.id.startswith('order_initial_'))
+  - expr: 'all(any(item.product_id == ''{target.best_value_id}'' for item in order.items)
+      for order in state.orders if not order.id.startswith(''order_initial_''))
+
+      '
     desc: Purchased product matches the target best-value product
     penalty: 0.3
   - expr: len(state.cart_items) == 0
     desc: Cart is empty after checkout
     penalty: 0.1
+secondary_primitives: []

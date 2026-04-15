@@ -1,85 +1,82 @@
 task_id: pp_message_billing
 env_id: patient_portal
 title: Billing Follow-Up on Recent Approved Claim
-instruction_template: >-
-  Review your most recent approved claim, then schedule exactly one follow-up
-  appointment with the billing department using the next available billing slot.
-  Use the appointment reason exactly "Incorrect charge review". Do not send any
-  messages.
+instruction_template: Review your most recent approved claim, then schedule exactly
+  one follow-up appointment with the billing department using the next available billing
+  slot. Use the appointment reason exactly "Incorrect charge review". Do not send
+  any messages.
 difficulty: medium
 time_limit_seconds: 180
 expected_steps: 8
 primary_primitives:
-  - grounding
-  - planning
+- grounding
 start_path: /billing
-
 seed:
   distractors: 6
   steps:
-    - use: patient_profile
-      params:
-        conditions: ["Hypertension"]
-        insurance_tier: standard
-      outputs: [pcp_id, pcp_name]
-    - use: provider_directory
-      params:
-        count: 5
-        specialties: ["pcp", "cardiology", "orthopedics", "billing", "admin"]
-        must_include: ["pcp", "billing"]
-      outputs: [provider_ids, providers_by_specialty]
-    - use: pharmacy_list
-      params:
-        count: 2
-      outputs: [default_pharmacy_id]
-    - use: appointment_history
-      params:
-        upcoming_count: 1
-        completed_count: 2
-      outputs: [completed_ids]
-    - use: insurance_claims
-      params:
-        approved_count: 2
-        denied_count: 0
-        processing_count: 1
-        with_eob: true
-      outputs: [approved_claim_ids]
+  - use: patient_profile
+    params:
+      conditions:
+      - Hypertension
+      insurance_tier: standard
+    outputs:
+    - pcp_id
+    - pcp_name
+  - use: provider_directory
+    params:
+      count: 5
+      specialties:
+      - pcp
+      - cardiology
+      - orthopedics
+      - billing
+      - admin
+      must_include:
+      - pcp
+      - billing
+    outputs:
+    - provider_ids
+    - providers_by_specialty
+  - use: pharmacy_list
+    params:
+      count: 2
+    outputs:
+    - default_pharmacy_id
+  - use: appointment_history
+    params:
+      upcoming_count: 1
+      completed_count: 2
+    outputs:
+    - completed_ids
+  - use: insurance_claims
+    params:
+      approved_count: 2
+      denied_count: 0
+      processing_count: 1
+      with_eob: true
+    outputs:
+    - approved_claim_ids
   targets:
-    approved_claim_ids: "{output.approved_claim_ids}"
-    billing_provider_ids: "{output.providers_by_specialty.billing}"
-
+    approved_claim_ids: '{output.approved_claim_ids}'
+    billing_provider_ids: '{output.providers_by_specialty.billing}'
 eval:
   source: server_state
   checks:
-    - expr: >-
-        len([
-          a for a in state.appointments
-          if a.status == 'scheduled'
-          and a.provider_id in {target.billing_provider_ids}
-          and a.reason == 'Incorrect charge review'
-          and a.id not in state._initial_snapshot.get('appointments', {})
-        ]) == 1
-      desc: Exactly one billing follow-up appointment was scheduled
-    - expr: >-
-        any(
-          a.status == 'scheduled'
-          and a.provider_id in {target.billing_provider_ids}
-          and a.reason == 'Incorrect charge review'
-          and a.datetime == min(
-            slot['datetime']
-            for provider_id in {target.billing_provider_ids}
-            for slot in state._initial_snapshot['providers'][provider_id]['available_slots']
-          )
-          and a.id not in state._initial_snapshot.get('appointments', {})
-          for a in state.appointments
-        )
-      desc: The billing follow-up used the next available billing slot
+  - expr: "len([\n  a for a in state.appointments\n  if a.status == 'scheduled'\n\
+      \  and a.provider_id in {target.billing_provider_ids}\n  and a.reason == 'Incorrect\
+      \ charge review'\n  and a.id not in state._initial_snapshot.get('appointments',\
+      \ {})\n]) == 1"
+    desc: Exactly one billing follow-up appointment was scheduled
+  - expr: "any(\n  a.status == 'scheduled'\n  and a.provider_id in {target.billing_provider_ids}\n\
+      \  and a.reason == 'Incorrect charge review'\n  and a.datetime == min(\n   \
+      \ slot['datetime']\n    for provider_id in {target.billing_provider_ids}\n \
+      \   for slot in state._initial_snapshot['providers'][provider_id]['available_slots']\n\
+      \  )\n  and a.id not in state._initial_snapshot.get('appointments', {})\n  for\
+      \ a in state.appointments\n)"
+    desc: The billing follow-up used the next available billing slot
   negative_checks:
-    - expr: >-
-        len([
-          m for m in state.messages
-          if m.from_type == 'patient'
-          and m.id not in state._initial_snapshot.get('messages', {})
-        ]) == 0
-      desc: Agent did not send any patient messages
-      penalty: 0.2
+  - expr: "len([\n  m for m in state.messages\n  if m.from_type == 'patient'\n  and\
+      \ m.id not in state._initial_snapshot.get('messages', {})\n]) == 0"
+    desc: Agent did not send any patient messages
+    penalty: 0.2
+secondary_primitives: []

@@ -13,7 +13,6 @@ time_limit_seconds: 220
 expected_steps: 14
 primary_primitives:
 - planning
-- grounding
 start_path: /home
 seed:
   distractors: 7
@@ -141,3 +140,4 @@ eval:
       \  for r in state.reservations\n  if not r.id.startswith('res_initial_')\n)\n"
     desc: Reservation was not booked with fewer than 4 guests
     penalty: 0.2
+secondary_primitives: []

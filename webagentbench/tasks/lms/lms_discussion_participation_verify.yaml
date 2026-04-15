@@ -1,85 +1,72 @@
 task_id: lms_discussion_participation_verify
 env_id: lms
 title: Cross-Reference Participation Grade with Post Count
-instruction_template: >-
-  In {target.course_code}, check whether your discussion participation meets
-  the requirements for each discussion forum. For each discussion, verify
-  your post count and reply count against the minimums. If any discussion
-  is below requirements, complete the missing posts/replies.
+instruction_template: In {target.course_code}, check whether your discussion participation
+  meets the requirements for each discussion forum. For each discussion, verify your
+  post count and reply count against the minimums. If any discussion is below requirements,
+  complete the missing posts/replies.
 difficulty: hard
 time_limit_seconds: 240
 expected_steps: 10
 primary_primitives:
-  - verification
-  - state_tracking
+- verification
 start_path: /courses
-
 seed:
   distractors: 2
   steps:
-    - use: student_profile
-      params: {}
-      outputs:
-        - student_id
-    - use: course_catalog
-      params:
-        count: 2
-        must_include: ["CS101"]
-      outputs:
-        - course_ids
-        - course_code
-        - target_course_id
-    - use: enrollment_set
-      params: {}
-      outputs:
-        - enrollment_ids
-    - use: discussion_forums
-      params:
-        count: 3
-        posts_per: 4
-      outputs:
-        - discussion_ids
-        - target_discussion_id
-        - target_discussion_title
-        - target_course_code
+  - use: student_profile
+    params: {}
+    outputs:
+    - student_id
+  - use: course_catalog
+    params:
+      count: 2
+      must_include:
+      - CS101
+    outputs:
+    - course_ids
+    - course_code
+    - target_course_id
+  - use: enrollment_set
+    params: {}
+    outputs:
+    - enrollment_ids
+  - use: discussion_forums
+    params:
+      count: 3
+      posts_per: 4
+    outputs:
+    - discussion_ids
+    - target_discussion_id
+    - target_discussion_title
+    - target_course_code
   targets:
     course_code: '{output.target_course_code}'
     target_course_id: '{output.target_course_id}'
     discussion_ids: '{output.discussion_ids}'
-
 eval:
   source: server_state
   checks:
-    - expr: >-
-        all(state.meets_discussion_requirements(did)
-            for did in [d.id for d in state.discussions
-                        if d.course_id == '{target.target_course_id}'])
-      desc: All discussions in the course meet minimum requirements
-    - expr: >-
-        any(p.author_id == state.student.id
-            for p in state.discussion_posts
-            if p.discussion_id in [d.id for d in state.discussions
-                                   if d.course_id == '{target.target_course_id}'])
-      desc: Student created posts in course discussions
-    - expr: >-
-        len([p for p in state.discussion_posts
-             if p.author_id == state.student.id
-             and p.discussion_id in [d.id for d in state.discussions
-                                     if d.course_id == '{target.target_course_id}']]) >= 1
-      desc: At least one new post was made in the target course
-    - expr: >-
-        all(e.status == 'enrolled'
-            for e in state.enrollments)
-      desc: All enrollments remain active
+  - expr: "all(state.meets_discussion_requirements(did)\n    for did in [d.id for\
+      \ d in state.discussions\n                if d.course_id == '{target.target_course_id}'])"
+    desc: All discussions in the course meet minimum requirements
+  - expr: "any(p.author_id == state.student.id\n    for p in state.discussion_posts\n\
+      \    if p.discussion_id in [d.id for d in state.discussions\n              \
+      \             if d.course_id == '{target.target_course_id}'])"
+    desc: Student created posts in course discussions
+  - expr: "len([p for p in state.discussion_posts\n     if p.author_id == state.student.id\n\
+      \     and p.discussion_id in [d.id for d in state.discussions\n            \
+      \                 if d.course_id == '{target.target_course_id}']]) >= 1"
+    desc: At least one new post was made in the target course
+  - expr: "all(e.status == 'enrolled'\n    for e in state.enrollments)"
+    desc: All enrollments remain active
   negative_checks:
-    - expr: >-
-        not any(p.author_id == state.student.id
-                and p.discussion_id not in [d.id for d in state.discussions
-                                            if d.course_id == '{target.target_course_id}']
-                for p in state.discussion_posts)
-      desc: Student did not post in discussions outside the target course
-      penalty: 0.2
-    - expr: >-
-        all(e.status != 'dropped' for e in state.enrollments)
-      desc: No courses were dropped
-      penalty: 0.3
+  - expr: "not any(p.author_id == state.student.id\n        and p.discussion_id not\
+      \ in [d.id for d in state.discussions\n                                    if\
+      \ d.course_id == '{target.target_course_id}']\n        for p in state.discussion_posts)"
+    desc: Student did not post in discussions outside the target course
+    penalty: 0.2
+  - expr: all(e.status != 'dropped' for e in state.enrollments)
+    desc: No courses were dropped
+    penalty: 0.3
+secondary_primitives: []

@@ -17,8 +17,6 @@ time_limit_seconds: 360
 expected_steps: 28
 primary_primitives:
 - verification
-- grounding
-- state_tracking
 secondary_primitives:
 - planning
 start_path: /inbox

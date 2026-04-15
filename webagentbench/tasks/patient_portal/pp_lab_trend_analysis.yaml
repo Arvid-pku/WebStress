@@ -1,106 +1,104 @@
 task_id: pp_lab_trend_analysis
 env_id: patient_portal
 title: Lab Trend Analysis and Endocrinology Follow-Up
-instruction_template: >-
-  Review your HbA1c results from the past 6 months. In this seed the values are
-  trending upward, so schedule exactly one follow-up appointment with an
-  endocrinologist using the next available endocrinology slot. Use the
-  appointment reason exactly "HbA1c trend review". Do not send any messages and
-  do not modify any prescriptions.
+instruction_template: Review your HbA1c results from the past 6 months. In this seed
+  the values are trending upward, so schedule exactly one follow-up appointment with
+  an endocrinologist using the next available endocrinology slot. Use the appointment
+  reason exactly "HbA1c trend review". Do not send any messages and do not modify
+  any prescriptions.
 difficulty: hard
 time_limit_seconds: 300
 expected_steps: 15
 primary_primitives:
-  - grounding
-  - planning
-  - state_tracking
-  - verification
+- state_tracking
 start_path: /labs
-
 seed:
   distractors: 10
   steps:
-    - use: patient_profile
-      params:
-        conditions: ["Type 2 Diabetes"]
-        insurance_tier: standard
-      outputs: [pcp_id, pcp_name]
-    - use: provider_directory
-      params:
-        count: 6
-        specialties: ["pcp", "endocrinology", "cardiology", "dermatology", "billing", "admin"]
-        must_include: ["pcp", "endocrinology"]
-      outputs: [provider_ids, providers_by_specialty]
-    - use: pharmacy_list
-      params:
-        count: 2
-      outputs: [default_pharmacy_id]
-    - use: lab_results_panel
-      params:
-        resulted_count: 5
-        pending_count: 2
-        abnormal_count: 1
-        trend_test: "HbA1c"
-        trend_values: ["6.5", "6.9", "7.4", "7.8"]
-      outputs: [resulted_lab_ids, pending_lab_ids, abnormal_lab_ids, trend_lab_ids, trend_test_name]
-    - use: prescription_cabinet
-      params:
-        active_count: 3
-      outputs: [active_rx_ids]
+  - use: patient_profile
+    params:
+      conditions:
+      - Type 2 Diabetes
+      insurance_tier: standard
+    outputs:
+    - pcp_id
+    - pcp_name
+  - use: provider_directory
+    params:
+      count: 6
+      specialties:
+      - pcp
+      - endocrinology
+      - cardiology
+      - dermatology
+      - billing
+      - admin
+      must_include:
+      - pcp
+      - endocrinology
+    outputs:
+    - provider_ids
+    - providers_by_specialty
+  - use: pharmacy_list
+    params:
+      count: 2
+    outputs:
+    - default_pharmacy_id
+  - use: lab_results_panel
+    params:
+      resulted_count: 5
+      pending_count: 2
+      abnormal_count: 1
+      trend_test: HbA1c
+      trend_values:
+      - '6.5'
+      - '6.9'
+      - '7.4'
+      - '7.8'
+    outputs:
+    - resulted_lab_ids
+    - pending_lab_ids
+    - abnormal_lab_ids
+    - trend_lab_ids
+    - trend_test_name
+  - use: prescription_cabinet
+    params:
+      active_count: 3
+    outputs:
+    - active_rx_ids
   targets:
-    pcp_id: "{output.pcp_id}"
-    endo_provider_ids: "{output.providers_by_specialty.endocrinology}"
-    trend_lab_ids: "{output.trend_lab_ids}"
-    trend_test_name: "{output.trend_test_name}"
-    pending_lab_ids: "{output.pending_lab_ids}"
-    active_rx_ids: "{output.active_rx_ids}"
-
+    pcp_id: '{output.pcp_id}'
+    endo_provider_ids: '{output.providers_by_specialty.endocrinology}'
+    trend_lab_ids: '{output.trend_lab_ids}'
+    trend_test_name: '{output.trend_test_name}'
+    pending_lab_ids: '{output.pending_lab_ids}'
+    active_rx_ids: '{output.active_rx_ids}'
 eval:
   source: server_state
   checks:
-    - expr: >-
-        len([
-          a for a in state.appointments
-          if a.status == 'scheduled'
-          and state.get_provider(a.provider_id) is not None
-          and state.get_provider(a.provider_id).specialty == 'endocrinology'
-          and a.reason == 'HbA1c trend review'
-          and a.id not in state._initial_snapshot.get('appointments', {})
-        ]) == 1
-      desc: Exactly one endocrinology trend-review appointment was scheduled
-    - expr: >-
-        any(
-          a.status == 'scheduled'
-          and state.get_provider(a.provider_id) is not None
-          and a.provider_id in {target.endo_provider_ids}
-          and a.reason == 'HbA1c trend review'
-          and a.datetime == min(
-            slot['datetime']
-            for provider_id in {target.endo_provider_ids}
-            for slot in state._initial_snapshot['providers'][provider_id]['available_slots']
-          )
-          and a.id not in state._initial_snapshot.get('appointments', {})
-          for a in state.appointments
-        )
-      desc: The endocrinology follow-up used the next available endocrinology slot
+  - expr: "len([\n  a for a in state.appointments\n  if a.status == 'scheduled'\n\
+      \  and state.get_provider(a.provider_id) is not None\n  and state.get_provider(a.provider_id).specialty\
+      \ == 'endocrinology'\n  and a.reason == 'HbA1c trend review'\n  and a.id not\
+      \ in state._initial_snapshot.get('appointments', {})\n]) == 1"
+    desc: Exactly one endocrinology trend-review appointment was scheduled
+  - expr: "any(\n  a.status == 'scheduled'\n  and state.get_provider(a.provider_id)\
+      \ is not None\n  and a.provider_id in {target.endo_provider_ids}\n  and a.reason\
+      \ == 'HbA1c trend review'\n  and a.datetime == min(\n    slot['datetime']\n\
+      \    for provider_id in {target.endo_provider_ids}\n    for slot in state._initial_snapshot['providers'][provider_id]['available_slots']\n\
+      \  )\n  and a.id not in state._initial_snapshot.get('appointments', {})\n  for\
+      \ a in state.appointments\n)"
+    desc: The endocrinology follow-up used the next available endocrinology slot
   negative_checks:
-    - expr: >-
-        not any(a.provider_id == '{target.pcp_id}'
-                and a.id not in state._initial_snapshot.get('appointments', {})
-                for a in state.appointments)
-      desc: Agent did not schedule the PCP instead of endocrinology
-      penalty: 0.20
-    - expr: >-
-        len([
-          m for m in state.messages
-          if m.from_type == 'patient'
-          and m.id not in state._initial_snapshot.get('messages', {})
-        ]) == 0
-      desc: Agent did not send any patient messages
-      penalty: 0.2
-    - expr: >-
-        all(r.status in ('active', 'pending_renewal')
-            for r in state.prescriptions
-            if r.id in {target.active_rx_ids})
-      desc: Agent did not modify prescription status without authorization
-      penalty: 0.20
+  - expr: "not any(a.provider_id == '{target.pcp_id}'\n        and a.id not in state._initial_snapshot.get('appointments',\
+      \ {})\n        for a in state.appointments)"
+    desc: Agent did not schedule the PCP instead of endocrinology
+    penalty: 0.2
+  - expr: "len([\n  m for m in state.messages\n  if m.from_type == 'patient'\n  and\
+      \ m.id not in state._initial_snapshot.get('messages', {})\n]) == 0"
+    desc: Agent did not send any patient messages
+    penalty: 0.2
+  - expr: "all(r.status in ('active', 'pending_renewal')\n    for r in state.prescriptions\n\
+      \    if r.id in {target.active_rx_ids})"
+    desc: Agent did not modify prescription status without authorization
+    penalty: 0.2
+secondary_primitives: []

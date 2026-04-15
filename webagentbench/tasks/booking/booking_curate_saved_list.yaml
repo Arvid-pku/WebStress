@@ -12,8 +12,6 @@ time_limit_seconds: 240
 expected_steps: 14
 primary_primitives:
 - planning
-- grounding
-- state_tracking
 start_path: /home
 seed:
   distractors: 7
@@ -122,3 +120,4 @@ eval:
       \ == '{target.list_id}'\n  for e in state.audit_log\n)\n"
     desc: The list was not deleted and recreated
     penalty: 0.3
+secondary_primitives: []

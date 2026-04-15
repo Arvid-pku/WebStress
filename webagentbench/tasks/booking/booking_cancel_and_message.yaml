@@ -13,8 +13,6 @@ time_limit_seconds: 200
 expected_steps: 12
 primary_primitives:
 - planning
-- grounding
-- state_tracking
 start_path: /home
 seed:
   distractors: 5
@@ -102,3 +100,4 @@ eval:
       '
     desc: Only one message was sent
     penalty: 0.15
+secondary_primitives: []

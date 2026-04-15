@@ -1,15 +1,15 @@
 task_id: reddit_privacy_overhaul
 env_id: reddit
 title: Privacy Settings Overhaul
-instruction_template: 'Go to Settings and make the following changes: 1. Disable "Show online status". 2. Disable "Allow followers".
-  3. Disable "Show active communities in profile". 4. Disable all email notification settings (comment replies, post replies,
+instruction_template: 'Go to Settings and make the following changes: 1. Disable "Show
+  online status". 2. Disable "Allow followers". 3. Disable "Show active communities
+  in profile". 4. Disable all email notification settings (comment replies, post replies,
   mentions, messages, and digest). Do not change display or content settings.'
 difficulty: medium
 time_limit_seconds: 240
 expected_steps: 15
 primary_primitives:
 - grounding
-- state_tracking
 start_path: /feed
 seed:
   distractors: 0
@@ -43,3 +43,4 @@ eval:
   - expr: state.settings.show_nsfw == False
     desc: NSFW setting not changed
     penalty: 0.15
+secondary_primitives: []

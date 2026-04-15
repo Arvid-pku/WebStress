@@ -1,16 +1,15 @@
 task_id: reddit_follow_notification
 env_id: reddit
 title: Follow Notification and Comment
-instruction_template: 'Go to your Notifications page. Find the notification about r/{target.notif_subreddit}. Mark it as read.
-  Then navigate to the post referenced by that notification (post ID: {target.related_post_id}) and leave a top-level comment
+instruction_template: 'Go to your Notifications page. Find the notification about
+  r/{target.notif_subreddit}. Mark it as read. Then navigate to the post referenced
+  by that notification (post ID: {target.related_post_id}) and leave a top-level comment
   with exactly: "{target.comment_text}" Do not comment on any other posts.'
 difficulty: medium
 time_limit_seconds: 240
 expected_steps: 16
 primary_primitives:
 - exploration
-- grounding
-- state_tracking
 start_path: /feed
 seed:
   distractors: 5
@@ -40,18 +39,20 @@ seed:
     notif_subreddit: todayilearned
     notification_id: '{output.notification_id}'
     related_post_id: '{output.post_id}'
-    comment_text: This is fascinating! The ability to edit RNA on the fly is essentially a form of real-time evolution.
+    comment_text: This is fascinating! The ability to edit RNA on the fly is essentially
+      a form of real-time evolution.
 eval:
   source: server_state
   checks:
   - expr: any(n.id == '{target.notification_id}' and n.is_read for n in state.notifications)
     desc: Target notification marked as read
-  - expr: any(c.post_id == '{target.related_post_id}' and c.body == "This is fascinating! The ability to edit RNA on the fly
-      is essentially a form of real-time evolution." and c.author_name == state.owner_username for c in state.comments)
+  - expr: any(c.post_id == '{target.related_post_id}' and c.body == "This is fascinating!
+      The ability to edit RNA on the fly is essentially a form of real-time evolution."
+      and c.author_name == state.owner_username for c in state.comments)
     desc: Exact comment posted on referenced post
   negative_checks:
-  - expr: sum(1 for c in state.comments if c.author_name == state.owner_username and c.post_id != '{target.related_post_id}')
-      <= 8
+  - expr: sum(1 for c in state.comments if c.author_name == state.owner_username and
+      c.post_id != '{target.related_post_id}') <= 8
     desc: No comments on unrelated posts
     penalty: 0.2
   - expr: len(state.sent_messages) == 0
@@ -60,3 +61,4 @@ eval:
   - expr: len(state.blocked_users) == 0
     desc: No users blocked when none required
     penalty: 0.15
+secondary_primitives: []

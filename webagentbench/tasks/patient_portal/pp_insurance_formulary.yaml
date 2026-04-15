@@ -1,97 +1,95 @@
 task_id: pp_insurance_formulary
 env_id: patient_portal
 title: Insurance Formulary Check
-instruction_template: >-
-  Your specialist recommended a new medication. Read the formulary message from
-  that provider, then schedule exactly one follow-up appointment with the specialist
-  using the next available endocrinology slot. Use the appointment reason exactly
-  "Formulary medication decision". Do not send any messages and do not modify
-  any prescriptions.
+instruction_template: Your specialist recommended a new medication. Read the formulary
+  message from that provider, then schedule exactly one follow-up appointment with
+  the specialist using the next available endocrinology slot. Use the appointment
+  reason exactly "Formulary medication decision". Do not send any messages and do
+  not modify any prescriptions.
 difficulty: expert
 time_limit_seconds: 480
 expected_steps: 28
 primary_primitives:
-  - grounding
-  - planning
-  - state_tracking
-  - verification
-  - backtracking
+- state_tracking
 start_path: /messages
-
 seed:
   distractors: 8
   steps:
-    - use: patient_profile
-      params:
-        conditions: ["High Cholesterol", "Type 2 Diabetes"]
-        insurance_tier: standard
-      outputs: [pcp_id, pcp_name, insurance_plan_name]
-    - use: provider_directory
-      params:
-        count: 5
-        specialties: ["pcp", "cardiology", "endocrinology", "billing"]
-        must_include: ["pcp", "endocrinology"]
-      outputs: [provider_ids, providers_by_specialty]
-    - use: pharmacy_list
-      params:
-        count: 2
-      outputs: [default_pharmacy_id]
-    - use: prescription_cabinet
-      params:
-        active_count: 3
-        expired_count: 1
-      outputs: [active_rx_ids]
-    - use: message_threads
-      params:
-        thread_count: 4
-        unread_count: 2
-        categories: ["clinical", "rx_renewal"]
-        include_rx_renewal: true
-        body_context:
-          type: "formulary_info"
-          provider_specialty: "endocrinology"
-          new_medication_name: "Semaglutide 0.25mg weekly"
-          alternative_name: "Metformin ER 500mg"
-          coverage_status: "not covered"
-      outputs: [thread_ids, unread_msg_ids]
+  - use: patient_profile
+    params:
+      conditions:
+      - High Cholesterol
+      - Type 2 Diabetes
+      insurance_tier: standard
+    outputs:
+    - pcp_id
+    - pcp_name
+    - insurance_plan_name
+  - use: provider_directory
+    params:
+      count: 5
+      specialties:
+      - pcp
+      - cardiology
+      - endocrinology
+      - billing
+      must_include:
+      - pcp
+      - endocrinology
+    outputs:
+    - provider_ids
+    - providers_by_specialty
+  - use: pharmacy_list
+    params:
+      count: 2
+    outputs:
+    - default_pharmacy_id
+  - use: prescription_cabinet
+    params:
+      active_count: 3
+      expired_count: 1
+    outputs:
+    - active_rx_ids
+  - use: message_threads
+    params:
+      thread_count: 4
+      unread_count: 2
+      categories:
+      - clinical
+      - rx_renewal
+      include_rx_renewal: true
+      body_context:
+        type: formulary_info
+        provider_specialty: endocrinology
+        new_medication_name: Semaglutide 0.25mg weekly
+        alternative_name: Metformin ER 500mg
+        coverage_status: not covered
+    outputs:
+    - thread_ids
+    - unread_msg_ids
   targets:
-    endo_provider_ids: "{output.providers_by_specialty.endocrinology}"
-    active_rx_ids: "{output.active_rx_ids}"
-
+    endo_provider_ids: '{output.providers_by_specialty.endocrinology}'
+    active_rx_ids: '{output.active_rx_ids}'
 eval:
   source: server_state
   checks:
-    - expr: >-
-        any(
-          m.from_type == 'provider'
-          and m.provider_id in {target.endo_provider_ids}
-          and m.subject == 'Formulary Coverage Update'
-          and m.id in state._initial_snapshot.get('messages', {})
-          and state.get_message(m.id) is not None
-          and state.get_message(m.id).is_read
-          for m in state.messages
-        )
-      desc: The endocrinology formulary message was read
-    - expr: >-
-        len([
-          a for a in state.appointments
-          if a.status == 'scheduled'
-          and a.provider_id in {target.endo_provider_ids}
-          and a.reason == 'Formulary medication decision'
-          and a.id not in state._initial_snapshot.get('appointments', {})
-        ]) == 1
-      desc: Exactly one endocrinology formulary-decision appointment was scheduled
-    - expr: >-
-        all(rx.status == state._initial_snapshot['prescriptions'][rx.id]['status']
-            for rx in state.prescriptions
-            if rx.id in state._initial_snapshot.get('prescriptions', {}))
-      desc: No existing prescriptions were modified
+  - expr: "any(\n  m.from_type == 'provider'\n  and m.provider_id in {target.endo_provider_ids}\n\
+      \  and m.subject == 'Formulary Coverage Update'\n  and m.id in state._initial_snapshot.get('messages',\
+      \ {})\n  and state.get_message(m.id) is not None\n  and state.get_message(m.id).is_read\n\
+      \  for m in state.messages\n)"
+    desc: The endocrinology formulary message was read
+  - expr: "len([\n  a for a in state.appointments\n  if a.status == 'scheduled'\n\
+      \  and a.provider_id in {target.endo_provider_ids}\n  and a.reason == 'Formulary\
+      \ medication decision'\n  and a.id not in state._initial_snapshot.get('appointments',\
+      \ {})\n]) == 1"
+    desc: Exactly one endocrinology formulary-decision appointment was scheduled
+  - expr: "all(rx.status == state._initial_snapshot['prescriptions'][rx.id]['status']\n\
+      \    for rx in state.prescriptions\n    if rx.id in state._initial_snapshot.get('prescriptions',\
+      \ {}))"
+    desc: No existing prescriptions were modified
   negative_checks:
-    - expr: >-
-        len([
-          m for m in state.messages
-          if m.from_type == 'patient'
-          and m.id not in state._initial_snapshot.get('messages', {})
-        ]) == 0
-      desc: Agent did not send any patient messages
-      penalty: 0.2
+  - expr: "len([\n  m for m in state.messages\n  if m.from_type == 'patient'\n  and\
+      \ m.id not in state._initial_snapshot.get('messages', {})\n]) == 0"
+    desc: Agent did not send any patient messages
+    penalty: 0.2
+secondary_primitives: []

@@ -1,97 +1,100 @@
 task_id: pp_complex_claim_dispute
 env_id: patient_portal
 title: Multi-Claim Dispute Resolution
-instruction_template: >-
-  Three insurance claims were denied and each has an available EOB. Review the
-  denied claims and appeal all three of them using the claim appeal action.
-  Do not send any messages and do not modify any approved claims.
+instruction_template: Three insurance claims were denied and each has an available
+  EOB. Review the denied claims and appeal all three of them using the claim appeal
+  action. Do not send any messages and do not modify any approved claims.
 difficulty: frontier
 time_limit_seconds: 600
 expected_steps: 60
 primary_primitives:
-  - grounding
-  - planning
-  - state_tracking
-  - verification
-  - backtracking
-  - patience
-  - exploration
+- planning
 start_path: /billing
-
 seed:
   distractors: 10
   steps:
-    - use: patient_profile
-      params:
-        conditions: ["Back Pain", "Hypertension", "Knee Osteoarthritis"]
-        insurance_tier: basic
-      outputs: [pcp_id, pcp_name, conditions_list]
-    - use: provider_directory
-      params:
-        count: 7
-        specialties: ["pcp", "orthopedics", "cardiology", "radiology", "neurology", "billing"]
-        must_include: ["pcp", "orthopedics", "billing"]
-      outputs: [provider_ids, providers_by_specialty]
-    - use: pharmacy_list
-      params:
-        count: 2
-      outputs: [default_pharmacy_id]
-    - use: appointment_history
-      params:
-        upcoming_count: 1
-        completed_count: 5
-      outputs: [upcoming_ids, completed_ids]
-    - use: referral_chain
-      params:
-        approved_count: 3
-        pending_count: 0
-      outputs: [approved_ref_ids]
-    - use: lab_results_panel
-      params:
-        resulted_count: 3
-        abnormal_count: 1
-      outputs: [resulted_lab_ids]
-    - use: insurance_claims
-      params:
-        approved_count: 2
-        denied_count: 3
-        with_eob: true
-        near_appeal_deadline: true
-      outputs: [denied_claim_ids, appealable_claim_id, approved_claim_ids]
+  - use: patient_profile
+    params:
+      conditions:
+      - Back Pain
+      - Hypertension
+      - Knee Osteoarthritis
+      insurance_tier: basic
+    outputs:
+    - pcp_id
+    - pcp_name
+    - conditions_list
+  - use: provider_directory
+    params:
+      count: 7
+      specialties:
+      - pcp
+      - orthopedics
+      - cardiology
+      - radiology
+      - neurology
+      - billing
+      must_include:
+      - pcp
+      - orthopedics
+      - billing
+    outputs:
+    - provider_ids
+    - providers_by_specialty
+  - use: pharmacy_list
+    params:
+      count: 2
+    outputs:
+    - default_pharmacy_id
+  - use: appointment_history
+    params:
+      upcoming_count: 1
+      completed_count: 5
+    outputs:
+    - upcoming_ids
+    - completed_ids
+  - use: referral_chain
+    params:
+      approved_count: 3
+      pending_count: 0
+    outputs:
+    - approved_ref_ids
+  - use: lab_results_panel
+    params:
+      resulted_count: 3
+      abnormal_count: 1
+    outputs:
+    - resulted_lab_ids
+  - use: insurance_claims
+    params:
+      approved_count: 2
+      denied_count: 3
+      with_eob: true
+      near_appeal_deadline: true
+    outputs:
+    - denied_claim_ids
+    - appealable_claim_id
+    - approved_claim_ids
   targets:
-    pcp_id: "{output.pcp_id}"
-    denied_claim_ids: "{output.denied_claim_ids}"
-    approved_claim_ids: "{output.approved_claim_ids}"
-
+    pcp_id: '{output.pcp_id}'
+    denied_claim_ids: '{output.denied_claim_ids}'
+    approved_claim_ids: '{output.approved_claim_ids}'
 eval:
   source: server_state
   checks:
-    - expr: >-
-        all(
-          state.get_claim(cid) is not None
-          and state.get_claim(cid).status == 'appealed'
-          for cid in {target.denied_claim_ids}
-        )
-      desc: All three denied claims were appealed
-    - expr: >-
-        len([
-          c for c in state.claims
-          if c.id in {target.denied_claim_ids}
-          and c.status == 'appealed'
-        ]) == 3
-      desc: Exactly three denied claims were appealed
-    - expr: >-
-        all(c.status == state._initial_snapshot['claims'][c.id]['status']
-            for c in state.claims
-            if c.id in {target.approved_claim_ids}
-            and c.id in state._initial_snapshot.get('claims', {}))
-      desc: Approved claims were not modified
+  - expr: "all(\n  state.get_claim(cid) is not None\n  and state.get_claim(cid).status\
+      \ == 'appealed'\n  for cid in {target.denied_claim_ids}\n)"
+    desc: All three denied claims were appealed
+  - expr: "len([\n  c for c in state.claims\n  if c.id in {target.denied_claim_ids}\n\
+      \  and c.status == 'appealed'\n]) == 3"
+    desc: Exactly three denied claims were appealed
+  - expr: "all(c.status == state._initial_snapshot['claims'][c.id]['status']\n   \
+      \ for c in state.claims\n    if c.id in {target.approved_claim_ids}\n    and\
+      \ c.id in state._initial_snapshot.get('claims', {}))"
+    desc: Approved claims were not modified
   negative_checks:
-    - expr: >-
-        len([
-          m for m in state.messages
-          if m.from_type == 'patient'
-          and m.id not in state._initial_snapshot.get('messages', {})
-        ]) == 0
-      desc: Agent did not send any patient messages
-      penalty: 0.2
+  - expr: "len([\n  m for m in state.messages\n  if m.from_type == 'patient'\n  and\
+      \ m.id not in state._initial_snapshot.get('messages', {})\n]) == 0"
+    desc: Agent did not send any patient messages
+    penalty: 0.2
+secondary_primitives: []

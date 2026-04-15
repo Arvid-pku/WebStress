@@ -1,17 +1,17 @@
 task_id: amazon_cart_budget_limit
 env_id: amazon
 title: Build a Cart Under a Budget Limit
-instruction_template: >
-  Add at least 3 items from the "{target.category}" category to your cart
-  with a total under ${target.budget}, then complete checkout using the shipping address
-  for Jordan Parker at 742 Evergreen Terrace and the Visa card ending in 4242.
+instruction_template: 'Add at least 3 items from the "{target.category}" category
+  to your cart with a total under ${target.budget}, then complete checkout using the
+  shipping address for Jordan Parker at 742 Evergreen Terrace and the Visa card ending
+  in 4242.
+
+  '
 difficulty: medium
 time_limit_seconds: 280
 expected_steps: 20
 primary_primitives:
 - planning
-- state_tracking
-- verification
 start_path: /
 seed:
   distractors: 12
@@ -86,17 +86,21 @@ eval:
   checks:
   - expr: any(not o.id.startswith('order_initial_') for o in state.orders)
     desc: A new order was placed
-  - expr: >
-      any(len(order.items) >= 3 for order in state.orders if not order.id.startswith('order_initial_'))
+  - expr: 'any(len(order.items) >= 3 for order in state.orders if not order.id.startswith(''order_initial_''))
+
+      '
     desc: Order contains at least 3 different items
-  - expr: >
-      any(sum(item.unit_price * item.quantity for item in order.items) < {target.budget}
-      for order in state.orders if not order.id.startswith('order_initial_'))
+  - expr: 'any(sum(item.unit_price * item.quantity for item in order.items) < {target.budget}
+      for order in state.orders if not order.id.startswith(''order_initial_''))
+
+      '
     desc: Order total is under ${target.budget}
   negative_checks:
-  - expr: sum(1 for o in state.orders if not o.id.startswith('order_initial_')) <= 1
+  - expr: sum(1 for o in state.orders if not o.id.startswith('order_initial_')) <=
+      1
     desc: Only one new order placed
     penalty: 0.15
   - expr: len(state.cart_items) == 0
     desc: Cart is empty after checkout
     penalty: 0.1
+secondary_primitives: []

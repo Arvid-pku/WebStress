@@ -1,69 +1,66 @@
 task_id: rh_limit_order_with_check
 env_id: robinhood
 title: Check Price Then Place Limit Buy Order
-instruction_template: "Check AMZN's current price, then place a limit buy order for 10 shares at 5% below current price, good-till-cancelled."
+instruction_template: Check AMZN's current price, then place a limit buy order for
+  10 shares at 5% below current price, good-till-cancelled.
 difficulty: medium
 time_limit_seconds: 150
 expected_steps: 6
 primary_primitives:
-  - grounding
-  - planning
-  - state_tracking
+- grounding
 start_path: /
-
 seed:
   distractors: 10
   steps:
-    - use: stock_universe
-      params:
-        count: 25
-        must_include: ["AMZN", "AAPL", "MSFT", "GOOGL"]
-      outputs: []
-    - use: portfolio_basic
-      params:
-        stocks: ["AAPL", "MSFT"]
-        quantities: ["15", "10"]
-        cost_bases: ["180.00", "370.00"]
-      outputs: []
-    - use: linked_banks
-      params: {}
-      outputs: []
+  - use: stock_universe
+    params:
+      count: 25
+      must_include:
+      - AMZN
+      - AAPL
+      - MSFT
+      - GOOGL
+    outputs: []
+  - use: portfolio_basic
+    params:
+      stocks:
+      - AAPL
+      - MSFT
+      quantities:
+      - '15'
+      - '10'
+      cost_bases:
+      - '180.00'
+      - '370.00'
+    outputs: []
+  - use: linked_banks
+    params: {}
+    outputs: []
   targets: {}
-
 eval:
   source: server_state
   checks:
-    - expr: >-
-        len([o for o in state.orders
-             if o.symbol == 'AMZN' and o.side == 'buy'
-             and not o.id.startswith('ord_decoy_')]) == 1
-      desc: Exactly one AMZN buy order was placed
-    - expr: >-
-        any(o.symbol == 'AMZN' and o.side == 'buy' and o.order_type == 'limit'
-            and o.quantity == 10 and o.time_in_force == 'gtc' and o.status == 'pending'
-            and not o.id.startswith('ord_decoy_')
-            for o in state.orders)
-      desc: A pending limit buy order for 10 shares of AMZN with GTC time-in-force exists
-    - expr: >-
-        any(o.order_type == 'limit' and o.symbol == 'AMZN'
-            and abs(o.limit_price - (state.get_stock('AMZN').price * Decimal('0.95'))) <= Decimal('0.01')
-            and not o.id.startswith('ord_decoy_')
-            for o in state.orders)
-      desc: The limit price is 5% below the current AMZN price
-    - expr: >-
-        not any(o.symbol != 'AMZN' and o.side == 'buy'
-                and not o.id.startswith('ord_decoy_')
-                for o in state.orders)
-      desc: No buy orders were placed on symbols other than AMZN
+  - expr: "len([o for o in state.orders\n     if o.symbol == 'AMZN' and o.side ==\
+      \ 'buy'\n     and not o.id.startswith('ord_decoy_')]) == 1"
+    desc: Exactly one AMZN buy order was placed
+  - expr: "any(o.symbol == 'AMZN' and o.side == 'buy' and o.order_type == 'limit'\n\
+      \    and o.quantity == 10 and o.time_in_force == 'gtc' and o.status == 'pending'\n\
+      \    and not o.id.startswith('ord_decoy_')\n    for o in state.orders)"
+    desc: A pending limit buy order for 10 shares of AMZN with GTC time-in-force exists
+  - expr: "any(o.order_type == 'limit' and o.symbol == 'AMZN'\n    and abs(o.limit_price\
+      \ - (state.get_stock('AMZN').price * Decimal('0.95'))) <= Decimal('0.01')\n\
+      \    and not o.id.startswith('ord_decoy_')\n    for o in state.orders)"
+    desc: The limit price is 5% below the current AMZN price
+  - expr: "not any(o.symbol != 'AMZN' and o.side == 'buy'\n        and not o.id.startswith('ord_decoy_')\n\
+      \        for o in state.orders)"
+    desc: No buy orders were placed on symbols other than AMZN
   negative_checks:
-    - expr: >-
-        not any(o.symbol == 'AMZN' and o.side != 'buy'
-            and not o.id.startswith('ord_decoy_')
-            for o in state.orders)
-      desc: The AMZN order was not a sell or other side
-      penalty: 0.25
-    - expr: >-
-        not any(o.side == 'sell' and not o.id.startswith('ord_decoy_')
-                for o in state.orders)
-      desc: No sell orders were placed during the limit-order check
-      penalty: 0.15
+  - expr: "not any(o.symbol == 'AMZN' and o.side != 'buy'\n    and not o.id.startswith('ord_decoy_')\n\
+      \    for o in state.orders)"
+    desc: The AMZN order was not a sell or other side
+    penalty: 0.25
+  - expr: "not any(o.side == 'sell' and not o.id.startswith('ord_decoy_')\n      \
+      \  for o in state.orders)"
+    desc: No sell orders were placed during the limit-order check
+    penalty: 0.15
+secondary_primitives: []

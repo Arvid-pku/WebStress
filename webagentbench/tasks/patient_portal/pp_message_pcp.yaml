@@ -1,76 +1,70 @@
 task_id: pp_message_pcp
 env_id: patient_portal
 title: Schedule PCP Medication Review
-instruction_template: >-
-  Review your medication list, then schedule exactly one follow-up appointment
-  with your primary care physician using the next available PCP slot. Use the
-  appointment reason exactly "Medication side effect review". Do not send any
-  messages.
+instruction_template: Review your medication list, then schedule exactly one follow-up
+  appointment with your primary care physician using the next available PCP slot.
+  Use the appointment reason exactly "Medication side effect review". Do not send
+  any messages.
 difficulty: easy
 time_limit_seconds: 120
 expected_steps: 5
 primary_primitives:
-  - grounding
+- planning
 start_path: /medications
-
 seed:
   distractors: 5
   steps:
-    - use: patient_profile
-      params:
-        conditions: ["Hypertension"]
-        insurance_tier: standard
-      outputs: [pcp_id, pcp_name]
-    - use: provider_directory
-      params:
-        count: 5
-        specialties: ["pcp", "cardiology", "dermatology", "billing"]
-        must_include: ["pcp"]
-      outputs: [provider_ids]
-    - use: pharmacy_list
-      params:
-        count: 2
-      outputs: [default_pharmacy_id]
-    - use: prescription_cabinet
-      params:
-        active_count: 3
-      outputs: [active_rx_ids]
+  - use: patient_profile
+    params:
+      conditions:
+      - Hypertension
+      insurance_tier: standard
+    outputs:
+    - pcp_id
+    - pcp_name
+  - use: provider_directory
+    params:
+      count: 5
+      specialties:
+      - pcp
+      - cardiology
+      - dermatology
+      - billing
+      must_include:
+      - pcp
+    outputs:
+    - provider_ids
+  - use: pharmacy_list
+    params:
+      count: 2
+    outputs:
+    - default_pharmacy_id
+  - use: prescription_cabinet
+    params:
+      active_count: 3
+    outputs:
+    - active_rx_ids
   targets:
-    pcp_id: "{output.pcp_id}"
-    pcp_name: "{output.pcp_name}"
-    active_rx_ids: "{output.active_rx_ids}"
-
+    pcp_id: '{output.pcp_id}'
+    pcp_name: '{output.pcp_name}'
+    active_rx_ids: '{output.active_rx_ids}'
 eval:
   source: server_state
   checks:
-    - expr: >-
-        len([
-          a for a in state.appointments
-          if a.status == 'scheduled'
-          and a.provider_id == '{target.pcp_id}'
-          and a.reason == 'Medication side effect review'
-          and a.id not in state._initial_snapshot.get('appointments', {})
-        ]) == 1
-      desc: Exactly one PCP medication-review appointment was scheduled
-    - expr: >-
-        any(
-          a.status == 'scheduled'
-          and a.provider_id == '{target.pcp_id}'
-          and a.reason == 'Medication side effect review'
-          and a.datetime == min(
-            slot['datetime']
-            for slot in state._initial_snapshot['providers']['{target.pcp_id}']['available_slots']
-          )
-          and a.id not in state._initial_snapshot.get('appointments', {})
-          for a in state.appointments
-        )
-      desc: The medication-review appointment used the next available PCP slot
+  - expr: "len([\n  a for a in state.appointments\n  if a.status == 'scheduled'\n\
+      \  and a.provider_id == '{target.pcp_id}'\n  and a.reason == 'Medication side\
+      \ effect review'\n  and a.id not in state._initial_snapshot.get('appointments',\
+      \ {})\n]) == 1"
+    desc: Exactly one PCP medication-review appointment was scheduled
+  - expr: "any(\n  a.status == 'scheduled'\n  and a.provider_id == '{target.pcp_id}'\n\
+      \  and a.reason == 'Medication side effect review'\n  and a.datetime == min(\n\
+      \    slot['datetime']\n    for slot in state._initial_snapshot['providers']['{target.pcp_id}']['available_slots']\n\
+      \  )\n  and a.id not in state._initial_snapshot.get('appointments', {})\n  for\
+      \ a in state.appointments\n)"
+    desc: The medication-review appointment used the next available PCP slot
   negative_checks:
-    - expr: >-
-        len([
-          m for m in state.messages
-          if m.from_type == 'patient'
-          and m.id not in state._initial_snapshot.get('messages', {})
-        ]) == 0
-      desc: Agent did not send any patient messages
-      penalty: 0.2
+  - expr: "len([\n  m for m in state.messages\n  if m.from_type == 'patient'\n  and\
+      \ m.id not in state._initial_snapshot.get('messages', {})\n]) == 0"
+    desc: Agent did not send any patient messages
+    penalty: 0.2
+secondary_primitives: []

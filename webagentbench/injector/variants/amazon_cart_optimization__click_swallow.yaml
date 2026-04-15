@@ -1,0 +1,13 @@
+variant_id: amazon_cart_optimization__click_swallow
+base_task_id: amazon_cart_optimization
+target_primitive: verification
+description: >
+  First click on any Add-to-Cart / Checkout button is a no-op. Agent
+  must verify and retry.
+injections:
+  - layer: client
+    params:
+      action: click_swallow
+      selector: "button.add-to-cart, button.checkout-btn, [data-wab-submit]"
+      swallow_count: 1
+      behavior: { mode: persistent }

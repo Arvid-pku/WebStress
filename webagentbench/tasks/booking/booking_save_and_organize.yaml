@@ -13,8 +13,6 @@ time_limit_seconds: 250
 expected_steps: 16
 primary_primitives:
 - planning
-- grounding
-- state_tracking
 start_path: /home
 seed:
   distractors: 8
@@ -138,3 +136,4 @@ eval:
       '
     desc: Only one new list named 'Italy Summer Trip' was created
     penalty: 0.15
+secondary_primitives: []

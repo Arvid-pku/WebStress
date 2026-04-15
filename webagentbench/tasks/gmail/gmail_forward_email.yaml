@@ -9,7 +9,6 @@ time_limit_seconds: 150
 expected_steps: 10
 primary_primitives:
 - grounding
-- planning
 start_path: /inbox
 seed:
   distractors: 10
@@ -32,3 +31,4 @@ eval:
   - expr: len(state.sent) == 1
     desc: Only one outbound email was sent
     penalty: 0.15
+secondary_primitives: []

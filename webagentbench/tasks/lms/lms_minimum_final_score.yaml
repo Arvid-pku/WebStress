@@ -1,88 +1,81 @@
 task_id: lms_minimum_final_score
 env_id: lms
 title: Calculate Minimum Final Exam Score for a B
-instruction_template: >-
-  Calculate the minimum score you need on the final exam in {target.course_code}
-  to achieve an overall grade of B (80% or above). Account for syllabus
-  weights and any dropped homework scores. If the required score is above
-  100 (impossible to achieve a B), drop the course. If the required score
-  is achievable (100 or below), submit 'study_plan.pdf' for the final exam
-  assignment.
+instruction_template: Calculate the minimum score you need on the final exam in {target.course_code}
+  to achieve an overall grade of B (80% or above). Account for syllabus weights and
+  any dropped homework scores. If the required score is above 100 (impossible to achieve
+  a B), drop the course. If the required score is achievable (100 or below), submit
+  'study_plan.pdf' for the final exam assignment.
 difficulty: hard
 time_limit_seconds: 300
 expected_steps: 15
 primary_primitives:
-  - state_tracking
-  - verification
-  - planning
+- state_tracking
 start_path: /courses
-
 seed:
   distractors: 2
   steps:
-    - use: student_profile
-      params: {}
-      outputs:
-        - student_id
-        - advisor_name
-    - use: course_catalog
-      params:
-        count: 3
-        must_include: ["CS101", "MATH201"]
-      outputs:
-        - course_ids
-        - course_code
-        - target_course_id
-    - use: enrollment_set
-      params: {}
-      outputs:
-        - enrollment_ids
-    - use: assignment_battery
-      params:
-        per_course_count: 8
-        graded_fraction: 0.6
-        late_count: 1
-      outputs:
-        - assignment_ids
-    - use: grade_book
-      params: {}
-      outputs:
-        - grade_ids
-        - current_weighted_scores
-        - dropped_grade_ids
-        - minimum_final_score_for_b
-        - min_score_achievable
-        - final_exam_assignment_id
+  - use: student_profile
+    params: {}
+    outputs:
+    - student_id
+    - advisor_name
+  - use: course_catalog
+    params:
+      count: 3
+      must_include:
+      - CS101
+      - MATH201
+    outputs:
+    - course_ids
+    - course_code
+    - target_course_id
+  - use: enrollment_set
+    params: {}
+    outputs:
+    - enrollment_ids
+  - use: assignment_battery
+    params:
+      per_course_count: 8
+      graded_fraction: 0.6
+      late_count: 1
+    outputs:
+    - assignment_ids
+  - use: grade_book
+    params: {}
+    outputs:
+    - grade_ids
+    - current_weighted_scores
+    - dropped_grade_ids
+    - minimum_final_score_for_b
+    - min_score_achievable
+    - final_exam_assignment_id
   targets:
     course_code: '{output.course_code}'
     target_course_id: '{output.target_course_id}'
     final_exam_assignment_id: '{output.final_exam_assignment_id}'
     min_score_achievable: '{output.min_score_achievable}'
-
 eval:
   source: server_state
   checks:
-    - expr: >-
-        (('{target.min_score_achievable}' == 'true'
-         and state.get_assignment('{target.final_exam_assignment_id}') is not None
-         and state.get_assignment('{target.final_exam_assignment_id}').submission_status in ('submitted', 'late')
-         and state.get_assignment('{target.final_exam_assignment_id}').file_name == 'study_plan.pdf')
-        or ('{target.min_score_achievable}' == 'false'
-            and state.get_enrollment_for_course('{target.target_course_id}') is not None
-            and state.get_enrollment_for_course('{target.target_course_id}').status == 'dropped'))
-      desc: >-
-        Submit study_plan.pdf for final exam if B is achievable, or drop the
-        course if required score exceeds 100
+  - expr: "(('{target.min_score_achievable}' == 'true'\n and state.get_assignment('{target.final_exam_assignment_id}')\
+      \ is not None\n and state.get_assignment('{target.final_exam_assignment_id}').submission_status\
+      \ in ('submitted', 'late')\n and state.get_assignment('{target.final_exam_assignment_id}').file_name\
+      \ == 'study_plan.pdf')\nor ('{target.min_score_achievable}' == 'false'\n   \
+      \ and state.get_enrollment_for_course('{target.target_course_id}') is not None\n\
+      \    and state.get_enrollment_for_course('{target.target_course_id}').status\
+      \ == 'dropped'))"
+    desc: Submit study_plan.pdf for final exam if B is achievable, or drop the course
+      if required score exceeds 100
   negative_checks:
-    - expr: >-
-        '{target.min_score_achievable}' != 'true'
-        or state.get_enrollment_for_course('{target.target_course_id}') is None
-        or state.get_enrollment_for_course('{target.target_course_id}').status != 'dropped'
-      desc: Did not drop course when B is achievable (wrong branch)
-      penalty: 0.5
-    - expr: >-
-        '{target.min_score_achievable}' != 'false'
-        or state.get_assignment('{target.final_exam_assignment_id}') is None
-        or state.get_assignment('{target.final_exam_assignment_id}').file_name != 'study_plan.pdf'
-      desc: Did not submit study plan when B is impossible (wrong branch)
-      penalty: 0.3
+  - expr: '''{target.min_score_achievable}'' != ''true'' or state.get_enrollment_for_course(''{target.target_course_id}'')
+      is None or state.get_enrollment_for_course(''{target.target_course_id}'').status
+      != ''dropped'''
+    desc: Did not drop course when B is achievable (wrong branch)
+    penalty: 0.5
+  - expr: '''{target.min_score_achievable}'' != ''false'' or state.get_assignment(''{target.final_exam_assignment_id}'')
+      is None or state.get_assignment(''{target.final_exam_assignment_id}'').file_name
+      != ''study_plan.pdf'''
+    desc: Did not submit study plan when B is impossible (wrong branch)
+    penalty: 0.3
+secondary_primitives: []

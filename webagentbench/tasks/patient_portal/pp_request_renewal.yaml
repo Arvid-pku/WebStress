@@ -1,77 +1,76 @@
 task_id: pp_request_renewal
 env_id: patient_portal
 title: Request Prescription Renewal
-instruction_template: >-
-  Your {target.zero_refill_medication} has 0 refills remaining. Request a
-  renewal so you can continue your medication.
+instruction_template: Your {target.zero_refill_medication} has 0 refills remaining.
+  Request a renewal so you can continue your medication.
 difficulty: medium
 time_limit_seconds: 180
 expected_steps: 8
 primary_primitives:
-  - grounding
-  - planning
+- grounding
 start_path: /medications
-
 seed:
   distractors: 6
   steps:
-    - use: patient_profile
-      params:
-        conditions: ["Hyperlipidemia"]
-        insurance_tier: standard
-      outputs: [pcp_id, pcp_name]
-    - use: provider_directory
-      params:
-        count: 4
-        specialties: ["pcp", "cardiology", "endocrinology", "billing"]
-        must_include: ["pcp"]
-      outputs: [provider_ids, providers_by_specialty]
-    - use: pharmacy_list
-      params:
-        count: 2
-      outputs: [default_pharmacy_id]
-    - use: prescription_cabinet
-      params:
-        active_count: 3
-        zero_refill_count: 1
-        expired_count: 1
-      outputs: [active_rx_ids, zero_refill_rx_id, zero_refill_medication]
+  - use: patient_profile
+    params:
+      conditions:
+      - Hyperlipidemia
+      insurance_tier: standard
+    outputs:
+    - pcp_id
+    - pcp_name
+  - use: provider_directory
+    params:
+      count: 4
+      specialties:
+      - pcp
+      - cardiology
+      - endocrinology
+      - billing
+      must_include:
+      - pcp
+    outputs:
+    - provider_ids
+    - providers_by_specialty
+  - use: pharmacy_list
+    params:
+      count: 2
+    outputs:
+    - default_pharmacy_id
+  - use: prescription_cabinet
+    params:
+      active_count: 3
+      zero_refill_count: 1
+      expired_count: 1
+    outputs:
+    - active_rx_ids
+    - zero_refill_rx_id
+    - zero_refill_medication
   targets:
-    pcp_id: "{output.pcp_id}"
-    zero_refill_rx_id: "{output.zero_refill_rx_id}"
-    active_rx_ids: "{output.active_rx_ids}"
-    zero_refill_medication: "{output.zero_refill_medication}"
-
+    pcp_id: '{output.pcp_id}'
+    zero_refill_rx_id: '{output.zero_refill_rx_id}'
+    active_rx_ids: '{output.active_rx_ids}'
+    zero_refill_medication: '{output.zero_refill_medication}'
 eval:
   source: server_state
   checks:
-    - expr: >-
-        any(r.id == '{target.zero_refill_rx_id}'
-            and r.status == 'pending_renewal'
-            for r in state.prescriptions)
-      desc: The zero-refill prescription status changed to pending_renewal
-    - expr: >-
-        any(m.from_type == 'patient'
-            and m.category == 'rx_renewal'
-            and m.id not in state._initial_snapshot.get('messages', {})
-            for m in state.messages)
-      desc: A renewal request message was sent with rx_renewal category
-    - expr: >-
-        len([r for r in state.prescriptions
-             if r.id == '{target.zero_refill_rx_id}'
-             and r.status == 'pending_renewal']) == 1
-      desc: Exactly one prescription was moved to pending_renewal
+  - expr: "any(r.id == '{target.zero_refill_rx_id}'\n    and r.status == 'pending_renewal'\n\
+      \    for r in state.prescriptions)"
+    desc: The zero-refill prescription status changed to pending_renewal
+  - expr: "any(m.from_type == 'patient'\n    and m.category == 'rx_renewal'\n    and\
+      \ m.id not in state._initial_snapshot.get('messages', {})\n    for m in state.messages)"
+    desc: A renewal request message was sent with rx_renewal category
+  - expr: "len([r for r in state.prescriptions\n     if r.id == '{target.zero_refill_rx_id}'\n\
+      \     and r.status == 'pending_renewal']) == 1"
+    desc: Exactly one prescription was moved to pending_renewal
   negative_checks:
-    - expr: >-
-        not any(r.id != '{target.zero_refill_rx_id}'
-                and r.status == 'pending_renewal'
-                and r.id in {target.active_rx_ids}
-                for r in state.prescriptions)
-      desc: Agent did not request renewal for prescriptions with remaining refills
-      penalty: 0.20
-    - expr: >-
-        len([m for m in state.messages
-             if m.from_type == 'patient'
-             and m.id not in state._initial_snapshot.get('messages', {})]) <= 1
-      desc: Agent did not send excessive messages beyond the renewal request
-      penalty: 0.15
+  - expr: "not any(r.id != '{target.zero_refill_rx_id}'\n        and r.status == 'pending_renewal'\n\
+      \        and r.id in {target.active_rx_ids}\n        for r in state.prescriptions)"
+    desc: Agent did not request renewal for prescriptions with remaining refills
+    penalty: 0.2
+  - expr: "len([m for m in state.messages\n     if m.from_type == 'patient'\n    \
+      \ and m.id not in state._initial_snapshot.get('messages', {})]) <= 1"
+    desc: Agent did not send excessive messages beyond the renewal request
+    penalty: 0.15
+secondary_primitives: []

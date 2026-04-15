@@ -1,99 +1,87 @@
 task_id: lms_calculate_weighted_grade
 env_id: lms
 title: Calculate Current Weighted Grade
-instruction_template: >-
-  Navigate to the grades page for {target.course_code}. Verify the overall
-  weighted grade displayed matches what you compute from the syllabus weights
-  and individual assignment scores. If you find a discrepancy of more than
-  1 point from the displayed score, resubmit the most recently graded
-  assignment with file 'grade_dispute.pdf'. If the grade is correct (within
-  1 point), mark the course's latest announcement as read to confirm you've
-  reviewed your standing.
+instruction_template: Navigate to the grades page for {target.course_code}. Verify
+  the overall weighted grade displayed matches what you compute from the syllabus
+  weights and individual assignment scores. If you find a discrepancy of more than
+  1 point from the displayed score, resubmit the most recently graded assignment with
+  file 'grade_dispute.pdf'. If the grade is correct (within 1 point), mark the course's
+  latest announcement as read to confirm you've reviewed your standing.
 difficulty: medium
 time_limit_seconds: 180
 expected_steps: 8
 primary_primitives:
-  - state_tracking
-  - verification
+- state_tracking
 start_path: /courses
-
 seed:
   distractors: 1
   steps:
-    - use: student_profile
-      params: {}
-      outputs:
-        - student_id
-    - use: course_catalog
-      params:
-        count: 3
-        must_include: ["CS101"]
-      outputs:
-        - course_ids
-        - course_code
-        - target_course_id
-    - use: enrollment_set
-      params: {}
-      outputs:
-        - enrollment_ids
-    - use: assignment_battery
-      params:
-        per_course_count: 8
-        graded_fraction: 0.6
-      outputs:
-        - assignment_ids
-    - use: grade_book
-      params: {}
-      outputs:
-        - grade_ids
-        - current_weighted_scores
-        - dropped_grade_ids
-        - has_discrepancy
-        - most_recent_graded_id
-    - use: announcements_feed
-      params:
-        count: 2
-        unread_count: 2
-      outputs:
-        - announcement_ids
-        - latest_announcement_id
+  - use: student_profile
+    params: {}
+    outputs:
+    - student_id
+  - use: course_catalog
+    params:
+      count: 3
+      must_include:
+      - CS101
+    outputs:
+    - course_ids
+    - course_code
+    - target_course_id
+  - use: enrollment_set
+    params: {}
+    outputs:
+    - enrollment_ids
+  - use: assignment_battery
+    params:
+      per_course_count: 8
+      graded_fraction: 0.6
+    outputs:
+    - assignment_ids
+  - use: grade_book
+    params: {}
+    outputs:
+    - grade_ids
+    - current_weighted_scores
+    - dropped_grade_ids
+    - has_discrepancy
+    - most_recent_graded_id
+  - use: announcements_feed
+    params:
+      count: 2
+      unread_count: 2
+    outputs:
+    - announcement_ids
+    - latest_announcement_id
   targets:
     course_code: '{output.course_code}'
     target_course_id: '{output.target_course_id}'
     has_discrepancy: '{output.has_discrepancy}'
     most_recent_graded_id: '{output.most_recent_graded_id}'
     latest_announcement_id: '{output.latest_announcement_id}'
-
 eval:
   source: server_state
   checks:
-    - expr: >-
-        (('{target.has_discrepancy}' == 'true'
-         and any(a.course_id == '{target.target_course_id}'
-                 and a.submission_status in ('submitted', 'late')
-                 and a.file_name == 'grade_dispute.pdf'
-                 for a in state.assignments))
-        or ('{target.has_discrepancy}' == 'false'
-            and state.get_announcement('{target.latest_announcement_id}') is not None
-            and state.get_announcement('{target.latest_announcement_id}').is_read == True))
-      desc: >-
-        Correct conditional action taken: submit grade_dispute.pdf in target course if
-        discrepancy exists, or mark latest announcement as read if no discrepancy
+  - expr: "(('{target.has_discrepancy}' == 'true'\n and any(a.course_id == '{target.target_course_id}'\n\
+      \         and a.submission_status in ('submitted', 'late')\n         and a.file_name\
+      \ == 'grade_dispute.pdf'\n         for a in state.assignments))\nor ('{target.has_discrepancy}'\
+      \ == 'false'\n    and state.get_announcement('{target.latest_announcement_id}')\
+      \ is not None\n    and state.get_announcement('{target.latest_announcement_id}').is_read\
+      \ == True))"
+    desc: 'Correct conditional action taken: submit grade_dispute.pdf in target course
+      if discrepancy exists, or mark latest announcement as read if no discrepancy'
   negative_checks:
-    - expr: >-
-        '{target.has_discrepancy}' != 'true'
-        or state.get_announcement('{target.latest_announcement_id}') is None
-        or state.get_announcement('{target.latest_announcement_id}').is_read != True
-      desc: Did not mark announcement as read when discrepancy exists (wrong branch)
-      penalty: 0.3
-    - expr: >-
-        '{target.has_discrepancy}' != 'false'
-        or not any(a.course_id == '{target.target_course_id}'
-                   and a.file_name == 'grade_dispute.pdf'
-                   for a in state.assignments)
-      desc: Did not submit grade_dispute.pdf when no discrepancy exists (wrong branch)
-      penalty: 0.3
-    - expr: >-
-        all(e.status != 'dropped' for e in state.enrollments)
-      desc: No courses were dropped during verification
-      penalty: 0.3
+  - expr: '''{target.has_discrepancy}'' != ''true'' or state.get_announcement(''{target.latest_announcement_id}'')
+      is None or state.get_announcement(''{target.latest_announcement_id}'').is_read
+      != True'
+    desc: Did not mark announcement as read when discrepancy exists (wrong branch)
+    penalty: 0.3
+  - expr: "'{target.has_discrepancy}' != 'false' or not any(a.course_id == '{target.target_course_id}'\n\
+      \           and a.file_name == 'grade_dispute.pdf'\n           for a in state.assignments)"
+    desc: Did not submit grade_dispute.pdf when no discrepancy exists (wrong branch)
+    penalty: 0.3
+  - expr: all(e.status != 'dropped' for e in state.enrollments)
+    desc: No courses were dropped during verification
+    penalty: 0.3
+secondary_primitives: []

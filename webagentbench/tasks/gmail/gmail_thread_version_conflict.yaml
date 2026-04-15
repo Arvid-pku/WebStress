@@ -1,25 +1,31 @@
 task_id: gmail_thread_version_conflict
 env_id: gmail
 title: Find the final agreed version number in a thread with superseded proposals
-instruction_template: |
-  Read the thread with subject "Release Version for Q3 Launch" from {target.chen_wei_name}.
+instruction_template: 'Read the thread with subject "Release Version for Q3 Launch"
+  from {target.chen_wei_name}.
+
   Identify the version number that both {target.chen_wei_name} and {target.dana_okafor_name}
+
   explicitly agreed on in that thread.
 
-  Begin your reply to {target.chen_wei_name}'s most recent message in the thread with exact text:
+
+  Begin your reply to {target.chen_wei_name}''s most recent message in the thread
+  with exact text:
+
   "Confirmed: version [the agreed version number] is the agreed release."
 
+
   Replace [the agreed version number] with the agreed version number from the thread,
+
   and do not include a "v" prefix.
+
+  '
 difficulty: medium
 time_limit_seconds: 360
 expected_steps: 18
 primary_primitives:
 - state_tracking
-- verification
-- grounding
-secondary_primitives:
-- patience
+secondary_primitives: []
 start_path: /inbox
 seed:
   distractors: 40
@@ -68,7 +74,8 @@ seed:
 eval:
   source: server_state
   checks:
-  - expr: any(e.thread_id == '{target.target_thread_id}' and e.body.strip().startswith('{target.reply_text}') for e in state.sent)
+  - expr: any(e.thread_id == '{target.target_thread_id}' and e.body.strip().startswith('{target.reply_text}')
+      for e in state.sent)
     desc: Reply begins with the correct confirmation text in the correct thread
   - expr: any(e.in_reply_to == '{target.chen_wei_latest_email_id}' for e in state.sent)
     desc: Reply is to Chen Wei's most recent message

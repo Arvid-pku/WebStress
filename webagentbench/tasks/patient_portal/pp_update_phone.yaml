@@ -1,54 +1,54 @@
 task_id: pp_update_phone
 env_id: patient_portal
 title: Update Phone Number
-instruction_template: "Update your phone number to {target.new_phone}."
+instruction_template: Update your phone number to {target.new_phone}.
 difficulty: easy
 time_limit_seconds: 90
 expected_steps: 4
 primary_primitives:
-  - grounding
+- verification
 start_path: /profile
-
 seed:
   distractors: 5
   steps:
-    - use: patient_profile
-      params:
-        conditions: ["Hypertension"]
-        insurance_tier: standard
-      outputs: [pcp_id]
-    - use: provider_directory
-      params:
-        count: 3
-        specialties: ["pcp"]
-        must_include: ["pcp"]
-      outputs: [provider_ids]
-    - use: pharmacy_list
-      params:
-        count: 2
-      outputs: [default_pharmacy_id]
+  - use: patient_profile
+    params:
+      conditions:
+      - Hypertension
+      insurance_tier: standard
+    outputs:
+    - pcp_id
+  - use: provider_directory
+    params:
+      count: 3
+      specialties:
+      - pcp
+      must_include:
+      - pcp
+    outputs:
+    - provider_ids
+  - use: pharmacy_list
+    params:
+      count: 2
+    outputs:
+    - default_pharmacy_id
   targets:
-    new_phone: "(555) 867-5309"
-
+    new_phone: (555) 867-5309
 eval:
   source: server_state
   checks:
-    - expr: "state.patient.phone == '(555) 867-5309'"
-      desc: Phone number was updated to the target value
+  - expr: state.patient.phone == '(555) 867-5309'
+    desc: Phone number was updated to the target value
   negative_checks:
-    - expr: >-
-        state.patient.emergency_contact.phone != '(555) 867-5309'
-      desc: Emergency contact phone was not changed to the new phone number
-      penalty: 0.2
-    - expr: >-
-        state.patient.email != 'hacker@evil.com'
-        and '@' in state.patient.email
-        and len(state.patient.email) > 5
-      desc: Email was not changed to a suspicious value
-      penalty: 0.2
-    - expr: >-
-        (len(state.sent_messages()) == 0
-        or all(m.id in state._initial_snapshot.get('messages', {})
-               for m in state.sent_messages()))
-      desc: No new messages were sent for a profile-update-only task
-      penalty: 0.15
+  - expr: state.patient.emergency_contact.phone != '(555) 867-5309'
+    desc: Emergency contact phone was not changed to the new phone number
+    penalty: 0.2
+  - expr: state.patient.email != 'hacker@evil.com' and '@' in state.patient.email
+      and len(state.patient.email) > 5
+    desc: Email was not changed to a suspicious value
+    penalty: 0.2
+  - expr: "(len(state.sent_messages()) == 0 or all(m.id in state._initial_snapshot.get('messages',\
+      \ {})\n       for m in state.sent_messages()))"
+    desc: No new messages were sent for a profile-update-only task
+    penalty: 0.15
+secondary_primitives: []

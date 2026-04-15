@@ -1,111 +1,96 @@
 task_id: pp_pay_claim
 env_id: patient_portal
 title: Pay Outstanding Balance
-instruction_template: >-
-  Pay the outstanding balance on your most recent approved insurance claim.
+instruction_template: Pay the outstanding balance on your most recent approved insurance
+  claim.
 difficulty: medium
 time_limit_seconds: 180
 expected_steps: 8
 primary_primitives:
-  - grounding
-  - planning
+- grounding
 start_path: /billing
-
 seed:
   distractors: 6
   steps:
-    - use: patient_profile
-      params:
-        conditions: ["Hypertension"]
-        insurance_tier: standard
-      outputs: [pcp_id, pcp_name]
-    - use: provider_directory
-      params:
-        count: 5
-        specialties: ["pcp", "cardiology", "dermatology", "billing", "admin"]
-        must_include: ["pcp", "cardiology"]
-      outputs: [provider_ids, providers_by_specialty]
-    - use: pharmacy_list
-      params:
-        count: 2
-      outputs: [default_pharmacy_id]
-    - use: appointment_history
-      params:
-        upcoming_count: 1
-        completed_count: 3
-      outputs: [completed_ids]
-    - use: insurance_claims
-      params:
-        approved_count: 2
-        denied_count: 1
-        processing_count: 1
-        with_eob: true
-      outputs: [approved_claim_ids, denied_claim_ids, total_patient_responsibility]
+  - use: patient_profile
+    params:
+      conditions:
+      - Hypertension
+      insurance_tier: standard
+    outputs:
+    - pcp_id
+    - pcp_name
+  - use: provider_directory
+    params:
+      count: 5
+      specialties:
+      - pcp
+      - cardiology
+      - dermatology
+      - billing
+      - admin
+      must_include:
+      - pcp
+      - cardiology
+    outputs:
+    - provider_ids
+    - providers_by_specialty
+  - use: pharmacy_list
+    params:
+      count: 2
+    outputs:
+    - default_pharmacy_id
+  - use: appointment_history
+    params:
+      upcoming_count: 1
+      completed_count: 3
+    outputs:
+    - completed_ids
+  - use: insurance_claims
+    params:
+      approved_count: 2
+      denied_count: 1
+      processing_count: 1
+      with_eob: true
+    outputs:
+    - approved_claim_ids
+    - denied_claim_ids
+    - total_patient_responsibility
   targets:
-    pcp_id: "{output.pcp_id}"
-    approved_claim_ids: "{output.approved_claim_ids}"
-    denied_claim_ids: "{output.denied_claim_ids}"
-    total_patient_responsibility: "{output.total_patient_responsibility}"
-
+    pcp_id: '{output.pcp_id}'
+    approved_claim_ids: '{output.approved_claim_ids}'
+    denied_claim_ids: '{output.denied_claim_ids}'
+    total_patient_responsibility: '{output.total_patient_responsibility}'
 eval:
   source: server_state
   checks:
-    - expr: >-
-        any(
-          c.id == max(
-            {target.approved_claim_ids},
-            key=lambda cid: (
-              state._initial_snapshot['claims'][cid]['service_date'],
-              cid,
-            ),
-          )
-          and c.status == 'approved'
-          and c.patient_responsibility == 0
-          for c in state.claims
-        )
-      desc: The most recent approved claim was paid in full
-    - expr: >-
-        len([c for c in state.claims
-             if c.id in {target.approved_claim_ids}
-             and c.patient_responsibility == 0]) == 1
-      desc: Exactly one approved claim was paid
-    - expr: >-
-        all(
-          c.patient_responsibility > 0
-          for c in state.claims
-          if c.id in {target.approved_claim_ids}
-          and c.id != max(
-            {target.approved_claim_ids},
-            key=lambda cid: (
-              state._initial_snapshot['claims'][cid]['service_date'],
-              cid,
-            ),
-          )
-        )
-      desc: Older approved claims were not paid instead
+  - expr: "any(\n  c.id == max(\n    {target.approved_claim_ids},\n    key=lambda\
+      \ cid: (\n      state._initial_snapshot['claims'][cid]['service_date'],\n  \
+      \    cid,\n    ),\n  )\n  and c.status == 'approved'\n  and c.patient_responsibility\
+      \ == 0\n  for c in state.claims\n)"
+    desc: The most recent approved claim was paid in full
+  - expr: "len([c for c in state.claims\n     if c.id in {target.approved_claim_ids}\n\
+      \     and c.patient_responsibility == 0]) == 1"
+    desc: Exactly one approved claim was paid
+  - expr: "all(\n  c.patient_responsibility > 0\n  for c in state.claims\n  if c.id\
+      \ in {target.approved_claim_ids}\n  and c.id != max(\n    {target.approved_claim_ids},\n\
+      \    key=lambda cid: (\n      state._initial_snapshot['claims'][cid]['service_date'],\n\
+      \      cid,\n    ),\n  )\n)"
+    desc: Older approved claims were not paid instead
   negative_checks:
-    - expr: >-
-        not any(c.id in {target.approved_claim_ids}
-                and c.id != max(
-                  {target.approved_claim_ids},
-                  key=lambda cid: (
-                    state._initial_snapshot['claims'][cid]['service_date'],
-                    cid,
-                  ),
-                )
-                and c.patient_responsibility == 0
-                for c in state.claims)
-      desc: Agent did not pay a non-target approved claim
-      penalty: 0.20
-    - expr: >-
-        not any(c.id in {target.denied_claim_ids}
-                and c.patient_responsibility == 0
-                for c in state.claims)
-      desc: Agent did not pay a denied claim instead of the target approved claim
-      penalty: 0.20
-    - expr: >-
-        not any(c.status == 'appealed'
-                and c.id in {target.denied_claim_ids}
-                for c in state.claims)
-      desc: Agent did not appeal a denied claim instead of paying
-      penalty: 0.20
+  - expr: "not any(c.id in {target.approved_claim_ids}\n        and c.id != max(\n\
+      \          {target.approved_claim_ids},\n          key=lambda cid: (\n     \
+      \       state._initial_snapshot['claims'][cid]['service_date'],\n          \
+      \  cid,\n          ),\n        )\n        and c.patient_responsibility == 0\n\
+      \        for c in state.claims)"
+    desc: Agent did not pay a non-target approved claim
+    penalty: 0.2
+  - expr: "not any(c.id in {target.denied_claim_ids}\n        and c.patient_responsibility\
+      \ == 0\n        for c in state.claims)"
+    desc: Agent did not pay a denied claim instead of the target approved claim
+    penalty: 0.2
+  - expr: "not any(c.status == 'appealed'\n        and c.id in {target.denied_claim_ids}\n\
+      \        for c in state.claims)"
+    desc: Agent did not appeal a denied claim instead of paying
+    penalty: 0.2
+secondary_primitives: []

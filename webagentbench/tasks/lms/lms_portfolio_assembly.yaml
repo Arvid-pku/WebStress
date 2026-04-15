@@ -1,97 +1,90 @@
 task_id: lms_portfolio_assembly
 env_id: lms
 title: Full Portfolio Assembly
-instruction_template: >-
-  Assemble a comprehensive academic portfolio. For each of your courses:
-  (1) Identify your highest-scored graded assignments (those scoring above
-  80% of points possible). (2) Verify the grades are correct by checking
-  against rubric criteria. (3) Note any assignments with positive instructor
-  feedback. (4) Check your discussion posts for thoughtful contributions
-  that could be included. Submit a portfolio compilation file named
-  "portfolio.pdf" to any unsubmitted assignment. Then send a brief
-  portfolio summary to your advisor ({target.advisor_name}).
+instruction_template: 'Assemble a comprehensive academic portfolio. For each of your
+  courses: (1) Identify your highest-scored graded assignments (those scoring above
+  80% of points possible). (2) Verify the grades are correct by checking against rubric
+  criteria. (3) Note any assignments with positive instructor feedback. (4) Check
+  your discussion posts for thoughtful contributions that could be included. Submit
+  a portfolio compilation file named "portfolio.pdf" to any unsubmitted assignment.
+  Then send a brief portfolio summary to your advisor ({target.advisor_name}).'
 difficulty: frontier
 time_limit_seconds: 600
 expected_steps: 50
 primary_primitives:
-  - state_tracking
-  - verification
-  - patience
-  - exploration
+- state_tracking
 start_path: /courses
-
 seed:
   distractors: 2
   steps:
-    - use: student_profile
-      params: {}
-      outputs:
-        - student_id
-        - advisor_name
-    - use: course_catalog
-      params:
-        count: 4
-        must_include: ["CS101", "MATH201", "ENG102"]
-      outputs:
-        - course_ids
-        - course_codes
-    - use: enrollment_set
-      params: {}
-      outputs:
-        - enrollment_ids
-    - use: assignment_battery
-      params:
-        per_course_count: 7
-        graded_fraction: 0.7
-      outputs:
-        - assignment_ids
-    - use: grade_book
-      params: {}
-      outputs:
-        - grade_ids
-        - current_weighted_scores
-    - use: discussion_forums
-      params:
-        count: 2
-        posts_per: 4
-      outputs:
-        - discussion_ids
-    - use: peer_review_assignments
-      params:
-        count: 2
-        statuses: ["submitted", "submitted"]
-      outputs:
-        - review_ids
+  - use: student_profile
+    params: {}
+    outputs:
+    - student_id
+    - advisor_name
+  - use: course_catalog
+    params:
+      count: 4
+      must_include:
+      - CS101
+      - MATH201
+      - ENG102
+    outputs:
+    - course_ids
+    - course_codes
+  - use: enrollment_set
+    params: {}
+    outputs:
+    - enrollment_ids
+  - use: assignment_battery
+    params:
+      per_course_count: 7
+      graded_fraction: 0.7
+    outputs:
+    - assignment_ids
+  - use: grade_book
+    params: {}
+    outputs:
+    - grade_ids
+    - current_weighted_scores
+  - use: discussion_forums
+    params:
+      count: 2
+      posts_per: 4
+    outputs:
+    - discussion_ids
+  - use: peer_review_assignments
+    params:
+      count: 2
+      statuses:
+      - submitted
+      - submitted
+    outputs:
+    - review_ids
   targets:
     advisor_name: '{output.advisor_name}'
     course_ids: '{output.course_ids}'
     course_codes: '{output.course_codes}'
     current_weighted_scores: '{output.current_weighted_scores}'
-
 eval:
   source: server_state
   checks:
-    - expr: >-
-        any(a.file_name == 'portfolio.pdf'
-            and a.submission_status in ('submitted', 'late')
-            for a in state.assignments)
-      desc: Agent submitted portfolio.pdf file
-    - expr: len(state.sent_messages) >= 1
-      desc: Agent sent a portfolio summary
-    - expr: >-
-        any('{target.advisor_name}' in m.get('to', '')
-            for m in state.sent_messages)
-      desc: Message addressed to advisor
+  - expr: "any(a.file_name == 'portfolio.pdf'\n    and a.submission_status in ('submitted',\
+      \ 'late')\n    for a in state.assignments)"
+    desc: Agent submitted portfolio.pdf file
+  - expr: len(state.sent_messages) >= 1
+    desc: Agent sent a portfolio summary
+  - expr: "any('{target.advisor_name}' in m.get('to', '')\n    for m in state.sent_messages)"
+    desc: Message addressed to advisor
   negative_checks:
-    - expr: >-
-        all(e.status != 'dropped' for e in state.enrollments)
-      desc: No courses were dropped
-      penalty: 0.3
-    - expr: len(state.sent_messages) <= 4
-      desc: Agent did not send excessive messages
-      penalty: 0.15
-    - expr: >-
-        len([a for a in state.assignments
-             if a.file_name == 'portfolio.pdf']) <= 2
-      desc: Agent did not submit excessively many portfolio files
-      penalty: 0.1
+  - expr: all(e.status != 'dropped' for e in state.enrollments)
+    desc: No courses were dropped
+    penalty: 0.3
+  - expr: len(state.sent_messages) <= 4
+    desc: Agent did not send excessive messages
+    penalty: 0.15
+  - expr: "len([a for a in state.assignments\n     if a.file_name == 'portfolio.pdf'])\
+      \ <= 2"
+    desc: Agent did not submit excessively many portfolio files
+    penalty: 0.1
+secondary_primitives: []

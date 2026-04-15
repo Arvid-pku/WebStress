@@ -1,133 +1,128 @@
 task_id: pp_year_end_review
 env_id: patient_portal
 title: Year-End Health Maintenance Review
-instruction_template: >-
-  Conduct a comprehensive year-end health review using direct actions only:
-  1) For every due or overdue immunization, schedule exactly one appointment and
-  use the vaccine name itself as the appointment reason,
-  2) For every overdue screening, schedule exactly one appointment and use the
-  screening name itself as the appointment reason,
-  3) Use the expiring approved referral to schedule exactly one specialist follow-up
-  appointment with reason "Expiring referral follow-up",
-  4) Appeal every denied insurance claim that has an available EOB.
-  Do not send any messages and do not discontinue any prescriptions.
+instruction_template: 'Conduct a comprehensive year-end health review using direct
+  actions only: 1) For every due or overdue immunization, schedule exactly one appointment
+  and use the vaccine name itself as the appointment reason, 2) For every overdue
+  screening, schedule exactly one appointment and use the screening name itself as
+  the appointment reason, 3) Use the expiring approved referral to schedule exactly
+  one specialist follow-up appointment with reason "Expiring referral follow-up",
+  4) Appeal every denied insurance claim that has an available EOB. Do not send any
+  messages and do not discontinue any prescriptions.'
 difficulty: frontier
 time_limit_seconds: 600
 expected_steps: 55
 primary_primitives:
-  - grounding
-  - planning
-  - state_tracking
-  - verification
-  - backtracking
-  - patience
-  - exploration
+- planning
 start_path: /
-
 seed:
   distractors: 10
   steps:
-    - use: patient_profile
-      params:
-        conditions: ["Type 2 Diabetes", "Hypertension", "High Cholesterol"]
-        insurance_tier: standard
-        overdue_screening_count: 2
-      outputs: [pcp_id, pcp_name, applicable_screening_names]
-    - use: provider_directory
-      params:
-        count: 6
-        specialties: ["pcp", "cardiology", "endocrinology", "billing"]
-        must_include: ["pcp", "billing"]
-      outputs: [provider_ids, providers_by_specialty]
-    - use: pharmacy_list
-      params:
-        count: 2
-      outputs: [default_pharmacy_id]
-    - use: prescription_cabinet
-      params:
-        active_count: 4
-        expiring_soon_count: 2
-        expired_count: 1
-      outputs: [active_rx_ids, expiring_rx_ids]
-    - use: immunization_record
-      params:
-        completed_count: 3
-        due_count: 2
-        series_incomplete: true
-      outputs: [due_imm_ids, due_vaccine_names, incomplete_series_imm_id]
-    - use: referral_chain
-      params:
-        approved_count: 1
-        pending_count: 1
-        expiring_soon: true
-      outputs: [approved_ref_ids, expiring_ref_id, pending_ref_ids]
-    - use: insurance_claims
-      params:
-        approved_count: 2
-        denied_count: 3
-        with_eob: true
-        near_appeal_deadline: true
-      outputs: [denied_claim_ids, appealable_claim_id]
-    - use: appointment_history
-      params:
-        upcoming_count: 2
-        completed_count: 3
-      outputs: [upcoming_ids]
+  - use: patient_profile
+    params:
+      conditions:
+      - Type 2 Diabetes
+      - Hypertension
+      - High Cholesterol
+      insurance_tier: standard
+      overdue_screening_count: 2
+    outputs:
+    - pcp_id
+    - pcp_name
+    - applicable_screening_names
+  - use: provider_directory
+    params:
+      count: 6
+      specialties:
+      - pcp
+      - cardiology
+      - endocrinology
+      - billing
+      must_include:
+      - pcp
+      - billing
+    outputs:
+    - provider_ids
+    - providers_by_specialty
+  - use: pharmacy_list
+    params:
+      count: 2
+    outputs:
+    - default_pharmacy_id
+  - use: prescription_cabinet
+    params:
+      active_count: 4
+      expiring_soon_count: 2
+      expired_count: 1
+    outputs:
+    - active_rx_ids
+    - expiring_rx_ids
+  - use: immunization_record
+    params:
+      completed_count: 3
+      due_count: 2
+      series_incomplete: true
+    outputs:
+    - due_imm_ids
+    - due_vaccine_names
+    - incomplete_series_imm_id
+  - use: referral_chain
+    params:
+      approved_count: 1
+      pending_count: 1
+      expiring_soon: true
+    outputs:
+    - approved_ref_ids
+    - expiring_ref_id
+    - pending_ref_ids
+  - use: insurance_claims
+    params:
+      approved_count: 2
+      denied_count: 3
+      with_eob: true
+      near_appeal_deadline: true
+    outputs:
+    - denied_claim_ids
+    - appealable_claim_id
+  - use: appointment_history
+    params:
+      upcoming_count: 2
+      completed_count: 3
+    outputs:
+    - upcoming_ids
   targets:
-    due_vaccine_names: "{output.due_vaccine_names}"
-    expiring_ref_id: "{output.expiring_ref_id}"
-    denied_claim_ids: "{output.denied_claim_ids}"
-    applicable_screening_names: "{output.applicable_screening_names}"
-    expiring_rx_ids: "{output.expiring_rx_ids}"
-
+    due_vaccine_names: '{output.due_vaccine_names}'
+    expiring_ref_id: '{output.expiring_ref_id}'
+    denied_claim_ids: '{output.denied_claim_ids}'
+    applicable_screening_names: '{output.applicable_screening_names}'
+    expiring_rx_ids: '{output.expiring_rx_ids}'
 eval:
   source: server_state
   checks:
-    - expr: >-
-        sorted(
-          a.reason
-          for a in state.appointments
-          if a.status == 'scheduled'
-          and a.id not in state._initial_snapshot.get('appointments', {})
-          and a.reason != 'Expiring referral follow-up'
-        ) == sorted(
-          [imm.vaccine_name for imm in state.immunizations if imm.next_due_at is not None and imm.next_due_at <= state.created_at]
-          + [
-            screening.screening_name
-            for screening in state.patient.applicable_screenings
-            if screening.next_due is not None
-            and screening.next_due < state.created_at.date()
-          ]
-        )
-      desc: Every due vaccine and overdue screening was scheduled once using the exact item name as the appointment reason
-    - expr: >-
-        len([
-          a for a in state.appointments
-          if a.status == 'scheduled'
-          and a.reason == 'Expiring referral follow-up'
-          and a.id not in state._initial_snapshot.get('appointments', {})
-          and a.linked_referral_id == '{target.expiring_ref_id}'
-        ]) == 1
-      desc: Exactly one follow-up appointment was scheduled using the expiring approved referral
-    - expr: >-
-        all(
-          state.get_claim(cid) is not None
-          and state.get_claim(cid).status == 'appealed'
-          for cid in {target.denied_claim_ids}
-        )
-      desc: Every denied claim with an EOB was appealed
+  - expr: "sorted(\n  a.reason\n  for a in state.appointments\n  if a.status == 'scheduled'\n\
+      \  and a.id not in state._initial_snapshot.get('appointments', {})\n  and a.reason\
+      \ != 'Expiring referral follow-up'\n) == sorted(\n  [imm.vaccine_name for imm\
+      \ in state.immunizations if imm.next_due_at is not None and imm.next_due_at\
+      \ <= state.created_at]\n  + [\n    screening.screening_name\n    for screening\
+      \ in state.patient.applicable_screenings\n    if screening.next_due is not None\n\
+      \    and screening.next_due < state.created_at.date()\n  ]\n)"
+    desc: Every due vaccine and overdue screening was scheduled once using the exact
+      item name as the appointment reason
+  - expr: "len([\n  a for a in state.appointments\n  if a.status == 'scheduled'\n\
+      \  and a.reason == 'Expiring referral follow-up'\n  and a.id not in state._initial_snapshot.get('appointments',\
+      \ {})\n  and a.linked_referral_id == '{target.expiring_ref_id}'\n]) == 1"
+    desc: Exactly one follow-up appointment was scheduled using the expiring approved
+      referral
+  - expr: "all(\n  state.get_claim(cid) is not None\n  and state.get_claim(cid).status\
+      \ == 'appealed'\n  for cid in {target.denied_claim_ids}\n)"
+    desc: Every denied claim with an EOB was appealed
   negative_checks:
-    - expr: >-
-        len([
-          m for m in state.messages
-          if m.from_type == 'patient'
-          and m.id not in state._initial_snapshot.get('messages', {})
-        ]) == 0
-      desc: Agent did not send any patient messages
-      penalty: 0.2
-    - expr: >-
-        all(rx.status == 'active'
-            for rx in state.prescriptions
-            if rx.id in {target.expiring_rx_ids})
-      desc: Expiring prescriptions were not prematurely discontinued
-      penalty: 0.2
+  - expr: "len([\n  m for m in state.messages\n  if m.from_type == 'patient'\n  and\
+      \ m.id not in state._initial_snapshot.get('messages', {})\n]) == 0"
+    desc: Agent did not send any patient messages
+    penalty: 0.2
+  - expr: "all(rx.status == 'active'\n    for rx in state.prescriptions\n    if rx.id\
+      \ in {target.expiring_rx_ids})"
+    desc: Expiring prescriptions were not prematurely discontinued
+    penalty: 0.2
+secondary_primitives: []

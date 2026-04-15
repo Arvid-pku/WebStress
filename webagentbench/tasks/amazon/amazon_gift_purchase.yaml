@@ -1,18 +1,17 @@
 task_id: amazon_gift_purchase
 env_id: amazon
 title: Buy a Gift and Ship to a New Address
-instruction_template: >
-  Search for "{target.product_name}" and purchase it as a gift.
-  Ship it to a new address with recipient name "{target.recipient_name}",
-  street "{target.street}", city "{target.city}", state "{target.state_code}",
-  ZIP "{target.zip}". Use the Visa card ending in 4242 for payment.
+instruction_template: 'Search for "{target.product_name}" and purchase it as a gift.
+  Ship it to a new address with recipient name "{target.recipient_name}", street "{target.street}",
+  city "{target.city}", state "{target.state_code}", ZIP "{target.zip}". Use the Visa
+  card ending in 4242 for payment.
+
+  '
 difficulty: medium
 time_limit_seconds: 300
 expected_steps: 24
 primary_primitives:
 - planning
-- grounding
-- verification
 start_path: /
 seed:
   distractors: 12
@@ -58,21 +57,27 @@ eval:
   checks:
   - expr: any(not o.id.startswith('order_initial_') for o in state.orders)
     desc: A new order was placed
-  - expr: >
-      any(any(item.product_id == '{target.product_id}' for item in order.items)
-      for order in state.orders if not order.id.startswith('order_initial_'))
+  - expr: 'any(any(item.product_id == ''{target.product_id}'' for item in order.items)
+      for order in state.orders if not order.id.startswith(''order_initial_''))
+
+      '
     desc: Order contains the target product
-  - expr: >
-      any(addr.full_name == 'Maria Garcia' and '250 Oak' in addr.street_address
+  - expr: 'any(addr.full_name == ''Maria Garcia'' and ''250 Oak'' in addr.street_address
       for addr in state.addresses)
+
+      '
     desc: New gift address was added with correct details
-  - expr: >
-      any(order.shipping_address_id != 'addr_1' for order in state.orders if not order.id.startswith('order_initial_'))
+  - expr: 'any(order.shipping_address_id != ''addr_1'' for order in state.orders if
+      not order.id.startswith(''order_initial_''))
+
+      '
     desc: New order uses the new gift address
   negative_checks:
-  - expr: sum(1 for o in state.orders if not o.id.startswith('order_initial_')) <= 1
+  - expr: sum(1 for o in state.orders if not o.id.startswith('order_initial_')) <=
+      1
     desc: Only one new order placed
     penalty: 0.15
   - expr: len(state.cart_items) == 0
     desc: Cart is empty after checkout
     penalty: 0.1
+secondary_primitives: []

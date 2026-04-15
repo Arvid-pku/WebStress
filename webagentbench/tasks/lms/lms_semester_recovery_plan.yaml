@@ -1,61 +1,59 @@
 task_id: lms_semester_recovery_plan
 env_id: lms
 title: Full Semester Recovery Plan
-instruction_template: >-
-  You're behind in multiple courses and need a full recovery plan. For each
-  of your courses: (1) Submit any recoverable late/missing assignments with
-  file "recovery.pdf" (skip those past max late days). (2) Compute the
-  minimum scores needed on remaining assignments to pass each course with
-  a C (70%). (3) If a course is mathematically impossible to pass, drop it
-  if the drop deadline hasn't passed. Then send a brief recovery plan
-  message to your advisor ({target.advisor_name}).
+instruction_template: 'You''re behind in multiple courses and need a full recovery
+  plan. For each of your courses: (1) Submit any recoverable late/missing assignments
+  with file "recovery.pdf" (skip those past max late days). (2) Compute the minimum
+  scores needed on remaining assignments to pass each course with a C (70%). (3) If
+  a course is mathematically impossible to pass, drop it if the drop deadline hasn''t
+  passed. Then send a brief recovery plan message to your advisor ({target.advisor_name}).'
 difficulty: frontier
 time_limit_seconds: 600
 expected_steps: 45
 primary_primitives:
-  - state_tracking
-  - verification
-  - planning
-  - backtracking
+- state_tracking
 start_path: /dashboard
-
 seed:
   distractors: 3
   steps:
-    - use: student_profile
-      params:
-        gpa: "2.10"
-      outputs:
-        - student_id
-        - advisor_name
-        - gpa
-    - use: course_catalog
-      params:
-        count: 5
-        must_include: ["CS101", "MATH201", "ENG102", "PHYS201"]
-        vary_late_policies: true
-      outputs:
-        - course_ids
-        - course_codes
-    - use: enrollment_set
-      params: {}
-      outputs:
-        - enrollment_ids
-    - use: assignment_battery
-      params:
-        per_course_count: 7
-        graded_fraction: 0.4
-        late_count: 2
-        missing_count: 2
-      outputs:
-        - assignment_ids
-        - missing_assignment_ids
-        - late_assignment_ids
-    - use: grade_book
-      params: {}
-      outputs:
-        - grade_ids
-        - current_weighted_scores
+  - use: student_profile
+    params:
+      gpa: '2.10'
+    outputs:
+    - student_id
+    - advisor_name
+    - gpa
+  - use: course_catalog
+    params:
+      count: 5
+      must_include:
+      - CS101
+      - MATH201
+      - ENG102
+      - PHYS201
+      vary_late_policies: true
+    outputs:
+    - course_ids
+    - course_codes
+  - use: enrollment_set
+    params: {}
+    outputs:
+    - enrollment_ids
+  - use: assignment_battery
+    params:
+      per_course_count: 7
+      graded_fraction: 0.4
+      late_count: 2
+      missing_count: 2
+    outputs:
+    - assignment_ids
+    - missing_assignment_ids
+    - late_assignment_ids
+  - use: grade_book
+    params: {}
+    outputs:
+    - grade_ids
+    - current_weighted_scores
   targets:
     advisor_name: '{output.advisor_name}'
     gpa: '{output.gpa}'
@@ -64,46 +62,36 @@ seed:
     missing_assignment_ids: '{output.missing_assignment_ids}'
     late_assignment_ids: '{output.late_assignment_ids}'
     current_weighted_scores: '{output.current_weighted_scores}'
-
 eval:
   source: server_state
   checks:
-    - expr: >-
-        any(a.file_name == 'recovery.pdf'
-            and a.submission_status in ('submitted', 'late')
-            for a in state.assignments)
-      desc: At least one recovery submission was made
-    - expr: >-
-        any(a.file_name == 'recovery.pdf'
-            and a.submission_status in ('submitted', 'late')
-            and a.id in [mid.strip() for mid in '{target.missing_assignment_ids}'.split(',')]
-            for a in state.assignments)
-      desc: Recovery file submitted for an identified missing assignment
-    - expr: >-
-        len([e for e in state.enrollments
-             if e.status == 'enrolled']) >= 3
-      desc: At least 3 courses remain enrolled (did not over-drop)
-    - expr: len(state.sent_messages) >= 1
-      desc: Agent sent a recovery plan message
-    - expr: >-
-        any('{target.advisor_name}' in m.get('to', '')
-            for m in state.sent_messages)
-      desc: Message addressed to advisor
-    - expr: >-
-        len([a for a in state.assignments
-             if a.file_name == 'recovery.pdf'
-             and a.submission_status in ('submitted', 'late')]) >= 2
-      desc: At least 2 recovery submissions were made (multiple missing/late assignments exist)
+  - expr: "any(a.file_name == 'recovery.pdf'\n    and a.submission_status in ('submitted',\
+      \ 'late')\n    for a in state.assignments)"
+    desc: At least one recovery submission was made
+  - expr: "any(a.file_name == 'recovery.pdf'\n    and a.submission_status in ('submitted',\
+      \ 'late')\n    and a.id in [mid.strip() for mid in '{target.missing_assignment_ids}'.split(',')]\n\
+      \    for a in state.assignments)"
+    desc: Recovery file submitted for an identified missing assignment
+  - expr: "len([e for e in state.enrollments\n     if e.status == 'enrolled']) >=\
+      \ 3"
+    desc: At least 3 courses remain enrolled (did not over-drop)
+  - expr: len(state.sent_messages) >= 1
+    desc: Agent sent a recovery plan message
+  - expr: "any('{target.advisor_name}' in m.get('to', '')\n    for m in state.sent_messages)"
+    desc: Message addressed to advisor
+  - expr: "len([a for a in state.assignments\n     if a.file_name == 'recovery.pdf'\n\
+      \     and a.submission_status in ('submitted', 'late')]) >= 2"
+    desc: At least 2 recovery submissions were made (multiple missing/late assignments
+      exist)
   negative_checks:
-    - expr: >-
-        sum(1 for e in state.enrollments if e.status == 'dropped') <= 2
-      desc: No more than 2 courses were dropped
-      penalty: 0.3
-    - expr: len(state.sent_messages) <= 4
-      desc: Agent did not send excessive messages
-      penalty: 0.15
-    - expr: >-
-        all(a.file_name != 'recovery.pdf' or a.submission_status in ('submitted', 'late')
-            for a in state.assignments)
-      desc: No recovery files were attached to non-submitted assignments
-      penalty: 0.1
+  - expr: sum(1 for e in state.enrollments if e.status == 'dropped') <= 2
+    desc: No more than 2 courses were dropped
+    penalty: 0.3
+  - expr: len(state.sent_messages) <= 4
+    desc: Agent did not send excessive messages
+    penalty: 0.15
+  - expr: "all(a.file_name != 'recovery.pdf' or a.submission_status in ('submitted',\
+      \ 'late')\n    for a in state.assignments)"
+    desc: No recovery files were attached to non-submitted assignments
+    penalty: 0.1
+secondary_primitives: []

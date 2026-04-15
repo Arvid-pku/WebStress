@@ -1,126 +1,94 @@
 task_id: pp_review_eob
 env_id: patient_portal
 title: Review EOB and Act on Balance
-instruction_template: >-
-  Review the Explanation of Benefits for your most recent approved claim. If the
-  patient responsibility on that claim is $200 or less, pay that exact claim and
-  no other claim. If the responsibility is above $200, leave all claims unpaid.
-  Do not send any messages.
+instruction_template: Review the Explanation of Benefits for your most recent approved
+  claim. If the patient responsibility on that claim is $200 or less, pay that exact
+  claim and no other claim. If the responsibility is above $200, leave all claims
+  unpaid. Do not send any messages.
 difficulty: medium
 time_limit_seconds: 200
 expected_steps: 10
 primary_primitives:
-  - grounding
-  - planning
+- state_tracking
 start_path: /billing
-
 seed:
   distractors: 8
   steps:
-    - use: patient_profile
-      params:
-        conditions: ["Hypertension"]
-        insurance_tier: basic
-      outputs: [pcp_id, pcp_name]
-    - use: provider_directory
-      params:
-        count: 5
-        specialties: ["pcp", "cardiology", "orthopedics", "billing", "admin"]
-        must_include: ["pcp", "billing"]
-      outputs: [provider_ids, providers_by_specialty]
-    - use: pharmacy_list
-      params:
-        count: 2
-      outputs: [default_pharmacy_id]
-    - use: appointment_history
-      params:
-        upcoming_count: 1
-        completed_count: 3
-      outputs: [completed_ids]
-    - use: insurance_claims
-      params:
-        approved_count: 2
-        denied_count: 1
-        processing_count: 1
-        with_eob: true
-      outputs: [approved_claim_ids, denied_claim_ids, total_patient_responsibility]
+  - use: patient_profile
+    params:
+      conditions:
+      - Hypertension
+      insurance_tier: basic
+    outputs:
+    - pcp_id
+    - pcp_name
+  - use: provider_directory
+    params:
+      count: 5
+      specialties:
+      - pcp
+      - cardiology
+      - orthopedics
+      - billing
+      - admin
+      must_include:
+      - pcp
+      - billing
+    outputs:
+    - provider_ids
+    - providers_by_specialty
+  - use: pharmacy_list
+    params:
+      count: 2
+    outputs:
+    - default_pharmacy_id
+  - use: appointment_history
+    params:
+      upcoming_count: 1
+      completed_count: 3
+    outputs:
+    - completed_ids
+  - use: insurance_claims
+    params:
+      approved_count: 2
+      denied_count: 1
+      processing_count: 1
+      with_eob: true
+    outputs:
+    - approved_claim_ids
+    - denied_claim_ids
+    - total_patient_responsibility
   targets:
-    approved_claim_ids: "{output.approved_claim_ids}"
-
+    approved_claim_ids: '{output.approved_claim_ids}'
 eval:
   source: server_state
   checks:
-    - expr: >-
-        (
-          float(state._initial_snapshot['claims'][
-            max(
-              {target.approved_claim_ids},
-              key=lambda cid: (
-                state._initial_snapshot['claims'][cid]['service_date'],
-                cid,
-              ),
-            )
-          ]['patient_responsibility']) <= 200
-          and state.get_claim(
-            max(
-              {target.approved_claim_ids},
-              key=lambda cid: (
-                state._initial_snapshot['claims'][cid]['service_date'],
-                cid,
-              ),
-            )
-          ).patient_responsibility == 0
-        ) or (
-          float(state._initial_snapshot['claims'][
-            max(
-              {target.approved_claim_ids},
-              key=lambda cid: (
-                state._initial_snapshot['claims'][cid]['service_date'],
-                cid,
-              ),
-            )
-          ]['patient_responsibility']) > 200
-          and state.get_claim(
-            max(
-              {target.approved_claim_ids},
-              key=lambda cid: (
-                state._initial_snapshot['claims'][cid]['service_date'],
-                cid,
-              ),
-            )
-          ).patient_responsibility == float(
-            state._initial_snapshot['claims'][
-            max(
-              {target.approved_claim_ids},
-              key=lambda cid: (
-                state._initial_snapshot['claims'][cid]['service_date'],
-                cid,
-              ),
-            )
-          ]['patient_responsibility']
-          )
-        )
-      desc: Agent followed the pay-versus-do-not-pay threshold rule for the most recent approved claim
-    - expr: >-
-        all(
-          float(c.patient_responsibility) == float(state._initial_snapshot['claims'][c.id]['patient_responsibility'])
-          for c in state.claims
-          if c.id in state._initial_snapshot.get('claims', {})
-          and c.id != max(
-            {target.approved_claim_ids},
-            key=lambda cid: (
-              state._initial_snapshot['claims'][cid]['service_date'],
-              cid,
-            ),
-          )
-        )
-      desc: No non-target claim balance was changed
+  - expr: "(\n  float(state._initial_snapshot['claims'][\n    max(\n      {target.approved_claim_ids},\n\
+      \      key=lambda cid: (\n        state._initial_snapshot['claims'][cid]['service_date'],\n\
+      \        cid,\n      ),\n    )\n  ]['patient_responsibility']) <= 200\n  and\
+      \ state.get_claim(\n    max(\n      {target.approved_claim_ids},\n      key=lambda\
+      \ cid: (\n        state._initial_snapshot['claims'][cid]['service_date'],\n\
+      \        cid,\n      ),\n    )\n  ).patient_responsibility == 0\n) or (\n  float(state._initial_snapshot['claims'][\n\
+      \    max(\n      {target.approved_claim_ids},\n      key=lambda cid: (\n   \
+      \     state._initial_snapshot['claims'][cid]['service_date'],\n        cid,\n\
+      \      ),\n    )\n  ]['patient_responsibility']) > 200\n  and state.get_claim(\n\
+      \    max(\n      {target.approved_claim_ids},\n      key=lambda cid: (\n   \
+      \     state._initial_snapshot['claims'][cid]['service_date'],\n        cid,\n\
+      \      ),\n    )\n  ).patient_responsibility == float(\n    state._initial_snapshot['claims'][\n\
+      \    max(\n      {target.approved_claim_ids},\n      key=lambda cid: (\n   \
+      \     state._initial_snapshot['claims'][cid]['service_date'],\n        cid,\n\
+      \      ),\n    )\n  ]['patient_responsibility']\n  )\n)"
+    desc: Agent followed the pay-versus-do-not-pay threshold rule for the most recent
+      approved claim
+  - expr: "all(\n  float(c.patient_responsibility) == float(state._initial_snapshot['claims'][c.id]['patient_responsibility'])\n\
+      \  for c in state.claims\n  if c.id in state._initial_snapshot.get('claims',\
+      \ {})\n  and c.id != max(\n    {target.approved_claim_ids},\n    key=lambda\
+      \ cid: (\n      state._initial_snapshot['claims'][cid]['service_date'],\n  \
+      \    cid,\n    ),\n  )\n)"
+    desc: No non-target claim balance was changed
   negative_checks:
-    - expr: >-
-        len([
-          m for m in state.messages
-          if m.from_type == 'patient'
-          and m.id not in state._initial_snapshot.get('messages', {})
-        ]) == 0
-      desc: Agent did not send any patient messages
-      penalty: 0.2
+  - expr: "len([\n  m for m in state.messages\n  if m.from_type == 'patient'\n  and\
+      \ m.id not in state._initial_snapshot.get('messages', {})\n]) == 0"
+    desc: Agent did not send any patient messages
+    penalty: 0.2
+secondary_primitives: []

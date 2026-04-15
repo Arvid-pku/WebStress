@@ -1,46 +1,45 @@
 task_id: rh_compare_dividend_yields
 env_id: robinhood
 title: Compare Dividend Yields and Add to Watchlist
-instruction_template: "Compare the dividend yields of KO, PEP, and PG. Add the one with the highest yield to your \"Dividend Kings\" watchlist."
+instruction_template: Compare the dividend yields of KO, PEP, and PG. Add the one
+  with the highest yield to your "Dividend Kings" watchlist.
 difficulty: medium
 time_limit_seconds: 180
 expected_steps: 7
 primary_primitives:
-  - grounding
-  - state_tracking
-  - exploration
+- grounding
 start_path: /
-
 seed:
   distractors: 10
   steps:
-    - use: stock_universe
-      params:
-        count: 25
-        must_include: ["KO", "PEP", "PG", "AAPL", "MSFT"]
-      outputs: []
-    - use: watchlist
-      params:
-        name: "Dividend Kings"
-        symbols: []
-      outputs: []
+  - use: stock_universe
+    params:
+      count: 25
+      must_include:
+      - KO
+      - PEP
+      - PG
+      - AAPL
+      - MSFT
+    outputs: []
+  - use: watchlist
+    params:
+      name: Dividend Kings
+      symbols: []
+    outputs: []
   targets: {}
-
 eval:
   source: server_state
   checks:
-    - expr: "any('KO' in w.symbols and w.name == 'Dividend Kings' for w in state.watchlists)"
-      desc: KO (highest dividend yield) is in the Dividend Kings watchlist
-    - expr: >-
-        any(w.name == 'Dividend Kings' and len(w.symbols) == 1
-            for w in state.watchlists)
-      desc: Exactly one symbol was added to the Dividend Kings watchlist
-    - expr: "any(w.name == 'Dividend Kings' for w in state.watchlists)"
-      desc: The Dividend Kings watchlist still exists
+  - expr: any('KO' in w.symbols and w.name == 'Dividend Kings' for w in state.watchlists)
+    desc: KO (highest dividend yield) is in the Dividend Kings watchlist
+  - expr: "any(w.name == 'Dividend Kings' and len(w.symbols) == 1\n    for w in state.watchlists)"
+    desc: Exactly one symbol was added to the Dividend Kings watchlist
+  - expr: any(w.name == 'Dividend Kings' for w in state.watchlists)
+    desc: The Dividend Kings watchlist still exists
   negative_checks:
-    - expr: >-
-        not any(s in next((w.symbols for w in state.watchlists
-            if w.name == 'Dividend Kings'), [])
-            for s in ['PEP', 'PG'])
-      desc: PEP and PG were not added to the Dividend Kings watchlist
-      penalty: 0.25
+  - expr: "not any(s in next((w.symbols for w in state.watchlists\n    if w.name ==\
+      \ 'Dividend Kings'), [])\n    for s in ['PEP', 'PG'])"
+    desc: PEP and PG were not added to the Dividend Kings watchlist
+    penalty: 0.25
+secondary_primitives: []

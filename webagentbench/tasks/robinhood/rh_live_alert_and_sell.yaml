@@ -1,4 +1,3 @@
----
 task_id: rh_live_alert_and_sell
 env_id: robinhood
 title: Alert-Triggered Market Sell
@@ -9,9 +8,7 @@ time_limit_seconds: 200
 expected_steps: 10
 primary_primitives:
 - planning
-- patience
-- grounding
-start_path: "/"
+start_path: /
 seed:
   distractors: 5
   steps:
@@ -48,44 +45,32 @@ seed:
 eval:
   source: server_state
   checks:
-  - expr: >-
-      len([a for a in state.price_alerts
-           if a.symbol == 'TSLA' and a.condition == 'above'
-           and not a.id.startswith('alert_decoy_')]) == 1
+  - expr: "len([a for a in state.price_alerts\n     if a.symbol == 'TSLA' and a.condition\
+      \ == 'above'\n     and not a.id.startswith('alert_decoy_')]) == 1"
     desc: Exactly one TSLA above-$270 alert was created
-  - expr: >-
-      any(a.symbol == 'TSLA' and a.condition == 'above' and a.status == 'triggered'
-      and a.triggered_at is not None
-      for a in state.price_alerts)
+  - expr: any(a.symbol == 'TSLA' and a.condition == 'above' and a.status == 'triggered'
+      and a.triggered_at is not None for a in state.price_alerts)
     desc: The TSLA price alert triggered
-  - expr: >-
-      any(o.symbol == 'TSLA' and o.side == 'sell' and o.status == 'filled' and
-          o.quantity == state.initial_quantity('TSLA') and
-          any(a.symbol == 'TSLA' and a.condition == 'above' and a.triggered_at is not None
-              and o.created_at > a.triggered_at
-              for a in state.price_alerts)
-          for o in state.orders)
+  - expr: "any(o.symbol == 'TSLA' and o.side == 'sell' and o.status == 'filled' and\n\
+      \    o.quantity == state.initial_quantity('TSLA') and\n    any(a.symbol == 'TSLA'\
+      \ and a.condition == 'above' and a.triggered_at is not None\n        and o.created_at\
+      \ > a.triggered_at\n        for a in state.price_alerts)\n    for o in state.orders)"
     desc: The entire TSLA position was sold after the alert triggered
-  - expr: >-
-      sum(1 for o in state.orders if not o.id.startswith('ord_decoy_')) == 1
+  - expr: sum(1 for o in state.orders if not o.id.startswith('ord_decoy_')) == 1
     desc: Only the intended alert-triggered sell order was placed
-  - expr: >-
-      state.get_position('TSLA') is None
+  - expr: state.get_position('TSLA') is None
     desc: TSLA was fully liquidated
   negative_checks:
   - expr: not any(o.symbol == 'TSLA' and o.side == 'buy' and not o.id.startswith('ord_decoy_')
       for o in state.orders)
     desc: The trigger caused a sell, not an additional buy
     penalty: 0.25
-  - expr: >-
-      not any(o.side == 'sell' and o.symbol != 'TSLA'
-      and not o.id.startswith('ord_decoy_')
+  - expr: not any(o.side == 'sell' and o.symbol != 'TSLA' and not o.id.startswith('ord_decoy_')
       for o in state.orders)
     desc: No sell orders were placed on unrelated symbols
     penalty: 0.15
-  - expr: >-
-      not any(o.side != 'sell' and not o.id.startswith('ord_decoy_')
-      for o in state.orders)
+  - expr: not any(o.side != 'sell' and not o.id.startswith('ord_decoy_') for o in
+      state.orders)
     desc: No non-sell orders were placed during the sell-only workflow
     penalty: 0.15
 secondary_primitives: []

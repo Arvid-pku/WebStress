@@ -1,18 +1,17 @@
 task_id: amazon_category_exploration
 env_id: amazon
 title: Browse Categories and Build a Multi-Category Cart
-instruction_template: >
-  Browse three different categories - "{target.cat_1}", "{target.cat_2}",
-  and "{target.cat_3}". Add one item from each category to your cart,
-  then complete the checkout using the shipping address for Jordan Parker
-  at 742 Evergreen Terrace and the Visa card ending in 4242.
+instruction_template: 'Browse three different categories - "{target.cat_1}", "{target.cat_2}",
+  and "{target.cat_3}". Add one item from each category to your cart, then complete
+  the checkout using the shipping address for Jordan Parker at 742 Evergreen Terrace
+  and the Visa card ending in 4242.
+
+  '
 difficulty: medium
 time_limit_seconds: 300
 expected_steps: 24
 primary_primitives:
-- planning
 - exploration
-- grounding
 start_path: /
 seed:
   distractors: 15
@@ -107,28 +106,33 @@ eval:
   checks:
   - expr: any(not o.id.startswith('order_initial_') for o in state.orders)
     desc: A new order was placed
-  - expr: >
-      any(len(order.items) >= 3 for order in state.orders if not order.id.startswith('order_initial_'))
+  - expr: 'any(len(order.items) >= 3 for order in state.orders if not order.id.startswith(''order_initial_''))
+
+      '
     desc: New order contains at least 3 items
-  - expr: >
-      any(any(item.product_id in [p.id for p in state.products
-      if 'Sports' in p.category or 'Outdoors' in p.category]
-      for item in order.items) for order in state.orders if not order.id.startswith('order_initial_'))
+  - expr: 'any(any(item.product_id in [p.id for p in state.products if ''Sports''
+      in p.category or ''Outdoors'' in p.category] for item in order.items) for order
+      in state.orders if not order.id.startswith(''order_initial_''))
+
+      '
     desc: At least one item from Sports and Outdoors category
-  - expr: >
-      any(any(item.product_id in [p.id for p in state.products
-      if 'Books' in p.category]
-      for item in order.items) for order in state.orders if not order.id.startswith('order_initial_'))
+  - expr: 'any(any(item.product_id in [p.id for p in state.products if ''Books'' in
+      p.category] for item in order.items) for order in state.orders if not order.id.startswith(''order_initial_''))
+
+      '
     desc: At least one item from Books category
-  - expr: >
-      any(any(item.product_id in [p.id for p in state.products
-      if 'Home' in p.category or 'Kitchen' in p.category]
-      for item in order.items) for order in state.orders if not order.id.startswith('order_initial_'))
+  - expr: 'any(any(item.product_id in [p.id for p in state.products if ''Home'' in
+      p.category or ''Kitchen'' in p.category] for item in order.items) for order
+      in state.orders if not order.id.startswith(''order_initial_''))
+
+      '
     desc: At least one item from Home and Kitchen category
   negative_checks:
-  - expr: sum(1 for o in state.orders if not o.id.startswith('order_initial_')) <= 1
+  - expr: sum(1 for o in state.orders if not o.id.startswith('order_initial_')) <=
+      1
     desc: Only one new order placed
     penalty: 0.15
   - expr: len(state.cart_items) == 0
     desc: Cart is empty after checkout
     penalty: 0.1
+secondary_primitives: []

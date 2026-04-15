@@ -8,7 +8,6 @@ time_limit_seconds: 120
 expected_steps: 8
 primary_primitives:
 - grounding
-- verification
 start_path: /inbox
 seed:
   distractors: 10
@@ -32,3 +31,4 @@ eval:
   - expr: len(state.sent) <= 1
     desc: Only one reply sent
     penalty: 0.2
+secondary_primitives: []

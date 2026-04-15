@@ -2,13 +2,16 @@ task_id: reddit_complete_account_setup
 title: Complete Account Setup and Engagement
 instruction_template: '1. Subscribe to r/MachineLearning, r/Piracy, and r/dataisbeautiful.
 
-  2. Set theme to "dark", enable compact view, disable all email notifications, set feed sort to "top".
+  2. Set theme to "dark", enable compact view, disable all email notifications, set
+  feed sort to "top".
 
-  3. Create a post in r/MachineLearning: title exactly "{target.post_title}", body exactly "{target.post_body}".
+  3. Create a post in r/MachineLearning: title exactly "{target.post_title}", body
+  exactly "{target.post_body}".
 
   4. In r/worldnews find "{target.wn_title}". Upvote, save, and comment: "{target.wn_comment}"
 
-  5. Send a message to u/{target.msg_to} subject "{target.msg_sub}" body exactly: "{target.msg_body}"
+  5. Send a message to u/{target.msg_to} subject "{target.msg_sub}" body exactly:
+  "{target.msg_body}"
 
   6. Mark all messages and notifications as read.
 
@@ -41,17 +44,18 @@ seed:
     - wn_title
     - wn_sub
   targets:
-    post_title: 'Diffusion models vs GANs for image generation: which to choose in 2026'
-    post_body: 'A practical comparison based on my experience deploying both in production. TL;DR: diffusion
-      models win on quality, GANs win on speed.'
+    post_title: 'Diffusion models vs GANs for image generation: which to choose in
+      2026'
+    post_body: 'A practical comparison based on my experience deploying both in production.
+      TL;DR: diffusion models win on quality, GANs win on speed.'
     wn_title: '{output.wn_title}'
     wn_id: '{output.wn_id}'
-    wn_comment: This is deeply concerning. The feedback loops between ice loss and ocean warming could
-      accelerate this further.
+    wn_comment: This is deeply concerning. The feedback loops between ice loss and
+      ocean warming could accelerate this further.
     msg_to: NeuralNexus
     msg_sub: Welcome
-    msg_body: Just joined r/MachineLearning! Looking forward to discussing diffusion models and contributing
-      to the community.
+    msg_body: Just joined r/MachineLearning! Looking forward to discussing diffusion
+      models and contributing to the community.
     initial_subscriptions: '{output.subscriptions}'
 eval:
   source: server_state
@@ -62,18 +66,19 @@ eval:
     desc: Subscribed to r/Piracy
   - expr: any(s.name == 'dataisbeautiful' and s.is_subscribed for s in state.subreddits)
     desc: Subscribed to r/dataisbeautiful
-  - expr: any(p.subreddit_name == 'MachineLearning' and p.title == '{target.post_title}' and p.body ==
-      '{target.post_body}' and p.author_name == state.owner_username for p in state.posts)
+  - expr: any(p.subreddit_name == 'MachineLearning' and p.title == '{target.post_title}'
+      and p.body == '{target.post_body}' and p.author_name == state.owner_username
+      for p in state.posts)
     desc: Exact post created in r/MachineLearning
   - expr: state.get_post('{target.wn_id}').vote_direction == 1
     desc: WN post upvoted
   - expr: '''{target.wn_id}'' in state.saved_post_ids'
     desc: WN post saved
-  - expr: any(c.post_id == '{target.wn_id}' and c.body == '{target.wn_comment}' and c.author_name == state.owner_username
-      for c in state.comments)
+  - expr: any(c.post_id == '{target.wn_id}' and c.body == '{target.wn_comment}' and
+      c.author_name == state.owner_username for c in state.comments)
     desc: Exact worldnews comment posted
-  - expr: any(m.to_user == '{target.msg_to}' and m.subject == '{target.msg_sub}' and m.body == '{target.msg_body}'
-      for m in state.sent_messages)
+  - expr: any(m.to_user == '{target.msg_to}' and m.subject == '{target.msg_sub}' and
+      m.body == '{target.msg_body}' for m in state.sent_messages)
     desc: Welcome message sent with exact body
   - expr: state.settings.theme == 'dark'
     desc: Theme dark
@@ -81,8 +86,8 @@ eval:
     desc: Compact view enabled
   - expr: state.settings.default_feed_sort == 'top'
     desc: Feed sort set to top
-  - expr: not state.settings.email_comment_reply and not state.settings.email_post_reply and not state.settings.email_mentions
-      and not state.settings.email_messages
+  - expr: not state.settings.email_comment_reply and not state.settings.email_post_reply
+      and not state.settings.email_mentions and not state.settings.email_messages
     desc: All email notifications disabled
   - expr: state.unread_message_count() == 0
     desc: Messages cleared
@@ -95,7 +100,8 @@ eval:
   - expr: len(state.sent_messages) <= 3
     desc: No extra messages sent beyond the required welcome note
     penalty: 0.15
-  - expr: sum(1 for p in state.posts if p.author_name == state.owner_username) <= 4
+  - expr: sum(1 for p in state.posts if p.author_name == state.owner_username) <=
+      4
     desc: No extra posts created beyond the required MachineLearning post
     penalty: 0.15
   - expr: len(state.blocked_users) == 0
@@ -103,5 +109,4 @@ eval:
     penalty: 0.15
 env_id: reddit
 start_path: /feed
-secondary_primitives:
-- grounding
+secondary_primitives: []

@@ -3,15 +3,16 @@ title: Multi-Community Outreach Campaign
 instruction_template: '1. Subscribe to r/{target.join1} and r/{target.join2}.
 
 
-  2. Create a text post in r/{target.join1} with title exactly: "{target.post1_title}" and body exactly:
-  "{target.post1_body}"
+  2. Create a text post in r/{target.join1} with title exactly: "{target.post1_title}"
+  and body exactly: "{target.post1_body}"
 
 
-  3. In r/{target.comment_sub}, find "{target.comment_title}" and comment with exactly: "{target.comment_text}"
+  3. In r/{target.comment_sub}, find "{target.comment_title}" and comment with exactly:
+  "{target.comment_text}"
 
 
-  4. Send messages to u/{target.msg1_to} and u/{target.msg2_to} both with subject "{target.msg_subject}"
-  and body exactly: "{target.msg_body}"
+  4. Send messages to u/{target.msg1_to} and u/{target.msg2_to} both with subject
+  "{target.msg_subject}" and body exactly: "{target.msg_body}"
 
 
   Do not unsubscribe from any communities.'
@@ -46,17 +47,18 @@ seed:
     join1: MachineLearning
     join2: Piracy
     post1_title: Comprehensive guide to fine-tuning LLMs on custom datasets
-    post1_body: I compiled everything I learned from fine-tuning 50+ models. Covers data preparation,
-      hyperparameter selection, and evaluation methodology.
+    post1_body: I compiled everything I learned from fine-tuning 50+ models. Covers
+      data preparation, hyperparameter selection, and evaluation methodology.
     comment_sub: '{output.subreddit_name}'
     comment_title: '{output.post_title}'
     comment_post_id: '{output.post_id}'
-    comment_text: Physical keyboards on phones. The tactile feedback was so much better for typing accuracy.
+    comment_text: Physical keyboards on phones. The tactile feedback was so much better
+      for typing accuracy.
     msg1_to: NeuralNexus
     msg2_to: ByteRunner
     msg_subject: New ML fine-tuning guide posted
-    msg_body: Just published a comprehensive guide on fine-tuning LLMs in r/MachineLearning. Would love
-      your feedback.
+    msg_body: Just published a comprehensive guide on fine-tuning LLMs in r/MachineLearning.
+      Would love your feedback.
     initial_subscriptions: '{output.subscriptions}'
 eval:
   source: server_state
@@ -65,11 +67,11 @@ eval:
     desc: Subscribed to ML
   - expr: any(s.name == 'Piracy' and s.is_subscribed for s in state.subreddits)
     desc: Subscribed to Piracy
-  - expr: any(p.subreddit_name == "MachineLearning" and "fine-tuning LLMs" in p.title and p.author_name
-      == state.owner_username for p in state.posts)
+  - expr: any(p.subreddit_name == "MachineLearning" and "fine-tuning LLMs" in p.title
+      and p.author_name == state.owner_username for p in state.posts)
     desc: ML post created
-  - expr: any(c.post_id == '{target.comment_post_id}' and "Physical keyboards" in c.body and c.author_name
-      == state.owner_username for c in state.comments)
+  - expr: any(c.post_id == '{target.comment_post_id}' and "Physical keyboards" in
+      c.body and c.author_name == state.owner_username for c in state.comments)
     desc: AskReddit comment
   - expr: any(m.to_user == "NeuralNexus" and "fine-tuning" in m.body for m in state.sent_messages)
     desc: Message to NeuralNexus
@@ -82,7 +84,8 @@ eval:
   - expr: len(state.sent_messages) <= 3
     desc: No excessive messages sent
     penalty: 0.15
-  - expr: sum(1 for p in state.posts if p.author_name == state.owner_username) <= 2
+  - expr: sum(1 for p in state.posts if p.author_name == state.owner_username) <=
+      2
     desc: No excessive posts created
     penalty: 0.15
   - expr: len(state.blocked_users) == 0
@@ -90,5 +93,4 @@ eval:
     penalty: 0.15
 env_id: reddit
 start_path: /feed
-secondary_primitives:
-- grounding
+secondary_primitives: []

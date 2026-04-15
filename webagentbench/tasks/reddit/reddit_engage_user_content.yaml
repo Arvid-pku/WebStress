@@ -1,14 +1,14 @@
 task_id: reddit_engage_user_content
 env_id: reddit
 title: Find and Engage with User Content
-instruction_template: Visit u/{target.target_user}'s profile page. Find their post titled "{target.user_post_title}". Upvote
-  that post and save it. Do not vote on or save any other posts.
+instruction_template: Visit u/{target.target_user}'s profile page. Find their post
+  titled "{target.user_post_title}". Upvote that post and save it. Do not vote on
+  or save any other posts.
 difficulty: medium
 time_limit_seconds: 180
 expected_steps: 12
 primary_primitives:
 - exploration
-- grounding
 start_path: /feed
 seed:
   distractors: 5
@@ -38,6 +38,8 @@ eval:
   - expr: state.get_post('{target.post_id}').is_saved
     desc: Post saved
   negative_checks:
-  - expr: sum(1 for p in state.posts if p.vote_direction != 0 and p.id != '{target.post_id}') == 0
+  - expr: sum(1 for p in state.posts if p.vote_direction != 0 and p.id != '{target.post_id}')
+      == 0
     desc: No other posts voted on
     penalty: 0.2
+secondary_primitives: []

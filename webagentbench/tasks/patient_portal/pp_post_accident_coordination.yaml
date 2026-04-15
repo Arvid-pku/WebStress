@@ -1,131 +1,122 @@
 task_id: pp_post_accident_coordination
 env_id: patient_portal
 title: Post-Accident Care Coordination
-instruction_template: >-
-  After an accident, coordinate the following care workstreams using only
-  appointments and referrals:
-  1) Schedule exactly one orthopedic follow-up appointment with reason
-  "Post-accident orthopedic follow-up",
-  2) Request exactly one new radiology referral from your PCP with reason
-  "Post-accident MRI evaluation",
-  3) Schedule exactly one PCP appointment with reason
-  "Disability documentation visit".
-  Do not send any messages, do not cancel any existing appointments, and do not
-  modify any medications.
+instruction_template: 'After an accident, coordinate the following care workstreams
+  using only appointments and referrals: 1) Schedule exactly one orthopedic follow-up
+  appointment with reason "Post-accident orthopedic follow-up", 2) Request exactly
+  one new radiology referral from your PCP with reason "Post-accident MRI evaluation",
+  3) Schedule exactly one PCP appointment with reason "Disability documentation visit".
+  Do not send any messages, do not cancel any existing appointments, and do not modify
+  any medications.'
 difficulty: frontier
 time_limit_seconds: 600
 expected_steps: 55
 primary_primitives:
-  - grounding
-  - planning
-  - state_tracking
-  - verification
-  - backtracking
-  - patience
-  - exploration
+- planning
 start_path: /
-
 seed:
   distractors: 10
   steps:
-    - use: patient_profile
-      params:
-        conditions: ["Lower Back Injury", "Hypertension"]
-        allergies: ["Codeine"]
-        insurance_tier: standard
-      outputs: [pcp_id, pcp_name, conditions_list]
-    - use: provider_directory
-      params:
-        count: 7
-        specialties: ["pcp", "orthopedics", "cardiology", "neurology", "radiology", "billing"]
-        must_include: ["pcp", "orthopedics", "radiology"]
-      outputs: [provider_ids, providers_by_specialty]
-    - use: pharmacy_list
-      params:
-        count: 2
-      outputs: [default_pharmacy_id]
-    - use: prescription_cabinet
-      params:
-        active_count: 4
-        interaction_pair: true
-      outputs: [active_rx_ids, interacting_rx_ids, interacting_medications]
-    - use: referral_chain
-      params:
-        approved_count: 1
-        pending_count: 0
-        with_prior_auth: true
-        must_have_specialties: ["orthopedics"]
-      outputs: [approved_ref_ids, pending_ref_ids, prior_auth_ref_id]
-    - use: appointment_history
-      params:
-        upcoming_count: 2
-        completed_count: 2
-      outputs: [upcoming_ids, completed_ids]
+  - use: patient_profile
+    params:
+      conditions:
+      - Lower Back Injury
+      - Hypertension
+      allergies:
+      - Codeine
+      insurance_tier: standard
+    outputs:
+    - pcp_id
+    - pcp_name
+    - conditions_list
+  - use: provider_directory
+    params:
+      count: 7
+      specialties:
+      - pcp
+      - orthopedics
+      - cardiology
+      - neurology
+      - radiology
+      - billing
+      must_include:
+      - pcp
+      - orthopedics
+      - radiology
+    outputs:
+    - provider_ids
+    - providers_by_specialty
+  - use: pharmacy_list
+    params:
+      count: 2
+    outputs:
+    - default_pharmacy_id
+  - use: prescription_cabinet
+    params:
+      active_count: 4
+      interaction_pair: true
+    outputs:
+    - active_rx_ids
+    - interacting_rx_ids
+    - interacting_medications
+  - use: referral_chain
+    params:
+      approved_count: 1
+      pending_count: 0
+      with_prior_auth: true
+      must_have_specialties:
+      - orthopedics
+    outputs:
+    - approved_ref_ids
+    - pending_ref_ids
+    - prior_auth_ref_id
+  - use: appointment_history
+    params:
+      upcoming_count: 2
+      completed_count: 2
+    outputs:
+    - upcoming_ids
+    - completed_ids
   targets:
-    pcp_id: "{output.pcp_id}"
-    pcp_name: "{output.pcp_name}"
-    ortho_provider_ids: "{output.providers_by_specialty.orthopedics}"
-    active_rx_ids: "{output.active_rx_ids}"
-    approved_ref_ids: "{output.approved_ref_ids}"
-    upcoming_ids: "{output.upcoming_ids}"
-
+    pcp_id: '{output.pcp_id}'
+    pcp_name: '{output.pcp_name}'
+    ortho_provider_ids: '{output.providers_by_specialty.orthopedics}'
+    active_rx_ids: '{output.active_rx_ids}'
+    approved_ref_ids: '{output.approved_ref_ids}'
+    upcoming_ids: '{output.upcoming_ids}'
 eval:
   source: server_state
   checks:
-    - expr: >-
-        len([
-          a for a in state.appointments
-          if a.status == 'scheduled'
-          and a.provider_id in {target.ortho_provider_ids}
-          and a.reason == 'Post-accident orthopedic follow-up'
-          and a.id not in state._initial_snapshot.get('appointments', {})
-        ]) == 1
-      desc: Exactly one orthopedic follow-up appointment was scheduled with the required reason
-    - expr: >-
-        len([
-          a for a in state.appointments
-          if a.status == 'scheduled'
-          and a.provider_id == '{target.pcp_id}'
-          and a.reason == 'Disability documentation visit'
-          and a.id not in state._initial_snapshot.get('appointments', {})
-        ]) == 1
-      desc: Exactly one PCP documentation appointment was scheduled
-    - expr: >-
-        len([
-          r for r in state.referrals
-          if r.id not in state._initial_snapshot.get('referrals', {})
-          and r.from_provider_id == '{target.pcp_id}'
-          and r.to_specialty == 'radiology'
-          and r.reason == 'Post-accident MRI evaluation'
-          and r.status == 'requested'
-        ]) == 1
-      desc: Exactly one new radiology referral was requested from the PCP
-    - expr: >-
-        len([
-          a for a in state.appointments
-          if a.id not in state._initial_snapshot.get('appointments', {})
-        ]) == 2
-      desc: Agent created exactly two new appointments
+  - expr: "len([\n  a for a in state.appointments\n  if a.status == 'scheduled'\n\
+      \  and a.provider_id in {target.ortho_provider_ids}\n  and a.reason == 'Post-accident\
+      \ orthopedic follow-up'\n  and a.id not in state._initial_snapshot.get('appointments',\
+      \ {})\n]) == 1"
+    desc: Exactly one orthopedic follow-up appointment was scheduled with the required
+      reason
+  - expr: "len([\n  a for a in state.appointments\n  if a.status == 'scheduled'\n\
+      \  and a.provider_id == '{target.pcp_id}'\n  and a.reason == 'Disability documentation\
+      \ visit'\n  and a.id not in state._initial_snapshot.get('appointments', {})\n\
+      ]) == 1"
+    desc: Exactly one PCP documentation appointment was scheduled
+  - expr: "len([\n  r for r in state.referrals\n  if r.id not in state._initial_snapshot.get('referrals',\
+      \ {})\n  and r.from_provider_id == '{target.pcp_id}'\n  and r.to_specialty ==\
+      \ 'radiology'\n  and r.reason == 'Post-accident MRI evaluation'\n  and r.status\
+      \ == 'requested'\n]) == 1"
+    desc: Exactly one new radiology referral was requested from the PCP
+  - expr: "len([\n  a for a in state.appointments\n  if a.id not in state._initial_snapshot.get('appointments',\
+      \ {})\n]) == 2"
+    desc: Agent created exactly two new appointments
   negative_checks:
-    - expr: >-
-        len([
-          m for m in state.messages
-          if m.from_type == 'patient'
-          and m.id not in state._initial_snapshot.get('messages', {})
-        ]) == 0
-      desc: Agent did not send any patient messages
-      penalty: 0.2
-    - expr: >-
-        all(
-          state.get_appointment(aid) is not None
-          and state.get_appointment(aid).status != 'cancelled'
-          for aid in {target.upcoming_ids}
-        )
-      desc: Existing appointments were not cancelled
-      penalty: 0.2
-    - expr: >-
-        all(rx.status == 'active'
-            for rx in state.prescriptions
-            if rx.id in {target.active_rx_ids})
-      desc: All existing prescriptions remain active
-      penalty: 0.3
+  - expr: "len([\n  m for m in state.messages\n  if m.from_type == 'patient'\n  and\
+      \ m.id not in state._initial_snapshot.get('messages', {})\n]) == 0"
+    desc: Agent did not send any patient messages
+    penalty: 0.2
+  - expr: "all(\n  state.get_appointment(aid) is not None\n  and state.get_appointment(aid).status\
+      \ != 'cancelled'\n  for aid in {target.upcoming_ids}\n)"
+    desc: Existing appointments were not cancelled
+    penalty: 0.2
+  - expr: "all(rx.status == 'active'\n    for rx in state.prescriptions\n    if rx.id\
+      \ in {target.active_rx_ids})"
+    desc: All existing prescriptions remain active
+    penalty: 0.3
+secondary_primitives: []

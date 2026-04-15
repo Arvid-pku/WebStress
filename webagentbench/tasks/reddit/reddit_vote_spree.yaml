@@ -1,14 +1,14 @@
 task_id: reddit_vote_spree
 env_id: reddit
 title: Vote on Multiple Specific Posts
-instruction_template: Upvote the post titled "{target.upvote_title}" in r/{target.upvote_sub}. Then downvote the post titled
-  "{target.downvote_title}" in r/{target.downvote_sub}. Do not vote on any other posts.
+instruction_template: Upvote the post titled "{target.upvote_title}" in r/{target.upvote_sub}.
+  Then downvote the post titled "{target.downvote_title}" in r/{target.downvote_sub}.
+  Do not vote on any other posts.
 difficulty: medium
 time_limit_seconds: 180
 expected_steps: 12
 primary_primitives:
 - grounding
-- state_tracking
 start_path: /feed
 seed:
   distractors: 6
@@ -60,3 +60,4 @@ eval:
   - expr: all(state.get_post(did).vote_direction == 0 for did in {target.decoy_post_ids})
     desc: Decoy posts not voted on
     penalty: 0.25
+secondary_primitives: []

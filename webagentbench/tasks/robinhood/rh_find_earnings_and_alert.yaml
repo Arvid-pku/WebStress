@@ -1,62 +1,56 @@
 task_id: rh_find_earnings_and_alert
 env_id: robinhood
 title: Find Earnings Stocks and Set Price Alerts
-instruction_template: "Find which stocks in your portfolio have earnings in the next 7 days. For each, create a price alert set at 5% below their current price."
+instruction_template: Find which stocks in your portfolio have earnings in the next
+  7 days. For each, create a price alert set at 5% below their current price.
 difficulty: medium
 time_limit_seconds: 200
 expected_steps: 8
 primary_primitives:
-  - exploration
-  - state_tracking
-  - planning
+- exploration
 start_path: /
-
 seed:
   distractors: 10
   steps:
-    - use: stock_universe
-      params:
-        count: 25
-        must_include: ["AAPL", "MSFT", "GOOGL", "AMZN", "META", "NVDA"]
-      outputs: []
-    - use: portfolio_diverse
-      params:
-        count: 6
-      outputs: []
-    - use: earnings_calendar
-      params:
-        days_ahead: 7
-      outputs: []
+  - use: stock_universe
+    params:
+      count: 25
+      must_include:
+      - AAPL
+      - MSFT
+      - GOOGL
+      - AMZN
+      - META
+      - NVDA
+    outputs: []
+  - use: portfolio_diverse
+    params:
+      count: 6
+    outputs: []
+  - use: earnings_calendar
+    params:
+      days_ahead: 7
+    outputs: []
   targets: {}
-
 eval:
   source: server_state
   checks:
-    - expr: >-
-        len(state.portfolio_symbols_with_earnings_within(7)) >= 1
-      desc: The portfolio has at least one stock with earnings in the next 7 days
-    - expr: >-
-        len([a for a in state.price_alerts if not a.id.startswith('alert_decoy_')]) ==
-        len(state.portfolio_symbols_with_earnings_within(7))
-      desc: Exactly one alert was created for each portfolio stock with upcoming earnings
-    - expr: >-
-        all(
-          any(
-            a.symbol == sym and a.condition == 'below' and a.status == 'active' and
-            abs(a.target_price - (state.get_stock(sym).price * Decimal('0.95'))) <= Decimal('0.01')
-            for a in state.price_alerts
-          )
-          for sym in state.portfolio_symbols_with_earnings_within(7)
-        )
-      desc: Each alert was set to 5% below current price for the correct stock
-    - expr: >-
-        not any(a.symbol not in state.portfolio_symbols_with_earnings_within(7)
-                and not a.id.startswith('alert_decoy_')
-                for a in state.price_alerts)
-      desc: No alerts were created for stocks without upcoming portfolio earnings
+  - expr: len(state.portfolio_symbols_with_earnings_within(7)) >= 1
+    desc: The portfolio has at least one stock with earnings in the next 7 days
+  - expr: len([a for a in state.price_alerts if not a.id.startswith('alert_decoy_')])
+      == len(state.portfolio_symbols_with_earnings_within(7))
+    desc: Exactly one alert was created for each portfolio stock with upcoming earnings
+  - expr: "all(\n  any(\n    a.symbol == sym and a.condition == 'below' and a.status\
+      \ == 'active' and\n    abs(a.target_price - (state.get_stock(sym).price * Decimal('0.95')))\
+      \ <= Decimal('0.01')\n    for a in state.price_alerts\n  )\n  for sym in state.portfolio_symbols_with_earnings_within(7)\n\
+      )"
+    desc: Each alert was set to 5% below current price for the correct stock
+  - expr: "not any(a.symbol not in state.portfolio_symbols_with_earnings_within(7)\n\
+      \        and not a.id.startswith('alert_decoy_')\n        for a in state.price_alerts)"
+    desc: No alerts were created for stocks without upcoming portfolio earnings
   negative_checks:
-    - expr: >-
-        len([o for o in state.orders
-            if not o.id.startswith('ord_decoy_')]) == 0
-      desc: No orders were placed (task only required setting price alerts)
-      penalty: 0.15
+  - expr: "len([o for o in state.orders\n    if not o.id.startswith('ord_decoy_')])\
+      \ == 0"
+    desc: No orders were placed (task only required setting price alerts)
+    penalty: 0.15
+secondary_primitives: []

@@ -1,87 +1,76 @@
 task_id: lms_find_project_assignments
 env_id: lms
 title: Find and Submit All Unsubmitted Project Assignments
-instruction_template: >-
-  Find all assignments categorized under "project" across your courses. For
-  any unsubmitted project assignment, submit it with file
-  "project_submission.pdf". Then mark all announcements as read to confirm
-  you have reviewed your standing.
+instruction_template: Find all assignments categorized under "project" across your
+  courses. For any unsubmitted project assignment, submit it with file "project_submission.pdf".
+  Then mark all announcements as read to confirm you have reviewed your standing.
 difficulty: hard
 time_limit_seconds: 240
 expected_steps: 12
 primary_primitives:
-  - state_tracking
-  - verification
+- state_tracking
 start_path: /courses
-
 seed:
   distractors: 2
   steps:
-    - use: student_profile
-      params: {}
-      outputs:
-        - student_id
-    - use: course_catalog
-      params:
-        count: 3
-        must_include: ["CS101", "MATH201"]
-      outputs:
-        - course_ids
-        - course_codes
-    - use: enrollment_set
-      params: {}
-      outputs:
-        - enrollment_ids
-    - use: assignment_battery
-      params:
-        per_course_count: 8
-        graded_fraction: 0.6
-      outputs:
-        - assignment_ids
-        - unsubmitted_project_ids
-    - use: grade_book
-      params: {}
-      outputs:
-        - grade_ids
-        - current_weighted_scores
-    - use: announcements_feed
-      params:
-        count: 4
-        unread_count: 2
-      outputs:
-        - announcement_ids
-        - unread_announcement_ids
+  - use: student_profile
+    params: {}
+    outputs:
+    - student_id
+  - use: course_catalog
+    params:
+      count: 3
+      must_include:
+      - CS101
+      - MATH201
+    outputs:
+    - course_ids
+    - course_codes
+  - use: enrollment_set
+    params: {}
+    outputs:
+    - enrollment_ids
+  - use: assignment_battery
+    params:
+      per_course_count: 8
+      graded_fraction: 0.6
+    outputs:
+    - assignment_ids
+    - unsubmitted_project_ids
+  - use: grade_book
+    params: {}
+    outputs:
+    - grade_ids
+    - current_weighted_scores
+  - use: announcements_feed
+    params:
+      count: 4
+      unread_count: 2
+    outputs:
+    - announcement_ids
+    - unread_announcement_ids
   targets:
     unsubmitted_project_ids: '{output.unsubmitted_project_ids}'
-
 eval:
   source: server_state
   checks:
-    - expr: >-
-        all(
-            state.get_assignment(aid) is not None
-            and state.get_assignment(aid).submission_status in ('submitted', 'late')
-            and state.get_assignment(aid).file_name == 'project_submission.pdf'
-            for aid in '{target.unsubmitted_project_ids}'.split(',')
-            if aid.strip()
-        )
-      desc: All unsubmitted project assignments were submitted with correct file
-    - expr: >-
-        len([a for a in state.assignments
-             if a.file_name == 'project_submission.pdf'
-             and a.submission_status in ('submitted', 'late')]) >= 1
-      desc: At least one project submission was made
-    - expr: all(a.is_read for a in state.announcements)
-      desc: All announcements are marked as read
+  - expr: "all(\n    state.get_assignment(aid) is not None\n    and state.get_assignment(aid).submission_status\
+      \ in ('submitted', 'late')\n    and state.get_assignment(aid).file_name == 'project_submission.pdf'\n\
+      \    for aid in '{target.unsubmitted_project_ids}'.split(',')\n    if aid.strip()\n\
+      )"
+    desc: All unsubmitted project assignments were submitted with correct file
+  - expr: "len([a for a in state.assignments\n     if a.file_name == 'project_submission.pdf'\n\
+      \     and a.submission_status in ('submitted', 'late')]) >= 1"
+    desc: At least one project submission was made
+  - expr: all(a.is_read for a in state.announcements)
+    desc: All announcements are marked as read
   negative_checks:
-    - expr: >-
-        not any(a.submission_status in ('submitted', 'late')
-                and a.file_name == 'project_submission.pdf'
-                and a.weight_category != 'project'
-                for a in state.assignments)
-      desc: No non-project assignments were submitted with the project file name
-      penalty: 0.3
-    - expr: >-
-        all(e.status != 'dropped' for e in state.enrollments)
-      desc: No courses were dropped during analysis
-      penalty: 0.2
+  - expr: "not any(a.submission_status in ('submitted', 'late')\n        and a.file_name\
+      \ == 'project_submission.pdf'\n        and a.weight_category != 'project'\n\
+      \        for a in state.assignments)"
+    desc: No non-project assignments were submitted with the project file name
+    penalty: 0.3
+  - expr: all(e.status != 'dropped' for e in state.enrollments)
+    desc: No courses were dropped during analysis
+    penalty: 0.2
+secondary_primitives: []

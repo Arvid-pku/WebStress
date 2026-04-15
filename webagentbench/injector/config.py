@@ -14,10 +14,26 @@ class Injection:
     """A single injection to apply to one layer.
 
     Layers:
-        client  — DOM/JS mutations via Playwright (Grounding, Exploration)
-        network — HTTP interception via Playwright (Patience, Verification)
-        server  — State mutations post-seed (Planning, Backtracking)
-        seed    — Data-level changes during seeding (State Tracking, Grounding, Planning)
+        client  — DOM / interaction mutations (React BenchmarkToolbar).
+                  Actions: swap_labels, add_decoy, scramble_aria, hide_affordance,
+                  false_banner, set_feature_flag (legacy); click_swallow,
+                  adjacent_selection, input_corruption, save_drift,
+                  double_submit_trap, restrict_affordance_set,
+                  intercepting_overlay, skeleton_never_resolves,
+                  distractor_modal, label_input_misalignment.
+                  Targets Grounding, Exploration, Verification, Patience.
+        network — HTTP interception (middleware + Playwright). Actions: delay
+                  (modes: once, intermittent, progressive, tail_latency,
+                  correlated_window, write_only_slow), error_then_success,
+                  silent_fail, stale_data, misleading_success,
+                  concurrent_modification, rate_limit, session_expiry.
+                  Targets Patience, Verification, Backtracking.
+        server  — State mutations post-seed (Planning, Backtracking).
+        seed    — Data-level changes during seeding. Actions include
+                  add_confusing_decoys, alias_entities, inject_distractor_emails
+                  (legacy) plus env-agnostic inject_adversarial_content and
+                  inflate_target_content. Targets State Tracking, Grounding,
+                  Planning.
     """
 
     layer: Literal["client", "network", "server", "seed"]

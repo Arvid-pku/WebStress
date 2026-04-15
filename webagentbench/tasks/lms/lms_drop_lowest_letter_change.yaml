@@ -1,99 +1,91 @@
 task_id: lms_drop_lowest_letter_change
 env_id: lms
 title: Determine If Dropping Lowest Quiz Changes Letter Grade
-instruction_template: >-
-  In {target.course_code}, determine whether applying the drop-lowest policy
-  changes your letter grade (A >= 90, B >= 80, C >= 70, D >= 60, F < 60).
-  Compute your weighted grade both with and without the drop. If dropping
-  the lowest changes your letter grade to a higher one, submit
-  'letter_grade_report.pdf' for the lowest-scoring homework (the one that
-  would be dropped). If dropping the lowest does NOT change your letter
-  grade, mark the course's latest announcement as read to confirm you have
-  reviewed the drop policy.
+instruction_template: In {target.course_code}, determine whether applying the drop-lowest
+  policy changes your letter grade (A >= 90, B >= 80, C >= 70, D >= 60, F < 60). Compute
+  your weighted grade both with and without the drop. If dropping the lowest changes
+  your letter grade to a higher one, submit 'letter_grade_report.pdf' for the lowest-scoring
+  homework (the one that would be dropped). If dropping the lowest does NOT change
+  your letter grade, mark the course's latest announcement as read to confirm you
+  have reviewed the drop policy.
 difficulty: hard
 time_limit_seconds: 240
 expected_steps: 12
 primary_primitives:
-  - state_tracking
-  - verification
+- state_tracking
 start_path: /courses
-
 seed:
   distractors: 2
   steps:
-    - use: student_profile
-      params: {}
-      outputs:
-        - student_id
-        - advisor_name
-    - use: course_catalog
-      params:
-        count: 3
-        must_include: ["CS101"]
-      outputs:
-        - course_ids
-        - course_code
-        - target_course_id
-    - use: enrollment_set
-      params: {}
-      outputs:
-        - enrollment_ids
-    - use: assignment_battery
-      params:
-        per_course_count: 8
-        graded_fraction: 0.7
-      outputs:
-        - assignment_ids
-        - lowest_hw_id
-    - use: grade_book
-      params: {}
-      outputs:
-        - grade_ids
-        - current_weighted_scores
-        - dropped_grade_ids
-        - drop_changes_letter
-    - use: announcements_feed
-      params:
-        count: 3
-        unread_count: 1
-      outputs:
-        - announcement_ids
-        - latest_announcement_id
+  - use: student_profile
+    params: {}
+    outputs:
+    - student_id
+    - advisor_name
+  - use: course_catalog
+    params:
+      count: 3
+      must_include:
+      - CS101
+    outputs:
+    - course_ids
+    - course_code
+    - target_course_id
+  - use: enrollment_set
+    params: {}
+    outputs:
+    - enrollment_ids
+  - use: assignment_battery
+    params:
+      per_course_count: 8
+      graded_fraction: 0.7
+    outputs:
+    - assignment_ids
+    - lowest_hw_id
+  - use: grade_book
+    params: {}
+    outputs:
+    - grade_ids
+    - current_weighted_scores
+    - dropped_grade_ids
+    - drop_changes_letter
+  - use: announcements_feed
+    params:
+      count: 3
+      unread_count: 1
+    outputs:
+    - announcement_ids
+    - latest_announcement_id
   targets:
     course_code: '{output.course_code}'
     target_course_id: '{output.target_course_id}'
     drop_changes_letter: '{output.drop_changes_letter}'
     lowest_hw_id: '{output.lowest_hw_id}'
     latest_announcement_id: '{output.latest_announcement_id}'
-
 eval:
   source: server_state
   checks:
-    - expr: >-
-        (('{target.drop_changes_letter}' == 'true'
-         and state.get_assignment('{target.lowest_hw_id}') is not None
-         and state.get_assignment('{target.lowest_hw_id}').submission_status in ('submitted', 'late')
-         and state.get_assignment('{target.lowest_hw_id}').file_name == 'letter_grade_report.pdf')
-        or ('{target.drop_changes_letter}' == 'false'
-            and state.get_announcement('{target.latest_announcement_id}') is not None
-            and state.get_announcement('{target.latest_announcement_id}').is_read == True))
-      desc: >-
-        Submit letter_grade_report.pdf for lowest homework if drop changes
-        letter grade, or mark latest announcement as read if it does not
+  - expr: "(('{target.drop_changes_letter}' == 'true'\n and state.get_assignment('{target.lowest_hw_id}')\
+      \ is not None\n and state.get_assignment('{target.lowest_hw_id}').submission_status\
+      \ in ('submitted', 'late')\n and state.get_assignment('{target.lowest_hw_id}').file_name\
+      \ == 'letter_grade_report.pdf')\nor ('{target.drop_changes_letter}' == 'false'\n\
+      \    and state.get_announcement('{target.latest_announcement_id}') is not None\n\
+      \    and state.get_announcement('{target.latest_announcement_id}').is_read ==\
+      \ True))"
+    desc: Submit letter_grade_report.pdf for lowest homework if drop changes letter
+      grade, or mark latest announcement as read if it does not
   negative_checks:
-    - expr: >-
-        '{target.drop_changes_letter}' != 'false'
-        or state.get_announcement('{target.latest_announcement_id}') is None
-        or state.get_announcement('{target.latest_announcement_id}').is_read == True
-      desc: Did not mark announcement as read when drop does not change letter grade (wrong branch)
-      penalty: 0.3
-    - expr: >-
-        '{target.drop_changes_letter}' != 'true'
-        or state.get_assignment('{target.lowest_hw_id}') is None
-        or state.get_assignment('{target.lowest_hw_id}').file_name != 'letter_grade_report.pdf'
-      desc: Did not submit when drop changes letter grade (wrong branch)
-      penalty: 0.3
-    - expr: >-
-        all(e.status != 'dropped' for e in state.enrollments)
-      desc: No courses were dropped during analysis
-      penalty: 0.3
+  - expr: '''{target.drop_changes_letter}'' != ''false'' or state.get_announcement(''{target.latest_announcement_id}'')
+      is None or state.get_announcement(''{target.latest_announcement_id}'').is_read
+      == True'
+    desc: Did not mark announcement as read when drop does not change letter grade
+      (wrong branch)
+    penalty: 0.3
+  - expr: '''{target.drop_changes_letter}'' != ''true'' or state.get_assignment(''{target.lowest_hw_id}'')
+      is None or state.get_assignment(''{target.lowest_hw_id}'').file_name != ''letter_grade_report.pdf'''
+    desc: Did not submit when drop changes letter grade (wrong branch)
+    penalty: 0.3
+  - expr: all(e.status != 'dropped' for e in state.enrollments)
+    desc: No courses were dropped during analysis
+    penalty: 0.3
+secondary_primitives: []

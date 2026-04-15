@@ -1,46 +1,40 @@
 task_id: rh_transfer_and_withdraw
 env_id: robinhood
 title: Check Balance and Withdraw Half
-instruction_template: "Check your cash balance, then withdraw half of it to your Wells Fargo savings account."
+instruction_template: Check your cash balance, then withdraw half of it to your Wells
+  Fargo savings account.
 difficulty: medium
 time_limit_seconds: 150
 expected_steps: 5
 primary_primitives:
-  - state_tracking
-  - planning
+- state_tracking
 start_path: /
-
 seed:
   distractors: 10
   steps:
-    - use: linked_banks
-      params:
-        banks:
-          - name: "Chase Checking"
-            type: "checking"
-            last_four: "4521"
-          - name: "Wells Fargo Savings"
-            type: "savings"
-            last_four: "7793"
-      outputs: []
+  - use: linked_banks
+    params:
+      banks:
+      - name: Chase Checking
+        type: checking
+        last_four: '4521'
+      - name: Wells Fargo Savings
+        type: savings
+        last_four: '7793'
+    outputs: []
   targets: {}
-
 eval:
   source: server_state
   checks:
-    - expr: >-
-        any(t.direction == 'withdrawal' and t.amount == 2500
-            for t in state.transfers)
-      desc: A withdrawal of $2,500 (half of $5,000 cash balance) exists
-    - expr: >-
-        any(t.direction == 'withdrawal' and t.status in ('completed', 'pending')
-            for t in state.transfers)
-      desc: A withdrawal transfer was successfully initiated
-    - expr: >-
-        len([t for t in state.transfers if t.direction == 'withdrawal']) >= 1
-      desc: At least one withdrawal transfer exists
+  - expr: "any(t.direction == 'withdrawal' and t.amount == 2500\n    for t in state.transfers)"
+    desc: A withdrawal of $2,500 (half of $5,000 cash balance) exists
+  - expr: "any(t.direction == 'withdrawal' and t.status in ('completed', 'pending')\n\
+      \    for t in state.transfers)"
+    desc: A withdrawal transfer was successfully initiated
+  - expr: len([t for t in state.transfers if t.direction == 'withdrawal']) >= 1
+    desc: At least one withdrawal transfer exists
   negative_checks:
-    - expr: >-
-        not any(t.direction == 'deposit' for t in state.transfers)
-      desc: No deposits were made (task only required a withdrawal)
-      penalty: 0.15
+  - expr: not any(t.direction == 'deposit' for t in state.transfers)
+    desc: No deposits were made (task only required a withdrawal)
+    penalty: 0.15
+secondary_primitives: []

@@ -1,22 +1,27 @@
 task_id: booking_frontier_everything
 env_id: booking
-title: 'Ultimate Task: Profile, Settings, Payments, Search, Book, Cancel, Modify, Review, Lists, Messages'
-instruction_template: "Complete this comprehensive session that touches every part of the platform: 1.\
-  \ Update your phone number to \"+1-415-555-0200\" and your address to\n   \"200 Market St, San Francisco,\
-  \ CA 94105\".\n2. In settings, change currency to EUR and enable two-factor authentication. 3. In travel\
-  \ preferences, set preferred bed type to \"king\" and add \"gluten-free\"\n   to dietary restrictions.\n\
-  4. Add a new Visa card ending in 7777, expiry 05/30, holder name \"Jordan Parker\",\n   and set it as\
-  \ your default payment.\n5. Search for hotels in \"Barcelona\" and book \"{target.book_name}\" \u2014\
-  \ the\n   standard room for 3 nights (2026-09-01 to 2026-09-04, 2 guests) using\n   your new default\
-  \ Visa card ending in 7777.\n6. Go to your trips and cancel the reservation at \"{target.cancel_name}\"\
-  \n   (confirmation {target.cancel_conf}).\n7. Find your reservation at \"{target.modify_name}\" and\
-  \ modify it: change\n   the check-in to 2026-07-20 and check-out to 2026-07-25 and add special\n   request\
-  \ \"Late checkout at 13:00 please\".\n8. Go to reviews and write a review for your completed stay at\n\
-  \   \"{target.review_prop_name}\": overall score 8.5, title \"Great location\",\n   positive \"Walking\
-  \ distance to everything, excellent breakfast\", negative\n   \"Room was a bit noisy at night\".\n9.\
-  \ Create a new saved list called \"2026 Favorites\" and add \"{target.book_name}\"\n   to it.\n10. Send\
-  \ a message to \"{target.book_name}\" with subject \"Early check-in request\"\n    and body \"Could\
-  \ we check in at 12:00 instead of 14:00? Thank you!\".\n"
+title: 'Ultimate Task: Profile, Settings, Payments, Search, Book, Cancel, Modify,
+  Review, Lists, Messages'
+instruction_template: "Complete this comprehensive session that touches every part\
+  \ of the platform: 1. Update your phone number to \"+1-415-555-0200\" and your address\
+  \ to\n   \"200 Market St, San Francisco, CA 94105\".\n2. In settings, change currency\
+  \ to EUR and enable two-factor authentication. 3. In travel preferences, set preferred\
+  \ bed type to \"king\" and add \"gluten-free\"\n   to dietary restrictions.\n4.\
+  \ Add a new Visa card ending in 7777, expiry 05/30, holder name \"Jordan Parker\"\
+  ,\n   and set it as your default payment.\n5. Search for hotels in \"Barcelona\"\
+  \ and book \"{target.book_name}\" — the\n   standard room for 3 nights (2026-09-01\
+  \ to 2026-09-04, 2 guests) using\n   your new default Visa card ending in 7777.\n\
+  6. Go to your trips and cancel the reservation at \"{target.cancel_name}\"\n   (confirmation\
+  \ {target.cancel_conf}).\n7. Find your reservation at \"{target.modify_name}\" and\
+  \ modify it: change\n   the check-in to 2026-07-20 and check-out to 2026-07-25 and\
+  \ add special\n   request \"Late checkout at 13:00 please\".\n8. Go to reviews and\
+  \ write a review for your completed stay at\n   \"{target.review_prop_name}\": overall\
+  \ score 8.5, title \"Great location\",\n   positive \"Walking distance to everything,\
+  \ excellent breakfast\", negative\n   \"Room was a bit noisy at night\".\n9. Create\
+  \ a new saved list called \"2026 Favorites\" and add \"{target.book_name}\"\n  \
+  \ to it.\n10. Send a message to \"{target.book_name}\" with subject \"Early check-in\
+  \ request\"\n    and body \"Could we check in at 12:00 instead of 14:00? Thank you!\"\
+  .\n"
 difficulty: frontier
 time_limit_seconds: 600
 expected_steps: 50
@@ -148,17 +153,18 @@ eval:
 
       '
     desc: New Visa 7777 added and set as default
-  - expr: 'any(r.property_id == ''{target.book_id}'' and r.check_in == ''2026-09-01'' and r.status ==
-      ''confirmed'' for r in state.reservations)
+  - expr: 'any(r.property_id == ''{target.book_id}'' and r.check_in == ''2026-09-01''
+      and r.status == ''confirmed'' for r in state.reservations)
 
       '
     desc: Barcelona hotel booked for correct dates
-  - expr: 'any(r.id == ''{target.cancel_res_id}'' and r.status == ''cancelled'' for r in state.reservations)
+  - expr: 'any(r.id == ''{target.cancel_res_id}'' and r.status == ''cancelled'' for
+      r in state.reservations)
 
       '
     desc: Provenza hotel reservation cancelled
-  - expr: 'any(r.id == ''{target.modify_res_id}'' and r.check_in == ''2026-07-20'' and r.check_out ==
-      ''2026-07-25'' for r in state.reservations)
+  - expr: 'any(r.id == ''{target.modify_res_id}'' and r.check_in == ''2026-07-20''
+      and r.check_out == ''2026-07-25'' for r in state.reservations)
 
       '
     desc: Madrid reservation dates modified
@@ -167,33 +173,36 @@ eval:
 
       '
     desc: Late checkout special request added
-  - expr: 'any(rv.property_id == ''{target.review_prop_id}'' and rv.overall_score == 8.5 and rv.title
-      == ''Great location'' for rv in state.reviews)
+  - expr: 'any(rv.property_id == ''{target.review_prop_id}'' and rv.overall_score
+      == 8.5 and rv.title == ''Great location'' for rv in state.reviews)
 
       '
     desc: Review written for Lisbon hotel
-  - expr: 'any(sl.name == ''2026 Favorites'' and ''{target.book_id}'' in sl.property_ids for sl in state.saved_lists)
+  - expr: 'any(sl.name == ''2026 Favorites'' and ''{target.book_id}'' in sl.property_ids
+      for sl in state.saved_lists)
 
       '
     desc: Saved list created with booked property
-  - expr: 'any(m.property_id == ''{target.book_id}'' and ''Early check-in'' in m.subject and m.sender
-      == ''guest'' for m in state.messages)
+  - expr: 'any(m.property_id == ''{target.book_id}'' and ''Early check-in'' in m.subject
+      and m.sender == ''guest'' for m in state.messages)
 
       '
     desc: Message sent to booked property
   negative_checks:
-  - expr: 'not any(e.action == ''reservation.cancel'' and e.payload.get(''reservation_id'') != ''{target.cancel_res_id}''
-      for e in state.audit_log)
+  - expr: 'not any(e.action == ''reservation.cancel'' and e.payload.get(''reservation_id'')
+      != ''{target.cancel_res_id}'' for e in state.audit_log)
 
       '
     desc: No other reservation was cancelled
     penalty: 0.2
-  - expr: 'sum(1 for e in state.audit_log if e.action == ''reservation.create'') <= 1
+  - expr: 'sum(1 for e in state.audit_log if e.action == ''reservation.create'') <=
+      1
 
       '
     desc: Only one new reservation created
     penalty: 0.15
-  - expr: 'not any(r.id == ''{target.modify_res_id}'' and r.status == ''cancelled'' for r in state.reservations)
+  - expr: 'not any(r.id == ''{target.modify_res_id}'' and r.status == ''cancelled''
+      for r in state.reservations)
 
       '
     desc: Modified reservation was not accidentally cancelled
@@ -203,5 +212,4 @@ eval:
       '
     desc: Original Visa card was not removed
     penalty: 0.1
-secondary_primitives:
-- state_tracking
+secondary_primitives: []

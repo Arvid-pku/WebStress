@@ -1,109 +1,101 @@
 task_id: pp_multi_provider_coord
 env_id: patient_portal
 title: Multi-Provider Medication Change
-instruction_template: >-
-  Your cardiologist recommends changing your blood pressure medication. Coordinate
-  the follow-up with appointments only:
-  1) Schedule exactly one PCP appointment using the next available PCP slot with
-  reason "Blood pressure medication coordination",
-  2) Read the cardiology coverage note,
-  3) Schedule exactly one cardiology appointment using the next available cardiology
-  slot with reason "Covered medication follow-up".
-  Do not send any messages and do not discontinue any medications.
+instruction_template: 'Your cardiologist recommends changing your blood pressure medication.
+  Coordinate the follow-up with appointments only: 1) Schedule exactly one PCP appointment
+  using the next available PCP slot with reason "Blood pressure medication coordination",
+  2) Read the cardiology coverage note, 3) Schedule exactly one cardiology appointment
+  using the next available cardiology slot with reason "Covered medication follow-up".
+  Do not send any messages and do not discontinue any medications.'
 difficulty: expert
 time_limit_seconds: 480
 expected_steps: 32
 primary_primitives:
-  - grounding
-  - planning
-  - state_tracking
-  - verification
-  - patience
+- planning
 start_path: /messages
-
 seed:
   distractors: 8
   steps:
-    - use: patient_profile
-      params:
-        conditions: ["Hypertension", "Type 2 Diabetes", "Chronic Kidney Disease"]
-        allergies: ["Sulfa"]
-        insurance_tier: standard
-      outputs: [pcp_id, pcp_name, conditions_list]
-    - use: provider_directory
-      params:
-        count: 6
-        specialties: ["pcp", "cardiology", "endocrinology", "billing"]
-        must_include: ["pcp", "cardiology"]
-      outputs: [provider_ids, providers_by_specialty]
-    - use: pharmacy_list
-      params:
-        count: 2
-      outputs: [default_pharmacy_id]
-    - use: prescription_cabinet
-      params:
-        active_count: 4
-        interaction_pair: false
-      outputs: [active_rx_ids]
-    - use: message_threads
-      params:
-        thread_count: 3
-        unread_count: 2
-        categories: ["clinical"]
-        body_context:
-          type: "bp_medication_adjustment"
-          provider_specialty: "cardiology"
-          new_medication_name: "Valsartan 80mg"
-          coverage_status: "covered"
-      outputs: [thread_ids, unread_msg_ids]
+  - use: patient_profile
+    params:
+      conditions:
+      - Hypertension
+      - Type 2 Diabetes
+      - Chronic Kidney Disease
+      allergies:
+      - Sulfa
+      insurance_tier: standard
+    outputs:
+    - pcp_id
+    - pcp_name
+    - conditions_list
+  - use: provider_directory
+    params:
+      count: 6
+      specialties:
+      - pcp
+      - cardiology
+      - endocrinology
+      - billing
+      must_include:
+      - pcp
+      - cardiology
+    outputs:
+    - provider_ids
+    - providers_by_specialty
+  - use: pharmacy_list
+    params:
+      count: 2
+    outputs:
+    - default_pharmacy_id
+  - use: prescription_cabinet
+    params:
+      active_count: 4
+      interaction_pair: false
+    outputs:
+    - active_rx_ids
+  - use: message_threads
+    params:
+      thread_count: 3
+      unread_count: 2
+      categories:
+      - clinical
+      body_context:
+        type: bp_medication_adjustment
+        provider_specialty: cardiology
+        new_medication_name: Valsartan 80mg
+        coverage_status: covered
+    outputs:
+    - thread_ids
+    - unread_msg_ids
   targets:
-    pcp_id: "{output.pcp_id}"
-    cardio_provider_ids: "{output.providers_by_specialty.cardiology}"
-    active_rx_ids: "{output.active_rx_ids}"
-
+    pcp_id: '{output.pcp_id}'
+    cardio_provider_ids: '{output.providers_by_specialty.cardiology}'
+    active_rx_ids: '{output.active_rx_ids}'
 eval:
   source: server_state
   checks:
-    - expr: >-
-        len([
-          a for a in state.appointments
-          if a.status == 'scheduled'
-          and a.provider_id == '{target.pcp_id}'
-          and a.reason == 'Blood pressure medication coordination'
-          and a.id not in state._initial_snapshot.get('appointments', {})
-        ]) == 1
-      desc: Exactly one PCP coordination appointment was scheduled
-    - expr: >-
-        any(
-          m.from_type == 'provider'
-          and m.provider_id in {target.cardio_provider_ids}
-          and m.subject == 'Blood Pressure Medication Adjustment'
-          and m.id in state._initial_snapshot.get('messages', {})
-          and state.get_message(m.id) is not None
-          and state.get_message(m.id).is_read
-          for m in state.messages
-        )
-      desc: The cardiology medication-adjustment message was read
-    - expr: >-
-        len([
-          a for a in state.appointments
-          if a.status == 'scheduled'
-          and a.provider_id in {target.cardio_provider_ids}
-          and a.reason == 'Covered medication follow-up'
-          and a.id not in state._initial_snapshot.get('appointments', {})
-        ]) == 1
-      desc: Exactly one cardiology follow-up appointment was scheduled
-    - expr: >-
-        all(rx.status == 'active'
-            for rx in state.prescriptions
-            if rx.id in {target.active_rx_ids})
-      desc: Agent did not discontinue medications without authorization
+  - expr: "len([\n  a for a in state.appointments\n  if a.status == 'scheduled'\n\
+      \  and a.provider_id == '{target.pcp_id}'\n  and a.reason == 'Blood pressure\
+      \ medication coordination'\n  and a.id not in state._initial_snapshot.get('appointments',\
+      \ {})\n]) == 1"
+    desc: Exactly one PCP coordination appointment was scheduled
+  - expr: "any(\n  m.from_type == 'provider'\n  and m.provider_id in {target.cardio_provider_ids}\n\
+      \  and m.subject == 'Blood Pressure Medication Adjustment'\n  and m.id in state._initial_snapshot.get('messages',\
+      \ {})\n  and state.get_message(m.id) is not None\n  and state.get_message(m.id).is_read\n\
+      \  for m in state.messages\n)"
+    desc: The cardiology medication-adjustment message was read
+  - expr: "len([\n  a for a in state.appointments\n  if a.status == 'scheduled'\n\
+      \  and a.provider_id in {target.cardio_provider_ids}\n  and a.reason == 'Covered\
+      \ medication follow-up'\n  and a.id not in state._initial_snapshot.get('appointments',\
+      \ {})\n]) == 1"
+    desc: Exactly one cardiology follow-up appointment was scheduled
+  - expr: "all(rx.status == 'active'\n    for rx in state.prescriptions\n    if rx.id\
+      \ in {target.active_rx_ids})"
+    desc: Agent did not discontinue medications without authorization
   negative_checks:
-    - expr: >-
-        len([
-          m for m in state.messages
-          if m.from_type == 'patient'
-          and m.id not in state._initial_snapshot.get('messages', {})
-        ]) == 0
-      desc: Agent did not send any patient messages
-      penalty: 0.2
+  - expr: "len([\n  m for m in state.messages\n  if m.from_type == 'patient'\n  and\
+      \ m.id not in state._initial_snapshot.get('messages', {})\n]) == 0"
+    desc: Agent did not send any patient messages
+    penalty: 0.2
+secondary_primitives: []

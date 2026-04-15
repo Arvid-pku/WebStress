@@ -12,7 +12,6 @@ time_limit_seconds: 200
 expected_steps: 14
 primary_primitives:
 - planning
-- grounding
 start_path: /home
 seed:
   distractors: 6
@@ -141,3 +140,4 @@ eval:
       '
     desc: At most one reservation was created for this property
     penalty: 0.2
+secondary_primitives: []

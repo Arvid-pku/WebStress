@@ -7,6 +7,31 @@ This changelog spans two benchmark eras:
 
 Unless noted otherwise, older page-benchmark sections are historical notes rather than a description of the active benchmark in this checkout.
 
+## Unreleased — Degradation Framework Expansion (2026-04-14)
+
+### What changed
+
+- expanded the injector catalog with seven new primitive types across four layers; see `docs/degradation_framework.md`
+- seed layer: added env-agnostic `inject_adversarial_content` (phishing / prompt_injection / urgency / impersonation / authority_appeal) covering gmail, amazon, reddit, robinhood, booking, lms, and patient_portal surfaces, plus `inflate_target_content` for deterministic haystack tests
+- network layer: added `tail_latency`, `correlated_window`, and `write_only_slow` behavior modes to the `delay` action; added new actions `misleading_success`, `concurrent_modification`, `rate_limit` (with `Retry-After`), and `session_expiry` (with `reauth_path` clearing). Both server middleware (`injector/middleware.py`) and Playwright parity (`injector/network.py`) cover these.
+- client layer: added 10 new DOM/interaction actions in `environments/shared/src/components/BenchmarkToolbar.tsx` — `click_swallow`, `adjacent_selection`, `input_corruption`, `save_drift`, `double_submit_trap`, `restrict_affordance_set`, `intercepting_overlay`, `skeleton_never_resolves`, `distractor_modal`, `label_input_misalignment`. Each installs document-level delegated listeners and returns a teardown for clean effect unmount.
+- authored 29 demonstration variant YAMLs across all 7 environments as blueprints for the new actions (see `injector/variants/*__{phishing_inbox,haystack,misleading_success,session_expiry,tail_latency,correlated_window,rate_limit,concurrent_modification,adjacent_selection,click_swallow,save_drift,double_submit,restrict_affordance,intercepting_overlay,distractor_modal,label_misalignment,input_corruption,skeleton_hang,write_only_slow,…}.yaml`)
+- added `tests/test_degradation_framework_new_actions.py` covering determinism, envelope contracts, and live-session behavior of the new actions
+- relaxed `test_patient_portal_variant_fallback_regression.py` to allow hand-authored variants in addition to the auto-generated batch
+
+### Design principles preserved
+
+- one primitive per variant (stacking reserved for explicit hard slices)
+- deterministic from seed (no floating-point randomness in any new handler)
+- detectable with effort (DOM readable, headers present, toasts visible)
+- adversarial content requires negative checks in the bound task's eval
+
+### Validation
+
+- `python3 -m pytest -q tests/test_degradation_framework_new_actions.py`
+- `python3 -m pytest -q tests/` — no regressions vs baseline
+- `environments/shared/node_modules/.bin/tsc --noEmit --project environments/shared`
+
 ## Unreleased — Documentation Realignment For Gmail Benchmark Mainline (2026-04-01)
 
 ### What changed

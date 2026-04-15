@@ -1,91 +1,79 @@
 task_id: lms_submission_priority
 env_id: lms
 title: Submit Assignments in Priority Order
-instruction_template: >-
-  You have multiple assignments due within the next 7 days across different
-  courses. Submit them in priority order: highest-weight category first, then
-  earliest deadline as tiebreaker. Submit each with file "priority_{n}.pdf"
-  where n is the submission order (1, 2, 3, etc.). Submit at least the top 2
-  priority assignments.
+instruction_template: 'You have multiple assignments due within the next 7 days across
+  different courses. Submit them in priority order: highest-weight category first,
+  then earliest deadline as tiebreaker. Submit each with file "priority_{n}.pdf" where
+  n is the submission order (1, 2, 3, etc.). Submit at least the top 2 priority assignments.'
 difficulty: hard
 time_limit_seconds: 300
 expected_steps: 15
 primary_primitives:
-  - planning
-  - state_tracking
+- planning
 start_path: /
-
 seed:
   distractors: 2
   steps:
-    - use: student_profile
-      params: {}
-      outputs:
-        - student_id
-    - use: course_catalog
-      params:
-        count: 4
-        must_include: ["CS101", "MATH201", "ENG102"]
-      outputs:
-        - course_ids
-        - course_codes
-    - use: enrollment_set
-      params: {}
-      outputs:
-        - enrollment_ids
-    - use: assignment_battery
-      params:
-        per_course_count: 6
-        graded_fraction: 0.3
-        missing_count: 0
-      outputs:
-        - assignment_ids
-        - priority_order_ids
-    - use: calendar_events
-      params:
-        include_recurring: false
-      outputs:
-        - event_ids
+  - use: student_profile
+    params: {}
+    outputs:
+    - student_id
+  - use: course_catalog
+    params:
+      count: 4
+      must_include:
+      - CS101
+      - MATH201
+      - ENG102
+    outputs:
+    - course_ids
+    - course_codes
+  - use: enrollment_set
+    params: {}
+    outputs:
+    - enrollment_ids
+  - use: assignment_battery
+    params:
+      per_course_count: 6
+      graded_fraction: 0.3
+      missing_count: 0
+    outputs:
+    - assignment_ids
+    - priority_order_ids
+  - use: calendar_events
+    params:
+      include_recurring: false
+    outputs:
+    - event_ids
   targets:
     priority_order_ids: '{output.priority_order_ids}'
-
 eval:
   source: server_state
   checks:
-    - expr: >-
-        len('{target.priority_order_ids}'.split(',')) >= 2
-      desc: At least 2 priority assignments exist (seed validation)
-    - expr: >-
-        (state.get_assignment('{target.priority_order_ids}'.split(',')[0].strip()) is not None
-         and state.get_assignment('{target.priority_order_ids}'.split(',')[0].strip()).submission_status
-             in ('submitted', 'late')
-         and state.get_assignment('{target.priority_order_ids}'.split(',')[0].strip()).file_name
-             == 'priority_1.pdf')
-      desc: Highest-priority assignment submitted with priority_1.pdf
-    - expr: >-
-        (state.get_assignment('{target.priority_order_ids}'.split(',')[1].strip()) is not None
-         and state.get_assignment('{target.priority_order_ids}'.split(',')[1].strip()).submission_status
-             in ('submitted', 'late')
-         and state.get_assignment('{target.priority_order_ids}'.split(',')[1].strip()).file_name
-             == 'priority_2.pdf')
-      desc: Second-priority assignment submitted with priority_2.pdf
-    - expr: >-
-        len([a for a in state.assignments
-             if a.submission_status in ('submitted', 'late')
-             and a.file_name is not None
-             and a.file_name.startswith('priority_')]) >= 2
-      desc: At least 2 priority submissions were made
+  - expr: len('{target.priority_order_ids}'.split(',')) >= 2
+    desc: At least 2 priority assignments exist (seed validation)
+  - expr: "(state.get_assignment('{target.priority_order_ids}'.split(',')[0].strip())\
+      \ is not None\n and state.get_assignment('{target.priority_order_ids}'.split(',')[0].strip()).submission_status\n\
+      \     in ('submitted', 'late')\n and state.get_assignment('{target.priority_order_ids}'.split(',')[0].strip()).file_name\n\
+      \     == 'priority_1.pdf')"
+    desc: Highest-priority assignment submitted with priority_1.pdf
+  - expr: "(state.get_assignment('{target.priority_order_ids}'.split(',')[1].strip())\
+      \ is not None\n and state.get_assignment('{target.priority_order_ids}'.split(',')[1].strip()).submission_status\n\
+      \     in ('submitted', 'late')\n and state.get_assignment('{target.priority_order_ids}'.split(',')[1].strip()).file_name\n\
+      \     == 'priority_2.pdf')"
+    desc: Second-priority assignment submitted with priority_2.pdf
+  - expr: "len([a for a in state.assignments\n     if a.submission_status in ('submitted',\
+      \ 'late')\n     and a.file_name is not None\n     and a.file_name.startswith('priority_')])\
+      \ >= 2"
+    desc: At least 2 priority submissions were made
   negative_checks:
-    - expr: >-
-        all(e.status != 'dropped' for e in state.enrollments)
-      desc: No courses were dropped during planning
-      penalty: 0.3
-    - expr: >-
-        not any(a.submission_status in ('submitted', 'late')
-                and a.file_name is not None
-                and a.file_name.startswith('priority_')
-                and a.id not in [pid.strip()
-                                 for pid in '{target.priority_order_ids}'.split(',')]
-                for a in state.assignments)
-      desc: No non-priority assignments were submitted with priority file names
-      penalty: 0.2
+  - expr: all(e.status != 'dropped' for e in state.enrollments)
+    desc: No courses were dropped during planning
+    penalty: 0.3
+  - expr: "not any(a.submission_status in ('submitted', 'late')\n        and a.file_name\
+      \ is not None\n        and a.file_name.startswith('priority_')\n        and\
+      \ a.id not in [pid.strip()\n                         for pid in '{target.priority_order_ids}'.split(',')]\n\
+      \        for a in state.assignments)"
+    desc: No non-priority assignments were submitted with priority file names
+    penalty: 0.2
+secondary_primitives: []

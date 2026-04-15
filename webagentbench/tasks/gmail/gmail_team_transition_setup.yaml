@@ -14,11 +14,7 @@ time_limit_seconds: 360
 expected_steps: 28
 primary_primitives:
 - planning
-- exploration
-- grounding
-secondary_primitives:
-- state_tracking
-- patience
+secondary_primitives: []
 start_path: /inbox
 seed:
   distractors: 40
