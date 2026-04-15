@@ -29,7 +29,7 @@ eval:
       \ == 'Jordan Parker'\n  for pm in state.payment_methods\n)\n"
     desc: The new card has the correct holder name
   negative_checks:
-  - expr: "not any(\n  e.action == 'payment_method.delete'\n  for e in state.audit_log\n\
+  - expr: "not any(\n  e.action == 'payment.remove'\n  for e in state.audit_log\n\
       )\n"
     desc: No existing payment method was removed
     penalty: 0.2

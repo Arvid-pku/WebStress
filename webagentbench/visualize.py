@@ -63,6 +63,73 @@ def _truncate_messages(messages: list[dict]) -> list[dict]:
     return out
 
 
+def _normalize_target_payload(target: object) -> dict:
+    """Normalize a recorded target payload into the nested shape used by replay JS."""
+    if isinstance(target, str):
+        return {"bid": target}
+    if not isinstance(target, dict):
+        return {}
+
+    payload: dict = {}
+    for key in ("bid", "role", "name", "selector", "nth", "bbox"):
+        value = target.get(key)
+        if value is not None:
+            payload[key] = value
+    return payload
+
+
+def _normalize_step_targets(step: dict) -> dict:
+    """Coerce flat or partially-shaped `targets` payloads into nested refs."""
+    normalized_step = dict(step)
+    raw_targets = step.get("targets") or {}
+    if not isinstance(raw_targets, dict):
+        normalized_step["targets"] = {}
+        return normalized_step
+
+    normalized_targets: dict[str, dict] = {}
+
+    # Current agent output can be either flat:
+    #   {"ref": "172", "role": "button", "name": "Save"}
+    # or nested:
+    #   {"ref": {"role": "button", "name": "Save"}}
+    flat_target_keys = {"bid", "role", "name", "selector", "nth", "bbox"}
+    has_flat_target = bool(flat_target_keys.intersection(raw_targets))
+    ref_is_scalar = isinstance(raw_targets.get("ref"), str)
+    if has_flat_target or ref_is_scalar:
+        ref_payload = _normalize_target_payload(raw_targets.get("ref"))
+        for key in flat_target_keys:
+            value = raw_targets.get(key)
+            if value is not None and key not in ref_payload:
+                ref_payload[key] = value
+        if ref_payload:
+            normalized_targets["ref"] = ref_payload
+
+    for key in ("ref", "from_ref", "to_ref"):
+        payload = _normalize_target_payload(raw_targets.get(key))
+        if payload:
+            existing = normalized_targets.get(key, {})
+            normalized_targets[key] = {**payload, **existing}
+
+    normalized_step["targets"] = normalized_targets
+    return normalized_step
+
+
+def _prepare_result_for_js(result: dict) -> dict:
+    """Return a browser-safe copy of a result payload for the embedded viewer."""
+    result_copy = dict(result)
+    agent = dict(result_copy.get("agent", {}))
+    raw_msgs = agent.get("messages", [])
+    raw_traj = agent.get("trajectory", [])
+    agent["messages"] = _truncate_messages(raw_msgs) if raw_msgs else []
+    agent["trajectory"] = [
+        _normalize_step_targets(step)
+        for step in raw_traj
+        if isinstance(step, dict)
+    ]
+    result_copy["agent"] = agent
+    return result_copy
+
+
 def generate_html(data: dict, server_url: str) -> str:
     """Generate the visualization HTML from result data."""
     model = data.get("agent", {}).get("model", "unknown")
@@ -73,14 +140,7 @@ def generate_html(data: dict, server_url: str) -> str:
     total_tasks = summary_total_tasks(summary) or len(results)
 
     # Build a lightweight copy of results with truncated messages for embedding.
-    results_for_js = []
-    for r in results:
-        r_copy = dict(r)
-        agent = dict(r_copy.get("agent", {}))
-        raw_msgs = agent.get("messages", [])
-        agent["messages"] = _truncate_messages(raw_msgs) if raw_msgs else []
-        r_copy["agent"] = agent
-        results_for_js.append(r_copy)
+    results_for_js = [_prepare_result_for_js(r) for r in results]
 
     results_json = json.dumps(results_for_js)
     task_meta_json = json.dumps(task_meta)
@@ -563,61 +623,304 @@ const ROLE_SELECTORS = {{
     spinbutton:'input[type="number"], [role="spinbutton"]',
     slider:    'input[type="range"], [role="slider"]',
     switch:    '[role="switch"]',
+    row:       'article, [role="row"], li, tr',
+    article:   'article, [role="article"]',
+    cell:      'td, th, [role="cell"], [role="gridcell"]',
+    sectionheader: 'h1, h2, h3, h4, h5, h6, header, [role="heading"]',
+    colorwell: 'input[type="color"], button, [role="button"]',
+    labeltext: 'label, span, [aria-label]',
+    strong:    'strong, b, [role="strong"]',
+    paragraph: 'p, [role="paragraph"], div',
 }};
+
+function normalizeText(value) {{
+    return String(value || '')
+        .replace(/\\s+/g, ' ')
+        .replace(/[“”]/g, '"')
+        .replace(/[’]/g, "'")
+        .trim()
+        .toLowerCase();
+}}
+
+function tokenizeText(value) {{
+    return normalizeText(value)
+        .replace(/[^a-z0-9$%]+/g, ' ')
+        .split(/\\s+/)
+        .filter(Boolean);
+}}
+
+function candidateTargetNames(name) {{
+    const variants = new Set();
+    const push = (value) => {{
+        const normalized = normalizeText(value);
+        if (normalized) variants.add(normalized);
+    }};
+
+    const raw = String(name || '');
+    push(raw);
+    push(
+        raw
+            .replace(/^open (?:unread |read )?thread /i, '')
+            .replace(/^read thread from /i, '')
+            .replace(/^reply all to /i, '')
+            .replace(/^reply to /i, '')
+            .replace(/^star contact /i, '')
+            .replace(/^unstar contact /i, '')
+            .replace(/^star /i, '')
+            .replace(/^unstar /i, '')
+            .replace(/^archive /i, '')
+            .replace(/^move to inbox /i, '')
+            .replace(/^delete permanently /i, '')
+            .replace(/^delete contact /i, '')
+            .replace(/^delete filter /i, '')
+            .replace(/^delete label /i, '')
+            .replace(/^delete /i, '')
+            .replace(/^apply label /i, '')
+            .replace(/^remove label /i, '')
+    );
+    return Array.from(variants);
+}}
 
 function getAccessibleName(el) {{
     const ariaLabel = el.getAttribute('aria-label');
     if (ariaLabel) return ariaLabel;
     const labelledBy = el.getAttribute('aria-labelledby');
     if (labelledBy) {{
-        const labelEl = el.ownerDocument.getElementById(labelledBy);
-        if (labelEl) return labelEl.textContent.trim();
+        const text = labelledBy
+            .split(/\\s+/)
+            .map((id) => el.ownerDocument.getElementById(id))
+            .filter(Boolean)
+            .map((labelEl) => labelEl.textContent.trim())
+            .filter(Boolean)
+            .join(' ');
+        if (text) return text;
     }}
     if (el.id) {{
         const label = el.ownerDocument.querySelector('label[for="' + el.id + '"]');
         if (label) return label.textContent.trim();
     }}
     if (el.placeholder) return el.placeholder;
+    if (typeof el.value === 'string' && el.value) return el.value;
     if (el.title) return el.title;
     if (el.alt) return el.alt;
     return el.textContent?.trim() || '';
 }}
 
-function findByRole(doc, role, name, nth) {{
-    const selector = ROLE_SELECTORS[role] || '[role="' + role + '"]';
-    const candidates = doc.querySelectorAll(selector);
-    const matches = [];
-    for (const el of candidates) {{
-        if (!el.offsetParent && el.tagName !== 'BODY' && !el.closest('dialog[open]')) continue;
-        if (!name) {{
-            matches.push(el);
-            continue;
-        }}
-        const accName = getAccessibleName(el);
-        if (accName.includes(name) || name.includes(accName)) {{
-            matches.push(el);
-        }}
+function buildSelectorCandidates(selector) {{
+    if (!selector) return [];
+    const stripped = selector.replace(/:nth-of-type\\(\\d+\\)/g, '').trim();
+    const parts = stripped.split('>').map((part) => part.trim()).filter(Boolean);
+    const selectors = new Set([selector, stripped]);
+    for (let i = 0; i < parts.length; i += 1) {{
+        selectors.add(parts.slice(i).join(' > '));
     }}
-    return matches[nth] || matches[0] || null;
+    if (parts.length > 0) {{
+        selectors.add(parts[parts.length - 1]);
+    }}
+    return Array.from(selectors).filter(Boolean);
 }}
 
-function findBySelector(doc, selector) {{
-    if (!selector) return null;
-    try {{
-        return doc.querySelector(selector);
-    }} catch (e) {{
-        return null;
+function isElementNode(el) {{
+    return Boolean(el) && el.nodeType === 1 && typeof el.getBoundingClientRect === 'function';
+}}
+
+function isVisibleElement(el) {{
+    if (!isElementNode(el)) return false;
+    const style = el.ownerDocument.defaultView?.getComputedStyle(el);
+    if (style && (style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0)) {{
+        return false;
     }}
+    const rect = el.getBoundingClientRect();
+    return rect.width > 0 && rect.height > 0;
+}}
+
+function roleSelector(role) {{
+    const normalizedRole = normalizeText(role);
+    if (normalizedRole && ROLE_SELECTORS[normalizedRole]) {{
+        return ROLE_SELECTORS[normalizedRole];
+    }}
+    if (normalizedRole) {{
+        return '[role="' + normalizedRole + '"], button, a, input, textarea, select, article, [aria-label], [title]';
+    }}
+    return 'button, a, input, textarea, select, article, [role], [aria-label], [title], label, span, li, td, th, p, strong';
+}}
+
+function roleMatches(el, role) {{
+    const normalizedRole = normalizeText(role);
+    if (!normalizedRole) return false;
+
+    const tag = el.tagName.toLowerCase();
+    const ariaRole = normalizeText(el.getAttribute('role'));
+    if (ariaRole === normalizedRole) return true;
+
+    switch (normalizedRole) {{
+        case 'button':
+            return tag === 'button' || tag === 'summary' || ['button', 'submit', 'reset'].includes((el.type || '').toLowerCase());
+        case 'textbox':
+            return tag === 'textarea' || tag === 'input' || ariaRole === 'textbox' || el.isContentEditable;
+        case 'searchbox':
+            return (tag === 'input' && (el.type || '').toLowerCase() === 'search') || ariaRole === 'searchbox';
+        case 'checkbox':
+            return (tag === 'input' && (el.type || '').toLowerCase() === 'checkbox') || ariaRole === 'checkbox';
+        case 'radio':
+            return (tag === 'input' && (el.type || '').toLowerCase() === 'radio') || ariaRole === 'radio';
+        case 'combobox':
+            return tag === 'select' || ariaRole === 'combobox' || ariaRole === 'listbox';
+        case 'link':
+            return tag === 'a' || ariaRole === 'link';
+        case 'tab':
+            return tag === 'button' || ariaRole === 'tab';
+        case 'menuitem':
+            return tag === 'button' || ariaRole === 'menuitem';
+        case 'row':
+            return tag === 'article' || tag === 'tr' || tag === 'li' || ariaRole === 'row';
+        case 'article':
+            return tag === 'article' || ariaRole === 'article';
+        case 'cell':
+            return tag === 'td' || tag === 'th' || ariaRole === 'cell' || ariaRole === 'gridcell';
+        case 'sectionheader':
+            return /^h[1-6]$/.test(tag) || tag === 'header' || ariaRole === 'heading';
+        case 'colorwell':
+            return (tag === 'input' && (el.type || '').toLowerCase() === 'color') || tag === 'button';
+        case 'labeltext':
+            return tag === 'label' || tag === 'span';
+        case 'strong':
+            return tag === 'strong' || tag === 'b';
+        case 'paragraph':
+            return tag === 'p' || tag === 'div';
+        default:
+            return false;
+    }}
+}}
+
+function scoreElement(el, target, bonus = 0) {{
+    let score = bonus;
+    const targetNames = candidateTargetNames(target?.name);
+    const descriptors = [
+        getAccessibleName(el),
+        el.getAttribute('title'),
+        el.getAttribute('placeholder'),
+        el.getAttribute('value'),
+        el.textContent,
+    ].map(normalizeText).filter(Boolean);
+
+    for (const targetName of targetNames) {{
+        if (!targetName) continue;
+        if (descriptors.some((value) => value === targetName)) {{
+            score += 140;
+            break;
+        }}
+        if (descriptors.some((value) => value.includes(targetName) || targetName.includes(value))) {{
+            score += 90;
+            break;
+        }}
+
+        const targetTokens = tokenizeText(targetName);
+        const matchedTokens = targetTokens.filter((token) =>
+            descriptors.some((value) => value.includes(token))
+        );
+        score += matchedTokens.length * 12;
+    }}
+
+    if (roleMatches(el, target?.role)) {{
+        score += 35;
+    }}
+    if (isVisibleElement(el)) {{
+        score += 12;
+    }}
+    if (['button', 'a', 'input', 'textarea', 'select'].includes(el.tagName.toLowerCase())) {{
+        score += 5;
+    }}
+
+    return score;
+}}
+
+function queryElements(doc, selector) {{
+    if (!selector) return [];
+    try {{
+        return Array.from(doc.querySelectorAll(selector)).filter(isElementNode);
+    }} catch (e) {{
+        return [];
+    }}
+}}
+
+function pickBestMatch(elements, target, bonus = 0) {{
+    let best = null;
+    let bestScore = -1;
+
+    for (const el of elements) {{
+        const score = scoreElement(el, target, bonus);
+        if (score > bestScore) {{
+            best = el;
+            bestScore = score;
+        }}
+    }}
+
+    return bestScore >= 20 ? {{ el: best, score: bestScore }} : null;
+}}
+
+function findBySelector(doc, target) {{
+    let best = null;
+    for (const selector of buildSelectorCandidates(target?.selector)) {{
+        const match = pickBestMatch(queryElements(doc, selector), target, 40);
+        if (match && (!best || match.score > best.score)) {{
+            best = match;
+        }}
+    }}
+    return best;
+}}
+
+function findByRole(doc, role, name, nth) {{
+    const target = {{ role, name }};
+    const candidates = queryElements(doc, roleSelector(role))
+        .map((el) => ({{ el, score: scoreElement(el, target, 24) }}))
+        .filter((item) => item.score >= 20)
+        .sort((a, b) => b.score - a.score);
+
+    if (!candidates.length) return null;
+    if (typeof nth === 'number') {{
+        return candidates[nth]?.el || (nth > 0 ? candidates[nth - 1]?.el : null) || candidates[0].el;
+    }}
+    return candidates[0].el;
 }}
 
 function findByText(doc, text) {{
-    const walker = document.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT);
+    const wanted = normalizeText(text);
+    if (!wanted || !doc.body) return null;
+
+    const NodeFilterRef = doc.defaultView?.NodeFilter || window.NodeFilter;
+    const walker = doc.createTreeWalker(doc.body, NodeFilterRef.SHOW_TEXT);
     while (walker.nextNode()) {{
-        if (walker.currentNode.textContent.includes(text)) {{
-            return walker.currentNode.parentElement;
-        }}
+        const nodeText = normalizeText(walker.currentNode.textContent);
+        if (!nodeText || !nodeText.includes(wanted)) continue;
+        const parent = walker.currentNode.parentElement;
+        if (parent) return parent;
     }}
     return null;
+}}
+
+function resolveTargetElement(doc, target) {{
+    if (!target) return null;
+
+    let best = findBySelector(doc, target);
+
+    const roleMatch = findByRole(doc, target.role, target.name, target.nth);
+    if (roleMatch) {{
+        const roleScore = scoreElement(roleMatch, target, 24);
+        if (!best || roleScore > best.score) {{
+            best = {{ el: roleMatch, score: roleScore }};
+        }}
+    }}
+
+    const textMatch = findByText(doc, candidateTargetNames(target.name)[0] || target.name);
+    if (textMatch) {{
+        const textScore = scoreElement(textMatch, target, 10);
+        if (!best || textScore > best.score) {{
+            best = {{ el: textMatch, score: textScore }};
+        }}
+    }}
+
+    return best?.el || null;
 }}
 
 // ═══════════════════════════════════════════════════════════════
@@ -642,8 +945,7 @@ function executeAction(trajStep) {{
         const dx = isHorizontal ? delta : 0;
         const dy = isHorizontal ? 0 : delta;
         if (targets.ref) {{
-            const el = findBySelector(doc, targets.ref.selector) ||
-                findByRole(doc, targets.ref.role, targets.ref.name, targets.ref.nth);
+            const el = resolveTargetElement(doc, targets.ref);
             if (el) el.scrollBy(dx, dy);
             else iframe.contentWindow.scrollBy(dx, dy);
         }} else {{
@@ -656,8 +958,7 @@ function executeAction(trajStep) {{
         const key = action.key || '';
         let target = doc.activeElement || doc.body;
         if (targets.ref) {{
-            const el = findBySelector(doc, targets.ref.selector) ||
-                findByRole(doc, targets.ref.role, targets.ref.name, targets.ref.nth);
+            const el = resolveTargetElement(doc, targets.ref);
             if (el) target = el;
         }}
         target.dispatchEvent(new KeyboardEvent('keydown', {{ key, bubbles: true }}));
@@ -669,16 +970,22 @@ function executeAction(trajStep) {{
     if (actionName === 'drag_and_drop') {{
         [targets.from_ref, targets.to_ref].forEach(t => {{
             if (t) {{
-                const el = findBySelector(doc, t.selector) || findByRole(doc, t.role, t.name, t.nth);
+                const el = resolveTargetElement(doc, t);
                 if (el) highlightEl(el);
             }}
         }});
         return 'drag_and_drop (highlight only)';
     }}
 
-    const t = targets.ref;
+    const t = (
+        targets.ref && typeof targets.ref === 'object'
+            ? targets.ref
+            : (typeof targets === 'object' && targets && !targets.ref && (targets.role || targets.name || targets.selector || targets.bid)
+                ? targets
+                : null)
+    );
     if (!t) return 'no target info';
-    const el = findBySelector(doc, t.selector) || findByRole(doc, t.role, t.name, t.nth);
+    const el = resolveTargetElement(doc, t);
     if (!el) return 'element not found: ' + t.role + ' "' + t.name + '"';
 
     highlightEl(el);
@@ -693,7 +1000,11 @@ function executeAction(trajStep) {{
             return 'dblclicked';
         case 'fill':
             el.focus();
-            el.value = action.value || '';
+            if ('value' in el) {{
+                el.value = action.value || '';
+            }} else if (el.isContentEditable) {{
+                el.textContent = action.value || '';
+            }}
             el.dispatchEvent(new Event('input', {{ bubbles: true }}));
             el.dispatchEvent(new Event('change', {{ bubbles: true }}));
             return 'filled "' + (action.value || '').substring(0, 30) + '"';
@@ -783,6 +1094,52 @@ async function destroyActiveReplaySession() {{
     }}
 }}
 
+function joinReplayPath(baseUrl, startPath) {{
+    const base = String(baseUrl || '').replace(/\\/+$/, '');
+    const path = String(startPath || '');
+    if (!path) {{
+        return base || '/';
+    }}
+    return base + (path.startsWith('/') ? path : '/' + path);
+}}
+
+function buildReplayRequestPayload(result, replay) {{
+    const payload = {{ task_id: replay.task_id || result.task_id }};
+    if (replay.seed !== undefined && replay.seed !== null) {{
+        payload.seed = replay.seed;
+    }}
+
+    const degradation =
+        replay.degradation && typeof replay.degradation === 'object'
+            ? replay.degradation
+            : (result.degradation && typeof result.degradation === 'object' ? result.degradation : null);
+
+    const variantFilename = replay.variant_filename || degradation?.variant_filename;
+    if (variantFilename) {{
+        payload.variant_filename = variantFilename;
+    }}
+
+    if (degradation) {{
+        const replayDegradation = {{ ...degradation }};
+        delete replayDegradation.variant_filename;
+        if (Object.keys(replayDegradation).length > 0) {{
+            payload.degradation = replayDegradation;
+        }}
+    }}
+
+    return payload;
+}}
+
+function buildReplayPageUrl(baseUrl, startPath, sessionId) {{
+    const joinedPath = joinReplayPath(baseUrl, startPath);
+    const replayUrl = new URL(joinedPath || '/', SERVER_URL || window.location.origin);
+    replayUrl.searchParams.set('session', sessionId);
+    if (!replayUrl.searchParams.has('agent_mode')) {{
+        replayUrl.searchParams.set('agent_mode', '1');
+    }}
+    return replayUrl.toString();
+}}
+
 async function buildReplayUrl(result, resetSession = false) {{
     const replay = result?.replay || {{}};
     if (replay.kind !== 'env') {{
@@ -797,10 +1154,7 @@ async function buildReplayUrl(result, resetSession = false) {{
         activeReplaySession.taskId !== (replay.task_id || result.task_id)
     ) {{
         await destroyActiveReplaySession();
-        const payload = {{ task_id: replay.task_id || result.task_id }};
-        if (replay.seed !== undefined && replay.seed !== null) {{
-            payload.seed = replay.seed;
-        }}
+        const payload = buildReplayRequestPayload(result, replay);
         const response = await fetch(`${{SERVER_URL}}/api/env/${{replay.env_id}}/session`, {{
             method: 'POST',
             headers: {{ 'Content-Type': 'application/json' }},
@@ -821,7 +1175,7 @@ async function buildReplayUrl(result, resetSession = false) {{
 
     const baseUrl = replay.base_url || result.base_url;
     const startPath = replay.start_path || "";
-    return `${{SERVER_URL}}${{baseUrl}}${{startPath}}?session=${{encodeURIComponent(activeReplaySession.sessionId)}}`;
+    return buildReplayPageUrl(baseUrl, startPath, activeReplaySession.sessionId);
 }}
 
 async function loadResultFrame(result, resetSession = false) {{

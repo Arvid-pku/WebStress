@@ -25,6 +25,10 @@ import yaml
 
 TASKS_DIR = Path(__file__).parent.parent / "tasks"
 VARIANTS_DIR = Path(__file__).parent.parent / "injector" / "variants"
+BACKEND_CODE_DIRS = (
+    Path(__file__).parent.parent / "backend" / "routes",
+    Path(__file__).parent.parent / "backend" / "models",
+)
 TARGET_RE = re.compile(r"\{target\.([^}]+)\}")
 ACTOR_REF_RE = re.compile(r"\{actor\.(\w+)")
 
@@ -67,6 +71,50 @@ def _collect_eval_exprs(task: dict) -> list[tuple[str, str, str]]:
     return items
 
 
+def _load_emitted_audit_actions() -> set[str]:
+    """Return concrete audit action names emitted by backend code."""
+
+    def _const_str(node: ast.AST) -> str | None:
+        if isinstance(node, ast.Constant) and isinstance(node.value, str):
+            return node.value
+        return None
+
+    actions: set[str] = set()
+    for root in BACKEND_CODE_DIRS:
+        for path in sorted(root.glob("*.py")):
+            tree = ast.parse(path.read_text())
+            for node in ast.walk(tree):
+                if not isinstance(node, ast.Call):
+                    continue
+
+                func_name = None
+                if isinstance(node.func, ast.Name):
+                    func_name = node.func.id
+                elif isinstance(node.func, ast.Attribute):
+                    func_name = node.func.attr
+
+                if func_name in {"_mutate", "_audit"} and len(node.args) >= 3:
+                    action = _const_str(node.args[2])
+                    if action:
+                        actions.add(action)
+                elif func_name == "AuditEntry":
+                    for kw in node.keywords:
+                        if kw.arg != "action":
+                            continue
+                        action = _const_str(kw.value)
+                        if action:
+                            actions.add(action)
+    return actions
+
+
+def _collect_audit_action_refs(expr: str) -> set[str]:
+    """Extract explicit ``e.action`` string refs from one eval expression."""
+    refs = set(re.findall(r"e\.action\s*(?:==|!=)\s*['\"]([^'\"]+)['\"]", expr))
+    for src in re.findall(r"e\.action\s+in\s*[\{\[\(]([^\}\]\)]+)[\}\]\)]", expr):
+        refs.update(re.findall(r"['\"]([^'\"]+)['\"]", src))
+    return refs
+
+
 def _instruction_text(task: dict[str, Any]) -> str:
     """Return the user-visible instruction text for a task."""
     return task.get("instruction_template", "") or task.get("instruction", "") or ""
@@ -74,6 +122,7 @@ def _instruction_text(task: dict[str, Any]) -> str:
 
 ALL_TASKS = _load_all_tasks()
 ALL_VARIANTS = _load_all_variants()
+EMITTED_AUDIT_ACTIONS = _load_emitted_audit_actions()
 ALL_EXPRS = []
 for _t in ALL_TASKS.values():
     ALL_EXPRS.extend(_collect_eval_exprs(_t))
@@ -272,6 +321,22 @@ def test_all_target_refs_in_eval_are_defined() -> None:
                         f"[{tid}] eval references {{target.{ref}}} "
                         f"but targets only defines: {sorted(target_keys)}"
                     )
+    assert not violations, "\n".join(violations)
+
+
+def test_eval_audit_action_refs_match_emitted_actions() -> None:
+    """Explicit audit-log action refs must match real backend-emitted actions."""
+    violations: list[str] = []
+    for tid, task in ALL_TASKS.items():
+        ev = task.get("eval") or {}
+        for phase in ("checks", "negative_checks"):
+            for item in ev.get(phase) or []:
+                expr = item["expr"] if isinstance(item, dict) else str(item)
+                for ref in sorted(_collect_audit_action_refs(expr)):
+                    if ref not in EMITTED_AUDIT_ACTIONS:
+                        violations.append(
+                            f"[{tid}] {phase} references unknown audit action {ref!r}"
+                        )
     assert not violations, "\n".join(violations)
 
 

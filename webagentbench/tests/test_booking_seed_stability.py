@@ -229,3 +229,67 @@ def test_view_reservation_needs_audit_entry() -> None:
     ))
     result2 = unified_evaluate(task, server_state=state, targets=targets, trajectory=[])
     assert result2["success"] is True
+
+
+def test_booking_add_payment_negative_check_penalizes_removed_payment_method() -> None:
+    """Deleting any payment method should trip the add-payment collateral guard."""
+    from webagentbench.backend.models.base import AuditEntry
+
+    _, state, targets, _ = _materialize("booking_add_payment")
+    state._initial_snapshot = state.state_snapshot()
+    task = get_task("booking_add_payment")
+
+    state.audit_log.append(AuditEntry(
+        action="payment.remove",
+        payload={"pm_id": "pm_1"},
+    ))
+
+    result = unified_evaluate(task, server_state=state, targets=targets, trajectory=[])
+    neg = next(n for n in result["negative_checks"] if n["desc"] == "No existing payment method was removed")
+    assert neg["passed"] is False
+
+
+@pytest.mark.parametrize(
+    ("task_id", "allowed_target", "desc"),
+    [
+        (
+            "booking_expert_account_migration",
+            "alex_pm_id",
+            "Did not delete any payment method other than Alex Parker's Mastercard",
+        ),
+        (
+            "booking_frontier_payment_and_booking",
+            "remove_pm_id",
+            "No wrong payment methods were deleted",
+        ),
+    ],
+)
+def test_booking_payment_removal_negative_checks_bind_allowed_target(
+    task_id: str,
+    allowed_target: str,
+    desc: str,
+) -> None:
+    """Wrong payment removals should fail while the intended removal stays allowed."""
+    from webagentbench.backend.models.base import AuditEntry
+
+    _, state, targets, _ = _materialize(task_id)
+    state._initial_snapshot = state.state_snapshot()
+    task = get_task(task_id)
+
+    state.audit_log.append(AuditEntry(
+        action="payment.remove",
+        payload={"pm_id": "pm_1"},
+    ))
+    wrong_result = unified_evaluate(task, server_state=state, targets=targets, trajectory=[])
+    wrong_neg = next(n for n in wrong_result["negative_checks"] if n["desc"] == desc)
+    assert wrong_neg["passed"] is False
+
+    _, allowed_state, allowed_targets, _ = _materialize(task_id)
+    allowed_state._initial_snapshot = allowed_state.state_snapshot()
+    allowed_state.audit_log.append(AuditEntry(
+        action="payment.remove",
+        payload={"pm_id": allowed_targets[allowed_target]},
+    ))
+    allowed_result = unified_evaluate(task, server_state=allowed_state, targets=allowed_targets, trajectory=[])
+    allowed_neg = next(n for n in allowed_result["negative_checks"] if n["desc"] == desc)
+    assert allowed_neg["passed"] is True

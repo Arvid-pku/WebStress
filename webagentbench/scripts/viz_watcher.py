@@ -94,6 +94,7 @@ def _tag(result: dict, *, configuration: str, variant_filename: str | None,
         "seed": seed,
         "base_url": base_url,
         "start_path": start_path,
+        "variant_filename": variant_filename,
     })
     if variant_filename:
         tagged.setdefault("degradation", {})

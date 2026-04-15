@@ -711,9 +711,25 @@ export function BenchmarkToolbar({ envId, sessionId }: BenchmarkToolbarProps) {
           trajectory: [],
         }),
       });
-      const result = (await response.json()) as EvaluationResult;
+      const rawResult = await response.text();
+      let result: (EvaluationResult & { detail?: string }) | null = null;
+      if (rawResult) {
+        try {
+          result = JSON.parse(rawResult) as EvaluationResult & { detail?: string };
+        } catch {
+          result = null;
+        }
+      }
       if (!response.ok) {
-        throw new Error(result.reasoning || result.detail || `Evaluate failed with status ${response.status}`);
+        throw new Error(
+          result?.reasoning ||
+            result?.detail ||
+            rawResult ||
+            `Evaluate failed with status ${response.status}`,
+        );
+      }
+      if (!result) {
+        throw new Error("Evaluate returned an empty response");
       }
       setEvaluation(result);
       setOpen(true);

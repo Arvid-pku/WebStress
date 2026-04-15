@@ -107,7 +107,7 @@ eval:
       \ != '{target.property_id}'\n  for e in state.audit_log\n)\n"
     desc: No reservation at wrong property
     penalty: 0.3
-  - expr: "not any(\n  e.action == 'payment_method.delete'\n  for e in state.audit_log\n\
+  - expr: "not any(\n  e.action == 'payment.remove'\n  for e in state.audit_log\n\
       )\n"
     desc: No existing payment methods were deleted
     penalty: 0.2

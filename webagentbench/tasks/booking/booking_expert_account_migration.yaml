@@ -81,8 +81,8 @@ eval:
   - expr: state.owner_email == 'jordan.parker@email.com'
     desc: Email address was not changed
     penalty: 0.25
-  - expr: "not any(\n  e.action == 'payment_method.delete' and\n  e.payload.get('card_type')\
-      \ == 'Visa' and\n  e.payload.get('last_four') == '4242'\n  for e in state.audit_log\n\
+  - expr: "not any(\n  e.action == 'payment.remove' and\n  e.payload.get('pm_id')\
+      \ != '{target.alex_pm_id}'\n  for e in state.audit_log\n\
       )\n"
-    desc: Did not delete the original default Visa card
+    desc: Did not delete any payment method other than Alex Parker's Mastercard
     penalty: 0.3

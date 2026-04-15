@@ -1205,6 +1205,7 @@ async def apply_wallet_credit(
 @router.post("/evaluate")
 async def evaluate(
     body: EvaluateRequest,
+    request: Request,
     sm: SessionManager = Depends(get_session_manager),
 ):
     session_id = body.session_id

@@ -176,7 +176,7 @@ eval:
   - expr: state.owner_email == 'jordan.parker@email.com'
     desc: Email was not changed
     penalty: 0.25
-  - expr: "not any(\n  e.action == 'payment_method.delete'\n  for e in state.audit_log\n\
+  - expr: "not any(\n  e.action == 'payment.remove'\n  for e in state.audit_log\n\
       )\n"
     desc: No existing payment methods were deleted
     penalty: 0.2

@@ -169,6 +169,45 @@ class TestStandardLifecycle:
         assert resp.status_code == 403
         assert "Controller access required" in resp.json()["detail"]
 
+    def test_booking_add_payment_can_evaluate_successfully_after_matching_mutation(
+        self,
+        client: TestClient,
+    ) -> None:
+        session_resp = client.post(
+            "/api/env/booking/session",
+            json={"task_id": "booking_add_payment", "seed": 42},
+            headers=controller_headers(),
+        )
+        assert session_resp.status_code == 200, session_resp.text
+        session = session_resp.json()
+
+        add_resp = client.post(
+            "/api/env/booking/payment-methods",
+            json={
+                "session_id": session["session_id"],
+                "card_type": "Discover",
+                "last_four": "7777",
+                "expiry": "09/28",
+                "holder_name": "Jordan Parker",
+                "is_default": False,
+            },
+        )
+        assert add_resp.status_code == 200, add_resp.text
+
+        eval_resp = client.post(
+            "/api/env/booking/evaluate",
+            json={
+                "session_id": session["session_id"],
+                "task_id": None,
+                "benchmark_state": {},
+                "trajectory": [],
+            },
+        )
+        assert eval_resp.status_code == 200, eval_resp.text
+        result = eval_resp.json()
+        assert result["success"] is True
+        assert result["score"] == pytest.approx(1.0)
+
 
 class TestPublicSessionSanitization:
     @pytest.mark.parametrize("env_id", _PUBLIC_SESSION_ENVS)

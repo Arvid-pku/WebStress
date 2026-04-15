@@ -230,7 +230,7 @@ eval:
       '
     desc: Only one November Europe Trip list created
     penalty: 0.1
-  - expr: "not any(\n  e.action == 'payment_method.delete' and\n  e.payload.get('payment_method_id')\
+  - expr: "not any(\n  e.action == 'payment.remove' and\n  e.payload.get('pm_id')\
       \ not in ('{target.remove_pm_id}',)\n  for e in state.audit_log\n)\n"
     desc: No wrong payment methods were deleted
     penalty: 0.3
