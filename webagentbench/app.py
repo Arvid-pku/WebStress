@@ -525,6 +525,7 @@ async def index():
                 <div><span>{ENVIRONMENT_COUNT}</span> environments</div>
                 <div><span>{ENV_TASK_COUNT}</span> tasks</div>
                 <div>v{MANIFEST_VERSION}</div>
+                <a href="/trajectories" style="color:#8b949e;text-decoration:none;border:1px solid #444;padding:3px 10px;border-radius:4px;font-size:12px">Trajectories</a>
                 <a href="/static/docs.html" style="color:#8b949e;text-decoration:none;border:1px solid #444;padding:3px 10px;border-radius:4px;font-size:12px">Docs</a>
             </div>
         </div>
@@ -812,6 +813,48 @@ async def index():
     </script>
 </body>
 </html>"""
+    return HTMLResponse(content=html)
+
+
+@app.get("/trajectories", response_class=HTMLResponse)
+async def list_trajectories():
+    """Directory page of trajectory visualisations shipped in /static/*_viz.html."""
+    import os as _os
+    from datetime import datetime as _dt
+    entries: list[dict] = []
+    for path in sorted(STATIC_DIR.glob("*_viz.html")):
+        stat = path.stat()
+        entries.append({
+            "name": path.stem,
+            "href": f"/static/{path.name}",
+            "size_kb": round(stat.st_size / 1024, 1),
+            "mtime": _dt.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M"),
+        })
+
+    rows = "".join(
+        f'<tr><td><a href="{e["href"]}">{e["name"]}</a></td>'
+        f'<td style="text-align:right;color:#656d76">{e["size_kb"]} KB</td>'
+        f'<td style="color:#656d76">{e["mtime"]}</td></tr>'
+        for e in entries
+    ) or '<tr><td colspan="3" style="padding:30px;color:#656d76;text-align:center">No trajectories yet. Generate one with <code>python -m webagentbench.scripts.run_bedrock_subset</code> or <code>python -m webagentbench.visualize &lt;results.json&gt;</code>.</td></tr>'
+
+    html = f"""<!DOCTYPE html>
+<html lang=\"en\"><head><meta charset=\"UTF-8\"><title>Trajectories — WebAgentBench</title>
+<style>
+  body {{ font-family:-apple-system,sans-serif; max-width:900px; margin:0 auto; padding:2rem; color:#1f2328; }}
+  a {{ color:#0969da; text-decoration:none; }} a:hover {{ text-decoration:underline; }}
+  table {{ width:100%; border-collapse:collapse; margin-top:1rem; font-size:0.9rem; }}
+  th {{ text-align:left; padding:8px 10px; border-bottom:2px solid #d0d7de; background:#f6f8fa; font-size:0.78rem; text-transform:uppercase; color:#656d76; }}
+  td {{ padding:8px 10px; border-bottom:1px solid #eaecef; }}
+  tr:hover td {{ background:#f9fbfd; }}
+  code {{ background:#f6f8fa; border:1px solid #d0d7de; padding:1px 5px; border-radius:4px; font-size:0.84em; }}
+</style></head><body>
+<a href=\"/launch\" style=\"font-size:0.85rem\">&larr; Back to launcher</a>
+<h1 style=\"margin-top:0.5rem\">Trajectory Visualisations</h1>
+<p style=\"color:#656d76\">Self-contained viz HTMLs produced by <code>visualize.py</code> (or <code>run_bedrock_subset.py</code>), served from <code>{STATIC_DIR.name}/*_viz.html</code>.</p>
+<table><thead><tr><th>Name</th><th style=\"text-align:right\">Size</th><th>Modified</th></tr></thead>
+<tbody>{rows}</tbody></table>
+</body></html>"""
     return HTMLResponse(content=html)
 
 
