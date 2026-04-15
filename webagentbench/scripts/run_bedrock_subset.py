@@ -184,8 +184,8 @@ def main() -> int:
     _load_env_file()
 
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--model", default="anthropic.claude-sonnet-4-6",
-                        help="Bedrock model ID (default: anthropic.claude-sonnet-4-6)")
+    parser.add_argument("--model", default="us.anthropic.claude-sonnet-4-6",
+                        help="Bedrock model ID (default: us.anthropic.claude-sonnet-4-6)")
     parser.add_argument("--provider", default="bedrock")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--no-headless", action="store_true",

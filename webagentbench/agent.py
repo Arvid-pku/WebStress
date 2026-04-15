@@ -102,27 +102,28 @@ def create_client(provider: str, base_url: str | None = None, api_key: str | Non
     if provider == "gemini":
         from google import genai
         return genai.Client(api_key=api_key or os.environ.get("GEMINI_API_KEY", ""))
-    else:
-        from openai import OpenAI
-        if base_url is None:
-            if provider == "vllm":
-                base_url = os.environ.get("WEBAGENTBENCH_API_BASE_URL", "http://localhost:8000/v1")
-            elif provider == "bedrock":
-                # AWS Bedrock exposes an OpenAI-compatible endpoint per region.
-                base_url = os.environ.get("AWS_BEDROCK_BASE_URL")
-                if not base_url:
-                    region = os.environ.get("AWS_BEDROCK_REGION", "us-east-1")
-                    base_url = f"https://bedrock-runtime.{region}.amazonaws.com/openai/v1"
-            else:
-                base_url = os.environ.get("OPENAI_API_BASE_URL", "https://api.openai.com/v1")
-        if api_key is None:
-            if provider == "vllm":
-                api_key = os.environ.get("WEBAGENTBENCH_API_KEY", "dummy")
-            elif provider == "bedrock":
-                api_key = os.environ.get("AWS_BEDROCK_API_KEY", "")
-            else:
-                api_key = os.environ.get("OPENAI_API_KEY", "")
-        return OpenAI(base_url=base_url, api_key=api_key)
+    if provider == "bedrock":
+        # Native AWS Bedrock Converse API via boto3. Authenticates with a
+        # long-term Bedrock API key (ABSK...) by routing it to the
+        # AWS_BEARER_TOKEN_BEDROCK env var boto3 reads automatically.
+        import boto3
+        key = api_key or os.environ.get("AWS_BEDROCK_API_KEY", "")
+        if key and not os.environ.get("AWS_BEARER_TOKEN_BEDROCK"):
+            os.environ["AWS_BEARER_TOKEN_BEDROCK"] = key
+        region = os.environ.get("AWS_BEDROCK_REGION", "us-east-1")
+        return boto3.client("bedrock-runtime", region_name=region)
+    from openai import OpenAI
+    if base_url is None:
+        if provider == "vllm":
+            base_url = os.environ.get("WEBAGENTBENCH_API_BASE_URL", "http://localhost:8000/v1")
+        else:
+            base_url = os.environ.get("OPENAI_API_BASE_URL", "https://api.openai.com/v1")
+    if api_key is None:
+        if provider == "vllm":
+            api_key = os.environ.get("WEBAGENTBENCH_API_KEY", "dummy")
+        else:
+            api_key = os.environ.get("OPENAI_API_KEY", "")
+    return OpenAI(base_url=base_url, api_key=api_key)
 
 
 def llm_complete(
@@ -133,7 +134,56 @@ def llm_complete(
     """Return (content, reasoning) from the LLM."""
     if provider == "gemini":
         return _complete_gemini(client, model, messages, temperature)
+    if provider == "bedrock":
+        return _complete_bedrock(client, model, messages, temperature)
     return _complete_openai(client, model, messages, temperature, reasoning_effort)
+
+
+def _complete_bedrock(client, model, messages, temperature):
+    """AWS Bedrock Converse API. Translates OpenAI-style messages into Converse
+    shape: system messages become top-level `system=[{text:...}]`, user/assistant
+    messages become `messages=[{role, content:[{text:...}]}]`. Consecutive
+    same-role turns are merged (Converse rejects adjacent duplicates)."""
+    system_blocks: list[dict] = []
+    converted: list[dict] = []
+    for msg in messages:
+        role = msg.get("role", "user")
+        content = msg.get("content", "")
+        if role == "system":
+            if content:
+                system_blocks.append({"text": content})
+            continue
+        bedrock_role = "assistant" if role == "assistant" else "user"
+        if converted and converted[-1]["role"] == bedrock_role:
+            converted[-1]["content"].append({"text": content})
+        else:
+            converted.append({"role": bedrock_role, "content": [{"text": content}]})
+
+    inference_config: dict[str, Any] = {"maxTokens": 4096}
+    if temperature is not None:
+        inference_config["temperature"] = float(temperature)
+
+    kwargs: dict[str, Any] = {
+        "modelId": model,
+        "messages": converted,
+        "inferenceConfig": inference_config,
+    }
+    if system_blocks:
+        kwargs["system"] = system_blocks
+
+    for attempt in range(5):
+        try:
+            response = client.converse(**kwargs)
+            blocks = response.get("output", {}).get("message", {}).get("content", [])
+            text = "".join(b.get("text", "") for b in blocks if "text" in b)
+            return text, ""
+        except Exception as e:
+            msg = str(e)
+            transient = "Throttling" in msg or "429" in msg or "ServiceUnavailable" in msg
+            if transient and attempt < 4:
+                time.sleep(2 ** attempt + 1)
+                continue
+            raise
 
 
 def _complete_openai(client, model, messages, temperature, reasoning_effort):
