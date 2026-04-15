@@ -107,11 +107,19 @@ def create_client(provider: str, base_url: str | None = None, api_key: str | Non
         if base_url is None:
             if provider == "vllm":
                 base_url = os.environ.get("WEBAGENTBENCH_API_BASE_URL", "http://localhost:8000/v1")
+            elif provider == "bedrock":
+                # AWS Bedrock exposes an OpenAI-compatible endpoint per region.
+                base_url = os.environ.get("AWS_BEDROCK_BASE_URL")
+                if not base_url:
+                    region = os.environ.get("AWS_BEDROCK_REGION", "us-east-1")
+                    base_url = f"https://bedrock-runtime.{region}.amazonaws.com/openai/v1"
             else:
                 base_url = os.environ.get("OPENAI_API_BASE_URL", "https://api.openai.com/v1")
         if api_key is None:
             if provider == "vllm":
                 api_key = os.environ.get("WEBAGENTBENCH_API_KEY", "dummy")
+            elif provider == "bedrock":
+                api_key = os.environ.get("AWS_BEDROCK_API_KEY", "")
             else:
                 api_key = os.environ.get("OPENAI_API_KEY", "")
         return OpenAI(base_url=base_url, api_key=api_key)

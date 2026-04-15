@@ -27,6 +27,14 @@ logger = logging.getLogger(__name__)
 BASE_DIR = Path(__file__).parent
 _MANIFEST = json.loads((BASE_DIR / "manifest.json").read_text())
 
+# Load local secrets (OPENAI_API_KEY, AWS_BEDROCK_API_KEY, GEMINI_API_KEY, ...)
+# from webagentbench/.env if present. .env is gitignored.
+try:
+    from dotenv import load_dotenv as _load_dotenv
+    _load_dotenv(BASE_DIR / ".env", override=False)
+except Exception:
+    pass
+
 _DEFAULT_MAX_STEPS = 30
 _DEFAULT_TIMEOUT = 300
 
@@ -513,7 +521,7 @@ def _print_summary(results):
 def main():
     parser = argparse.ArgumentParser(description="WebAgentBench Evaluation (BrowserGym)", epilog=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--model", required=True)
-    parser.add_argument("--provider", default="openai", choices=["vllm", "openai", "gemini"])
+    parser.add_argument("--provider", default="openai", choices=["vllm", "openai", "gemini", "bedrock"])
     parser.add_argument("--api-base-url", default=None)
     parser.add_argument("--api-key", default=None)
     parser.add_argument("--temperature", type=float, default=None)
