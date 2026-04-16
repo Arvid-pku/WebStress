@@ -68,6 +68,10 @@ def _validate_predicate(p: Any) -> dict[str, Any]:
 
     A predicate must be a dict with exactly one key, and that key must appear in
     the allowlist. Returns the predicate unchanged on success.
+
+    For nested predicates (``fields`` and ``length``), the inner predicate(s)
+    are recursively validated so typos inside a nested block (e.g.
+    ``{fields: {city: {bogus: 1}}}``) are rejected at load time.
     """
     if not isinstance(p, dict):
         raise ValueError(
@@ -83,6 +87,23 @@ def _validate_predicate(p: Any) -> dict[str, Any]:
             f"predicate key {key!r} is not in the allowlist "
             f"{sorted(_ALLOWED_PREDICATE_KEYS)!r}"
         )
+    arg = p[key]
+    # Recurse into nested predicate forms.
+    if key == "fields":
+        if not isinstance(arg, dict):
+            raise ValueError(
+                f"'fields' predicate expects a dict of field -> predicate, "
+                f"got {type(arg).__name__}"
+            )
+        for sub_field, sub_predicate in arg.items():
+            if not isinstance(sub_field, str):
+                raise ValueError(
+                    f"'fields' predicate keys must be strings, "
+                    f"got {type(sub_field).__name__}"
+                )
+            _validate_predicate(sub_predicate)
+    elif key == "length":
+        _validate_predicate(arg)
     return p
 
 
@@ -124,8 +145,8 @@ class CreateEntry(BaseModel):
 
     entity: str
     bijection: Bijection | None = None
-    count: int = 1
-    weight: float = 1.0
+    count: int = Field(default=1, ge=1)
+    weight: float = Field(default=1.0, ge=0.0)
     properties: dict[str, dict[str, Any]] = Field(default_factory=dict)
 
     model_config = ConfigDict(extra="forbid")
@@ -145,7 +166,7 @@ class UpdateEntry(BaseModel):
     entity: str
     where: dict[str, dict[str, Any]]
     changes: dict[str, dict[str, Any]] = Field(default_factory=dict)
-    weight: float = 1.0
+    weight: float = Field(default=1.0, ge=0.0)
 
     model_config = ConfigDict(extra="forbid")
 
@@ -165,7 +186,7 @@ class DeleteEntry(BaseModel):
 
     entity: str
     where: dict[str, dict[str, Any]]
-    weight: float = 1.0
+    weight: float = Field(default=1.0, ge=0.0)
 
     model_config = ConfigDict(extra="forbid")
 
@@ -185,7 +206,7 @@ class InvariantEntry(BaseModel):
     collection: str
     filter: str | None = None
     preserve: Literal["ALL"] = "ALL"
-    weight: float = 1.0
+    weight: float = Field(default=1.0, ge=0.0)
 
     model_config = ConfigDict(extra="forbid")
 
@@ -196,7 +217,7 @@ class Constraint(BaseModel):
     desc: str
     expr: str
     severity: Literal["critical", "high", "medium", "low"] = "medium"
-    weight: float = 1.0
+    weight: float = Field(default=1.0, ge=0.0)
 
     model_config = ConfigDict(extra="forbid")
 
