@@ -147,6 +147,7 @@ class CreateEntry(BaseModel):
     bijection: Bijection | None = None
     count: int = Field(default=1, ge=1)
     weight: float = Field(default=1.0, ge=0.0)
+    desc: str | None = None  # optional human-readable check label
     properties: dict[str, dict[str, Any]] = Field(default_factory=dict)
 
     model_config = ConfigDict(extra="forbid")

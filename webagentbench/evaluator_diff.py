@@ -591,7 +591,7 @@ def _match_single_block(
                 left = _eval_target_expr(entry.bijection.over, targets)
             except Exception as exc:
                 checks.append({
-                    "desc": f"Bijection {entry.entity} (target lookup failed)",
+                    "desc": entry.desc or f"Create required {entry.entity}(s) (target lookup failed)",
                     "passed": False,
                     "error": f"target expression failed: {exc}",
                 })
@@ -617,8 +617,9 @@ def _match_single_block(
                 ]
                 bijection_excess[i] = len(excess_candidates) > 0
                 passed_weight += entry.weight
+                base_desc = entry.desc or f"Create {entry.entity}(s) — 0 required"
                 checks.append({
-                    "desc": f"Bijection {entry.entity} (empty target set)",
+                    "desc": f"{base_desc} (trivially satisfied — nothing required)",
                     "passed": True,
                     "error": None,
                 })
@@ -653,7 +654,7 @@ def _match_single_block(
             # claim is about over-creation, not under.
             bijection_excess[i] = len(candidates) > n_left
 
-            desc = f"Bijection {entry.entity} ({n_left} slots)"
+            base_desc = entry.desc or f"Create {n_left} required {entry.entity}(s)"
             if saturated:
                 # Record matched candidates so the unaccounted sweep won't
                 # flag them as collateral.
@@ -661,13 +662,17 @@ def _match_single_block(
                     cand = candidates[cj]
                     matched_ids.add((cand.entity, cand.entity_id))
                 passed_weight += entry.weight
-                checks.append({"desc": desc, "passed": True, "error": None})
+                checks.append({
+                    "desc": f"{base_desc} — {n_left} of {n_left} done",
+                    "passed": True,
+                    "error": None,
+                })
             else:
                 # Partial credit: N/M of the weight.
                 fraction = len(matching) / n_left if n_left > 0 else 0.0
                 passed_weight += entry.weight * fraction
                 checks.append({
-                    "desc": desc,
+                    "desc": f"{base_desc} — {len(matching)} of {n_left} done",
                     "passed": False,
                     "error": f"matched {len(matching)} of {n_left}",
                 })
@@ -703,7 +708,7 @@ def _match_single_block(
                 passed = True
                 break
 
-        desc = f"Create {entry.entity} with required properties"
+        desc = entry.desc or f"Create a {entry.entity} with required properties"
         checks.append({
             "desc": desc,
             "passed": passed,

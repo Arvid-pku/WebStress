@@ -71,6 +71,7 @@ seed:
 canonical_diff:
   create:
     - entity: Appointment
+      desc: "Schedule an appointment for each overdue vaccine"
       bijection:
         over: "target['due_imm_ids']"
         variable: v
