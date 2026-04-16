@@ -101,7 +101,7 @@ Every property binding is a predicate. Equality is the singleton-set case.
 | `{predicate: "<expr>"}` | Arbitrary boolean over the field value `x` and state | `{predicate: "len(x) > 0"}` |
 | `{any: true}` | Explicit wildcard — field may take any value, recorded for audit | `{any: true}` |
 
-Missing predicate on a field on an authored entry is a **compile error**: every field the entity schema marks as set-by-agent must either be bound or explicitly waived with `{any: true}`. (The schema is per-env, but the rule is universal: the compiler does not let an author silently omit a field.)
+Missing predicate on a field on an authored entry is a **schema validation error at task-load time**: every field the entity schema marks as set-by-agent must either be bound or explicitly waived with `{any: true}`. (The schema is per-env, but the rule is universal: the validator does not let an author silently omit a field.)
 
 ### 3.3  Bijection semantics
 
@@ -170,29 +170,25 @@ canonical_diff:
   ...
   named_invariants:
     - name: "Agent did not cancel existing non-immunization appointments"
-      derived_from: invariant[0]            # references diff.invariant entry by index
+      ref: invariant[0]       # pointer to a diff entry
       severity: high
     - name: "Agent did not book more appointments than due vaccines"
-      derived_from: cardinality(create[0])  # references the cardinality bound on a create entry
+      ref: create[0]          # the bijection entry — bounded count is implied by the bijection
       severity: medium
 ```
 
-The `derived_from:` field uses a small, closed grammar (not free text):
+The `ref:` field is a single-form pointer into the diff: `invariant[N]` / `create[N]` / `update[N]` / `delete[N]`. That's the whole grammar.
 
-- `invariant[N]` — references the N-th entry in the diff's `invariant:` list.
-- `cardinality(create[N])` — references the bijection/count bound on the N-th `create:` entry.
-- `property(create[N].<field>)` — references a specific field predicate (e.g. `property(create[0].provider_id)`).
-- `delete[N]` / `update[N]` — same convention for the other diff categories.
+### 5.2  Structural verification at load time
 
-### 5.2  Compile-time verification
+When the task YAML is loaded, the schema validator checks:
 
-The compiler verifies each named invariant **structurally**: the `derived_from:` reference must resolve to a diff entry that exists and is of a kind capable of implying the invariant's name. The compiler does not attempt semantic implication (undecidable in general); it verifies:
+1. Each `ref:` parses and resolves to an existing entry in the diff.
+2. The pointed-to entry's kind is consistent with the invariant's name-level intent (an "Agent did not X" label resolves to an `invariant[]` or a bounded `create[]`; it cannot resolve to an `update[]` positive assertion).
 
-1. The reference parses and resolves to a real diff entry.
-2. The diff entry's *kind* matches the invariant's *shape*. A named invariant of the form "Agent did not X" must derive from an `invariant[]` entry (which forbids change) or a cardinality bound (which forbids excess); it cannot derive from a `create[]` property predicate (which asserts a positive fact).
-3. The referenced entry is actually present in the diff.
+Semantic implication ("does the referenced entry *actually* forbid what the label says") is undecidable in general — the validator does not attempt it. Authors get a fast structural check; semantic fidelity is the author's responsibility, same as today. The win is that the label is mechanically *linked* to the rule — so if a later edit removes `invariant[0]`, the stale `ref:` is caught immediately instead of silently decaying into a zombie label.
 
-This ensures a named invariant cannot reference a nonexistent or type-incompatible diff entry. **Named invariants are metadata; the diff is the truth.** The author writes human-readable labels; the compiler keeps them honest to the structure.
+**Named invariants are metadata pointing at diff rules; the diff is the enforcement.**
 
 ### 5.3  Runtime output
 
@@ -221,14 +217,14 @@ Output:
    - `{eq: x}` → `x`
    - `{in: [...]}` → first element
    - `{between: [lo, hi]}` → midpoint
-   - `{predicate: "..."}` → the author must provide an `example:` value alongside the predicate for preview to work (compile error otherwise)
+   - `{predicate: "..."}` → the author must provide an `example:` value alongside the predicate for preview to work (schema validation error otherwise)
    - `{any: true}` → retain the field's seed-time value; if the field is new on a created entity, use the env schema's default
    Then apply the resulting transformation to `initial_state`.
 3. Opens the env SPA in a browser, pre-loaded with the canonical final state.
 
 The author *looks at the UI* and confirms it matches the task's intended outcome. If the canonical state is obviously wrong (wrong provider shown, no vaccine linkage visible, date in the past), the author edits the diff and re-previews.
 
-This is the mechanical replacement for the three-layer validation approach considered earlier (schema completeness + instruction keyword map + adversarial rejection). Visual review of the canonical final state catches axes the diff failed to bind, because those axes render with visibly-incorrect values.
+Visual review catches axes the diff failed to bind, because those axes render with visibly-incorrect values. The author sees "appointment with no provider name" or "date showing Jan 1 1970" and fixes the predicate before shipping the task.
 
 ### 6.2  Multi-diff preview
 
@@ -240,28 +236,40 @@ For bijection entries with target sets of size N, the preview renders N concrete
 
 ---
 
-## 7  Runtime Integration — Compile to YAML
+## 7  Runtime Integration — Direct Comparison, No Codegen
 
-The runtime is unchanged. The compiler writes generated checks back into the same task YAML in a marked block:
+The evaluator gains one new branch. No generated YAML, no compiled expressions, no `# BEGIN GENERATED` magic blocks. Single source of truth: the `canonical_diff:` block.
 
-```yaml
-# BEGIN GENERATED FROM canonical_diff — DO NOT EDIT BY HAND
-eval:
-  source: server_state
-  checks:
-    - expr: ...           # compiled from create[0].properties
-      desc: ...
-  negative_checks:
-    - expr: ...           # compiled from invariant[0]
-      desc: "Agent did not cancel existing non-immunization appointments"
-      penalty: 0.2
-# END GENERATED
-```
+### 7.1  Per-session state capture
 
-- The `canonical_diff` block is the source of truth; the generated `eval:` block is always regenerable.
-- Migration is per-task: any task can stay on hand-written checks until converted. The compiler only rewrites `eval:` when a `canonical_diff:` block is present.
-- Git diffs remain reviewable. Generated checks are plain expr strings — same format as today, same runtime path, same evaluator logic.
-- A CI check `scripts/assert_generated_blocks_are_fresh.py` fails if a `canonical_diff:` has been edited without regenerating. Prevents drift between source and generated.
+At session creation, the existing session-store already snapshots the seeded initial state and the seed-step `outputs` / `targets`. The evaluator additionally persists a **reference snapshot** of initial state (a deep-copy of all `state.*` collections indexed by entity id).
+
+### 7.2  Evaluation flow
+
+When `/api/env/<env>/evaluate` is called:
+
+1. Compute `agent_diff = diff(initial_snapshot, current_state)`. The diff is a typed set:
+   ```
+   DiffEntry = Create(entity_type, entity_id, fields)
+             | Update(entity_type, entity_id, field_changes)
+             | Delete(entity_type, entity_id, last_fields)
+   ```
+   This is a plain structural diff — walk both snapshots by entity id, emit tuples. ~50 lines.
+
+2. Match `agent_diff` against `canonical_diff` using the algorithm in §4:
+   - For each authored `create/update/delete` entry, find agent entries satisfying its predicates (with bijection where specified).
+   - Build the match; any unmatched agent entry is a collateral violation.
+   - Any `invariant:` entry whose filtered collection has a matching diff entry is a violation.
+
+3. Emit the evaluation report. Format is backward-compatible with today's evaluator output (same `checks:` list with `{desc, passed, error}` and `negative_checks:` list with `{desc, passed, penalty}`). The items populating those lists come from the diff matcher + named invariants, not from expr-string evaluation.
+
+### 7.3  Routing: legacy vs canonical_diff
+
+The evaluator reads the task YAML. If it has a `canonical_diff:` block, the new path runs. Otherwise, the existing `eval.checks` expr-based path runs unchanged. Per-task migration, no global flag, no coordination.
+
+### 7.4  What the runtime gains
+
+One pydantic schema (`CanonicalDiff`), one function (`match_diff(agent_diff, canonical_diff, session.targets) → EvalReport`). The existing expr-based evaluator stays where it is, untouched, for legacy tasks. Total new runtime surface: ~300 lines.
 
 ---
 
@@ -270,7 +278,7 @@ eval:
 The 507 existing tasks do not migrate in one pass.
 
 **Phase 0 — infrastructure (no task changes):**
-Build the compiler, preview tool, and CI freshness check. Ship behind a feature flag. Run it against one sample task end-to-end.
+Build the canonical_diff schema, the diff matcher, and the preview tool. Wire the matcher into `evaluator.py` behind the `if task_def.canonical_diff:` branch. Ship with one pilot task (`pp_immunization_gap_review`) converted end-to-end to prove the path.
 
 **Phase 1 — hardest-failing tasks first:**
 Audit results (e.g. the pp_immunization_gap_review class) identify tasks with known check gaps. Convert these first; each conversion removes a real false-pass from the benchmark. Target: 20 tasks.
@@ -291,45 +299,49 @@ There is no coordination requirement. Any task can be migrated independently. Re
 ## 9  What Stays, What Goes
 
 **Stays:**
-- The `eval:` runtime in `webagentbench/evaluator.py` — unchanged.
-- The `expr:` check language for runtime evaluation — unchanged.
-- The per-env pydantic state schemas (`backend/gmail/state.py`, etc.) — used by the compiler to know field types.
+- The existing `eval:` runtime in `webagentbench/evaluator.py` — untouched. Continues to evaluate legacy tasks via expr strings.
+- The `expr:` check language — still used by tasks that haven't migrated, and by the `{predicate: "..."}` escape hatch for unusual cases.
+- The per-env pydantic state schemas (`backend/gmail/state.py`, etc.) — used by the diff matcher to know field types and by schema-completeness validation.
 - Negative checks as a concept in eval output — retained for interpretability via named invariants.
 - Penalty semantics — named invariants carry a `severity` which maps to existing penalty bands.
 
-**Goes (after full migration):**
+**Added:**
+- `canonical_diff:` block in task YAML (new, co-exists with `eval:` during migration).
+- One new evaluator branch: diff matcher (~300 lines).
+- One preview tool: `tasks/preview.py` for visually verifying a canonical state.
+
+**Goes (after full migration, Phase 4):**
 - Hand-authored `eval.checks` / `eval.negative_checks` blocks in YAMLs.
-- The eval-hardening-playbook patterns §1.1–§1.6, §2.1–§2.5, §6 — these become compiler invariants; authors never re-derive them.
+- The eval-hardening-playbook patterns §1.1–§1.6, §2.1–§2.5, §6 — replaced by the diff matcher's structural guarantees; authors never re-derive them.
 - The informal "audit procedure" in playbook §12.
 
-**Goes immediately (not end-of-migration):**
-- Nothing. The compiler is strictly additive in Phase 0–2. Existing tasks continue to run.
+**Goes immediately:** Nothing. The new path is strictly additive in Phase 0–2. Existing tasks keep working.
 
 ---
 
 ## 10  Component Boundaries
 
-Three new files, three clear responsibilities:
+Three new files, three clear responsibilities, no shared mutable state:
 
-| File | Responsibility | Dependencies |
-|---|---|---|
-| `webagentbench/tasks/_canonical_diff_schema.py` | Pydantic model for `canonical_diff` block + predicate vocabulary | pydantic only |
-| `webagentbench/tasks/_canonical_diff_compiler.py` | Compile `canonical_diff` → `eval.checks`/`eval.negative_checks` expr strings; verify named invariants are implied by diff | `_canonical_diff_schema` + per-env state schema |
-| `webagentbench/tasks/_canonical_diff_preview.py` | Apply diff to seeded state, open SPA for visual review | `_canonical_diff_schema` + runtime server |
+| File | Responsibility | Dependencies | ~LOC |
+|---|---|---|---|
+| `webagentbench/tasks/canonical_diff.py` | Pydantic model for `canonical_diff` block + predicate vocabulary + `ref:` grammar. Pure schema, no logic. | pydantic only | ~150 |
+| `webagentbench/evaluator_diff.py` | `compute_diff(before, after)` + `match_diff(agent_diff, canonical, targets)` → `EvalReport`. Pure functions, no I/O. | canonical_diff schema, per-env state schema | ~300 |
+| `webagentbench/tasks/preview.py` | CLI: apply diff to seed → launch SPA at canonical state for author review. Thin wrapper around existing session creation. | canonical_diff schema + `webagentbench.app` | ~100 |
 
-Each file is testable in isolation. Compiler is a pure function (YAML in, YAML out); preview is an I/O wrapper. Schema has no runtime side effects.
+Plus one integration point: `webagentbench/evaluator.py` gets an `if task_def.canonical_diff:` branch that calls `evaluator_diff.match_diff(...)`. Five lines.
+
+Total new code surface: ~550 lines across four files. Each file is testable in isolation. The schema is pure data; the matcher is pure functions; the preview is a thin CLI. No global state, no singletons, no code generation.
 
 ---
 
 ## 11  Testing Strategy
 
-The compiler's correctness is itself testable using the same primitive:
+- **Unit tests on the diff matcher.** Synthetic `before` / `after` pairs + canonical_diff blocks + expected `EvalReport`. Covers each predicate type, bijection matching (saturated and unsaturated), invariant violations, and collateral detection. `webagentbench/tests/test_evaluator_diff.py`.
+- **Round-trip tests per task.** For each task with a `canonical_diff:` block: (1) apply the diff to seeded state → matcher must return pass; (2) for each authored predicate, synthesize a one-field mutation violating it → matcher must return fail with the expected named invariant attributed. These are auto-generated from the diff; authors write nothing.
+- **Equivalence tests during migration.** For each task being migrated, run both the old hand-authored expr checks and the new diff matcher against the same corpus of historical agent trajectories (from `results/webagentbench/*.json`). Divergence flags either a matcher bug or a latent check bug in the original. Both get resolved before deleting the legacy `eval:` block.
 
-- **Golden-file tests:** a small corpus of canonical_diff YAMLs + expected compiled `eval:` blocks. CI diff-checks the output.
-- **Round-trip tests:** for each golden diff, apply it to seed → verify the compiled checks pass. Mutate one field of the applied result → verify at least one compiled check fails.
-- **Equivalence tests:** for each task migrated, both old hand-authored checks and new compiled checks are run on a corpus of historical agent trajectories (from `results/webagentbench/*.json`). Divergence flags either a compiler bug or a latent check bug in the original; both are fixed before deleting the hand-written version.
-
-The equivalence test is the most valuable guardrail for migration: no task migrates without its compiled checks being proven equivalent-or-stricter than the hand-written ones on real trajectory data.
+The equivalence test is the primary migration guardrail: no task loses its legacy checks until the diff matcher is proven equivalent-or-stricter on real trajectory data.
 
 ---
 
@@ -342,7 +354,7 @@ Some instructions require predicates over state the agent discovers (e.g., "*rep
 Fields like `Email.headers` are dicts. How does `{eq: {...}}` compare? Deep equality? Subset? We propose: dicts default to subset-equality unless the schema marks the field `strict`.
 
 **OQ-3: Author-side type-checking.**
-Predicates reference target-dict keys like `target.admin_providers[v]`. If the seed builder didn't emit `admin_providers`, the compile error should point at the seed, not the check. Needs a build-time link between seed-builder output schemas and canonical_diff predicate references.
+Predicates reference target-dict keys like `target.admin_providers[v]`. If the seed builder didn't emit `admin_providers`, the validation error should point at the seed, not the check. Needs a load-time link between seed-builder output schemas and canonical_diff predicate references.
 
 **OQ-4: Seed builder additions.**
 Several existing tasks lack the target data their new `canonical_diff` needs (e.g., immunization has no `admin_providers` output yet). Migrating those tasks requires extending the seed builder first. Is this in-scope for Phase 1 or a prerequisite?
@@ -358,4 +370,4 @@ The design succeeds if, once implemented and the first 20 tasks are migrated:
 1. No task with a `canonical_diff:` block can pass an evaluation run where the agent produces a final state the author did not intend. (Verified by an adversarial trajectory corpus.)
 2. Authors reviewing a canonical diff + preview UI consistently catch missing bindings that the previous hand-written-check review missed. (Verified by blind review test: give authors two versions of a task, one with a known gap, and measure catch rate.)
 3. Migrated tasks show measurable pass-rate drops on agents known to produce near-correct-but-wrong trajectories (baseline GPT-5.4 browser-use). A drop indicates the new checks caught gaps the old checks missed.
-4. The playbook's §1-§2 patterns are deleted from the docs — the compiler enforces them structurally.
+4. The playbook's §1-§2 patterns are deleted from the docs — the schema validator + diff matcher enforce them structurally.
