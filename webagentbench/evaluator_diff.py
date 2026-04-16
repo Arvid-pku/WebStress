@@ -737,6 +737,30 @@ def _match_single_block(
                 details={"entry_index": i},
             ))
 
+    # 2.5 Constraints -- state-level aggregates (spec §3.6)
+    for i, c in enumerate(block.constraints):
+        total_weight += c.weight
+        globs = {"__builtins__": _SAFE_BUILTINS}
+        locs = {"state": final, "initial": initial, "target": targets}
+        try:
+            # Restricted eval -- author-controlled source, safe-builtins only.
+            ok = bool(eval(c.expr, globs, locs))  # noqa: S307
+        except Exception:
+            ok = False
+        negative_checks.append({
+            "desc": c.desc,
+            "passed": ok,
+            "penalty": _SEVERITY_PENALTY.get(c.severity, _SEVERITY_PENALTY["medium"]),
+        })
+        if ok:
+            passed_weight += c.weight
+        else:
+            failures.append(Failure(
+                kind="constraint",
+                description=c.desc,
+                details={"entry_index": i, "severity": c.severity},
+            ))
+
     # 3. Unaccounted sweep.
     # Any agent_diff entry that (a) was not matched to a positive target and
     # (b) is not on an invariant-guarded collection is collateral.
@@ -763,8 +787,46 @@ def _match_single_block(
                 details={"entity_id": entry.entity_id},
             ))
 
-    score = (passed_weight / total_weight) if total_weight > 0 else 1.0
-    score = max(0.0, min(1.0, score))
+    # 3.5 Named-invariant attribution (spec §5)
+    #
+    # For each named_invariant, resolve its ref to a diff entry and rewrite
+    # the corresponding entry's descriptor in checks/negative_checks with the
+    # human-readable label and severity. This is presentation-only -- the
+    # underlying pass/fail is determined by the diff rules above.
+    for ni in block.named_invariants:
+        m = re.match(r"(invariant|create|update|delete)\[(\d+)\]", ni.ref)
+        if not m:
+            continue
+        kind, idx = m.group(1), int(m.group(2))
+        severity = _SEVERITY_PENALTY.get(ni.severity, _SEVERITY_PENALTY["medium"])
+        if kind == "invariant" and 0 <= idx < len(block.invariant):
+            # Rewrite the matching negative_check
+            target_collection = block.invariant[idx].collection
+            for nc in negative_checks:
+                if target_collection in nc["desc"] and nc["desc"].startswith("Preserve "):
+                    nc["desc"] = ni.name
+                    nc["penalty"] = severity
+                    break
+        elif kind == "create" and 0 <= idx < len(block.create):
+            # For bijection bounded-creation: synthesize a negative_check
+            # showing whether the cardinality bound held.
+            entity = block.create[idx].entity
+            # Find the corresponding `Bijection ...` check in checks list
+            for c in checks:
+                if c["desc"].startswith(f"Bijection {entity}"):
+                    negative_checks.append({
+                        "desc": ni.name,
+                        "passed": c["passed"],
+                        "penalty": severity,
+                    })
+                    break
+
+    # 4. Penalty-adjusted score
+    penalty = sum(
+        nc["penalty"] for nc in negative_checks if not nc["passed"]
+    )
+    score_raw = (passed_weight / total_weight) if total_weight > 0 else 1.0
+    score = max(0.0, min(1.0, score_raw - penalty))
     passed = len(failures) == 0
 
     return EvalReport(

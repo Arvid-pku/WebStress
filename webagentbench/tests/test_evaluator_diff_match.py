@@ -148,3 +148,102 @@ def test_bijection_excess_fails():
     ]
     report = match_diff(agent_diff, cd, targets=targets, initial=None, final=None)
     assert report.passed is False
+
+
+# -- Task 6: Named invariants + constraints + scoring ----------------
+
+def test_named_invariant_attached_on_failure():
+    cd = _diff({
+        "invariant": [{"collection": "state.contacts", "preserve": "ALL"}],
+        "named_invariants": [
+            {"name": "Agent did not modify contacts",
+             "ref": "invariant[0]", "severity": "high"},
+        ],
+    })
+    agent_diff = [Update(entity="contacts", entity_id="c1",
+                         field_changes={"name": ("a", "b")})]
+    report = match_diff(agent_diff, cd, targets={}, initial=None, final=None)
+    assert report.passed is False
+    labeled = [n for n in report.negative_checks if n["desc"] == "Agent did not modify contacts"]
+    assert labeled, f"expected named invariant label in negative_checks, got: {report.negative_checks}"
+    assert labeled[0]["passed"] is False
+
+
+def test_constraint_block_fails_task():
+    cd = _diff({
+        "constraints": [{
+            "desc": "chat must have at least one message",
+            "expr": "len(state['chat']) >= 1",
+            "severity": "critical",
+        }],
+    })
+    final_state = {"chat": []}
+    report = match_diff([], cd, targets={}, initial=None, final=final_state)
+    assert report.passed is False
+    assert any("chat must have" in c["desc"] for c in report.negative_checks)
+
+
+def test_constraint_block_passes_when_true():
+    cd = _diff({
+        "constraints": [{
+            "desc": "chat has at least one message",
+            "expr": "len(state['chat']) >= 1",
+            "severity": "critical",
+        }],
+    })
+    final_state = {"chat": [{"role": "assistant", "content": "hi"}]}
+    report = match_diff([], cd, targets={}, initial=None, final=final_state)
+    assert report.passed is True
+
+
+def test_partial_credit_bijection():
+    cd = _diff({
+        "create": [{
+            "entity": "appointments",
+            "bijection": {"over": "target['due_ids']", "variable": "v"},
+            "properties": {"vaccine_ref": {"expr": "x == v"}},
+        }],
+    })
+    targets = {"due_ids": ["imm_1", "imm_2", "imm_3"]}
+    agent_diff = [
+        Create(entity="appointments", entity_id="a1", fields={"vaccine_ref": "imm_1"}),
+        Create(entity="appointments", entity_id="a2", fields={"vaccine_ref": "imm_2"}),
+        # Missing imm_3 -- 2/3 credit
+    ]
+    report = match_diff(agent_diff, cd, targets=targets, initial=None, final=None)
+    assert report.passed is False
+    assert 0.55 <= report.score <= 0.75, f"expected ~2/3 score, got {report.score}"
+
+
+def test_named_invariant_severity_penalty_applied():
+    """High-severity named invariant failure reduces score more than medium."""
+    cd_high = _diff({
+        "invariant": [{"collection": "state.contacts", "preserve": "ALL"}],
+        "named_invariants": [
+            {"name": "Major contact violation",
+             "ref": "invariant[0]", "severity": "high"},
+        ],
+    })
+    cd_low = _diff({
+        "invariant": [{"collection": "state.contacts", "preserve": "ALL"}],
+        "named_invariants": [
+            {"name": "Minor contact violation",
+             "ref": "invariant[0]", "severity": "low"},
+        ],
+    })
+    agent_diff = [Update(entity="contacts", entity_id="c1",
+                         field_changes={"name": ("a", "b")})]
+
+    r_high = match_diff(agent_diff, cd_high, targets={}, initial=None, final=None)
+    r_low = match_diff(agent_diff, cd_low, targets={}, initial=None, final=None)
+
+    # high severity penalty (0.2) > low severity penalty (0.1) -> higher penalty
+    # means lower score (both tasks pass zero positive weight; both fail the invariant)
+    # Since passed_weight == 0, raw score is 0; penalty subtracts from 0, clamped
+    # to 0. So score is 0 for both. The distinction is in the negative_checks penalty
+    # field.
+    high_penalty = next(n["penalty"] for n in r_high.negative_checks
+                         if n["desc"] == "Major contact violation")
+    low_penalty = next(n["penalty"] for n in r_low.negative_checks
+                        if n["desc"] == "Minor contact violation")
+    assert high_penalty > low_penalty
