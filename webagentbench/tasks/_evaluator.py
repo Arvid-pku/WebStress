@@ -440,6 +440,19 @@ def evaluate(
         ``checks``, ``negative_checks``, and ``final_score`` keys.
     """
 
+    # ------------------------------------------------------------------
+    # Canonical-diff dispatch (spec §7).
+    # ------------------------------------------------------------------
+    # Tasks that declare a ``canonical_diff`` block are evaluated via the
+    # net-diff matcher, not the legacy expression path. This branch runs
+    # first because the new grammar is strictly richer than the legacy
+    # expr checks.
+    # ------------------------------------------------------------------
+    if getattr(task, "canonical_diff", None) is not None:
+        return _evaluate_via_canonical_diff(
+            task, server_state=server_state, targets=targets
+        )
+
     eval_config = getattr(task, "eval", None)
 
     # ------------------------------------------------------------------
@@ -575,3 +588,102 @@ def evaluate(
     if collateral:
         result["collateral"] = collateral
     return result
+
+
+# ------------------------------------------------------------------
+# Canonical-diff dispatch (spec §7)
+# ------------------------------------------------------------------
+
+def _evaluate_via_canonical_diff(
+    task: Any,
+    *,
+    server_state: Any,
+    targets: dict[str, Any],
+) -> dict[str, Any]:
+    """Evaluate a task whose YAML declares a ``canonical_diff`` block.
+
+    Resolution flow (spec §7.5):
+      * The initial snapshot is pulled from
+        ``server_state._initial_state_copy`` (a full ``BaseEnvState``
+        deep-copy taken by ``SessionManager.create_session``). If that's
+        unavailable we fall back to the legacy ``_initial_snapshot``
+        dict populated by route handlers at eval-time — both shapes are
+        accepted by ``_collections_of``.
+      * The ``session_start`` binding, if present in ``targets``, is
+        parsed to a ``datetime`` for use in time-window predicates.
+    """
+    from datetime import datetime
+
+    from webagentbench.evaluator_diff import compute_diff, match_diff
+
+    initial = getattr(server_state, "_initial_state_copy", None)
+    if initial is None:
+        initial = getattr(server_state, "_initial_snapshot", None)
+
+    # Parse session_start (stored as ISO string in resolved_targets).
+    session_start_raw = targets.get("session_start") if targets else None
+    session_start: datetime | None = None
+    if isinstance(session_start_raw, str):
+        try:
+            session_start = datetime.fromisoformat(session_start_raw)
+        except ValueError:
+            session_start = None
+    elif isinstance(session_start_raw, datetime):
+        session_start = session_start_raw
+
+    try:
+        agent_diff = compute_diff(initial, server_state) if initial is not None else []
+    except TypeError:
+        # Snapshot type unsupported by _collections_of — treat as "no prior
+        # state" so the matcher still runs against the final state.
+        agent_diff = []
+
+    report = match_diff(
+        agent_diff,
+        task.canonical_diff,
+        targets=dict(targets or {}),
+        initial=initial,
+        final=server_state,
+        session_start=session_start,
+    )
+
+    return {
+        "score": report.score,
+        "success": report.passed,
+        "final_score": report.score,
+        "checks": report.checks,
+        "negative_checks": report.negative_checks,
+        "reasoning": _format_diff_reasoning(report),
+    }
+
+
+def _format_diff_reasoning(report) -> str:
+    """Render a diff-match report in the legacy reasoning format.
+
+    Mirrors the structure produced by the expression-based evaluator so
+    downstream log consumers (visualizer, trajectory dumper) don't need
+    conditional formatting.
+    """
+    passed = sum(1 for c in report.checks if c["passed"])
+    total = len(report.checks)
+    lines = [f"Passed {passed}/{total} checks."]
+    for c in report.checks:
+        mark = "PASS" if c["passed"] else "FAIL"
+        line = f"  [{mark}] {c.get('desc', '')}"
+        err = c.get("error")
+        if err:
+            line += f" (error: {err})"
+        lines.append(line)
+    failed_negs = [nc for nc in report.negative_checks if not nc["passed"]]
+    if failed_negs:
+        total_penalty = sum(nc.get("penalty", 0.0) for nc in failed_negs)
+        lines.append(
+            f"Negative check penalties: {len(failed_negs)} triggered, "
+            f"total penalty {total_penalty:.2f}."
+        )
+        for nc in failed_negs:
+            lines.append(f"  [PENALTY -{nc.get('penalty', 0.0):.2f}] {nc.get('desc', '')}")
+    elif report.negative_checks:
+        lines.append("All negative checks passed (no penalties).")
+    lines.append(f"Final score: {report.score:.3f} | Success: {report.passed}")
+    return "\n".join(lines)

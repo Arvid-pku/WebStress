@@ -905,6 +905,21 @@ async def health():
     }
 
 
+@app.post("/api/env/{env_id}/session/{session_id}/chat")
+async def append_chat(env_id: str, session_id: str, body: dict, request: Request):
+    """Record an agent chat message into state.chat.
+
+    Called by the BrowserGym harness each time the agent emits a
+    ``send_msg_to_user`` / ``report_infeasible`` message. Best-effort: silently
+    no-ops if the session is unknown so chat forwarding never aborts a task.
+    """
+    session_manager: SessionManager = request.app.state.session_manager
+    role = body.get("role", "assistant")
+    content = body.get("content", "")
+    session_manager.append_chat_message(session_id, role=role, content=content)
+    return {"ok": True}
+
+
 if __name__ == "__main__":
     import argparse
     import uvicorn

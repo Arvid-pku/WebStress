@@ -12,6 +12,8 @@ from typing import Any
 
 import yaml
 
+from webagentbench.tasks.canonical_diff import CanonicalDiff
+
 
 # ------------------------------------------------------------------
 # Sub-schemas for the ``seed:`` block
@@ -110,6 +112,7 @@ class TaskDefinition:
     start_path: str = "/"
     seed: SeedConfig | None = None
     eval: EvalConfig | None = None
+    canonical_diff: CanonicalDiff | None = None
 
     # ------------------------------------------------------------------
     # Loader
@@ -133,9 +136,13 @@ class TaskDefinition:
         raw = dict(raw)
         seed_raw = raw.pop("seed", None)
         eval_raw = raw.pop("eval", None)
+        canonical_diff_raw = raw.pop("canonical_diff", None)
         known = {f.name for f in cls.__dataclass_fields__.values()}
         filtered = {k: v for k, v in raw.items() if k in known}
         td = cls(**filtered)
+
+        if canonical_diff_raw is not None:
+            td.canonical_diff = CanonicalDiff.model_validate(canonical_diff_raw)
 
         if seed_raw is not None:
             actors = {

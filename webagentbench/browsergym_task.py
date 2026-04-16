@@ -96,6 +96,7 @@ class WebAgentBenchTask(AbstractBrowserTask):
         self._degradation_config = None
         self._evaluated = False
         self._initial_chat_count = -1  # track initial chat messages to avoid false termination
+        self._forwarded_chat_count = 0  # number of agent chat messages already pushed to state.chat
 
         # BrowserGym task properties
         self.viewport = {"width": 1280, "height": 720}
@@ -232,6 +233,33 @@ class WebAgentBenchTask(AbstractBrowserTask):
             if msg.get("role") == "infeasible":
                 done = True
                 break
+
+        # Forward newly-seen agent chat messages to state.chat (best-effort).
+        # BrowserGym stores the text under the "message" key for assistant and
+        # infeasible entries; we normalize to the role/content schema expected
+        # by the /chat endpoint. Failure here must never abort validate().
+        if self._session_id and self._env_id:
+            agent_messages = [
+                m for m in new_messages
+                if m.get("role") in ("assistant", "infeasible")
+            ]
+            unpushed = agent_messages[self._forwarded_chat_count:]
+            for msg in unpushed:
+                try:
+                    _http_json(
+                        f"{self._bench_url}/api/env/{self._env_id}"
+                        f"/session/{urllib.parse.quote(self._session_id)}/chat",
+                        method="POST",
+                        payload={
+                            "role": msg.get("role", "assistant"),
+                            "content": msg.get("message", ""),
+                        },
+                        headers=controller_headers(),
+                    )
+                except Exception:
+                    # Chat forwarding is best-effort; never block evaluation.
+                    pass
+                self._forwarded_chat_count += 1
 
         if not done:
             return 0.0, False, "", {}
