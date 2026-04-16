@@ -530,19 +530,27 @@ Precise behavior on edge cases that would otherwise be implementation-defined:
 The 507 existing tasks do not migrate in one pass.
 
 **Phase 0 — infrastructure (no task changes):**
-Build the canonical_diff schema, the diff matcher, and the preview tool. Wire the matcher into `evaluator.py` behind the `if task_def.canonical_diff:` branch. Ship with one pilot task (`pp_immunization_gap_review`) converted end-to-end to prove the path.
+Build the canonical_diff schema, the diff matcher, and the preview tool. Wire the matcher into `evaluator.py` behind the `if task_def.canonical_diff:` branch. Ship with one pilot task (`pp_immunization_gap_review`) converted end-to-end to prove the path. **Pilot env: `patient_portal`** (chosen because it has the running example that motivated this design; the pilot doubles as a concrete false-pass fix).
 
-**Phase 1 — hardest-failing tasks first:**
-Audit results (e.g. the pp_immunization_gap_review class) identify tasks with known check gaps. Convert these first; each conversion removes a real false-pass from the benchmark. Target: 20 tasks.
+**Phase 1 — hardest-failing tasks first (target: 20 tasks):**
+Prioritize tasks **by known-false-pass rate**: pick tasks where the baseline GPT-5.4 browser-use run produces 1.00 scores on obviously-wrong trajectories. Historical trajectories in `results/webagentbench/` are the source. This ordering maximizes "the new system was needed" evidence per PR and builds reviewer confidence in the pattern.
 
-**Phase 2 — new tasks must use canonical_diff:**
-Block merging any new task without a `canonical_diff:` block. The gate is a test in `webagentbench/tests/test_task_requires_canonical_diff.py` that walks every YAML under `webagentbench/tasks/` created or modified in the PR (detected via `git diff --name-only main...HEAD`), and fails if any such YAML lacks a `canonical_diff:` top-level key. Legacy tasks in the corpus are grandfathered until explicitly touched; the gate only fires on *new or modified* YAMLs. Old tasks continue to work; the corpus only grows in the new format.
+**Phase 2 — new tasks must use canonical_diff (trigger: 5 tasks migrated cleanly):**
+The CI gate turns on **after 5 Phase-1 migrations land cleanly** (proves the authoring protocol catches gaps in practice, not just in theory). The gate is `webagentbench/tests/test_task_requires_canonical_diff.py` — walks new/modified YAMLs in the PR diff (`git diff --name-only main...HEAD`) and fails any that lack a `canonical_diff:` top-level key. Legacy tasks are grandfathered until explicitly touched.
 
 **Phase 3 — opportunistic backfill:**
-When touching an existing task for any reason (seed update, instruction reword, evaluator fix), convert it to `canonical_diff` as part of the change. Target: 6 months to fully migrate.
+Whenever touching an existing task for any reason (seed update, instruction reword, evaluator fix), convert it to `canonical_diff` as part of the change. Adopt TypedDicts on seed-builder `outputs:` during this phase (resolves OQ-3).
 
-**Phase 4 — remove legacy path:**
-After full migration, the `eval.checks` hand-authored path is removed. Compiler becomes the only way to produce `eval:` blocks.
+**Phase 4 — remove legacy path (target: ~6 months after Phase 0):**
+After full migration, delete `eval.checks` / `eval.negative_checks` handling from `evaluator.py` and remove `expr:`-based check support. The `canonical_diff:` block becomes the only way to declare task correctness. Wall-clock date is indicative; triggered by "migration backlog < 10 tasks" rather than calendar time.
+
+### 8.1  PR policy during migration (Phases 1–3)
+
+- **Preview screenshot attached** to every PR with a `canonical_diff:` (visual confirmation the canonical state matches intent). Optional after Phase 4 when the pattern is fully internalized.
+- **Equivalence-test summary** in PR description (§11): trajectory counts per outcome quadrant.
+- **Coverage-improvement list** in PR description: the axes the new diff checks that the legacy `eval.checks` missed.
+- **LLM-authored diffs** are allowed; human review against Protocol §16 is mandatory.
+- **Seed extensions** (OQ-4) are bundled into the same PR as the canonical_diff migration — split PRs tend to leave orphaned seed-builder changes in main without the diff that motivated them.
 
 There is no coordination requirement. Any task can be migrated independently. Reversal (back to hand-written checks) is also trivial during the migration window — delete the `canonical_diff:` block, restore hand-written `eval:`.
 
@@ -593,48 +601,77 @@ Total new code surface: ~550 lines across four files. Each file is testable in i
 
 - **Unit tests on the diff matcher.** Synthetic `before` / `after` pairs + canonical_diff blocks + expected `EvalReport`. Covers each predicate type, bijection matching (saturated and unsaturated), invariant violations, and collateral detection. `webagentbench/tests/test_evaluator_diff.py`.
 - **Round-trip tests per task.** For each task with a `canonical_diff:` block: (1) apply the diff to seeded state → matcher must return pass; (2) for each authored predicate, synthesize a one-field mutation violating it → matcher must return fail with the expected named invariant attributed. These are auto-generated from the diff; authors write nothing.
-- **Equivalence tests during migration.** For each task being migrated, run both the old hand-authored expr checks and the new diff matcher against the same corpus of historical agent trajectories (from `results/webagentbench/*.json`). Divergence flags either a matcher bug or a latent check bug in the original. Both get resolved before deleting the legacy `eval:` block.
+- **Equivalence tests during migration.** For each task being migrated, run both the old hand-authored expr checks and the new diff matcher against a defined corpus of historical agent trajectories and compare pass/fail per trajectory. Divergence flags either a matcher bug or a latent check bug in the original. Both get resolved before deleting the legacy `eval:` block.
 
-The equivalence test is the primary migration guardrail: no task loses its legacy checks until the diff matcher is proven equivalent-or-stricter on real trajectory data.
+**Equivalence-test trajectory corpus (locked).** The corpus is the intersection of:
+  - Trajectories from `results/webagentbench/*.json` dated within the **last 6 months**.
+  - Trajectories whose parent run achieved **average score ≥ 0.5** (weak-model runs rarely exercise edge cases and skew the comparison).
+Old trajectories may have been produced against obsolete seeds and can yield false-divergence; the date window keeps the corpus relevant. The 0.5-score floor keeps the corpus signal-rich without excluding every failure (agents sometimes fail on exactly the cases we want to distinguish).
+
+The equivalence test is the primary migration guardrail: no task loses its legacy checks until the diff matcher is proven equivalent-or-stricter on this corpus.
 
 ---
 
-## 12  Open Questions
+## 12  Resolved Design Questions
 
-**OQ-1: Derived predicates evaluated at final-state time.**
-Some instructions require predicates over state the agent discovers (e.g., "*reply to the sender who mentioned X*" where X is only visible in email bodies). The `{expr: "..."}` escape hatch already covers this via the `state` binding. Deciding whether to promote this to a first-class category (e.g., a dedicated `{resolve: "..."}` predicate whose return value is then compared to the field) is a syntactic-sugar question, not an architecture one.
+All questions considered during the design phase have been resolved. This section records each resolution for future readers; no action items remain.
 
-**OQ-2: Strict vs permissive dict-field equality.**
-Resolved in §3.2 (the `{fields: {...}}` predicate). Deep `{eq: {...}}` is strict; `{fields:}` is selective. Retained in OQ list only to note that we may want a `{fields_subset:}` shorthand for common "these fields must match, others may drift" cases — deferred pending real-world need.
+**OQ-1 — Derived-predicate syntactic sugar. RESOLVED: not adding.**
+`{expr: "..."}` with the `state` binding already covers final-state-derived values. A dedicated `{resolve: "..."}` form was considered as syntactic sugar but rejected — adds grammar for marginal ergonomics. Revisit only if >20 tasks adopt the pattern and find the verbose form awkward.
 
-**OQ-3: Seed-output type contract.**
-Predicates reference target-dict keys like `target.admin_providers[v]`. If the seed builder didn't emit `admin_providers`, the validation error should point at the seed, not the check. Needs a load-time link between seed-builder output schemas and canonical_diff predicate references. Low-risk but requires pydantic TypedDicts on seed outputs to become viable.
+**OQ-2 — Nested-object predicate semantics. RESOLVED in §3.2.**
+The `{fields: {...}}` form gives selective per-subfield binding with unmentioned sub-fields defaulting to `{any: true}`; `{eq: {...}}` remains strict deep-equality. A `{fields_subset:}` shorthand was considered; deferred pending real-world need for the pattern.
 
-**OQ-4: Seed builder additions.**
-Several existing tasks lack the target data their new `canonical_diff` needs (e.g., immunization has no `admin_providers` output yet). Migrating those tasks requires extending the seed builder first. Treated as **prerequisite** for per-task migration: a task cannot be migrated until its seed emits the targets the diff needs. This is expected to be the largest per-task chunk of migration effort.
+**OQ-3 — Seed-output type contract. RESOLVED: adopt TypedDicts in Phase 3.**
+Seed-builder `outputs:` currently have no type contract; predicate references like `target.admin_providers[v]` can produce confusing errors when the seed doesn't emit the key. Migrating seed builders to return `TypedDict` schemas gives the validator a clean point to attribute the error. Not blocking for Phase 0-2; adopted during Phase 3 opportunistic backfill.
 
-**OQ-5 (RESOLVED): Read-only / evidence tasks.**
-Resolved by promoting chat messages to first-class state (§3.5). Every task — read-only included — produces a non-empty diff because `send_msg_to_user` always appends to `state.chat`. Correctness of the answer becomes a content predicate on the `ChatMessage.content` field. The legacy-eval escape hatch for read-only tasks is **removed**; no task bypasses the diff model. The only implementation cost is a ~20-LOC-per-env backend change to record chat messages into `State.chat`.
+**OQ-4 — Seed builder additions for new targets. RESOLVED: bundled into migration PRs.**
+Many existing tasks need new seed outputs before their `canonical_diff` can reference them. Seed extensions are bundled into the migration PR (one diff = one task's fully-working migration), never split. Protocol §15 M5 codifies this.
 
-**OQ-6 (RESOLVED): Cross-collection aggregate invariants.**
-Resolved via the `constraints:` block (§3.6). Authors write a small expr-string for cases genuinely not expressible as per-entity predicates (sum/count/min/max, cross-collection joins). The block is deliberately narrow and stigmatized in the protocol so it remains rare; structured predicates stay the default.
+**OQ-5 — Read-only / evidence tasks. RESOLVED in §3.5.**
+Promoted chat messages to first-class state via `state.chat: list[ChatMessage]`. Every task including read-only produces a non-empty diff (at minimum, the agent's answer ChatMessage). No legacy-eval escape hatch remains.
 
-**OQ-7 (RESOLVED): Audit-log and append-only-log convention.**
-Resolved via the pydantic `Config` marker on SYSTEM_MANAGED collections (§7.1). The default-invariant sweep skips them. Tasks may still declare explicit invariants on the audit log when a specific suspicious-action guard is genuinely needed — the marker only affects the *default*, not the authored form.
+**OQ-6 — Cross-collection aggregate invariants. RESOLVED in §3.6.**
+Introduced the `constraints:` block for state-level assertions that can't be expressed per-entity (sums, joins, pre/post comparisons). Deliberately narrow grammar, no count limit, reviewers expected to scrutinize each use.
 
-**OQ-8: Adversarial mutation synthesis when negation is empty.**
-For `{in: [p1, p2, p3]}` where the env's entire provider set is `{p1, p2, p3}`, no "pick a non-admin provider" mutation exists — the adversarial test cannot be synthesized. The adversarial test harness skips that field and logs a warning; the preview step becomes the primary guard. Rare in practice but worth handling gracefully.
+**OQ-7 — Audit-log / append-only-log convention. RESOLVED in §7.1.**
+Pydantic `Config` marker on SYSTEM_MANAGED collections; matcher's default-invariant sweep skips them. Tasks may still declare explicit invariants on the audit log when genuinely needed — the marker only affects the default sweep.
 
-**OQ-3 (remains open): Seed-output type contract.**
-Predicates reference target-dict keys like `target.admin_providers[v]`. If the seed builder didn't emit `admin_providers`, the validation error should point at the seed, not the check. Needs a load-time link between seed-builder output schemas and canonical_diff predicate references. Low-risk but requires pydantic TypedDicts on seed outputs.
+**OQ-8 — Adversarial mutation synthesis when negation pool is empty. RESOLVED: skip with warning.**
+When `{in: [p1, p2, p3]}` covers the entire candidate set and no "not-in-set" mutation exists, the adversarial synthesizer skips the field and logs a warning. The preview step (§6.1) is the authoritative gate in these rare cases. Forcing authors to broaden the seed just to support adversarial-synthesis would invert the ergonomics.
 
-**OQ-4 (remains open): Seed builder additions.**
-Several existing tasks lack the target data their new `canonical_diff` needs. Per-task migration prerequisite — largest chunk of migration effort.
+---
 
-**OQ-1 (remains open): Derived-predicate syntactic sugar.**
-`{expr: "..."}` already covers final-state-derived values via the `state` binding. Whether to add a dedicated `{resolve: "..."}` syntax is cosmetic, deferred.
+### 12.1  Rollout policies (locked)
 
-Only OQ-1, OQ-3, OQ-4, OQ-8 remain open. None affect architecture.
+Decisions that don't belong in the architecture but are recorded here for consistency across the migration effort:
+
+| Policy | Decision | Rationale |
+|---|---|---|
+| Pilot env (Phase 0) | `patient_portal`, task `pp_immunization_gap_review` | Task was the motivating example; pilot doubles as a concrete false-pass fix |
+| Severity → penalty mapping | `critical=0.3, high=0.2, medium=0.15, low=0.1` (today's values) | Rebalancing during migration would invalidate historical trajectory comparisons. Revisit after Phase 4. |
+| CI-gate activation (Phase 2) | After 5 Phase-1 migrations land cleanly | Validates pattern before making it mandatory |
+| Phase 1 task selection | By known-false-pass rate (baseline GPT-5.4 scoring 1.0 on obviously-wrong trajectories) | Maximum "this was needed" evidence per PR |
+| Equivalence-test corpus | Last 6 months + parent run avg-score ≥ 0.5 | Keeps corpus relevant and signal-rich |
+| Preview screenshots in PRs | Required Phase 1–3, optional after | Forces reviewer visual confirmation while pattern is being socialized |
+| LLM-authored diff policy | Allowed with mandatory human review (Protocol §16) | LLM drafts reduce authoring effort; human review catches known LLM failure modes |
+| Phase 4 trigger | Migration backlog < 10 tasks (indicative: ~6 months from Phase 0) | Velocity-driven, not calendar-driven |
+
+### 12.2  Values locked inline
+
+Other small design defaults are locked where they appear and listed here as a cross-reference:
+
+| Value | Decision | Set in |
+|---|---|---|
+| Preview representative-value selection | First of `{in:}`, midpoint of `{between:}` | §6.1 |
+| `matches_semantic` default threshold | `0.8` | §3.2 |
+| Bijection size "likely authoring error" threshold | `50` slots | §7.5 |
+| Matching algorithm | Hopcroft-Karp | §4 |
+| Deterministic tie-break for multiple saturating matchings | Lexicographic on entity-id | §4.1 |
+| LLM prompt schema format | `State.model_json_schema()` + nearest-neighbor few-shot examples | Protocol §12 |
+| Schema-validation failure behavior | Hard boot block with structured error | §8 |
+| `constraints:` count per task | No limit | §3.6 |
+| Named-invariant default template | `"Agent did not modify <collection_name>"` (authors may override per-invariant) | Protocol §7 |
 
 ---
 
