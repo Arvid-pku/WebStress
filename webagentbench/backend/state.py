@@ -187,6 +187,27 @@ class SessionManager:
                 snapshot["counts"] = summary["counts"]
         return snapshot
 
+    def get_state(self, session_id: str) -> BaseEnvState | None:
+        """Return the session state or None if the session is unknown.
+
+        A non-raising accessor intended for read-only inspection (tests, chat
+        forwarding). Callers that require a 404 should use :meth:`get`.
+        """
+        with self._lock:
+            return self._sessions.get(session_id)
+
+    def append_chat_message(self, session_id: str, *, role: str, content: str) -> None:
+        """Append an agent-produced chat message to the session's state.chat.
+
+        No-op if the session doesn't exist (graceful degradation).
+        """
+        from .models.base import ChatMessage
+        with self._lock:
+            state = self._sessions.get(session_id)
+            if state is None:
+                return
+            state.chat.append(ChatMessage(role=role, content=content))
+
 
 def materialize_task_state(
     env_id: str, task_id: str, seed: int | None = None

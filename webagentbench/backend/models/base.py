@@ -59,6 +59,19 @@ class AuditEntry(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
+class ChatMessage(BaseModel):
+    """An agent-produced chat message recorded in state.chat.
+
+    Role is typically 'assistant' (send_msg_to_user) or 'infeasible'
+    (report_infeasible). Content is the raw message string.
+    """
+    role: str
+    content: str
+    timestamp: datetime = Field(default_factory=utc_now)
+
+    model_config = ConfigDict(extra="forbid")
+
+
 class BaseEnvState(BaseModel):
     env_id: str
     task_id: str
@@ -66,6 +79,7 @@ class BaseEnvState(BaseModel):
     updated_at: datetime = Field(default_factory=utc_now)
     audit_log: list[AuditEntry] = Field(default_factory=list)
     benchmark_state: dict[str, Any] = Field(default_factory=dict)
+    chat: list[ChatMessage] = Field(default_factory=list)
     _resolved_targets: dict[str, Any] = PrivateAttr(default_factory=dict)
     _seed: int | None = PrivateAttr(default=None)
     _degradation: dict[str, Any] = PrivateAttr(default_factory=dict)
