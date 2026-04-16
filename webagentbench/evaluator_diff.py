@@ -763,17 +763,26 @@ def _match_single_block(
 
     # 3. Unaccounted sweep.
     # Any agent_diff entry that (a) was not matched to a positive target and
-    # (b) is not on an invariant-guarded collection is collateral.
+    # (b) is not fully covered by an invariant is collateral. A FILTERED
+    # invariant only protects entries that match its filter — entries in the
+    # same collection but outside the filter still need to be accounted for
+    # here (e.g. newly-created appointments when the invariant guards only
+    # existing upcoming appointments).
     positive_cols = {
         _collection_for(e.entity)
         for e in list(block.create) + list(block.update) + list(block.delete)
     }
-    invariant_cols = {inv.collection.removeprefix("state.") for inv in block.invariant}
+    # Only UNFILTERED invariants fully cover their collection.
+    invariant_cols_full = {
+        inv.collection.removeprefix("state.")
+        for inv in block.invariant
+        if not inv.filter
+    }
     for entry in agent_diff:
         if (entry.entity, entry.entity_id) in matched_ids:
             continue
-        if entry.entity in invariant_cols:
-            continue  # already accounted for by the invariant branch
+        if entry.entity in invariant_cols_full:
+            continue  # whole collection invariant already handled this entry
         if entry.entity in positive_cols:
             failures.append(Failure(
                 kind="unaccounted",
