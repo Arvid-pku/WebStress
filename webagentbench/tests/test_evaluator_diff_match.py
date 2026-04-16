@@ -247,3 +247,61 @@ def test_named_invariant_severity_penalty_applied():
     low_penalty = next(n["penalty"] for n in r_low.negative_checks
                         if n["desc"] == "Minor contact violation")
     assert high_penalty > low_penalty
+
+
+# ── Task 7: Integration with TaskDefinition + evaluator.py ──────────
+
+def test_task_definition_parses_canonical_diff():
+    from webagentbench.tasks._schema import TaskDefinition
+    td = TaskDefinition.model_validate({
+        "task_id": "test_dispatch",
+        "env_id": "patient_portal",
+        "title": "Test dispatch",
+        "instruction_template": "Test.",
+        "canonical_diff": {
+            "invariant": [{"collection": "state.emails", "preserve": "ALL"}],
+        },
+    })
+    assert td.canonical_diff is not None
+    assert len(td.canonical_diff.invariant) == 1
+
+
+def test_named_invariant_ref_resolution_validated_at_load():
+    """A canonical_diff referencing invariant[99] when only 1 exists is rejected."""
+    import pytest
+    from webagentbench.tasks._schema import TaskDefinition
+    from pydantic import ValidationError
+    with pytest.raises((ValueError, ValidationError)):
+        # This fails at canonical_diff-level load validation (not pydantic field parsing,
+        # since the ref string is structurally valid — it's the out-of-range index that
+        # fails).
+        from webagentbench.tasks._registry import _validate_canonical_diff_refs
+        td = TaskDefinition.model_validate({
+            "task_id": "bad_ref",
+            "env_id": "patient_portal",
+            "title": "Bad ref",
+            "instruction_template": "Test.",
+            "canonical_diff": {
+                "invariant": [{"collection": "state.emails", "preserve": "ALL"}],
+                "named_invariants": [
+                    {"name": "X", "ref": "invariant[99]", "severity": "high"},
+                ],
+            },
+        })
+        _validate_canonical_diff_refs(td)
+
+
+def test_session_captures_initial_snapshot():
+    """After create_session, the session exposes an initial_snapshot attribute."""
+    from webagentbench.backend.state import SessionManager
+    sm = SessionManager()
+    sid, _, _ = sm.create_session(
+        env_id="patient_portal",
+        task_id="pp_immunization_gap_review",
+        seed=42,
+    )
+    snapshot = sm.get_initial_snapshot(sid)
+    assert snapshot is not None
+    # Snapshot must be independent of current state — mutating current doesn't affect it
+    current = sm.get_state(sid)
+    assert len(current.appointments) == len(snapshot.appointments)

@@ -34,6 +34,7 @@ class SessionManager:
 
     def __init__(self):
         self._sessions: dict[str, BaseEnvState] = {}
+        self._initial_snapshots: dict[str, BaseEnvState] = {}
         self._lock = threading.RLock()
 
     def create_session(self, env_id: str, task_id: str, seed: int | None = None) -> tuple[str, dict[str, Any], int]:
@@ -101,8 +102,14 @@ class SessionManager:
                         )
 
         session_id = f"{env_id}_{task_id}_{uuid.uuid4().hex[:10]}"
+        # Take a post-seed snapshot of the state so the canonical_diff
+        # evaluator can compute a net diff later. Deep-copy isolates the
+        # snapshot from subsequent agent mutations (spec §7.5).
+        initial_snapshot = state.model_copy(deep=True)
+        state._initial_state_copy = initial_snapshot
         with self._lock:
             self._sessions[session_id] = state
+            self._initial_snapshots[session_id] = initial_snapshot
         return session_id, resolved_targets, actual_seed
 
     def get(self, session_id: str) -> BaseEnvState:
@@ -115,6 +122,16 @@ class SessionManager:
     def destroy(self, session_id: str) -> None:
         with self._lock:
             self._sessions.pop(session_id, None)
+            self._initial_snapshots.pop(session_id, None)
+
+    def get_initial_snapshot(self, session_id: str) -> BaseEnvState | None:
+        """Return the post-seed snapshot of session state (taken at creation time).
+
+        This is the reference point for compute_diff during evaluation.
+        Returns None if the session is unknown or has no snapshot.
+        """
+        with self._lock:
+            return self._initial_snapshots.get(session_id)
 
     def get_targets(self, session_id: str) -> dict[str, Any]:
         with self._lock:

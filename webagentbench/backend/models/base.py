@@ -84,6 +84,11 @@ class BaseEnvState(BaseModel):
     _seed: int | None = PrivateAttr(default=None)
     _degradation: dict[str, Any] = PrivateAttr(default_factory=dict)
     _initial_snapshot: dict[str, Any] | None = PrivateAttr(default=None)
+    # Post-seed deep-copy of this state (for canonical_diff evaluation).
+    # Set by ``SessionManager.create_session``. Distinct from the legacy
+    # ``_initial_snapshot`` dict which is populated at eval-time via
+    # ``state_snapshot()`` for collateral-damage detection.
+    _initial_state_copy: "BaseEnvState | None" = PrivateAttr(default=None)
 
     model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
