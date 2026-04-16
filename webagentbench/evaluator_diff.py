@@ -575,6 +575,11 @@ def _match_single_block(
     negative_checks: list[dict] = []
     passed_weight = 0.0
     total_weight = 0.0
+    # Track excess candidates per bijection create[i] so named_invariants with
+    # ref=create[i] can distinguish "under-saturation" (too few) from "excess"
+    # (too many). The "did not schedule more than due" label is only about
+    # excess; under-saturation is already reflected in the bijection check.
+    bijection_excess: dict[int, bool] = {}
 
     # 1. Create entries (non-bijection only — Task 5 adds bijection).
     for i, entry in enumerate(block.create):
@@ -600,7 +605,17 @@ def _match_single_block(
             n_left = len(left) if hasattr(left, "__len__") else 0
 
             if n_left == 0:
-                # Degenerate case — zero slots, zero creates required.
+                # Degenerate case — zero slots required.
+                # Any existing Create candidates on this entity become
+                # "excess" (the agent scheduled N>0 appointments when 0
+                # were needed). Detect and flag accordingly.
+                collection_name = _collection_for(entry.entity)
+                excess_candidates = [
+                    c for c in agent_diff
+                    if isinstance(c, Create) and c.entity == collection_name
+                    and (c.entity, c.entity_id) not in matched_ids
+                ]
+                bijection_excess[i] = len(excess_candidates) > 0
                 passed_weight += entry.weight
                 checks.append({
                     "desc": f"Bijection {entry.entity} (empty target set)",
@@ -633,6 +648,10 @@ def _match_single_block(
             # Find maximum matching.
             matching = _max_bipartite_matching(edges, n_left, len(candidates))
             saturated = len(matching) == n_left
+            # Excess = strictly more candidates than slots. Independent of
+            # whether the match saturates; the "did not schedule too many"
+            # claim is about over-creation, not under.
+            bijection_excess[i] = len(candidates) > n_left
 
             desc = f"Bijection {entry.entity} ({n_left} slots)"
             if saturated:
@@ -699,9 +718,11 @@ def _match_single_block(
                 details={"entry_index": i},
             ))
 
-    # 2. Invariant enforcement.
+    # 2. Invariant enforcement. Invariants are PENALTY-ONLY — they do not
+    # contribute to total_weight / passed_weight. Doing nothing must not
+    # earn positive score just because nothing got mutated; only the
+    # positive diff (create/update/delete) drives the numerator.
     for i, inv in enumerate(block.invariant):
-        total_weight += inv.weight
         collection = inv.collection.removeprefix("state.")
         violated = False
         for entry in agent_diff:
@@ -728,18 +749,16 @@ def _match_single_block(
             "passed": not violated,
             "penalty": _SEVERITY_PENALTY["medium"],
         })
-        if not violated:
-            passed_weight += inv.weight
-        else:
+        if violated:
             failures.append(Failure(
                 kind="invariant",
                 description=desc,
                 details={"entry_index": i},
             ))
 
-    # 2.5 Constraints -- state-level aggregates (spec §3.6)
+    # 2.5 Constraints — state-level aggregates (spec §3.6). Also penalty-only
+    # on the negative side; do not contribute to positive score.
     for i, c in enumerate(block.constraints):
-        total_weight += c.weight
         globs = {"__builtins__": _SAFE_BUILTINS}
         locs = {"state": final, "initial": initial, "target": targets}
         try:
@@ -752,9 +771,7 @@ def _match_single_block(
             "passed": ok,
             "penalty": _SEVERITY_PENALTY.get(c.severity, _SEVERITY_PENALTY["medium"]),
         })
-        if ok:
-            passed_weight += c.weight
-        else:
+        if not ok:
             failures.append(Failure(
                 kind="constraint",
                 description=c.desc,
@@ -817,18 +834,18 @@ def _match_single_block(
                     nc["penalty"] = severity
                     break
         elif kind == "create" and 0 <= idx < len(block.create):
-            # For bijection bounded-creation: synthesize a negative_check
-            # showing whether the cardinality bound held.
-            entity = block.create[idx].entity
-            # Find the corresponding `Bijection ...` check in checks list
-            for c in checks:
-                if c["desc"].startswith(f"Bijection {entity}"):
-                    negative_checks.append({
-                        "desc": ni.name,
-                        "passed": c["passed"],
-                        "penalty": severity,
-                    })
-                    break
+            # `ref: create[N]` labels the *cardinality-upper-bound* claim
+            # ("did not schedule more than due"). This is PASS when the
+            # agent didn't produce excess candidates; it's FAIL only when
+            # there are strictly more candidates than slots. Under-
+            # saturation (too few) is reflected in the bijection check
+            # itself, not here.
+            has_excess = bijection_excess.get(idx, False)
+            negative_checks.append({
+                "desc": ni.name,
+                "passed": not has_excess,
+                "penalty": severity,
+            })
 
     # 4. Penalty-adjusted score
     penalty = sum(
