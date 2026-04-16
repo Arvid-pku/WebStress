@@ -80,17 +80,20 @@ Appointment  | state.appointments  | provider_id → state.providers
 
 ## 4  Step 3 — Enumerate agent-mutable fields
 
-For each entity type identified in step 2, list **every field** defined on the pydantic model. For each field, classify it into exactly one of five categories:
+For each entity type identified in step 2, list **every field** defined on the pydantic model. For each field, classify it into exactly one of four categories:
 
 | Category | Meaning | Predicate in diff |
 |---|---|---|
-| **BOUND_BY_INSTRUCTION** | Instruction directly or transitively determines the value | `{eq: ...}` / `{in: ...}` / `{between: ...}` |
+| **BOUND_BY_INSTRUCTION** | Instruction directly or transitively determines the value | `{eq: ...}` / `{in: ...}` / `{between: ...}` / `{set_eq: ...}` / `{superset: ...}` / etc. |
 | **BOUND_BY_DOMAIN** | Environment semantics force a value regardless of agent choice (e.g., `created_at: now`, `status: scheduled` when creating an appointment) | `{eq: ...}` or `{predicate: ...}` |
 | **FREE_BUT_RECORDED** | Agent can choose, but choice is irrelevant to correctness (e.g., `notes: ""` vs some string) | `{any: true}` |
-| **IMMUTABLE_BY_AGENT** | System-managed field not exposed to agent actions (e.g., auto-assigned `id`) | Omit from diff |
-| **FORBIDDEN** | Field is on the entity but task requires it NOT be changed/set | Cover via `invariant:` in step 5 |
+| **SYSTEM_MANAGED** | Field exists on the entity but is set server-side and not agent-mutable (e.g., auto-assigned `id`, monotonic `created_at`, `audit_trail` sub-object). The env's State marks these via a pydantic `Config` attribute. | Omit from diff |
 
-**Rule:** every BOUND_BY_INSTRUCTION and BOUND_BY_DOMAIN field MUST appear in the diff's `properties:`. Every FREE_BUT_RECORDED field MUST appear with `{any: true}`. The schema validator enforces this — missing fields produce a validation error.
+**Rule:** every BOUND_BY_INSTRUCTION and BOUND_BY_DOMAIN field MUST appear in the diff's `properties:`. Every FREE_BUT_RECORDED field MUST appear with `{any: true}`. SYSTEM_MANAGED fields are recognized by the schema validator and do not need to appear. Missing a non-SYSTEM_MANAGED field produces a validation error at task-load time.
+
+**Collection-valued fields** (e.g., `Email.labels: list[str]`, `Order.items: list[LineItem]`): prefer the set-oriented predicates (`set_eq`, `subset`, `superset`, `contains`). Using `{eq: [a, b, c]}` on a list is order-sensitive and is almost always a bug — reviewers should treat `{eq:}` on a list field as a red flag.
+
+**Nested-object fields** (e.g., `Order.shipping_address`): prefer `{fields: {subfield: <predicate>, ...}}` so unbound sub-fields default to `{any: true}`. Using `{eq: {...whole dict...}}` locks every sub-field and is usually over-specified.
 
 **LLM-automation hook:** the pydantic model can be introspected programmatically to produce the field list; the classification step is the only place human/LLM judgment is required. An LLM given the instruction + the fields list can classify each field in one pass.
 
@@ -152,16 +155,22 @@ create:
 
 This is the **negative check authoring protocol**. It is algorithmic — no creative judgment required once step 1 is done right.
 
+**Mention-set definition.** A collection is "mentioned" by the instruction if the instruction tells the agent to (a) *read* from it ("review your medications"), (b) *write* to it ("schedule an appointment"), or (c) *compare against* it ("of the orders placed this week"). Mere casual presence of the word in the instruction is not mention — a task that says "unlike your medications, this task is about appointments" does not mention medications for protocol purposes.
+
+**Append-only / system-managed collections are skipped.** Most envs expose an `audit_log` (or similar monotonic growing collection) that receives entries from every agent action. The env's `State` marks these with a class-level `Config` attribute; the matcher's default-invariant sweep skips them. Do not add invariants on these collections unless a task has a specific reason to (rare).
+
 For the env's state model:
 
 ```
 for each collection C in state.*:
-    if C is the target collection of a step-4 entry:
-        skip — already constrained by the positive diff
-    elif the instruction MENTIONS C (even tangentially):
-        add an invariant with the appropriate filter
+    if C is SYSTEM_MANAGED_APPEND_ONLY (e.g., audit_log):
+        skip
+    elif C is the target collection of a step-4 entry:
+        add a scoped invariant on the complement (see below)
+    elif C is in the instruction's mention set:
+        add a scoped invariant with a narrow filter
     else:
-        add an invariant: preserve ALL on filter TRUE
+        add a broad invariant: preserve ALL, no filter
 ```
 
 Translation rules:
@@ -223,6 +232,8 @@ named_invariants:
     ref: create[0]
     severity: medium
 ```
+
+**Default auto-generation.** If the author provides no `named_invariants:` block, the matcher synthesizes defaults at task-load time using the template `"Agent did not modify <collection_name>"` per invariant entry and `"Agent did not create extra <entity_type> beyond the required count"` per bijection `create:`. Authors should override defaults whenever the task-specific label is clearer — but the fallback ensures every invariant has *some* human-readable label in the eval output, even on fast-drafted tasks.
 
 **Severity mapping** (matches the existing penalty bands):
 
@@ -350,10 +361,12 @@ Enumerate all collections in `patient_portal/state.py`:
 ```
 state.profile, state.providers, state.pharmacies, state.appointments,
 state.immunizations, state.medications, state.lab_orders, state.messages,
-state.billing, state.insurance, state.audit_log
+state.billing, state.insurance, state.audit_log (SYSTEM_MANAGED — skip)
 ```
 
-Instruction-mention set: `{appointments, immunizations (read-only)}`.
+Instruction-mention set: `{appointments (write), immunizations (read)}`.
+
+`state.audit_log` is skipped (SYSTEM_MANAGED_APPEND_ONLY).
 
 Invariants:
 
@@ -466,8 +479,11 @@ When reviewing a diff, look for these specific anti-patterns — each correspond
 |---|---|---|
 | `{any: true}` on a field the instruction clearly constrains | 3 | Re-classify field, emit `{eq:}` or `{in:}` |
 | Missing field in `properties:` block | 3 | Every model field must be classified |
+| `{eq: [a, b, c]}` on a list-valued field | 3 | Use `{set_eq:}` or `{superset:}` — plain `eq` on a list is order-sensitive and almost always a bug |
+| `{eq: {full dict}}` on a nested-object field | 3 | Use `{fields: {subfield: predicate, ...}}` so unbound sub-fields default to `any` |
 | No `bijection:` on a create entry that answers "for each" | 4 | Add bijection over the quantified target set |
 | Invariant missing for a major collection | 5 | Default: if instruction doesn't mention it, add `preserve: ALL` |
+| Invariant added on `state.audit_log` | 5 | Audit log is append-only SYSTEM_MANAGED — default-sweep skips it; explicit invariant is rarely right |
 | `named_invariant.ref:` pointing at wrong entry kind | 6 | Structurally verified — validator will reject |
 | Skipped preview step ("looked correct in my head") | 7 | Always run the preview; visual catches slip-ups text review misses |
 | Skipped adversarial tests because "task is simple" | 8 | Simple tasks have simple adversarial sets. None exempt. |

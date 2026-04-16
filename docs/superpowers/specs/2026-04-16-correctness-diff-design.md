@@ -76,9 +76,16 @@ canonical_diff:
         scheduled_at:  {between: [target.window_start, target.window_end]}
         status:        {eq: scheduled}
 
-  update: []                              # existing entities whose fields must change
+  update:                                 # existing entities whose fields must change
+    - entity: Email
+      where: {id: {eq: target.thread_anchor_id}}
+      changes:
+        is_read: {eq: true}
+        labels:  {superset: [inbox, starred]}
 
-  delete: []                              # entities that must be removed
+  delete:                                 # entities that must be removed
+    - entity: Filter
+      where: {id: {eq: target.stale_filter_id}}
 
   invariant:
     - collection: state.appointments
@@ -90,25 +97,69 @@ canonical_diff:
 
 Three kinds of entries — `create`, `update`, `delete` — describe **required** changes. A fourth — `invariant` — describes **forbidden** changes on existing state. Together they bound both what the agent *must* do and what the agent *must not* do.
 
+**Selectors (`where:`).** `update` and `delete` entries include a `where:` block — a field→predicate map using the same predicate vocabulary as `properties:` (§3.2) — that identifies which existing entity the entry targets. The selector must uniquely resolve to at most one existing entity per execution; if multiple entities satisfy the selector, the schema validator rejects the task at load time (the author should narrow the selector or express the intent as a bijection).
+
 ### 3.2  Predicate vocabulary
 
-Every property binding is a predicate. Equality is the singleton-set case.
+Every property binding is a predicate. Equality is the singleton-set case. Scalar and collection-valued fields have distinct predicate families:
+
+**Scalar predicates:**
 
 | Predicate | Meaning | Example |
 |---|---|---|
 | `{eq: x}` | Field value equals `x` | `{eq: scheduled}` |
 | `{in: [...]}` | Field value is in the given set | `{in: target.admin_providers[v]}` |
 | `{between: [lo, hi]}` | Numeric/date range (inclusive) | `{between: [target.week_start, target.week_end]}` |
-| `{predicate: "<expr>"}` | Arbitrary boolean over the field value `x` and state | `{predicate: "len(x) > 0"}` |
-| `{any: true}` | Explicit wildcard — field may take any value, recorded for audit | `{any: true}` |
+| `{predicate: "<expr>"}` | Arbitrary boolean; see scope note below | `{predicate: "x > state.get_stock(target.symbol).price"}` |
+| `{any: true}` | Explicit wildcard; author-acknowledged don't-care | `{any: true}` |
 
-Missing predicate on a field on an authored entry is a **schema validation error at task-load time**: every field the entity schema marks as set-by-agent must either be bound or explicitly waived with `{any: true}`. (The schema is per-env, but the rule is universal: the validator does not let an author silently omit a field.)
+**Collection-valued predicates** (lists, sets — e.g., `Email.labels`, `Order.items`):
+
+| Predicate | Meaning | Example |
+|---|---|---|
+| `{set_eq: [...]}` | Order-insensitive set equality | `{set_eq: [inbox, starred]}` |
+| `{subset: [...]}` | Every element of `x` is in the given set | `{subset: [inbox, starred, important]}` |
+| `{superset: [...]}` | `x` contains every element of the given set | `{superset: [starred]}` |
+| `{contains: x}` | `x` appears at least once as an element | `{contains: target.required_label}` |
+| `{length: <scalar predicate>}` | Predicate on the collection's length | `{length: {eq: 3}}` |
+
+**Nested-object predicates** (fields whose value is itself a pydantic sub-model — e.g., `Order.shipping_address`):
+
+| Predicate | Meaning |
+|---|---|
+| `{eq: {...}}` | Deep equality on every sub-field |
+| `{fields: {<subfield>: <predicate>, ...}}` | Recursive — predicates on named sub-fields; unmentioned sub-fields default to `{any: true}` |
+
+```yaml
+shipping_address:
+  fields:
+    zip:   {eq: target.dest_zip}
+    city:  {eq: target.dest_city}
+    # street and state default to any
+```
+
+**Predicate escape-hatch scope (`{predicate: "<expr>"}`).** The expression is evaluated with the same restricted-globals pattern the existing `evaluator.py` uses for `expr:` checks (safe-builtins allow-list, no `__builtins__`). Bound names:
+
+- `x` — the field value being predicated.
+- `v` — the bijection variable (only bound inside a `bijection` entry).
+- `target` — the session's target dict (merged outputs of all seed steps).
+- `initial` — the initial-state snapshot.
+- `state` — the current (final) state.
+- `Decimal`, `datetime`, `len`, standard whitelisted numerics.
+
+**Authoring trust model.** Predicate strings are author-provided at task-load time, under the same trust model as the existing legacy `expr:` check strings. They are never derived from agent input and they never cross a session boundary. The risk profile is identical to today's system — no regression, no new surface — but the predicate form is preferred over this escape hatch whenever a scalar/collection/nested predicate would do, precisely to minimize `expr:`-style surface going forward.
+
+**Schema-completeness rule.** Missing predicate on a field of an authored entry is a **schema validation error at task-load time**: every field the entity schema marks as set-by-agent must either be bound or explicitly waived with `{any: true}`. The validator does not let an author silently omit a field.
 
 ### 3.3  Bijection semantics
 
 When a `create` / `update` entry has a `bijection:` block, it stands for *many* entries — one per element of the target set. The `variable:` name is bound inside all predicates of that entry.
 
-Correctness under bijection: there must exist a **perfect matching** between the agent's new entities and the set `{v for v in bijection.over}` such that every pairing satisfies all property predicates with `v` bound to the paired target. If no perfect matching exists, the task fails. If multiple matchings exist, the task passes (symmetry is handled automatically).
+Correctness under bijection: there must exist a **perfect matching** between the agent's entities and the set `{v for v in bijection.over}` such that every pairing satisfies all property predicates with `v` bound to the paired target. If no perfect matching exists, the task fails. If multiple matchings exist, the task passes (symmetry is handled automatically).
+
+**Degenerate case — empty target set.** If `bijection.over` evaluates to an empty list, the bijection requires zero entities. The agent's state must contain zero unmatched candidates of that type; otherwise it fails the "no excess" rule. This is the correct behavior for tasks like "for any overdue vaccines, schedule X" where the seed produced no overdue vaccines.
+
+**Degenerate case — no bijection.** A `create`/`update`/`delete` entry without a `bijection:` block implies `count: 1` exactly. The author may specify an explicit `count: N` for literal-count cases ("buy 3 shares"). The matcher always requires an exact match on count; `>=` and `<=` bounds are not part of the grammar (if you want tolerance, use a predicate on a count-like field or use a bijection).
 
 ### 3.4  Multi-valued correctness via disjunction
 
@@ -121,7 +172,17 @@ canonical_diff:
     - create: [...]       # approach B: forward to the team
 ```
 
-The agent's observed diff must match one. Not both.
+**Matching rule.** The matcher evaluates the agent's diff against each alternative and returns the result with the **highest score**. If two alternatives both yield pass=true, the one with fewer negative-invariant violations wins. If all alternatives fail, the one with the highest partial-credit score is returned (and its named-invariant attributions are what the eval report shows).
+
+This is "try all, take best" — not first-match. First-match would be implementation-simpler but would attribute failures to the wrong alternative when the agent was attempting a different valid path.
+
+### 3.5  Diff semantics — sequential vs net
+
+`compute_diff(initial, final)` returns the **net** state delta: entities that exist in `final` but not in `initial` → `Create`; entities that exist in both with changed fields → `Update`; entities that exist in `initial` but not in `final` → `Delete`. Intermediate mutations the agent performed and then reverted do not appear.
+
+Consequence: if an agent creates an entity with id `X`, deletes it, and then re-creates it with id `X` and different fields, the diff contains one `Create(X, final_fields)` — the intermediate state is invisible. This is usually fine but has one edge: if a task requires *observable side effects* of intermediate actions (e.g., "the audit log must record a delete"), those must be expressed as invariants or predicates on the audit-log collection explicitly. The diff's net semantics does not imply "no intermediate delete happened."
+
+If an authored `create[0]` and `delete[0]` both target the same entity type and id, the task is internally inconsistent and the schema validator rejects it at load time.
 
 ---
 
@@ -130,31 +191,62 @@ The agent's observed diff must match one. Not both.
 Given `authored_diff` and `agent_diff = diff(initial_state, final_state)`:
 
 ```
-matched = set()
+matched = set()   # agent-diff entries already attributed to an authored entry
+
+# Helper: does a candidate agent-diff entry satisfy an authored entry?
+# - Create: agent entry is Create of same entity-type;
+#           candidate.fields satisfy authored.properties predicates
+#           (with v bound to the bijection target if any)
+# - Update: agent entry is Update of same entity-type;
+#           candidate.entity_id satisfies authored.where selector;
+#           candidate.field_changes' new-values satisfy authored.changes predicates
+# - Delete: agent entry is Delete of same entity-type;
+#           candidate.entity_id satisfies authored.where selector
+
 for each entry in authored_diff.{create, update, delete}:
     candidates = agent_diff entries of matching kind and entity type
+                 minus entries already in `matched`
     if entry has bijection:
         build bipartite graph:
             left  = elements of bijection.over
-            right = candidates (excluding ones in `matched`)
-            edge  = predicate satisfied
-        find maximum matching
-        require matching saturates the left side
-        add matched right-side entries to `matched`
+            right = candidates
+            edge(l, r) = entry predicates hold for r with v = l
+        find maximum matching (Hopcroft-Karp)
+        require matching saturates left side (|matching| == |left|)
+        record the matched right-side entries in `matched`
     else:
-        require exactly one candidate (not in `matched`) whose fields satisfy predicates
+        require exactly one candidate satisfies entry predicates
+        (with v unbound — bijection is the only binder)
         add it to `matched`
 
 for each invariant entry:
-    require no agent_diff entry touches the filtered collection
+    filtered = collection entries matching the invariant filter
+    require no agent_diff entry touches any element of `filtered`
+    (except agent_diff entries already in `matched` that belong to this
+     filter's collection — which by construction they cannot, since an
+     invariant's collection is disjoint from the target collections of
+     positive entries, enforced at load time)
 
 unmatched = agent_diff \ matched
-require unmatched is empty (modulo `any:true` waivers)
+require unmatched is empty
+(SYSTEM_MANAGED collections — e.g., audit_log — are excluded from
+ agent_diff entirely, so they cannot contribute to unmatched.)
+
+# Report assembly
+for each failed requirement, attach:
+  - the authored-entry index or invariant-filter that caused the failure
+  - the matching named_invariants[i].name if any named_invariant.ref points
+    at that entry
+  - the specific agent-diff entry that violated (for named output)
 
 success = all requirements hold
+score   = 1.0 if success, else 1.0 - sum(failed_invariants.severity_penalty)
+         clamped to [0, 1]
 ```
 
-This is the whole enforcement engine. Bipartite matching uses standard Hopcroft-Karp (trivial at task-level sizes). Everything else is set arithmetic.
+This is the whole enforcement engine. Bipartite matching uses standard Hopcroft-Karp (trivial at task-level sizes — typical bijection sizes are 1-5). Everything else is set arithmetic.
+
+**Why the disjoint-collections constraint.** A positive `create:` entry and an `invariant:` entry cannot target the same collection, because the invariant would forbid the very creation the positive entry requires. The schema validator rejects this at load time. Scoped invariants on a collection that *also* hosts positive entries must use a `filter:` that excludes the positive-entry targets (e.g., "existing appointments in `upcoming_ids`" vs "newly-created appointments").
 
 ---
 
@@ -243,7 +335,11 @@ The evaluator gains one new branch. No generated YAML, no compiled expressions, 
 
 ### 7.1  Per-session state capture
 
-At session creation, the existing session-store already snapshots the seeded initial state and the seed-step `outputs` / `targets`. The evaluator additionally persists a **reference snapshot** of initial state (a deep-copy of all `state.*` collections indexed by entity id).
+At session creation, the existing session-store already snapshots the seeded initial state and the seed-step `outputs` / `targets`. The evaluator additionally persists a **reference snapshot** of initial state.
+
+The snapshot uses pydantic's immutable `model_copy(deep=True)` on the root `State` object. For the largest env seeds (gmail with ~50 emails + threads), this is sub-millisecond and produces ~200KB per session. No streaming / lazy snapshot needed at current scale; if session count grows 100×, swap to a copy-on-write strategy. Flagged as non-blocking perf work.
+
+**Collection enumeration.** The matcher needs the set of collections on `State` to run step 5's invariant sweep (protocol §5). This is discovered via pydantic model introspection on the env's `State` class — no hand-maintained list per env. Append-only system collections (e.g., `state.audit_log`) are marked with a class-level `Config` attribute so the matcher skips them from the default-invariant sweep; task authors can still reference them via explicit `invariant:` entries when needed.
 
 ### 7.2  Evaluation flow
 
@@ -349,16 +445,31 @@ The equivalence test is the primary migration guardrail: no task loses its legac
 ## 12  Open Questions
 
 **OQ-1: Derived predicates evaluated at final-state time.**
-Some instructions require predicates over state the agent discovers (e.g., "*reply to the sender who mentioned X*" where X is only visible in email bodies). This requires the predicate to be evaluated against `final_state` rather than seed-time targets. The `{predicate: "..."}` escape hatch covers this, but we haven't decided whether to make derived predicates a first-class category (alongside `eq`/`in`/`between`) or keep them under `predicate:`.
+Some instructions require predicates over state the agent discovers (e.g., "*reply to the sender who mentioned X*" where X is only visible in email bodies). The `{predicate: "..."}` escape hatch already covers this via the `state` binding. Deciding whether to promote this to a first-class category (e.g., a dedicated `{resolve: "..."}` predicate whose return value is then compared to the field) is a syntactic-sugar question, not an architecture one.
 
-**OQ-2: Tolerance on nested objects.**
-Fields like `Email.headers` are dicts. How does `{eq: {...}}` compare? Deep equality? Subset? We propose: dicts default to subset-equality unless the schema marks the field `strict`.
+**OQ-2: Strict vs permissive dict-field equality.**
+Resolved in §3.2 (the `{fields: {...}}` predicate). Deep `{eq: {...}}` is strict; `{fields:}` is selective. Retained in OQ list only to note that we may want a `{fields_subset:}` shorthand for common "these fields must match, others may drift" cases — deferred pending real-world need.
 
-**OQ-3: Author-side type-checking.**
-Predicates reference target-dict keys like `target.admin_providers[v]`. If the seed builder didn't emit `admin_providers`, the validation error should point at the seed, not the check. Needs a load-time link between seed-builder output schemas and canonical_diff predicate references.
+**OQ-3: Seed-output type contract.**
+Predicates reference target-dict keys like `target.admin_providers[v]`. If the seed builder didn't emit `admin_providers`, the validation error should point at the seed, not the check. Needs a load-time link between seed-builder output schemas and canonical_diff predicate references. Low-risk but requires pydantic TypedDicts on seed outputs to become viable.
 
 **OQ-4: Seed builder additions.**
-Several existing tasks lack the target data their new `canonical_diff` needs (e.g., immunization has no `admin_providers` output yet). Migrating those tasks requires extending the seed builder first. Is this in-scope for Phase 1 or a prerequisite?
+Several existing tasks lack the target data their new `canonical_diff` needs (e.g., immunization has no `admin_providers` output yet). Migrating those tasks requires extending the seed builder first. Treated as **prerequisite** for per-task migration: a task cannot be migrated until its seed emits the targets the diff needs. This is expected to be the largest per-task chunk of migration effort.
+
+**OQ-5: Read-only / evidence tasks.**
+Some tasks (e.g., "find the email from X and report the subject") require the agent to observe state, perform a lookup, and report via `send_msg_to_user`, without changing state. The diff is empty by definition. For these, correctness lives in the agent's chat message, not the diff. Two options:
+  (a) Keep legacy `eval:` for read-only tasks — they're a small minority and the diff model was never designed for them.
+  (b) Extend the diff model with a `report:` clause whose predicate is over `chat_messages[-1].content`.
+Recommendation: (a). Read-only tasks are ~10% of the benchmark and fit the legacy expr-string path fine.
+
+**OQ-6: Cross-collection aggregate invariants.**
+"Total portfolio value must not drop below X" — an aggregate across `state.positions` entries. No single entry's change is a violation; the sum matters. Not expressible as a `preserve: ALL` filter. The `{predicate: "..."}` escape hatch on an authored entry covers it awkwardly. Proposed extension: an `aggregate_invariant:` block at canonical_diff level with a named reducer (sum, count, min, max) and a predicate on the result. Deferred pending evidence that non-trivial numbers of tasks actually need this.
+
+**OQ-7: Audit-log and append-only-log convention.**
+Most envs have `state.audit_log` growing with every action. The default-invariant sweep must skip these. Handled via a class-level marker on the State subfield (see §7.1). Open: whether tasks should *ever* place an explicit invariant on the audit log (e.g., "agent did not log a suspicious action") — low-priority.
+
+**OQ-8: Adversarial mutation synthesis when negation is empty.**
+For `{in: [p1, p2, p3]}` where the env's entire provider set is `{p1, p2, p3}`, no "pick a non-admin provider" mutation exists — the adversarial test cannot be synthesized. The adversarial test harness skips that field and logs a warning; the preview step becomes the primary guard. Rare in practice but worth handling gracefully.
 
 These can be resolved during implementation planning — they do not change the architecture.
 
