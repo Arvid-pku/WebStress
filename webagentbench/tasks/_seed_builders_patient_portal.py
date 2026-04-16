@@ -1875,15 +1875,29 @@ def build_immunization_record(ctx: PatientPortalSeedContext, params: dict[str, A
         ctx.base["immunizations"] = []
 
     providers = ctx.base.get("providers", [])
-    # Constraint: administering_provider_id must reference a provider with available slots
-    providers_with_slots = [
+    # Immunizations are clinically administered by PCPs (not cardiologists /
+    # endocrinologists / dermatologists). Restrict admin-provider candidates
+    # to PCPs — this matches real healthcare AND avoids the referral-required
+    # gate in the patient_portal UI, which blocks booking with specialists
+    # unless an approved referral exists.
+    pcp_providers = [
         p for p in providers
-        if p.get("available_slots") and p.get("specialty") not in ("billing", "admin")
+        if p.get("available_slots") and p.get("specialty") == "pcp"
     ]
-    if not providers_with_slots:
-        providers_with_slots = [p for p in providers if p.get("specialty") not in ("billing", "admin")]
-    if not providers_with_slots:
-        providers_with_slots = providers[:1] if providers else [{"id": "prov_1"}]
+    if pcp_providers:
+        providers_with_slots = pcp_providers
+    else:
+        # Fallback: any non-billing/admin provider with slots, then any at all.
+        providers_with_slots = [
+            p for p in providers
+            if p.get("available_slots") and p.get("specialty") not in ("billing", "admin")
+        ]
+        if not providers_with_slots:
+            providers_with_slots = [
+                p for p in providers if p.get("specialty") not in ("billing", "admin")
+            ]
+        if not providers_with_slots:
+            providers_with_slots = providers[:1] if providers else [{"id": "prov_1"}]
 
     vaccine_pool = list(_VACCINES)
     ctx.rng.shuffle(vaccine_pool)
