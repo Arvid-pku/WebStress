@@ -123,6 +123,16 @@ Every property binding is a predicate. Equality is the singleton-set case. Scala
 | `{contains: x}` | `x` appears at least once as an element | `{contains: target.required_label}` |
 | `{length: <scalar predicate>}` | Predicate on the collection's length | `{length: {eq: 3}}` |
 
+**Text predicates** (string fields — e.g., `ChatMessage.content`, `Email.body`):
+
+| Predicate | Meaning | Example |
+|---|---|---|
+| `{substring: s}` | `x` contains `s` | `{substring: target.invoice_number}` |
+| `{substring_all: [...]}` | `x` contains every listed substring | `{substring_all: [target.date, target.amount]}` |
+| `{substring_any: [...]}` | `x` contains at least one listed substring | `{substring_any: [approved, confirmed]}` |
+| `{regex: "..."}` | `x` matches the regex | `{regex: "\\b[A-Z]{3}-\\d{4}\\b"}` |
+| `{matches_semantic: s, threshold: 0.8}` | Semantic similarity to `s` via the env's fuzzy-match helper (same LLM/embedding path the legacy `_fuzzy_eq` uses) | `{matches_semantic: target.intent, threshold: 0.85}` |
+
 **Nested-object predicates** (fields whose value is itself a pydantic sub-model — e.g., `Order.shipping_address`):
 
 | Predicate | Meaning |
@@ -176,7 +186,66 @@ canonical_diff:
 
 This is "try all, take best" — not first-match. First-match would be implementation-simpler but would attribute failures to the wrong alternative when the agent was attempting a different valid path.
 
-### 3.5  Diff semantics — sequential vs net
+### 3.5  Chat as first-class state — universal non-empty diff
+
+Every env's `State` class gets a universal collection:
+
+```python
+state.chat: list[ChatMessage]   # appended to by send_msg_to_user / report_infeasible
+```
+
+`ChatMessage` has fields `{role: Literal["assistant", "infeasible"], content: str, timestamp: datetime}`. The harness already records these server-side via the session store; they are now formally part of `State` and therefore part of the diff.
+
+**Implication: every task's canonical diff is non-empty.** Even a purely read-only task ("find the email from X and tell me the subject") has a mandatory `create:` entry — the agent's answer message — whose content predicate encodes what the answer must say:
+
+```yaml
+canonical_diff:
+  create:
+    - entity: ChatMessage
+      where: {role: {eq: assistant}}
+      properties:
+        content: {substring_all: [target.sender_name, target.expected_subject]}
+  invariant:
+    # No state collections other than chat may change — strict read-only guard
+    - collection: state.emails
+      preserve: ALL
+    - collection: state.folders
+      preserve: ALL
+    # ... (auto-filled by default invariant sweep)
+```
+
+The legacy path of routing read-only tasks through hand-written `eval.checks` with text-matching on `chat_messages[-1].content` is **removed**. Every task — read-only, write-only, mixed — is expressed in the same canonical_diff grammar. No escape hatch, no task-shape-dependent branching.
+
+**Per-env work needed.** Each env's backend state module adds a `chat` field on the `State` model and a hook in the harness that appends a `ChatMessage` when `send_msg_to_user` / `report_infeasible` is called. This is ~20 lines per env and unblocks ~10% of tasks that previously required a legacy path.
+
+### 3.6  State-level constraints (for cases per-entity diff cannot express)
+
+Rare cases — cross-collection aggregates, invariants that span multiple entities — fit per-entity diff awkwardly. For these, a small escape hatch block `constraints:` at the `canonical_diff` top level:
+
+```yaml
+constraints:
+  - desc: "Total portfolio market value did not drop below baseline"
+    expr: "sum(p.value for p in state.positions) >= sum(p.value for p in initial.positions) * Decimal('0.95')"
+    severity: high
+```
+
+The `expr:` uses the same restricted-evaluator scope as `{predicate: "..."}` (`state`, `initial`, `target`, `Decimal`, `datetime`, safe-builtins). Each constraint gets a `severity:` that maps to a named-invariant penalty.
+
+**When to use it (rare):**
+
+- Aggregates across a collection (sum, count, min, max over fields).
+- Relationships between two collections' contents ("every pending invoice has a corresponding approval record").
+- Pre/post comparisons on fields the diff doesn't capture (e.g., deterministic-but-derived metrics).
+
+**When NOT to use it (common):**
+
+- Per-entity property predicates → use `create/update` predicates.
+- Per-entity existence/absence → use `invariant:` filters.
+- Count bounds on a single collection → use `bijection.over` or explicit `count: N`.
+
+`constraints:` is deliberately terse and ordered last in the grammar. Reviewers should treat every `constraints:` entry as a design smell to scrutinize: is there a structured predicate that would do? Only use this when the answer is genuinely no.
+
+### 3.7  Diff semantics — sequential vs net
 
 `compute_diff(initial, final)` returns the **net** state delta: entities that exist in `final` but not in `initial` → `Create`; entities that exist in both with changed fields → `Update`; entities that exist in `initial` but not in `final` → `Delete`. Intermediate mutations the agent performed and then reverted do not appear.
 
@@ -226,6 +295,12 @@ for each invariant entry:
      filter's collection — which by construction they cannot, since an
      invariant's collection is disjoint from the target collections of
      positive entries, enforced at load time)
+
+for each constraint in authored_diff.constraints (if any):
+    evaluate constraint.expr in the restricted scope
+    require result is truthy
+    if not: attach constraint.desc to the failure report with
+    constraint.severity's penalty
 
 unmatched = agent_diff \ matched
 require unmatched is empty
@@ -456,22 +531,28 @@ Predicates reference target-dict keys like `target.admin_providers[v]`. If the s
 **OQ-4: Seed builder additions.**
 Several existing tasks lack the target data their new `canonical_diff` needs (e.g., immunization has no `admin_providers` output yet). Migrating those tasks requires extending the seed builder first. Treated as **prerequisite** for per-task migration: a task cannot be migrated until its seed emits the targets the diff needs. This is expected to be the largest per-task chunk of migration effort.
 
-**OQ-5: Read-only / evidence tasks.**
-Some tasks (e.g., "find the email from X and report the subject") require the agent to observe state, perform a lookup, and report via `send_msg_to_user`, without changing state. The diff is empty by definition. For these, correctness lives in the agent's chat message, not the diff. Two options:
-  (a) Keep legacy `eval:` for read-only tasks — they're a small minority and the diff model was never designed for them.
-  (b) Extend the diff model with a `report:` clause whose predicate is over `chat_messages[-1].content`.
-Recommendation: (a). Read-only tasks are ~10% of the benchmark and fit the legacy expr-string path fine.
+**OQ-5 (RESOLVED): Read-only / evidence tasks.**
+Resolved by promoting chat messages to first-class state (§3.5). Every task — read-only included — produces a non-empty diff because `send_msg_to_user` always appends to `state.chat`. Correctness of the answer becomes a content predicate on the `ChatMessage.content` field. The legacy-eval escape hatch for read-only tasks is **removed**; no task bypasses the diff model. The only implementation cost is a ~20-LOC-per-env backend change to record chat messages into `State.chat`.
 
-**OQ-6: Cross-collection aggregate invariants.**
-"Total portfolio value must not drop below X" — an aggregate across `state.positions` entries. No single entry's change is a violation; the sum matters. Not expressible as a `preserve: ALL` filter. The `{predicate: "..."}` escape hatch on an authored entry covers it awkwardly. Proposed extension: an `aggregate_invariant:` block at canonical_diff level with a named reducer (sum, count, min, max) and a predicate on the result. Deferred pending evidence that non-trivial numbers of tasks actually need this.
+**OQ-6 (RESOLVED): Cross-collection aggregate invariants.**
+Resolved via the `constraints:` block (§3.6). Authors write a small expr-string for cases genuinely not expressible as per-entity predicates (sum/count/min/max, cross-collection joins). The block is deliberately narrow and stigmatized in the protocol so it remains rare; structured predicates stay the default.
 
-**OQ-7: Audit-log and append-only-log convention.**
-Most envs have `state.audit_log` growing with every action. The default-invariant sweep must skip these. Handled via a class-level marker on the State subfield (see §7.1). Open: whether tasks should *ever* place an explicit invariant on the audit log (e.g., "agent did not log a suspicious action") — low-priority.
+**OQ-7 (RESOLVED): Audit-log and append-only-log convention.**
+Resolved via the pydantic `Config` marker on SYSTEM_MANAGED collections (§7.1). The default-invariant sweep skips them. Tasks may still declare explicit invariants on the audit log when a specific suspicious-action guard is genuinely needed — the marker only affects the *default*, not the authored form.
 
 **OQ-8: Adversarial mutation synthesis when negation is empty.**
 For `{in: [p1, p2, p3]}` where the env's entire provider set is `{p1, p2, p3}`, no "pick a non-admin provider" mutation exists — the adversarial test cannot be synthesized. The adversarial test harness skips that field and logs a warning; the preview step becomes the primary guard. Rare in practice but worth handling gracefully.
 
-These can be resolved during implementation planning — they do not change the architecture.
+**OQ-3 (remains open): Seed-output type contract.**
+Predicates reference target-dict keys like `target.admin_providers[v]`. If the seed builder didn't emit `admin_providers`, the validation error should point at the seed, not the check. Needs a load-time link between seed-builder output schemas and canonical_diff predicate references. Low-risk but requires pydantic TypedDicts on seed outputs.
+
+**OQ-4 (remains open): Seed builder additions.**
+Several existing tasks lack the target data their new `canonical_diff` needs. Per-task migration prerequisite — largest chunk of migration effort.
+
+**OQ-1 (remains open): Derived-predicate syntactic sugar.**
+`{predicate: "..."}` already covers final-state-derived values via the `state` binding. Whether to add a dedicated `{resolve: "..."}` syntax is cosmetic, deferred.
+
+Only OQ-1, OQ-3, OQ-4, OQ-8 remain open. None affect architecture.
 
 ---
 

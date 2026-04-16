@@ -129,6 +129,20 @@ Pick the right operation based on the actor verb from step 1:
 - "N X" (literal count in instruction) → single entry with `count: N`
 - "any X" (pick one) → single entry with `count: 1` and relaxed predicates (`in:` over the acceptable set)
 
+**Read-only / answer-reporting tasks** (actor verb is "find / tell / report / what is / describe"):
+
+The agent's answer is a `ChatMessage` appended to `state.chat`. The canonical diff **always** has a `create` entry for this message with a content predicate:
+
+```yaml
+create:
+  - entity: ChatMessage
+    where: {role: {eq: assistant}}
+    properties:
+      content: {substring_all: [target.expected_term_1, target.expected_term_2]}
+```
+
+The invariant sweep in step 5 then preserves all other collections, enforcing strict read-only semantics. Read-only tasks are not a special case — they use the same grammar as write tasks, just with a ChatMessage target. Prefer `substring_all` over `substring_any` when the instruction lists multiple required facts; use `matches_semantic` only when the answer is genuinely open-ended.
+
 **Predicate construction:** for each field in the field matrix from step 3, emit the predicate from the classification. Reference the bijection variable wherever the instruction says "that X" or "its" or "for each":
 
 ```yaml
@@ -490,7 +504,98 @@ When reviewing a diff, look for these specific anti-patterns — each correspond
 
 ---
 
-## 14  Relationship to the legacy playbook
+## 14  Worked example: read-only task
+
+For contrast with the write-heavy immunization example above — a read-only task applying the same protocol.
+
+**Instruction:** "Find the most recent invoice from Atlas Cleaning and tell me the total amount due and the due date."
+
+### Step 1 — Parse
+
+| Token | Value |
+|---|---|
+| Actor verb | tell (answer) → ChatMessage create |
+| Target type | ChatMessage |
+| Quantifier | single answer |
+| Identity constraints | answer references the invoice from Atlas Cleaning (sender_name == "Atlas Cleaning", most recent) |
+| Property constraints | content mentions the invoice's `amount_due` and `due_date` |
+| Implicit invariants | no emails modified, no folders changed, no filters created, no drafts sent |
+
+### Step 2 — Entities
+
+```
+Target type   | State collection  | Related refs
+ChatMessage   | state.chat        | (none)
+Email         | state.emails      | (read-only, used to find the expected values)
+```
+
+### Step 3 — Field matrix for ChatMessage
+
+```
+role       → BOUND_BY_INSTRUCTION  ({eq: assistant})
+content    → BOUND_BY_INSTRUCTION  ({substring_all: [target.expected_amount_str, target.expected_due_date_str]})
+timestamp  → SYSTEM_MANAGED        (skip)
+```
+
+### Step 4 — Positive diff
+
+```yaml
+create:
+  - entity: ChatMessage
+    where: {role: {eq: assistant}}
+    properties:
+      role:    {eq: assistant}
+      content:
+        substring_all:
+          - target.expected_amount_str
+          - target.expected_due_date_str
+```
+
+### Step 5 — Invariants (strict read-only)
+
+```yaml
+invariant:
+  - collection: state.emails
+    preserve: ALL
+  - collection: state.folders
+    preserve: ALL
+  - collection: state.filters
+    preserve: ALL
+  - collection: state.contacts
+    preserve: ALL
+  - collection: state.drafts
+    preserve: ALL
+  - collection: state.sent
+    preserve: ALL
+  # state.chat not listed — it receives the authored `create`
+  # state.audit_log skipped (SYSTEM_MANAGED)
+```
+
+### Step 6 — Named invariants
+
+```yaml
+named_invariants:
+  - name: "Agent answered with the correct amount and due date"
+    ref: create[0]
+    severity: critical
+  - name: "Agent did not modify any email, folder, or filter"
+    ref: invariant[0]
+    severity: high
+  # remaining invariants get auto-generated labels
+```
+
+### Step 8 — Adversarial tests
+
+- Answer missing the amount → fail (`substring_all` predicate on content).
+- Answer missing the due date → fail.
+- Agent marked the invoice email as read → fail (invariant on `state.emails`).
+- Agent composed a draft reply → fail (invariant on `state.drafts`).
+
+The same protocol, the same grammar, the same matcher. Read-only tasks do not need a parallel authoring path.
+
+---
+
+## 15  Relationship to the legacy playbook
 
 The legacy [`eval-hardening-playbook.md`](eval-hardening-playbook.md) contains patterns for writing robust `expr:` checks by hand. For tasks on the legacy path, it remains the authoritative reference.
 
