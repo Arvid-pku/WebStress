@@ -44,6 +44,82 @@ seed:
     target_course_id: '{output.target_course_id}'
     module_ids: '{output.module_ids}'
     next_available_module_id: '{output.next_available_module_id}'
+canonical_diff:
+  update:
+    - entity: Module
+      desc: Complete the next three modules in the prerequisite chain after finishing all content items
+      bijection:
+        over: "target['module_ids'].split(',')[1:4]"
+        variable: v
+      where:
+        id:
+          expr: "x == v"
+      changes:
+        status:
+          eq: completed
+        content_items:
+          expr: "all(item.get('completed') is True for item in x)"
+  invariant:
+    - collection: state.modules
+      filter: "a.id not in target['module_ids'].split(',')[1:4]"
+      preserve: ALL
+    - collection: state.courses
+      preserve: ALL
+    - collection: state.enrollments
+      preserve: ALL
+    - collection: state.assignments
+      preserve: ALL
+    - collection: state.discussions
+      preserve: ALL
+    - collection: state.discussion_posts
+      preserve: ALL
+    - collection: state.peer_reviews
+      preserve: ALL
+    - collection: state.announcements
+      preserve: ALL
+    - collection: state.grades
+      preserve: ALL
+    - collection: state.calendar_events
+      preserve: ALL
+    - collection: state.sent_messages
+      preserve: ALL
+  named_invariants:
+    - name: Agent completed the next three modules
+      ref: update[0]
+      severity: high
+    - name: Agent did not modify other modules
+      ref: invariant[0]
+      severity: high
+    - name: Agent did not modify course records
+      ref: invariant[1]
+      severity: medium
+    - name: Agent did not drop or alter enrollments
+      ref: invariant[2]
+      severity: high
+    - name: Agent did not modify assignments
+      ref: invariant[3]
+      severity: medium
+    - name: Agent did not modify discussions
+      ref: invariant[4]
+      severity: medium
+    - name: Agent did not create or edit discussion posts
+      ref: invariant[5]
+      severity: medium
+    - name: Agent did not alter peer reviews
+      ref: invariant[6]
+      severity: medium
+    - name: Agent did not modify announcements
+      ref: invariant[7]
+      severity: medium
+    - name: Agent did not modify grades
+      ref: invariant[8]
+      severity: high
+    - name: Agent did not modify calendar events
+      ref: invariant[9]
+      severity: low
+    - name: Agent did not send messages
+      ref: invariant[10]
+      severity: medium
 eval:
   source: server_state
   checks:
