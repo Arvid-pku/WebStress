@@ -148,7 +148,7 @@ canonical_diff:
       desc: Drop the target course
       where:
         id:
-          expr: "x == next(e.id for e in initial.enrollments if e.course_id == target['target_course_id'])"
+          expr: "x == [e.id for e in initial.enrollments if e.course_id == target['target_course_id']][0]"
       changes:
         status:
           eq: dropped
