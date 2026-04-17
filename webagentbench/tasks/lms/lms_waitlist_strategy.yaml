@@ -61,6 +61,81 @@ seed:
     gpa: '{output.gpa}'
     course_codes: '{output.course_codes}'
     current_weighted_scores: '{output.current_weighted_scores}'
+canonical_diff:
+  constraints:
+  - desc: Agent sent exactly one decision message
+    expr: len(state.sent_messages) == 1
+    severity: high
+  - desc: Decision message was addressed to the advisor
+    expr: "any(target['advisor_name'] in m.get('to', '') for m in state.sent_messages)"
+    severity: critical
+  - desc: Decision message came from the student account
+    expr: "any(m.get('from') == state.student.email for m in state.sent_messages)"
+    severity: medium
+  - desc: Decision message had a non-empty subject
+    expr: "any(m.get('subject', '').strip() for m in state.sent_messages)"
+    severity: low
+  - desc: Decision message used a brief subject
+    expr: "any(len(m.get('subject', '').strip()) <= 120 for m in state.sent_messages)"
+    severity: low
+  - desc: Decision message had a brief non-empty body
+    expr: "any(0 < len(m.get('body', '').strip()) <= 280 for m in state.sent_messages)"
+    severity: medium
+  - desc: Decision message was sent after the session started
+    expr: "any(m.get('sent_at') and datetime.fromisoformat(m['sent_at']) >= datetime.fromisoformat(target['session_start']) for m in state.sent_messages)"
+    severity: low
+  invariant:
+  - collection: state.courses
+    preserve: ALL
+  - collection: state.enrollments
+    preserve: ALL
+  - collection: state.assignments
+    preserve: ALL
+  - collection: state.modules
+    preserve: ALL
+  - collection: state.discussions
+    preserve: ALL
+  - collection: state.discussion_posts
+    preserve: ALL
+  - collection: state.peer_reviews
+    preserve: ALL
+  - collection: state.announcements
+    preserve: ALL
+  - collection: state.grades
+    preserve: ALL
+  - collection: state.calendar_events
+    preserve: ALL
+  named_invariants:
+  - name: Agent did not modify courses
+    ref: invariant[0]
+    severity: medium
+  - name: Agent did not modify enrollments
+    ref: invariant[1]
+    severity: high
+  - name: Agent did not modify assignments
+    ref: invariant[2]
+    severity: high
+  - name: Agent did not modify modules
+    ref: invariant[3]
+    severity: medium
+  - name: Agent did not modify discussions
+    ref: invariant[4]
+    severity: medium
+  - name: Agent did not create or edit discussion posts
+    ref: invariant[5]
+    severity: medium
+  - name: Agent did not alter peer reviews
+    ref: invariant[6]
+    severity: medium
+  - name: Agent did not modify announcements
+    ref: invariant[7]
+    severity: medium
+  - name: Agent did not modify grades
+    ref: invariant[8]
+    severity: high
+  - name: Agent did not modify calendar events
+    ref: invariant[9]
+    severity: low
 eval:
   source: server_state
   checks:
