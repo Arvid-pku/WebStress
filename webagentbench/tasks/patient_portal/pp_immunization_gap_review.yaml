@@ -31,6 +31,8 @@ seed:
       - dermatology
       - billing
       - admin
+      count_per_specialty:
+        pcp: 2
       must_include:
       - pcp
     outputs:

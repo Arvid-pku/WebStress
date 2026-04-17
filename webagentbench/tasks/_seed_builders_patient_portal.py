@@ -475,12 +475,21 @@ def _parse_frequency_years(freq: str) -> int:
 def build_provider_directory(ctx: PatientPortalSeedContext, params: dict[str, Any]) -> dict[str, Any]:
     """Create N providers across requested specialties with realistic available slots.
 
-    Params: count (int), specialties (list[str]), must_include (list[str])
+    Params:
+      specialties (list[str]): one provider of each listed specialty by default.
+      count_per_specialty (dict[str, int]): override the default count-of-1
+        for specific specialties. E.g. {"pcp": 2} creates two distinct PCPs.
+        Required when tasks need bijection identity tests across providers of
+        the same specialty (e.g. immunizations administered by different PCPs).
+      must_include (list[str]): specialties that must be present; merged with
+        `specialties` with duplicates collapsed.
     Outputs: provider_ids, providers_by_specialty
     """
     specialties = params.get("specialties", ["pcp"])
+    count_per_specialty = params.get("count_per_specialty", {}) or {}
     must_include = set(params.get("must_include", []))
-    # Ensure must_include specialties are in the specialties list
+    # Merge specialties + must_include, deduped. count_per_specialty controls
+    # how many providers of each specialty are created (default 1).
     all_specialties = list(dict.fromkeys(specialties + list(must_include)))
 
     if "providers" not in ctx.base:
@@ -489,50 +498,62 @@ def build_provider_directory(ctx: PatientPortalSeedContext, params: dict[str, An
     provider_ids: list[str] = []
     providers_by_specialty: dict[str, list[str]] = {}
 
-    for spec in all_specialties:
-        names_pool = _PROVIDER_NAMES.get(spec, [f"Dr. {ctx.fake.name()}"])
-        dept = _SPECIALTY_DEPARTMENTS.get(spec, spec.title())
+    # Track which names have already been used per specialty so multiple
+    # providers of the same specialty don't collide on name.
+    used_names_per_spec: dict[str, set[str]] = {}
 
-        # For PCP, always use prov_1 to match patient.pcp_id
-        if spec == "pcp" and not any(p.get("id") == "prov_1" for p in ctx.base["providers"]):
-            prov_id = "prov_1"
-            # Consume counter to stay in sync
-            ctx.counters["prov"] = max(ctx.counters.get("prov", 0), 1)
-        else:
-            prov_id = ctx.next_id("prov")
+    for base_spec in all_specialties:
+        n_of_this = max(1, int(count_per_specialty.get(base_spec, 1)))
+        for _copy_idx in range(n_of_this):
+            spec = base_spec
+            names_pool = list(_PROVIDER_NAMES.get(spec, [f"Dr. {ctx.fake.name()}"]))
+            used = used_names_per_spec.setdefault(spec, set())
+            available_names = [n for n in names_pool if n not in used]
+            if not available_names:
+                # Exhausted pool — generate a unique synthetic name.
+                available_names = [f"Dr. {ctx.fake.name()}"]
+            dept = _SPECIALTY_DEPARTMENTS.get(spec, spec.title())
 
-        prov_name = ctx.rng.choice(names_pool)
-        accepting = spec not in ("billing", "admin")
-        npi = f"{ctx.rng.randint(1000000000, 9999999999)}"
+            # For PCP, always use prov_1 to match patient.pcp_id (first PCP only)
+            if spec == "pcp" and not any(p.get("id") == "prov_1" for p in ctx.base["providers"]):
+                prov_id = "prov_1"
+                ctx.counters["prov"] = max(ctx.counters.get("prov", 0), 1)
+            else:
+                prov_id = ctx.next_id("prov")
 
-        # Generate 3-6 available slots over the next 2 weeks
-        num_slots = ctx.rng.randint(3, 6)
-        slots: list[dict[str, Any]] = []
-        for _ in range(num_slots):
-            days_ahead = ctx.rng.randint(1, 14)
-            hour = ctx.rng.randint(9, 16)
-            slot_dt = ctx.now.replace(hour=hour, minute=0, second=0, microsecond=0) + timedelta(days=days_ahead)
-            slot_type = ctx.rng.choice(["in-person", "telehealth"])
-            slots.append({
-                "datetime": slot_dt.isoformat(),
-                "type": slot_type,
-                "duration_minutes": 30,
-            })
-        # Sort slots by datetime
-        slots.sort(key=lambda s: s["datetime"])
+            prov_name = ctx.rng.choice(available_names)
+            used.add(prov_name)
+            accepting = spec not in ("billing", "admin")
+            npi = f"{ctx.rng.randint(1000000000, 9999999999)}"
 
-        prov_dict = {
-            "id": prov_id,
-            "name": prov_name,
-            "specialty": spec,
-            "department": dept,
-            "npi": npi,
-            "accepting_new": accepting,
-            "available_slots": slots,
-        }
-        ctx.base["providers"].append(prov_dict)
-        provider_ids.append(prov_id)
-        providers_by_specialty.setdefault(spec, []).append(prov_id)
+            # Generate 3-6 available slots over the next 2 weeks
+            num_slots = ctx.rng.randint(3, 6)
+            slots: list[dict[str, Any]] = []
+            for _ in range(num_slots):
+                days_ahead = ctx.rng.randint(1, 14)
+                hour = ctx.rng.randint(9, 16)
+                slot_dt = ctx.now.replace(hour=hour, minute=0, second=0, microsecond=0) + timedelta(days=days_ahead)
+                slot_type = ctx.rng.choice(["in-person", "telehealth"])
+                slots.append({
+                    "datetime": slot_dt.isoformat(),
+                    "type": slot_type,
+                    "duration_minutes": 30,
+                })
+            # Sort slots by datetime
+            slots.sort(key=lambda s: s["datetime"])
+
+            prov_dict = {
+                "id": prov_id,
+                "name": prov_name,
+                "specialty": spec,
+                "department": dept,
+                "npi": npi,
+                "accepting_new": accepting,
+                "available_slots": slots,
+            }
+            ctx.base["providers"].append(prov_dict)
+            provider_ids.append(prov_id)
+            providers_by_specialty.setdefault(spec, []).append(prov_id)
 
     # Update PCP name in outputs if we created a PCP
     if "pcp" in providers_by_specialty:
@@ -1937,14 +1958,20 @@ def build_immunization_record(ctx: PatientPortalSeedContext, params: dict[str, A
         ctx.base["immunizations"].append(imm_dict)
         completed_imm_ids.append(imm_id)
 
-    # Due immunizations (next_due_at is in the past)
-    for _ in range(due_count):
+    # Due immunizations (next_due_at is in the past).
+    # Rotate through the PCP pool so that when multiple PCPs exist, each
+    # overdue vaccine is bound to a DIFFERENT administering provider. This
+    # preserves the bijection's identity-test property: the agent must
+    # actually look up which provider administered which vaccine, not just
+    # book any PCP for any vaccine.
+    for _idx_due in range(due_count):
         if vax_idx >= len(vaccine_pool):
             vax_idx = 0
         vax = vaccine_pool[vax_idx]
         vax_idx += 1
         imm_id = ctx.next_id("imm")
-        admin_prov = ctx.rng.choice(providers_with_slots)
+        # Round-robin: if N PCPs are available, vaccine i uses PCP (i mod N).
+        admin_prov = providers_with_slots[_idx_due % len(providers_with_slots)]
         administered_at = ctx.now - timedelta(days=ctx.rng.randint(365, 1095))
         # next_due is in the past (overdue)
         next_due = ctx.now - timedelta(days=ctx.rng.randint(1, 60))
