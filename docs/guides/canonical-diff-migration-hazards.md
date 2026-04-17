@@ -482,3 +482,61 @@ applicable before asserting zero.
 feed bijections — e.g., `assignment_battery` with `discrepant_count: 0`.
 When authoring, run the bijection's `over:` expression mentally against
 the seed's most conservative output to confirm it's non-empty.
+
+---
+
+## Class 10 — Constraint-only canonical_diff inverts the scoring model
+
+**Symptom.** A task whose `canonical_diff:` has no `create:`, `update:`,
+or `delete:` entries (only `constraints:` and/or `invariant:`) scores
+`1.0 − Σ penalties_that_fire` on do-nothing. If penalties sum to less
+than 1, the agent gets phantom credit for doing nothing; if they exceed
+1, the score clips to 0. Either way the score reflects the initial
+state's constraint-violation count, not what the agent did.
+
+**Root cause.** `evaluator_diff.py:1137` falls back to `score_raw = 1.0`
+when `total_weight == 0` (the "no positive work was required" branch).
+That fallback is correct for *truly* vacuous tasks but wrong for tasks
+that express their success criteria entirely as constraints. Such tasks
+are measuring "penalty distance from a 1.0 baseline" rather than
+"positive pool / total pool" — an inverted model that makes do-nothing
+scores arbitrary.
+
+**Where.** `webagentbench/evaluator_diff.py:1137`. Also: any task YAML
+whose `canonical_diff` has no `create/update/delete` entries.
+
+**Audit test.** `tests/test_matcher_audit.py::test_no_constraint_only_canonical_diffs`
+enumerates offenders. Currently marked `xfail` pending the matcher fix
+(see below); converts to `xpass` automatically once fixed.
+
+**Known offenders (as of this doc).** `lms_waitlist_strategy`,
+`pp_update_insurance`, `pp_update_phone`.
+
+**Proposed fix (not yet applied).** When a block has no positive
+entries but has `constraints:`, promote constraints to the positive
+pool's numerator:
+
+```python
+if total_weight > 0:
+    score_raw = passed_weight / total_weight
+elif block.constraints:
+    n_total = len(block.constraints)
+    n_passed = sum(1 for nc in negative_checks
+                   if nc["passed"] and _is_constraint(nc))
+    score_raw = n_passed / n_total
+else:
+    score_raw = 1.0
+```
+
+Tradeoff: this shifts constraint semantics — they'd stop being pure
+penalties and start contributing to the positive pool when they're the
+only signal. Authors who want pure-penalty constraints on a task with
+positive entries are unaffected.
+
+**Alternative (YAML-side).** Convert each constraint-only task into a
+proper positive-pool task: promote the constraint expressions to
+`update` entries on the patient/user singleton. The YAML grows, but
+scoring becomes orthodox. 3-YAML fix versus 1-matcher fix.
+
+**Regression guard.** The audit test above. Every future migration's
+PR should run it; if the xfail flips to xpass, the fix landed.
