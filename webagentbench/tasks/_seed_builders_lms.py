@@ -1949,6 +1949,23 @@ def _build_grade_book(ctx: LMSSeedContext, params: dict[str, Any]) -> dict[str, 
             # Update current_weighted_scores for the victim course
             current_weighted_scores[victim_cid] = "1.00"
 
+    impossible_b_enrollment_ids: list[str] = []
+    for cid in impossible_b_course_ids:
+        enrollment_id = enrollment_by_course.get(cid)
+        if enrollment_id:
+            impossible_b_enrollment_ids.append(enrollment_id)
+
+    achievable_final_exam_assignment_ids: list[str] = []
+    for cid in achievable_course_ids:
+        fa = next(
+            (a for a in assignments if a["course_id"] == cid and a["type"] == "exam" and a["weight_category"] == "final"),
+            None,
+        )
+        if not fa:
+            fa = next((a for a in assignments if a["course_id"] == cid and a["type"] == "exam"), None)
+        if fa:
+            achievable_final_exam_assignment_ids.append(fa["id"])
+
     # ── priority_order_ids (with grade data) ──
     unsubmitted_all = [a for a in assignments if a["submission_status"] == "not_submitted"]
     wl: dict[str, dict[str, Decimal]] = {}
@@ -2121,6 +2138,8 @@ def _build_grade_book(ctx: LMSSeedContext, params: dict[str, Any]) -> dict[str, 
         "min_score_achievable": min_score_achievable,
         "final_exam_assignment_id": final_exam_assignment_id,
         "final_exam_assignment_ids": ",".join(final_exam_assignment_ids_list),
+        "impossible_b_enrollment_ids": ",".join(impossible_b_enrollment_ids),
+        "achievable_final_exam_assignment_ids": ",".join(achievable_final_exam_assignment_ids),
         "lower_grade_course_id": lower_grade_course_id,
         "lower_grade_enrollment_id": lower_grade_enrollment_id,
         "lowest_hw_id": lowest_hw_id,
