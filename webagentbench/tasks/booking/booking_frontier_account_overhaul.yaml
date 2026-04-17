@@ -115,6 +115,145 @@ seed:
     remove_pm_id: '{output.remove_pm_id}'
     remove_last_four: '5555'
     remove_holder: Alex Parker
+canonical_diff:
+  constraints:
+    - desc: Display name updated to Jordan A. Parker
+      expr: "state.owner_name == 'Jordan A. Parker'"
+      severity: high
+    - desc: Phone updated to +1-312-555-0198
+      expr: "state.owner_phone == '+1-312-555-0198'"
+      severity: medium
+    - desc: Nationality updated to GB
+      expr: "state.owner_nationality == 'GB'"
+      severity: medium
+    - desc: Currency set to EUR
+      expr: "state.settings.currency == 'EUR'"
+      severity: high
+    - desc: Language set to French
+      expr: "state.settings.language == 'French'"
+      severity: medium
+    - desc: Two-factor authentication enabled
+      expr: "state.settings.two_factor_enabled == True"
+      severity: critical
+    - desc: Deal alerts disabled
+      expr: "state.settings.deal_alerts == False"
+      severity: medium
+    - desc: Newsletter enabled
+      expr: "state.settings.newsletter == True"
+      severity: medium
+    - desc: SMS notifications enabled
+      expr: "state.settings.sms_notifications == True"
+      severity: medium
+    - desc: Preferred bed type set to queen
+      expr: "state.travel_preferences.preferred_bed_type == 'queen'"
+      severity: medium
+    - desc: Floor preference set to high
+      expr: "state.travel_preferences.floor_preference == 'high'"
+      severity: medium
+    - desc: Smoking set to false
+      expr: "state.travel_preferences.smoking == False"
+      severity: medium
+    - desc: Halal added to dietary restrictions
+      expr: "'halal' in state.travel_preferences.dietary_restrictions"
+      severity: high
+  delete:
+    - entity: PaymentMethod
+      desc: Remove Mastercard 5555
+      where:
+        id: {expr: "x == target['remove_pm_id']"}
+  create:
+    - entity: PaymentMethod
+      desc: Add new Visa ending 3333 as default
+      properties:
+        card_type: {eq: "Visa"}
+        last_four: {eq: "3333"}
+        is_default: {eq: true}
+        holder_name: {any: true}
+        expiry: {any: true}
+    - entity: PaymentMethod
+      desc: Add new Mastercard ending 7777
+      properties:
+        card_type: {eq: "Mastercard"}
+        last_four: {eq: "7777"}
+        holder_name: {any: true}
+        expiry: {any: true}
+    - entity: Reservation
+      desc: Book the London Connaught Deluxe Room for 2 guests
+      properties:
+        property_id: {expr: "x == target['prop_id']"}
+        property_name: {any: true}
+        room_type_id: {any: true}
+        room_type_name: {eq: "Deluxe Room"}
+        check_in: {eq: "2026-08-01"}
+        check_out: {eq: "2026-08-05"}
+        nights: {eq: 4}
+        guests: {eq: 2}
+        rooms: {any: true}
+        price_per_night: {any: true}
+        total_price: {any: true}
+        taxes_and_fees: {any: true}
+        currency: {any: true}
+        status: {eq: confirmed}
+        booked_at: {any: true}
+        guest_info: {any: true}
+        payment_method_id: {any: true}
+        cancellation_policy: {any: true}
+        confirmation_number: {any: true}
+        is_genius_deal: {any: true}
+        genius_discount: {any: true}
+        meals_included: {any: true}
+        rating_submitted: {any: true}
+  invariant:
+    - collection: state.reservations
+      filter: "a.property_id != target['prop_id']"
+      preserve: ALL
+    - collection: state.properties
+      preserve: ALL
+    - collection: state.reviews
+      preserve: ALL
+    - collection: state.saved_lists
+      preserve: ALL
+    - collection: state.messages
+      preserve: ALL
+    - collection: state.payment_methods
+      filter: "a.id != target['remove_pm_id'] and a.last_four not in ('3333', '7777')"
+      preserve: ALL
+    - collection: state.notifications
+      preserve: ALL
+  named_invariants:
+    - name: Agent removed old Mastercard 5555
+      ref: delete[0]
+      severity: high
+    - name: Agent added new Visa 3333 as default
+      ref: create[0]
+      severity: high
+    - name: Agent added new Mastercard 7777
+      ref: create[1]
+      severity: medium
+    - name: Agent booked the London hotel Deluxe Room with correct dates
+      ref: create[2]
+      severity: critical
+    - name: Agent did not modify other reservations
+      ref: invariant[0]
+      severity: high
+    - name: Agent did not modify properties
+      ref: invariant[1]
+      severity: medium
+    - name: Agent did not create or modify reviews
+      ref: invariant[2]
+      severity: low
+    - name: Agent did not modify saved lists
+      ref: invariant[3]
+      severity: low
+    - name: Agent did not send unsolicited messages
+      ref: invariant[4]
+      severity: low
+    - name: Agent did not tamper with other payment methods
+      ref: invariant[5]
+      severity: high
+    - name: Agent did not create spurious notifications
+      ref: invariant[6]
+      severity: low
 eval:
   source: server_state
   checks:

@@ -218,6 +218,190 @@ seed:
     review1_name: '{output.review1_prop_name}'
     review2_prop_id: '{output.review2_prop_id}'
     review2_name: '{output.review2_prop_name}'
+canonical_diff:
+  update:
+    - entity: Reservation
+      desc: Cancel Hotel Athena Rome reservation
+      where:
+        id: {expr: "x == target['cancel1_res_id']"}
+      changes:
+        status: {eq: cancelled}
+    - entity: Reservation
+      desc: Cancel Berlin Tiergarten Boutique reservation
+      where:
+        id: {expr: "x == target['cancel2_res_id']"}
+      changes:
+        status: {eq: cancelled}
+    - entity: Reservation
+      desc: Modify Grand Hotel Vienna dates
+      where:
+        id: {expr: "x == target['modify_res_id']"}
+      changes:
+        check_in: {eq: "2026-09-10"}
+        check_out: {eq: "2026-09-14"}
+  create:
+    - entity: Message
+      desc: Send cancellation notice to Hotel Athena Rome
+      properties:
+        property_id: {expr: "x == target['cancel1_prop_id']"}
+        property_name: {any: true}
+        reservation_id: {any: true}
+        subject:
+          expr: "'cancellation' in x.lower()"
+        body:
+          expr: "'schedule' in x.lower() or 'cancel' in x.lower()"
+        sender: {eq: guest}
+        read: {any: true}
+        created_at: {any: true}
+    - entity: Message
+      desc: Send cancellation inquiry to Berlin Tiergarten Boutique
+      properties:
+        property_id: {expr: "x == target['cancel2_prop_id']"}
+        property_name: {any: true}
+        reservation_id: {any: true}
+        subject:
+          expr: "'cancellation' in x.lower()"
+        body:
+          expr: "'refund' in x.lower()"
+        sender: {eq: guest}
+        read: {any: true}
+        created_at: {any: true}
+    - entity: Message
+      desc: Send date change confirmation to Grand Hotel Vienna
+      properties:
+        property_id: {expr: "x == target['modify_prop_id']"}
+        property_name: {any: true}
+        reservation_id: {any: true}
+        subject:
+          expr: "'date' in x.lower() or 'change' in x.lower()"
+        body:
+          expr: "'dates' in x.lower() or 'available' in x.lower()"
+        sender: {eq: guest}
+        read: {any: true}
+        created_at: {any: true}
+    - entity: SavedList
+      desc: Create Cancelled - Revisit list with both cancelled properties
+      properties:
+        name: {eq: "Cancelled - Revisit"}
+        property_ids:
+          expr: >-
+            target['cancel1_prop_id'] in x and
+            target['cancel2_prop_id'] in x
+        created_at: {any: true}
+        updated_at: {any: true}
+    - entity: Review
+      desc: Write review for completed Copenhagen Harbor stay
+      properties:
+        property_id: {expr: "x == target['review1_prop_id']"}
+        reservation_id: {any: true}
+        author_name: {any: true}
+        author_country: {any: true}
+        overall_score: {eq: 8.5}
+        scores: {any: true}
+        title: {eq: "Very comfortable"}
+        positive:
+          expr: "'beds' in x.lower() or 'quiet' in x.lower()"
+        negative: {any: true}
+        room_type: {any: true}
+        travel_purpose: {eq: leisure}
+        traveled_with: {eq: couple}
+        stay_date: {any: true}
+        created_at: {any: true}
+        helpful_count: {any: true}
+        property_response: {any: true}
+    - entity: Review
+      desc: Write review for completed Amsterdam Canal View stay
+      properties:
+        property_id: {expr: "x == target['review2_prop_id']"}
+        reservation_id: {any: true}
+        author_name: {any: true}
+        author_country: {any: true}
+        overall_score: {eq: 7.0}
+        scores: {any: true}
+        title: {eq: "Decent stay"}
+        positive:
+          expr: "'location' in x.lower()"
+        negative:
+          expr: "'slow room service' in x.lower()"
+        room_type: {any: true}
+        travel_purpose: {eq: business}
+        traveled_with: {eq: solo}
+        stay_date: {any: true}
+        created_at: {any: true}
+        helpful_count: {any: true}
+        property_response: {any: true}
+  invariant:
+    - collection: state.reservations
+      filter: >-
+        a.id not in (target['cancel1_res_id'], target['cancel2_res_id'], target['modify_res_id'])
+      preserve: ALL
+    - collection: state.properties
+      preserve: ALL
+    - collection: state.reviews
+      filter: >-
+        a.property_id not in (target['review1_prop_id'], target['review2_prop_id'])
+      preserve: ALL
+    - collection: state.saved_lists
+      filter: "a.name != 'Cancelled - Revisit'"
+      preserve: ALL
+    - collection: state.messages
+      filter: >-
+        a.sender == 'property' or
+        a.property_id not in (target['cancel1_prop_id'], target['cancel2_prop_id'], target['modify_prop_id'])
+      preserve: ALL
+    - collection: state.payment_methods
+      preserve: ALL
+    - collection: state.notifications
+      preserve: ALL
+  named_invariants:
+    - name: Agent cancelled Hotel Athena Rome reservation
+      ref: update[0]
+      severity: critical
+    - name: Agent cancelled Berlin Tiergarten reservation
+      ref: update[1]
+      severity: critical
+    - name: Agent modified Grand Hotel Vienna dates
+      ref: update[2]
+      severity: high
+    - name: Agent sent cancellation notice to Rome hotel
+      ref: create[0]
+      severity: high
+    - name: Agent sent refund inquiry to Berlin hotel
+      ref: create[1]
+      severity: high
+    - name: Agent sent date change message to Vienna hotel
+      ref: create[2]
+      severity: high
+    - name: Agent created Cancelled - Revisit list
+      ref: create[3]
+      severity: high
+    - name: Agent wrote review for Copenhagen completed stay
+      ref: create[4]
+      severity: high
+    - name: Agent wrote review for Amsterdam completed stay
+      ref: create[5]
+      severity: high
+    - name: Agent did not modify other reservations
+      ref: invariant[0]
+      severity: high
+    - name: Agent did not modify properties
+      ref: invariant[1]
+      severity: medium
+    - name: Agent did not write reviews for other properties
+      ref: invariant[2]
+      severity: medium
+    - name: Agent did not modify other saved lists
+      ref: invariant[3]
+      severity: medium
+    - name: Agent only messaged the three target properties
+      ref: invariant[4]
+      severity: medium
+    - name: Agent did not modify payment methods
+      ref: invariant[5]
+      severity: high
+    - name: Agent did not create spurious notifications
+      ref: invariant[6]
+      severity: low
 eval:
   source: server_state
   checks:

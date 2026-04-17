@@ -101,8 +101,14 @@ _SAFE_BUILTINS = {
 
 def _expr_scope(scope: PredicateScope) -> dict[str, Any]:
     """Build the locals dict passed to the restricted eval for ``{expr: "..."}``."""
+    # Wrap dict values in _DotObj so authors can write ``x.field`` instead of
+    # ``x['field']``.  This is particularly important for nested entity fields
+    # (e.g. ``guest_info``) which are stored as dicts after model_dump.
+    x = scope.value
+    if isinstance(x, dict):
+        x = _DotObj(x)
     return {
-        "x": scope.value,
+        "x": x,
         "v": scope.bijection_var,
         "target": scope.target,
         "initial": scope.initial,
