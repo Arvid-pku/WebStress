@@ -800,6 +800,98 @@ def _match_single_block(
                 details={"entry_index": i},
             ))
 
+    # 1.5 Update entries — mutation to an existing entity.
+    # Each update has a `where` selector (predicates on entity fields) and
+    # `changes` predicates (predicates on new field values after mutation).
+    for i, entry in enumerate(block.update):
+        total_weight += entry.weight
+        collection_name = _collection_for(entry.entity)
+        base_desc = entry.desc or f"Update {entry.entity} matching selector"
+        matched = False
+        for candidate in agent_diff:
+            from_cand = isinstance(candidate, Update)
+            if not from_cand:
+                continue
+            if candidate.entity != collection_name:
+                continue
+            if (candidate.entity, candidate.entity_id) in matched_ids:
+                continue
+            # Evaluate `where` against a synthesised entity dict (the updated
+            # entity's state: id + changed fields' new values, fallback to old).
+            entity_dict = {"id": candidate.entity_id}
+            for f, (_before, after) in candidate.field_changes.items():
+                entity_dict[f] = after
+            # `where` predicates read the entity's field values, not field_changes.
+            where_ok = True
+            for fname, pred in entry.where.items():
+                scope = _build_scope(targets, initial, final, session_start=session_start)
+                if not _predicate_holds(pred, entity_dict.get(fname), scope):
+                    where_ok = False
+                    break
+            if not where_ok:
+                continue
+            # `changes` predicates test the new (after) values of mutated fields.
+            changes_ok = True
+            for fname, pred in entry.changes.items():
+                after_value = candidate.field_changes.get(fname, (None, entity_dict.get(fname)))[1]
+                scope = _build_scope(targets, initial, final, session_start=session_start)
+                if not _predicate_holds(pred, after_value, scope):
+                    changes_ok = False
+                    break
+            if where_ok and changes_ok:
+                matched_ids.add((candidate.entity, candidate.entity_id))
+                matched = True
+                break
+        checks.append({
+            "desc": base_desc,
+            "passed": matched,
+            "error": None if matched else "no Update entry matched both where and changes predicates",
+        })
+        if matched:
+            passed_weight += entry.weight
+        else:
+            failures.append(Failure(
+                kind="missing_update", description=base_desc,
+                details={"entry_index": i},
+            ))
+
+    # 1.6 Delete entries.
+    for i, entry in enumerate(block.delete):
+        total_weight += entry.weight
+        collection_name = _collection_for(entry.entity)
+        base_desc = entry.desc or f"Delete {entry.entity} matching selector"
+        matched = False
+        for candidate in agent_diff:
+            if not isinstance(candidate, Delete):
+                continue
+            if candidate.entity != collection_name:
+                continue
+            if (candidate.entity, candidate.entity_id) in matched_ids:
+                continue
+            entity_dict = {"id": candidate.entity_id, **candidate.last_fields}
+            where_ok = True
+            for fname, pred in entry.where.items():
+                scope = _build_scope(targets, initial, final, session_start=session_start)
+                if not _predicate_holds(pred, entity_dict.get(fname), scope):
+                    where_ok = False
+                    break
+            if where_ok:
+                matched_ids.add((candidate.entity, candidate.entity_id))
+                matched = True
+                break
+        checks.append({
+            "desc": base_desc,
+            "passed": matched,
+            "error": None if matched else "no Delete entry matched the where selector",
+        })
+        if matched:
+            passed_weight += entry.weight
+        else:
+            failures.append(Failure(
+                kind="missing_delete", description=base_desc,
+                details={"entry_index": i},
+            ))
+
     # 2. Invariant enforcement. Invariants are PENALTY-ONLY — they do not
     # contribute to total_weight / passed_weight. Doing nothing must not
     # earn positive score just because nothing got mutated; only the

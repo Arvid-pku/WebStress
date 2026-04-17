@@ -168,6 +168,7 @@ class UpdateEntry(BaseModel):
     where: dict[str, dict[str, Any]]
     changes: dict[str, dict[str, Any]] = Field(default_factory=dict)
     weight: float = Field(default=1.0, ge=0.0)
+    desc: str | None = None  # optional human-readable check label
 
     model_config = ConfigDict(extra="forbid")
 
@@ -188,6 +189,7 @@ class DeleteEntry(BaseModel):
     entity: str
     where: dict[str, dict[str, Any]]
     weight: float = Field(default=1.0, ge=0.0)
+    desc: str | None = None  # optional human-readable check label
 
     model_config = ConfigDict(extra="forbid")
 
