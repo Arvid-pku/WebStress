@@ -30,6 +30,7 @@ seed:
     - pcp_id
     - pcp_name
     - applicable_screening_names
+    - overdue_screening_names
   - use: provider_directory
     params:
       count: 6
@@ -95,34 +96,109 @@ seed:
     expiring_ref_id: '{output.expiring_ref_id}'
     denied_claim_ids: '{output.denied_claim_ids}'
     applicable_screening_names: '{output.applicable_screening_names}'
+    overdue_screening_names: '{output.overdue_screening_names}'
     expiring_rx_ids: '{output.expiring_rx_ids}'
-eval:
-  source: server_state
-  checks:
-  - expr: "sorted(\n  a.reason\n  for a in state.appointments\n  if a.status == 'scheduled'\n\
-      \  and a.id not in state._initial_snapshot.get('appointments', {})\n  and a.reason\
-      \ != 'Expiring referral follow-up'\n) == sorted(\n  [imm.vaccine_name for imm\
-      \ in state.immunizations if imm.next_due_at is not None and imm.next_due_at\
-      \ <= state.created_at]\n  + [\n    screening.screening_name\n    for screening\
-      \ in state.patient.applicable_screenings\n    if screening.next_due is not None\n\
-      \    and screening.next_due < state.created_at.date()\n  ]\n)"
-    desc: Every due vaccine and overdue screening was scheduled once using the exact
-      item name as the appointment reason
-  - expr: "len([\n  a for a in state.appointments\n  if a.status == 'scheduled'\n\
-      \  and a.reason == 'Expiring referral follow-up'\n  and a.id not in state._initial_snapshot.get('appointments',\
-      \ {})\n  and a.linked_referral_id == '{target.expiring_ref_id}'\n]) == 1"
-    desc: Exactly one follow-up appointment was scheduled using the expiring approved
-      referral
-  - expr: "all(\n  state.get_claim(cid) is not None\n  and state.get_claim(cid).status\
-      \ == 'appealed'\n  for cid in {target.denied_claim_ids}\n)"
-    desc: Every denied claim with an EOB was appealed
-  negative_checks:
-  - expr: "len([\n  m for m in state.messages\n  if m.from_type == 'patient'\n  and\
-      \ m.id not in state._initial_snapshot.get('messages', {})\n]) == 0"
-    desc: Agent did not send any patient messages
-    penalty: 0.2
-  - expr: "all(rx.status == 'active'\n    for rx in state.prescriptions\n    if rx.id\
-      \ in {target.expiring_rx_ids})"
-    desc: Expiring prescriptions were not prematurely discontinued
-    penalty: 0.2
+canonical_diff:
+  # Shape: multiple bijection creates on Appointment (due vaccines +
+  # overdue screenings) + one non-bijection create for the expiring
+  # referral follow-up + one bijection update on InsuranceClaim for the
+  # appeals. Predicates use `reason` equality to keep the three appointment
+  # bijections disjoint (hazard: multi-create-same-entity leak —
+  # predicates must make candidate pools non-overlapping).
+  create:
+    - entity: Appointment
+      desc: "Schedule one appointment per due/overdue immunization; reason = vaccine name"
+      bijection:
+        over: "target['due_vaccine_names']"
+        variable: v
+      properties:
+        status: {eq: "scheduled"}
+        reason:
+          expr: "x == v"
+    - entity: Appointment
+      desc: "Schedule one appointment per overdue screening; reason = screening name"
+      bijection:
+        over: "target['overdue_screening_names']"
+        variable: v
+      properties:
+        status: {eq: "scheduled"}
+        reason:
+          expr: "x == v"
+    - entity: Appointment
+      desc: "Schedule exactly one specialist follow-up using the expiring approved referral; reason must be 'Expiring referral follow-up'"
+      properties:
+        status: {eq: "scheduled"}
+        reason: {eq: "Expiring referral follow-up"}
+        linked_referral_id:
+          expr: "x == target['expiring_ref_id']"
+  update:
+    - entity: InsuranceClaim
+      desc: "Appeal every denied claim that has an available EOB (status -> appealed)"
+      bijection:
+        over: "target['denied_claim_ids']"
+        variable: v
+      where:
+        id:
+          expr: "x == v"
+      changes:
+        status: {eq: "appealed"}
+  invariant:
+    # Pre-existing appointments must remain unchanged; the three creates
+    # above are the only permitted appointment mutations.
+    - collection: state.appointments
+      filter: "a.id in {x.id for x in initial.appointments}"
+      preserve: ALL
+    # Claims not in the denied set must be preserved (approved / processing
+    # / distractor). Filter scope exposes `a` + `target` only (hazard), so
+    # we use the scalar seed list directly.
+    - collection: state.claims
+      filter: "a.id not in target['denied_claim_ids']"
+      preserve: ALL
+    # Prescriptions untouched — "do not discontinue any prescriptions".
+    - collection: state.prescriptions
+      preserve: ALL
+    # No patient messages — "do not send any messages".
+    - collection: state.messages
+      preserve: ALL
+    # Referrals remain as seeded (the agent links the existing expiring
+    # approved referral to the new appointment but does not mutate it).
+    - collection: state.referrals
+      preserve: ALL
+    - collection: state.immunizations
+      preserve: ALL
+    - collection: state.lab_results
+      preserve: ALL
+    - collection: state.pharmacies
+      preserve: ALL
+  named_invariants:
+    - name: "Agent did not cancel or modify pre-existing appointments"
+      ref: invariant[0]
+      severity: high
+    - name: "Agent did not modify claims outside the denied set"
+      ref: invariant[1]
+      severity: critical
+    - name: "Agent did not discontinue or modify prescriptions"
+      ref: invariant[2]
+      severity: critical
+    - name: "Agent did not send any patient messages"
+      ref: invariant[3]
+      severity: high
+    - name: "Agent did not create or modify referrals"
+      ref: invariant[4]
+      severity: high
+    - name: "Agent did not modify immunization records"
+      ref: invariant[5]
+      severity: medium
+    - name: "Agent did not create or modify lab results"
+      ref: invariant[6]
+      severity: high
+    - name: "Agent did not modify pharmacies"
+      ref: invariant[7]
+      severity: medium
+    - name: "Agent scheduled exactly one expiring-referral follow-up appointment"
+      ref: create[2]
+      severity: high
+    - name: "Agent appealed exactly the denied claims with an available EOB"
+      ref: update[0]
+      severity: high
 secondary_primitives: []
