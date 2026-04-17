@@ -75,53 +75,133 @@ seed:
     outputs:
     - thread_ids
     - unread_msg_ids
+    - all_msg_ids
+    - context_msg_ids
+    - context_discontinued_rx_ids
   targets:
     pcp_id: '{output.pcp_id}'
     pcp_name: '{output.pcp_name}'
     active_rx_ids: '{output.active_rx_ids}'
     upcoming_ids: '{output.upcoming_ids}'
-eval:
-  source: server_state
-  checks:
-  - expr: "any(\n  m.from_type == 'provider'\n  and 'Discharge Summary - Medication\
-      \ List:' in m.body\n  and m.id in state._initial_snapshot.get('messages', {})\n\
-      \  and state.get_message(m.id) is not None\n  and state.get_message(m.id).is_read\n\
-      \  for m in state.messages\n)"
-    desc: The discharge summary message was read
-  - expr: "all(\n  state.get_prescription(rid) is not None\n  and state.get_prescription(rid).status\
-      \ == 'pending_renewal'\n  for rid in [\n    rid for rid in {target.active_rx_ids}\n\
-      \    if any(\n      f\"Note: {state._initial_snapshot['prescriptions'][rid]['medication']}\
-      \ was discontinued during hospitalization.\"\n      in msg['body']\n      for\
-      \ msg in state._initial_snapshot.get('messages', {}).values()\n      if msg.get('from_type')\
-      \ == 'provider'\n    )\n  ]\n)"
-    desc: Every active medication explicitly marked as discontinued in the discharge
-      summary was routed through renewal request flow
-  - expr: "len([\n  m for m in state.messages\n  if m.from_type == 'patient'\n  and\
-      \ m.category == 'rx_renewal'\n  and m.linked_entity_id in [\n    rid for rid\
-      \ in {target.active_rx_ids}\n    if any(\n      f\"Note: {state._initial_snapshot['prescriptions'][rid]['medication']}\
-      \ was discontinued during hospitalization.\"\n      in msg['body']\n      for\
-      \ msg in state._initial_snapshot.get('messages', {}).values()\n      if msg.get('from_type')\
-      \ == 'provider'\n    )\n  ]\n  and m.id not in state._initial_snapshot.get('messages',\
-      \ {})\n]) == len([\n  rid for rid in {target.active_rx_ids}\n  if any(\n   \
-      \ f\"Note: {state._initial_snapshot['prescriptions'][rid]['medication']} was\
-      \ discontinued during hospitalization.\"\n    in msg['body']\n    for msg in\
-      \ state._initial_snapshot.get('messages', {}).values()\n    if msg.get('from_type')\
-      \ == 'provider'\n  )\n])"
-    desc: Exactly one renewal-request artifact was created for each discontinued medication
-      named in the summary
-  - expr: "len([\n  a for a in state.appointments\n  if a.status == 'scheduled'\n\
-      \  and a.provider_id == '{target.pcp_id}'\n  and a.reason == 'Post-discharge\
-      \ medication reconciliation'\n  and a.id not in state._initial_snapshot.get('appointments',\
-      \ {})\n]) == 1"
-    desc: Exactly one PCP medication-reconciliation appointment was scheduled
-  negative_checks:
-  - expr: "len([\n  m for m in state.messages\n  if m.from_type == 'patient'\n  and\
-      \ m.category == 'clinical'\n  and m.id not in state._initial_snapshot.get('messages',\
-      \ {})\n]) == 0"
-    desc: Agent did not send separate clinical messages
-    penalty: 0.2
-  - expr: "not any(rx.status == 'discontinued'\n        for rx in state.prescriptions\n\
-      \        if rx.id in {target.active_rx_ids})"
-    desc: Agent did not directly discontinue prescriptions
-    penalty: 0.3
+    all_msg_ids: '{output.all_msg_ids}'
+    discharge_msg_id: '{output.context_msg_ids.discharge_summary}'
+    discontinued_rx_ids: '{output.context_discontinued_rx_ids.discharge_summary}'
+canonical_diff:
+  # Positive signals:
+  #   (a) mark the discharge-summary provider message as read
+  #       (identified by target.discharge_msg_id, emitted by the
+  #       message_threads seed);
+  #   (b) for each prescription flagged as "discontinued during
+  #       hospitalization" in the discharge note, flip its status to
+  #       pending_renewal (bijection over target.discontinued_rx_ids);
+  #   (c) create one patient->rx_renewal ClinicalMessage per discontinued
+  #       rx (bijection), linked to that rx — structural signal that the
+  #       renewal reached the RX system (category="rx_renewal");
+  #   (d) schedule exactly one PCP appointment with reason
+  #       "Post-discharge medication reconciliation".
+  update:
+    - entity: ClinicalMessage
+      desc: "Mark the discharge-summary message as read"
+      where:
+        # `where` only sees id + changed fields; match by id against the
+        # deterministic target emitted by message_threads.
+        id:
+          expr: "x == target['discharge_msg_id']"
+      changes:
+        is_read: {eq: true}
+    - entity: Prescription
+      desc: "Flip each discontinued prescription to pending_renewal"
+      bijection:
+        over: "target['discontinued_rx_ids']"
+        variable: v
+      where:
+        id: {expr: "x == v"}
+      changes:
+        status: {eq: "pending_renewal"}
+  create:
+    - entity: ClinicalMessage
+      desc: "Submit a structured rx_renewal request per discontinued rx"
+      bijection:
+        over: "target['discontinued_rx_ids']"
+        variable: v
+      properties:
+        from_type: {eq: "patient"}
+        category: {eq: "rx_renewal"}
+        linked_entity_id: {expr: "x == v"}
+        linked_entity_type: {eq: "prescription"}
+        is_read: {eq: true}
+        provider_id:
+          expr: >-
+            x in [r.provider_id for r in initial.prescriptions if r.id == v]
+        subject: {any: true}
+        body: {any: true}
+        thread_id: {any: true}
+        is_urgent: {any: true}
+    - entity: Appointment
+      desc: "Schedule one PCP medication-reconciliation appointment"
+      properties:
+        status: {eq: "scheduled"}
+        provider_id:
+          expr: "x == target['pcp_id']"
+        reason: {eq: "Post-discharge medication reconciliation"}
+        datetime: {any: true}
+        type: {any: true}
+        notes: {any: true}
+        linked_referral_id: {any: true}
+        pre_auth_status: {any: true}
+        booked_at: {any: true}
+        location: {any: true}
+  invariant:
+    - collection: state.messages
+      # All pre-existing messages must be preserved except the discharge
+      # summary (which gets marked read). The create[0] bijection authors
+      # brand-new patient rx_renewal messages — they don't overlap with
+      # initial ids.
+      filter: "a.id in target['all_msg_ids'] and a.id != target['discharge_msg_id']"
+      preserve: ALL
+    - collection: state.prescriptions
+      # Prescriptions not named as discontinued must remain untouched
+      # (no direct discontinuation, no spurious renewals).
+      filter: "a.id not in target['discontinued_rx_ids']"
+      preserve: ALL
+    - collection: state.appointments
+      # Existing appointments unchanged — the create above is the only
+      # permitted appointment mutation.
+      filter: "a.id in {x.id for x in initial.appointments}"
+      preserve: ALL
+    - collection: state.immunizations
+      preserve: ALL
+    - collection: state.lab_results
+      preserve: ALL
+    - collection: state.claims
+      preserve: ALL
+    - collection: state.referrals
+      preserve: ALL
+    - collection: state.pharmacies
+      preserve: ALL
+  named_invariants:
+    - name: "Agent did not modify, delete, or alter pre-existing messages (other than marking discharge read)"
+      ref: invariant[0]
+      severity: medium
+    - name: "Agent did not directly discontinue or modify prescriptions that were not named in the discharge note"
+      ref: invariant[1]
+      severity: critical
+    - name: "Agent did not cancel or modify pre-existing appointments"
+      ref: invariant[2]
+      severity: high
+    - name: "Agent did not modify immunization records"
+      ref: invariant[3]
+      severity: medium
+    - name: "Agent did not create or modify lab results"
+      ref: invariant[4]
+      severity: high
+    - name: "Agent did not touch insurance claims"
+      ref: invariant[5]
+      severity: critical
+    - name: "Agent did not create or modify referrals"
+      ref: invariant[6]
+      severity: high
+    - name: "Agent did not modify pharmacies"
+      ref: invariant[7]
+      severity: medium
 secondary_primitives: []

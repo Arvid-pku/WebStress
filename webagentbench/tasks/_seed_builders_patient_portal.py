@@ -1602,6 +1602,13 @@ def build_message_threads(ctx: PatientPortalSeedContext, params: dict[str, Any])
     # "specialist follow-up" providers without re-parsing the body text.
     context_specialties: dict[str, str] = {}
     context_specialist_provider_ids: dict[str, list[str]] = {}
+    # Per-context-type: for `discharge_summary` contexts, the rx id the body
+    # text flags as "discontinued during hospitalization". Mirrors
+    # `_generate_contextual_body`'s logic — the omitted rx is the last entry
+    # of the first 4 active prescriptions, so downstream tasks (e.g.
+    # pp_medication_reconciliation) can identify the exact rx the agent must
+    # route through the renewal flow without re-parsing the body string.
+    context_discontinued_rx_ids: dict[str, list[str]] = {}
     billing_thread_id: str | None = None
     rx_renewal_thread_id: str | None = None
     unread_assigned = 0
@@ -1686,6 +1693,27 @@ def build_message_threads(ctx: PatientPortalSeedContext, params: dict[str, Any])
                     if p.get("specialty") == chosen_specialty
                 ]
 
+        # For discharge_summary contexts, pre-compute which active rx the body
+        # will flag as "discontinued during hospitalization". The body
+        # generator operates on the first 4 active prescriptions and omits the
+        # last one (`meds[omit_idx]`); mirror that logic exactly so the target
+        # matches the text the agent reads.
+        if (
+            thread_context
+            and str(thread_context.get("type", "")) == "discharge_summary"
+        ):
+            ctx_type = str(thread_context.get("type", ""))
+            active_rxes = [
+                rx for rx in ctx.base.get("prescriptions", [])
+                if rx.get("status") == "active"
+            ]
+            if active_rxes:
+                meds_subset = active_rxes[:4]
+                discontinued_rx = meds_subset[-1]
+                context_discontinued_rx_ids.setdefault(ctx_type, []).append(
+                    discontinued_rx["id"]
+                )
+
         # Create 2-4 messages per thread (alternating provider/patient)
         msgs_in_thread = ctx.rng.randint(2, 4)
         for m in range(msgs_in_thread):
@@ -1764,6 +1792,10 @@ def build_message_threads(ctx: PatientPortalSeedContext, params: dict[str, Any])
         # the specialty named in the rendered body. Empty when no such
         # context exists.
         "context_specialist_provider_ids": context_specialist_provider_ids,
+        # Per-body-context-type list of prescription ids the body flags as
+        # "discontinued during hospitalization" (populated for
+        # `discharge_summary` contexts).
+        "context_discontinued_rx_ids": context_discontinued_rx_ids,
     }
 
 
