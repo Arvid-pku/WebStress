@@ -370,6 +370,43 @@ against any seed-derived list/dict target:
 
 ---
 
+## Class 12 — Shared-tree parallel authoring pollution
+
+**Symptom.** A task-local validation or full-suite checkpoint fails on a task
+you were not actively touching, often with errors from `_validate_canonical_diff_refs`
+or with `pytest` collecting placeholder scaffold tests that were never meant to
+ship.
+
+**Root cause.** Parallel workers editing task YAMLs and generated tests in the
+same checkout expose half-authored files to global loaders immediately:
+
+- `webagentbench/tasks/_registry.py:load_all_tasks()` eagerly loads every task
+  YAML, so one invalid in-progress canonical diff can break unrelated task
+  validation.
+- `pytest` discovers `webagentbench/tests/test_*.py` as soon as the file exists,
+  so a generated scaffold with `TODO(author)` placeholders can fail the full
+  suite even though the committed branch is fine.
+
+This is not a task-logic bug; it is a workspace-isolation bug in the migration
+process.
+
+**Fix applied.** Treat parallel migrations as isolated worktree jobs, not
+shared-tree live edits. Each worker should author and validate in its own git
+worktree (or otherwise keep files private until they are fully valid), and only
+land reviewed task files into the main checkout after validation passes.
+
+**Regression guard.**
+
+1. Never run the env-wide checkpoint suite from a checkout that contains
+   unfinished task YAMLs or scaffold tests.
+2. For parallel authoring, create one git worktree per worker/batch before
+   generating tests.
+3. If you must share a checkout temporarily, require workers to keep every
+   touched task file loadable and every generated test file fully implemented at
+   all times.
+
+---
+
 ## Migration pre-flight checklist
 
 Before opening a task migration PR, run through these for that specific task:
