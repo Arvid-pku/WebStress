@@ -577,22 +577,53 @@ def build_provider_directory(ctx: PatientPortalSeedContext, params: dict[str, An
 def build_pharmacy_list(ctx: PatientPortalSeedContext, params: dict[str, Any]) -> dict[str, Any]:
     """Create pharmacies with one default. Optional mail-order.
 
-    Params: count (2-3), include_mail_order (bool)
-    Outputs: pharmacy_ids, default_pharmacy_id, mail_order_pharmacy_id
+    Params:
+        count (2-3)
+        include_mail_order (bool)
+        must_include_name (str | list[str]): case-insensitive substring(s) of
+            pharmacy template names that MUST be present in the selected
+            pharmacies. Each matched template is pinned before other
+            templates are appended up to `count`.
+        target_pharmacy_name (str): case-insensitive substring of a pharmacy
+            template name whose id should be exposed as `target_pharmacy_id`
+            in the outputs. The name must also match one of `must_include_name`
+            (or the caller must guarantee it ends up in the selection) —
+            otherwise `target_pharmacy_id` may be None.
+    Outputs: pharmacy_ids, default_pharmacy_id, mail_order_pharmacy_id,
+             target_pharmacy_id
     """
     count = params.get("count", 2)
     include_mail_order = params.get("include_mail_order", False)
+    must_include_raw = params.get("must_include_name") or []
+    if isinstance(must_include_raw, str):
+        must_include_names = [must_include_raw]
+    else:
+        must_include_names = list(must_include_raw)
+    target_pharmacy_name: str | None = params.get("target_pharmacy_name")
 
     if "pharmacies" not in ctx.base:
         ctx.base["pharmacies"] = []
 
     templates = list(_PHARMACY_TEMPLATES)
     ctx.rng.shuffle(templates)
+
+    # Pin must_include templates to the front (preserving shuffle for the rest).
+    pinned: list[dict[str, str]] = []
+    for needle in must_include_names:
+        match = next(
+            (t for t in templates if needle.lower() in t["name"].lower()),
+            None,
+        )
+        if match is not None:
+            templates.remove(match)
+            pinned.append(match)
+    templates = pinned + templates
     selected = templates[:min(count, len(templates))]
 
     pharmacy_ids: list[str] = []
     default_pharmacy_id: str = ""
     mail_order_pharmacy_id: str | None = None
+    target_pharmacy_id: str | None = None
 
     for i, tmpl in enumerate(selected):
         pharm_id = ctx.next_id("pharm")
@@ -612,6 +643,12 @@ def build_pharmacy_list(ctx: PatientPortalSeedContext, params: dict[str, Any]) -
         pharmacy_ids.append(pharm_id)
         if is_default:
             default_pharmacy_id = pharm_id
+        if (
+            target_pharmacy_name
+            and target_pharmacy_id is None
+            and target_pharmacy_name.lower() in tmpl["name"].lower()
+        ):
+            target_pharmacy_id = pharm_id
 
     if include_mail_order:
         pharm_id = ctx.next_id("pharm")
@@ -637,6 +674,7 @@ def build_pharmacy_list(ctx: PatientPortalSeedContext, params: dict[str, Any]) -
         "pharmacy_ids": pharmacy_ids,
         "default_pharmacy_id": default_pharmacy_id,
         "mail_order_pharmacy_id": mail_order_pharmacy_id,
+        "target_pharmacy_id": target_pharmacy_id,
     }
 
 
@@ -844,6 +882,7 @@ def build_prescription_cabinet(ctx: PatientPortalSeedContext, params: dict[str, 
     interaction_pair = params.get("interaction_pair", False)
     target_medication_name: str | None = params.get("target_medication_name")
     target_exclude_mail_order = bool(params.get("target_exclude_mail_order", False))
+    target_exclude_pharmacy_name: str | None = params.get("target_exclude_pharmacy_name")
 
     if "prescriptions" not in ctx.base:
         ctx.base["prescriptions"] = []
@@ -881,6 +920,7 @@ def build_prescription_cabinet(ctx: PatientPortalSeedContext, params: dict[str, 
         expires_days: int,
         *,
         force_retail_pharmacy: bool = False,
+        exclude_pharmacy_name: str | None = None,
     ) -> dict[str, Any]:
         nonlocal med_idx
         rx_id = ctx.next_id("rx")
@@ -890,6 +930,13 @@ def build_prescription_cabinet(ctx: PatientPortalSeedContext, params: dict[str, 
             retail_pharmacies = [p for p in pharmacies if not p.get("is_mail_order")]
             if retail_pharmacies:
                 available_pharmacies = retail_pharmacies
+        if exclude_pharmacy_name:
+            filtered = [
+                p for p in available_pharmacies
+                if exclude_pharmacy_name.lower() not in p.get("name", "").lower()
+            ]
+            if filtered:
+                available_pharmacies = filtered
         pharm_id = ctx.rng.choice([p["id"] for p in available_pharmacies]) if available_pharmacies else default_pharm_id
         last_filled = ctx.now - timedelta(days=ctx.rng.randint(7, 60))
         expires_at = ctx.now + timedelta(days=expires_days)
@@ -914,10 +961,13 @@ def build_prescription_cabinet(ctx: PatientPortalSeedContext, params: dict[str, 
             break
         med = med_pool[med_idx]
         med_idx += 1
-        force_retail_pharmacy = bool(
-            target_exclude_mail_order
-            and target_medication_name
+        is_target_med = bool(
+            target_medication_name
             and target_medication_name.lower() in med["name"].lower()
+        )
+        force_retail_pharmacy = bool(target_exclude_mail_order and is_target_med)
+        exclude_pharmacy_for_rx = (
+            target_exclude_pharmacy_name if is_target_med else None
         )
         rx = _make_rx(
             med,
@@ -925,6 +975,7 @@ def build_prescription_cabinet(ctx: PatientPortalSeedContext, params: dict[str, 
             ctx.rng.randint(2, 6),
             ctx.rng.randint(90, 365),
             force_retail_pharmacy=force_retail_pharmacy,
+            exclude_pharmacy_name=exclude_pharmacy_for_rx,
         )
         ctx.base["prescriptions"].append(rx)
         active_rx_ids.append(rx["id"])
