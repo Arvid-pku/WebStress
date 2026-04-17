@@ -45,6 +45,82 @@ seed:
     next_available_module_id: '{output.next_available_module_id}'
     first_locked_module_id: '{output.first_locked_module_id}'
     module_title: Module 2
+
+canonical_diff:
+  update:
+    - entity: Module
+      desc: Complete the specified module after finishing all of its content items
+      where:
+        id:
+          expr: "x == target['next_available_module_id']"
+      changes:
+        status: {eq: completed}
+        content_items:
+          expr: "all(item.get('completed') is True for item in x)"
+  invariant:
+    - collection: state.modules
+      filter: "a.id != target['next_available_module_id']"
+      preserve: ALL
+    - collection: state.courses
+      preserve: ALL
+    - collection: state.enrollments
+      preserve: ALL
+    - collection: state.assignments
+      preserve: ALL
+    - collection: state.discussions
+      preserve: ALL
+    - collection: state.discussion_posts
+      preserve: ALL
+    - collection: state.peer_reviews
+      preserve: ALL
+    - collection: state.announcements
+      preserve: ALL
+    - collection: state.grades
+      preserve: ALL
+    - collection: state.calendar_events
+      preserve: ALL
+    - collection: state.sent_messages
+      preserve: ALL
+  named_invariants:
+    - name: Agent did not modify other modules
+      ref: invariant[0]
+      severity: high
+    - name: Agent did not modify course records
+      ref: invariant[1]
+      severity: medium
+    - name: Agent did not drop or alter enrollments
+      ref: invariant[2]
+      severity: high
+    - name: Agent did not modify assignments
+      ref: invariant[3]
+      severity: medium
+    - name: Agent did not modify discussions
+      ref: invariant[4]
+      severity: medium
+    - name: Agent did not create or edit discussion posts
+      ref: invariant[5]
+      severity: medium
+    - name: Agent did not alter peer reviews
+      ref: invariant[6]
+      severity: medium
+    - name: Agent did not modify announcements
+      ref: invariant[7]
+      severity: medium
+    - name: Agent did not modify grades
+      ref: invariant[8]
+      severity: high
+    - name: Agent did not modify calendar events
+      ref: invariant[9]
+      severity: low
+    - name: Agent did not send messages
+      ref: invariant[10]
+      severity: medium
+  constraints:
+    - desc: Completing the target module unlocks the next module in the sequence
+      expr: >-
+        state.get_module(target['first_locked_module_id']) is not None
+        and state.is_module_unlocked(target['first_locked_module_id'])
+      severity: high
 eval:
   source: server_state
   checks:
