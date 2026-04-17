@@ -2361,7 +2361,7 @@ def _build_module_sequence(ctx: LMSSeedContext, params: dict[str, Any]) -> dict[
                 title=f"Video Lecture {i + 1}",
                 type="video",
                 completed=i < completed_count,
-                linked_assignment_id=linked_assignment_id if i == completed_count else None,
+                linked_assignment_id=(linked_assignment_id or None) if i == completed_count else None,
             ),
         ]
 
