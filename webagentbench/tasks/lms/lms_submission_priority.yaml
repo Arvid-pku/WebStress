@@ -47,6 +47,79 @@ seed:
     - event_ids
   targets:
     priority_order_ids: '{output.priority_order_ids}'
+canonical_diff:
+  update:
+    - entity: Assignment
+      desc: Submit the top two priority assignments in order with matching priority filenames
+      bijection:
+        over: "target['priority_order_ids'].split(',')[:2]"
+        variable: v
+      where:
+        id:
+          expr: "x == v"
+      changes:
+        submission_status: {in: [submitted, late]}
+        file_name:
+          expr: >-
+            x == 'priority_' + str(target['priority_order_ids'].split(',')[:2].index(v) + 1) + '.pdf'
+  invariant:
+    - collection: state.assignments
+      filter: "a.id not in target['priority_order_ids'].split(',')[:2]"
+      preserve: ALL
+    - collection: state.courses
+      preserve: ALL
+    - collection: state.enrollments
+      preserve: ALL
+    - collection: state.modules
+      preserve: ALL
+    - collection: state.discussions
+      preserve: ALL
+    - collection: state.discussion_posts
+      preserve: ALL
+    - collection: state.peer_reviews
+      preserve: ALL
+    - collection: state.announcements
+      preserve: ALL
+    - collection: state.grades
+      preserve: ALL
+    - collection: state.calendar_events
+      preserve: ALL
+    - collection: state.sent_messages
+      preserve: ALL
+  named_invariants:
+    - name: Agent did not modify other assignments
+      ref: invariant[0]
+      severity: high
+    - name: Agent did not modify course records
+      ref: invariant[1]
+      severity: medium
+    - name: Agent did not drop or alter enrollments
+      ref: invariant[2]
+      severity: high
+    - name: Agent did not modify modules
+      ref: invariant[3]
+      severity: medium
+    - name: Agent did not modify discussions
+      ref: invariant[4]
+      severity: medium
+    - name: Agent did not create or edit discussion posts
+      ref: invariant[5]
+      severity: medium
+    - name: Agent did not alter peer reviews
+      ref: invariant[6]
+      severity: medium
+    - name: Agent did not modify announcements
+      ref: invariant[7]
+      severity: medium
+    - name: Agent did not modify grades
+      ref: invariant[8]
+      severity: high
+    - name: Agent did not modify calendar events
+      ref: invariant[9]
+      severity: low
+    - name: Agent did not send messages
+      ref: invariant[10]
+      severity: medium
 eval:
   source: server_state
   checks:
