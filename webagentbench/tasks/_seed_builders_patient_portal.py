@@ -1389,12 +1389,22 @@ def _generate_contextual_body(ctx: PatientPortalSeedContext, body_context: dict[
         omitted_name = meds[omit_idx]["medication"]
         lines.append(f"Note: {omitted_name} was discontinued during hospitalization.")
         if body_context.get("include_referral_mention"):
+            # An explicit `referral_specialty` override wins — downstream callers
+            # (e.g. `build_message_threads`) pre-compute a deterministic specialty
+            # and set it here so the seed's exposed
+            # `context_specialist_provider_ids` target exactly matches the
+            # specialty named in the rendered body.
+            override_specialty = body_context.get("referral_specialty")
             referral_mentions = [
                 ref.get("to_specialty", "specialist").title()
                 for ref in referrals
                 if ref.get("status") in ("approved", "requested")
             ]
-            if referral_mentions:
+            if override_specialty:
+                lines.append(
+                    f"Follow-up referral recommended: {str(override_specialty).title()} consultation."
+                )
+            elif referral_mentions:
                 lines.append(
                     "Follow-up referrals noted on discharge: "
                     + ", ".join(sorted(set(referral_mentions[:2])))
@@ -1584,6 +1594,14 @@ def build_message_threads(ctx: PatientPortalSeedContext, params: dict[str, Any])
     # pp_respond_to_provider) use this to identify the specific incoming
     # message the agent must read.
     context_msg_ids: dict[str, str] = {}
+    # Per-context-type: the specialty string named inside the rendered body
+    # (currently populated for `discharge_summary` contexts that include a
+    # referral mention) and the list of provider ids matching that specialty
+    # in the seeded directory. Enables downstream tasks (e.g.
+    # pp_post_hospitalization) to look up the single legitimate set of
+    # "specialist follow-up" providers without re-parsing the body text.
+    context_specialties: dict[str, str] = {}
+    context_specialist_provider_ids: dict[str, list[str]] = {}
     billing_thread_id: str | None = None
     rx_renewal_thread_id: str | None = None
     unread_assigned = 0
@@ -1628,6 +1646,45 @@ def build_message_threads(ctx: PatientPortalSeedContext, params: dict[str, Any])
             )
         else:
             subject = ctx.rng.choice(_CLINICAL_SUBJECTS)
+
+        # For discharge_summary contexts with include_referral_mention, pick a
+        # deterministic specialist specialty up-front so (a) the rendered body
+        # mentions an exact specialty string and (b) the seeder can export the
+        # matching specialist provider ids as a target for downstream tasks.
+        if (
+            thread_context
+            and str(thread_context.get("type", "")) == "discharge_summary"
+            and thread_context.get("include_referral_mention")
+            and "referral_specialty" not in thread_context
+        ):
+            ctx_type = str(thread_context.get("type", ""))
+            existing_referral_specs = [
+                ref.get("to_specialty")
+                for ref in ctx.base.get("referrals", [])
+                if ref.get("status") in ("approved", "requested") and ref.get("to_specialty")
+            ]
+            chosen_specialty: str | None = None
+            if existing_referral_specs:
+                chosen_specialty = str(existing_referral_specs[0])
+            else:
+                # Reproduce the fallback used by `_generate_contextual_body`:
+                # first non-pcp/billing/admin provider.
+                fallback_specialist = next(
+                    (
+                        p for p in providers
+                        if p.get("specialty") not in ("pcp", "billing", "admin")
+                    ),
+                    None,
+                )
+                if fallback_specialist is not None:
+                    chosen_specialty = fallback_specialist.get("specialty")
+            if chosen_specialty:
+                thread_context["referral_specialty"] = chosen_specialty
+                context_specialties[ctx_type] = chosen_specialty
+                context_specialist_provider_ids[ctx_type] = [
+                    p["id"] for p in providers
+                    if p.get("specialty") == chosen_specialty
+                ]
 
         # Create 2-4 messages per thread (alternating provider/patient)
         msgs_in_thread = ctx.rng.randint(2, 4)
@@ -1699,6 +1756,14 @@ def build_message_threads(ctx: PatientPortalSeedContext, params: dict[str, Any])
         # context (e.g. {"bp_medication_adjustment": "msg_1"}). Empty when
         # no `body_context`/`body_contexts` was supplied.
         "context_msg_ids": context_msg_ids,
+        # Per-body-context-type specialty named in the rendered body (currently
+        # populated for `discharge_summary` contexts with a referral mention).
+        # Empty when no such context exists.
+        "context_specialties": context_specialties,
+        # Per-body-context-type list of provider ids whose specialty matches
+        # the specialty named in the rendered body. Empty when no such
+        # context exists.
+        "context_specialist_provider_ids": context_specialist_provider_ids,
     }
 
 
