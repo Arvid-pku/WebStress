@@ -692,12 +692,16 @@ def _match_single_block(
             bijection_excess[i] = len(candidates) > n_left
 
             base_desc = entry.desc or f"Create {n_left} required {entry.entity}(s)"
+            # Record matched candidates regardless of saturation so the
+            # unaccounted sweep doesn't double-flag partially-matched
+            # candidates as collateral (Class 7 bug — matched_ids must
+            # cover every candidate consumed by this bijection, not only
+            # when the matching fully saturates).
+            for _li, cj in matching.items():
+                cand = candidates[cj]
+                matched_ids.add((cand.entity, cand.entity_id))
+
             if saturated:
-                # Record matched candidates so the unaccounted sweep won't
-                # flag them as collateral.
-                for _li, cj in matching.items():
-                    cand = candidates[cj]
-                    matched_ids.add((cand.entity, cand.entity_id))
                 passed_weight += entry.weight
                 checks.append({
                     "desc": f"{base_desc} — {n_left} of {n_left} done",
@@ -871,18 +875,31 @@ def _match_single_block(
             continue
         if entry.entity in invariant_cols_full:
             continue  # whole collection invariant already handled this entry
+        # Also surface collateral failures as a visible negative_check so
+        # users don't see score=1.0 but passed=False with no explanation.
+        # Without a visible entry the discrepancy between the positive-
+        # side score and the failures-based passed boolean looks like a bug
+        # to anyone reading the eval panel.
         if entry.entity in positive_cols:
+            desc = f"Unaccounted {type(entry).__name__.lower()} in {entry.entity} (id={entry.entity_id})"
             failures.append(Failure(
-                kind="unaccounted",
-                description=f"Excess unaccounted entry in {entry.entity}",
+                kind="unaccounted", description=desc,
                 details={"entity_id": entry.entity_id},
             ))
+            negative_checks.append({
+                "desc": desc, "passed": False,
+                "penalty": _SEVERITY_PENALTY["medium"],
+            })
         else:
+            desc = f"Unexpected {type(entry).__name__.lower()} on {entry.entity} (id={entry.entity_id}) — collection not mentioned in diff"
             failures.append(Failure(
-                kind="unaccounted",
-                description=f"Agent mutated unrelated collection: {entry.entity}",
+                kind="unaccounted", description=desc,
                 details={"entity_id": entry.entity_id},
             ))
+            negative_checks.append({
+                "desc": desc, "passed": False,
+                "penalty": _SEVERITY_PENALTY["high"],
+            })
 
     # 3.5 Named-invariant attribution (spec §5)
     #
