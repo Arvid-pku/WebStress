@@ -223,11 +223,18 @@ def eval_predicate(pred: dict, scope: PredicateScope) -> bool:
     # ── expr (restricted eval) ────────────────────────────────────
     if key == "expr":
         try:
-            globs = {"__builtins__": _SAFE_BUILTINS}
             # Restricted eval — mirrors webagentbench/evaluator.py line 76.
             # Only the safe-builtins allowlist is exposed; expression source
             # is author-controlled (task YAML).
-            return bool(eval(arg, globs, _expr_scope(scope)))  # noqa: S307
+            #
+            # Merge the predicate scope into GLOBALS (not locals) so list/gen
+            # comprehensions can see `x`, `v`, `target`, etc. Comprehensions
+            # run in a nested function scope that only reads from globals —
+            # keeping scope vars in locals makes them invisible inside
+            # `any(... for v in target['...'])`-style expressions, which is a
+            # common pattern authors want to write.
+            globs: dict = {"__builtins__": _SAFE_BUILTINS, **_expr_scope(scope)}
+            return bool(eval(arg, globs, {}))  # noqa: S307
         except Exception:
             return False
 
