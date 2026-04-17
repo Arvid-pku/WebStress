@@ -9,6 +9,9 @@ build/
 .venv/
 .uv/
 
+# Git worktrees
+.worktrees/
+
 # Environment and local config
 .env
 .env.*

@@ -38,17 +38,19 @@ seed:
     - providers_by_specialty
   - use: pharmacy_list
     params:
-      count: 3
+      count: 2
       include_mail_order: true
     outputs:
     - pharmacy_ids
     - default_pharmacy_id
     - mail_order_pharmacy_id
+    - new_default_pharmacy_id
   - use: prescription_cabinet
     params:
       active_count: 4
       expired_count: 2
       zero_refill_count: 0
+      active_at_default_only: true
     outputs:
     - active_rx_ids
   targets:
@@ -57,18 +59,72 @@ seed:
     pharmacy_ids: '{output.pharmacy_ids}'
     default_pharmacy_id: '{output.default_pharmacy_id}'
     mail_order_pharmacy_id: '{output.mail_order_pharmacy_id}'
-eval:
-  source: server_state
-  checks:
-  - expr: state.default_pharmacy() is not None and state.default_pharmacy().id !=
-      '{target.default_pharmacy_id}'
-    desc: Default pharmacy was changed to a different pharmacy
-  negative_checks:
-  - expr: state.default_pharmacy() is None or state.default_pharmacy().id != '{target.mail_order_pharmacy_id}'
-    desc: Agent did not set mail-order pharmacy as new default
-    penalty: 0.2
-  - expr: "all(r.status in ('active', 'expired', 'discontinued')\n    for r in state.prescriptions\n\
-      \    if r.id in {target.active_rx_ids})"
-    desc: Agent did not inadvertently change prescription status
-    penalty: 0.15
+    new_default_pharmacy_id: '{output.new_default_pharmacy_id}'
+canonical_diff:
+  update:
+    - entity: Prescription
+      desc: "Transfer each active prescription to the new retail pharmacy"
+      bijection:
+        over: "target['active_rx_ids']"
+        variable: v
+      where:
+        id: {expr: "x == v"}
+      changes:
+        pharmacy_id: {expr: "x == target['new_default_pharmacy_id']"}
+    - entity: Pharmacy
+      desc: "Clear default flag from the closing pharmacy"
+      where:
+        id: {expr: "x == target['default_pharmacy_id']"}
+      changes:
+        is_default: {eq: false}
+    - entity: Pharmacy
+      desc: "Set the new retail pharmacy as the default"
+      where:
+        id: {expr: "x == target['new_default_pharmacy_id']"}
+      changes:
+        is_default: {eq: true}
+  invariant:
+    - collection: state.prescriptions
+      filter: "a.id not in target['active_rx_ids']"
+      preserve: ALL
+    - collection: state.pharmacies
+      filter: "a.id != target['default_pharmacy_id'] and a.id != target['new_default_pharmacy_id']"
+      preserve: ALL
+    - collection: state.appointments
+      preserve: ALL
+    - collection: state.immunizations
+      preserve: ALL
+    - collection: state.lab_results
+      preserve: ALL
+    - collection: state.messages
+      preserve: ALL
+    - collection: state.claims
+      preserve: ALL
+    - collection: state.referrals
+      preserve: ALL
+  named_invariants:
+    - name: "Agent did not modify non-active prescriptions (expired/discontinued)"
+      ref: invariant[0]
+      severity: high
+    - name: "Agent did not flip default flag on the mail-order or any other pharmacy"
+      ref: invariant[1]
+      severity: high
+    - name: "Agent did not create, cancel, or modify appointments"
+      ref: invariant[2]
+      severity: high
+    - name: "Agent did not modify immunization records"
+      ref: invariant[3]
+      severity: medium
+    - name: "Agent did not create or modify lab results"
+      ref: invariant[4]
+      severity: high
+    - name: "Agent did not send unsolicited messages"
+      ref: invariant[5]
+      severity: medium
+    - name: "Agent did not touch insurance claims"
+      ref: invariant[6]
+      severity: critical
+    - name: "Agent did not create or modify referrals"
+      ref: invariant[7]
+      severity: high
 secondary_primitives: []

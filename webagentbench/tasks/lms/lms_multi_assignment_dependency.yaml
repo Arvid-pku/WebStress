@@ -27,6 +27,10 @@ seed:
       count: 3
       must_include:
       - CS201
+      grading_template_indices:
+      - 0
+      - 3
+      - 0
     outputs:
     - course_ids
     - course_codes
@@ -44,8 +48,9 @@ seed:
       target_assignment_status: not_submitted
     outputs:
     - assignment_ids
-    - target_assignment_id
-    - target_assignment_title
+    - target_quiz_assignment_id
+    - target_project_assignment_id
+    - target_essay_assignment_id
     - decoy_assignment_id
   - use: grade_book
     params: {}
@@ -56,60 +61,184 @@ seed:
       count: 4
       chain_type: linear
       completed_count: 2
+      linked_assignment_id: '{output.target_quiz_assignment_id}'
     outputs:
     - module_ids
     - next_available_module_id
   - use: peer_review_assignments
     params:
       count: 2
+      assignment_id: '{output.target_essay_assignment_id}'
       statuses:
       - assigned
       - assigned
     outputs:
     - review_ids
     - pending_review_ids
+    - target_review_id
   targets:
     course_code: '{output.course_code}'
     target_course_id: '{output.target_course_id}'
-    target_assignment_id: '{output.target_assignment_id}'
+    target_quiz_assignment_id: '{output.target_quiz_assignment_id}'
+    target_project_assignment_id: '{output.target_project_assignment_id}'
+    target_essay_assignment_id: '{output.target_essay_assignment_id}'
+    target_review_id: '{output.target_review_id}'
     decoy_assignment_id: '{output.decoy_assignment_id}'
     next_available_module_id: '{output.next_available_module_id}'
     pending_review_ids: '{output.pending_review_ids}'
     module_ids: '{output.module_ids}'
+canonical_diff:
+  update:
+  - entity: Module
+    desc: Complete the next available module after finishing every content item
+    where:
+      id:
+        expr: "x == target['next_available_module_id']"
+    changes:
+      status:
+        eq: completed
+      content_items:
+        expr: "all(item.get('completed') is True for item in x)"
+  - entity: Assignment
+    desc: Submit the linked quiz assignment with quiz_answers.pdf
+    where:
+      id:
+        expr: "x == target['target_quiz_assignment_id']"
+    changes:
+      submission_status:
+        in:
+        - submitted
+        - late
+      file_name:
+        eq: quiz_answers.pdf
+  - entity: PeerReview
+    desc: Complete the pending peer review with full rubric scores and detailed comments
+    where:
+      id:
+        expr: "x == target['target_review_id']"
+    changes:
+      rubric_scores:
+        expr: >-
+          len(x) == 3
+          and set(x) == {'clarity', 'depth', 'originality'}
+          and all(1 <= v <= 5 for v in x.values())
+      comments:
+        expr: "len(x.strip()) >= 30"
+      status:
+        eq: submitted
+  - entity: Assignment
+    desc: Submit the project assignment with project_final.pdf
+    where:
+      id:
+        expr: "x == target['target_project_assignment_id']"
+    changes:
+      submission_status:
+        in:
+        - submitted
+        - late
+      file_name:
+        eq: project_final.pdf
+  invariant:
+  - collection: state.modules
+    filter: "a.id != target['next_available_module_id']"
+    preserve: ALL
+  - collection: state.assignments
+    filter: "a.id not in [target['target_quiz_assignment_id'], target['target_project_assignment_id']]"
+    preserve: ALL
+  - collection: state.assignments
+    filter: "a.id == target['decoy_assignment_id']"
+    preserve: ALL
+  - collection: state.peer_reviews
+    filter: "a.id != target['target_review_id']"
+    preserve: ALL
+  - collection: state.courses
+    preserve: ALL
+  - collection: state.enrollments
+    preserve: ALL
+  - collection: state.discussions
+    preserve: ALL
+  - collection: state.discussion_posts
+    preserve: ALL
+  - collection: state.announcements
+    preserve: ALL
+  - collection: state.grades
+    preserve: ALL
+  - collection: state.calendar_events
+    preserve: ALL
+  - collection: state.sent_messages
+    preserve: ALL
+  named_invariants:
+  - name: Agent completed the next available module
+    ref: update[0]
+    severity: high
+  - name: Agent submitted the linked quiz assignment
+    ref: update[1]
+    severity: high
+  - name: Agent completed the pending peer review
+    ref: update[2]
+    severity: high
+  - name: Agent submitted the project assignment
+    ref: update[3]
+    severity: high
+  - name: Agent did not modify other modules
+    ref: invariant[0]
+    severity: high
+  - name: Agent did not modify other assignments
+    ref: invariant[1]
+    severity: high
+  - name: Agent did not touch the decoy assignment
+    ref: invariant[2]
+    severity: critical
+  - name: Agent did not modify other peer reviews
+    ref: invariant[3]
+    severity: high
+  - name: Agent did not modify course records
+    ref: invariant[4]
+    severity: medium
+  - name: Agent did not drop or alter enrollments
+    ref: invariant[5]
+    severity: high
+  - name: Agent did not modify discussions
+    ref: invariant[6]
+    severity: medium
+  - name: Agent did not create or edit discussion posts
+    ref: invariant[7]
+    severity: medium
+  - name: Agent did not modify announcements
+    ref: invariant[8]
+    severity: medium
+  - name: Agent did not modify grades
+    ref: invariant[9]
+    severity: high
+  - name: Agent did not modify calendar events
+    ref: invariant[10]
+    severity: low
+  - name: Agent did not send messages
+    ref: invariant[11]
+    severity: medium
 eval:
   source: server_state
   checks:
-  - expr: "any(m.id == '{target.next_available_module_id}' and m.status == 'completed'\n\
-      \    for m in state.modules)"
+  - expr: "any(m.id == '{target.next_available_module_id}' and m.status == 'completed'\n    for m in state.modules)"
     desc: Module was completed
-  - expr: "any(a.file_name == 'quiz_answers.pdf'\n    and a.submission_status in ('submitted',\
-      \ 'late')\n    and a.course_id == '{target.target_course_id}'\n    for a in\
-      \ state.assignments)"
+  - expr: "any(a.file_name == 'quiz_answers.pdf'\n    and a.submission_status in ('submitted', 'late')\n    and a.course_id == '{target.target_course_id}'\n    for a in state.assignments)"
     desc: Quiz submitted with correct file in target course
-  - expr: "any(pr.status == 'submitted'\n    and pr.reviewer_student_id == state.student.id\n\
-      \    and len(pr.rubric_scores) >= 3\n    for pr in state.peer_reviews)"
+  - expr: "any(pr.status == 'submitted'\n    and pr.reviewer_student_id == state.student.id\n    and len(pr.rubric_scores) >= 3\n    for pr in state.peer_reviews)"
     desc: Peer review completed with full rubric
-  - expr: "any(pr.status == 'submitted'\n    and pr.reviewer_student_id == state.student.id\n\
-      \    and len(pr.comments) >= 30\n    for pr in state.peer_reviews)"
+  - expr: "any(pr.status == 'submitted'\n    and pr.reviewer_student_id == state.student.id\n    and len(pr.comments) >= 30\n    for pr in state.peer_reviews)"
     desc: Peer review has 30+ character comments
-  - expr: "any(a.file_name == 'project_final.pdf'\n    and a.submission_status in\
-      \ ('submitted', 'late')\n    and a.course_id == '{target.target_course_id}'\n\
-      \    for a in state.assignments)"
+  - expr: "any(a.file_name == 'project_final.pdf'\n    and a.submission_status in ('submitted', 'late')\n    and a.course_id == '{target.target_course_id}'\n    for a in state.assignments)"
     desc: Project submitted with correct file in target course
-  - expr: "any(m.id == '{target.next_available_module_id}'\n    and all(ci.completed\
-      \ for ci in m.content_items)\n    for m in state.modules)"
+  - expr: "any(m.id == '{target.next_available_module_id}'\n    and all(ci.completed for ci in m.content_items)\n    for m in state.modules)"
     desc: All module content items completed
   negative_checks:
-  - expr: state.get_assignment('{target.decoy_assignment_id}') is None or state.get_assignment('{target.decoy_assignment_id}').submission_status
-      == 'not_submitted'
+  - expr: state.get_assignment('{target.decoy_assignment_id}') is None or state.get_assignment('{target.decoy_assignment_id}').submission_status == 'not_submitted'
     desc: Decoy assignment was not submitted
     penalty: 0.3
   - expr: all(e.status != 'dropped' for e in state.enrollments)
     desc: No courses were dropped
     penalty: 0.3
-  - expr: "not any(pr.status == 'submitted'\n        and pr.reviewer_student_id ==\
-      \ state.student.id\n        and len(pr.rubric_scores) < 3\n        for pr in\
-      \ state.peer_reviews)"
+  - expr: "not any(pr.status == 'submitted'\n        and pr.reviewer_student_id == state.student.id\n        and len(pr.rubric_scores) < 3\n        for pr in state.peer_reviews)"
     desc: No incomplete peer reviews were submitted
     penalty: 0.2
 secondary_primitives: []

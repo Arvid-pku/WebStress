@@ -45,8 +45,62 @@ def load_all_tasks() -> dict[str, TaskDefinition]:
             raise
 
     _validate_builder_references(index, sources)
+    for task in index.values():
+        _validate_canonical_diff_refs(task)
     logger.info("Loaded %d tasks from %s", len(index), TASKS_DIR)
     return index
+
+
+def _validate_canonical_diff_refs(task) -> None:
+    """Verify named_invariant refs resolve to existing diff entries.
+
+    Also enforces spec §4 that positive-diff collections and invariant
+    collections are disjoint (unless the invariant has a filter to scope it).
+
+    Raises ValueError on out-of-range / malformed refs or on overlapping
+    collections. Called for every task that has a canonical_diff block.
+    """
+    import re
+    cd = getattr(task, "canonical_diff", None)
+    if cd is None:
+        return
+    # Walk all blocks (including oneof alternatives).
+    blocks = [cd]
+    if cd.oneof:
+        blocks.extend(cd.oneof)
+
+    for block in blocks:
+        # 1. Named-invariant ref resolution.
+        for ni in block.named_invariants:
+            m = re.match(r"(invariant|create|update|delete)\[(\d+)\]", ni.ref)
+            if not m:
+                raise ValueError(
+                    f"{task.task_id}: named_invariants[...].ref '{ni.ref}' is malformed"
+                )
+            kind, idx = m.group(1), int(m.group(2))
+            target_list = getattr(block, kind)
+            if idx >= len(target_list):
+                raise ValueError(
+                    f"{task.task_id}: named_invariants[...].ref '{ni.ref}' "
+                    f"references {kind}[{idx}] but only {len(target_list)} {kind}(s) exist"
+                )
+
+        # 2. Spec §4: a collection can't be both a positive target and an
+        #    invariant target (unless the invariant narrows via filter).
+        def _col_for(entity_type: str) -> str:
+            lower = entity_type.lower()
+            return lower if lower.endswith("s") else lower + "s"
+
+        positive_cols: set[str] = set()
+        for e in list(block.create) + list(block.update) + list(block.delete):
+            positive_cols.add(_col_for(e.entity))
+        for inv in block.invariant:
+            inv_col = inv.collection.removeprefix("state.")
+            if inv_col in positive_cols and not inv.filter:
+                raise ValueError(
+                    f"{task.task_id}: invariant on '{inv.collection}' overlaps with positive "
+                    f"diff target and has no filter — scope it with a filter: expression"
+                )
 
 
 def _validate_builder_references(

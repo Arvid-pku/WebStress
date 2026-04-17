@@ -334,7 +334,8 @@ def build_patient_profile(ctx: PatientPortalSeedContext, params: dict[str, Any])
     Params: allergies (list[str]), conditions (list[str]), insurance_tier (str),
             overdue_screening_count (int) — force this many screenings to be overdue
     Outputs: patient_name, pcp_id, pcp_name, insurance_plan_name, member_id,
-             group_number, conditions_list, allergies_list, applicable_screening_names
+             group_number, conditions_list, allergies_list, applicable_screening_names,
+             overdue_screening_names (the subset whose next_due has already passed)
     """
     allergies = params.get("allergies", [])
     conditions = params.get("conditions", [])
@@ -441,6 +442,19 @@ def build_patient_profile(ctx: PatientPortalSeedContext, params: dict[str, Any])
 
     ctx.base["patient"] = patient_dict
 
+    # Compute the overdue subset — every screening whose next_due has already
+    # passed relative to the seeded clock. Consumers (e.g. the
+    # pp_preventive_screening_review canonical_diff) need this as a target
+    # so a bijection can create one appointment per overdue screening
+    # without reconstructing the filter inside a predicate (Class 8
+    # comprehension-scope hazard).
+    _today = ctx.now.date()
+    overdue_screening_names = [
+        s["screening_name"]
+        for s in screening_models
+        if s["next_due"] is not None and date.fromisoformat(s["next_due"]) < _today
+    ]
+
     return {
         "patient_name": patient_name,
         "pcp_id": pcp_id,
@@ -451,6 +465,7 @@ def build_patient_profile(ctx: PatientPortalSeedContext, params: dict[str, Any])
         "conditions_list": conditions,
         "allergies_list": allergies,
         "applicable_screening_names": [s["screening_name"] for s in screening_models],
+        "overdue_screening_names": overdue_screening_names,
     }
 
 
@@ -475,12 +490,21 @@ def _parse_frequency_years(freq: str) -> int:
 def build_provider_directory(ctx: PatientPortalSeedContext, params: dict[str, Any]) -> dict[str, Any]:
     """Create N providers across requested specialties with realistic available slots.
 
-    Params: count (int), specialties (list[str]), must_include (list[str])
+    Params:
+      specialties (list[str]): one provider of each listed specialty by default.
+      count_per_specialty (dict[str, int]): override the default count-of-1
+        for specific specialties. E.g. {"pcp": 2} creates two distinct PCPs.
+        Required when tasks need bijection identity tests across providers of
+        the same specialty (e.g. immunizations administered by different PCPs).
+      must_include (list[str]): specialties that must be present; merged with
+        `specialties` with duplicates collapsed.
     Outputs: provider_ids, providers_by_specialty
     """
     specialties = params.get("specialties", ["pcp"])
+    count_per_specialty = params.get("count_per_specialty", {}) or {}
     must_include = set(params.get("must_include", []))
-    # Ensure must_include specialties are in the specialties list
+    # Merge specialties + must_include, deduped. count_per_specialty controls
+    # how many providers of each specialty are created (default 1).
     all_specialties = list(dict.fromkeys(specialties + list(must_include)))
 
     if "providers" not in ctx.base:
@@ -489,50 +513,62 @@ def build_provider_directory(ctx: PatientPortalSeedContext, params: dict[str, An
     provider_ids: list[str] = []
     providers_by_specialty: dict[str, list[str]] = {}
 
-    for spec in all_specialties:
-        names_pool = _PROVIDER_NAMES.get(spec, [f"Dr. {ctx.fake.name()}"])
-        dept = _SPECIALTY_DEPARTMENTS.get(spec, spec.title())
+    # Track which names have already been used per specialty so multiple
+    # providers of the same specialty don't collide on name.
+    used_names_per_spec: dict[str, set[str]] = {}
 
-        # For PCP, always use prov_1 to match patient.pcp_id
-        if spec == "pcp" and not any(p.get("id") == "prov_1" for p in ctx.base["providers"]):
-            prov_id = "prov_1"
-            # Consume counter to stay in sync
-            ctx.counters["prov"] = max(ctx.counters.get("prov", 0), 1)
-        else:
-            prov_id = ctx.next_id("prov")
+    for base_spec in all_specialties:
+        n_of_this = max(1, int(count_per_specialty.get(base_spec, 1)))
+        for _copy_idx in range(n_of_this):
+            spec = base_spec
+            names_pool = list(_PROVIDER_NAMES.get(spec, [f"Dr. {ctx.fake.name()}"]))
+            used = used_names_per_spec.setdefault(spec, set())
+            available_names = [n for n in names_pool if n not in used]
+            if not available_names:
+                # Exhausted pool — generate a unique synthetic name.
+                available_names = [f"Dr. {ctx.fake.name()}"]
+            dept = _SPECIALTY_DEPARTMENTS.get(spec, spec.title())
 
-        prov_name = ctx.rng.choice(names_pool)
-        accepting = spec not in ("billing", "admin")
-        npi = f"{ctx.rng.randint(1000000000, 9999999999)}"
+            # For PCP, always use prov_1 to match patient.pcp_id (first PCP only)
+            if spec == "pcp" and not any(p.get("id") == "prov_1" for p in ctx.base["providers"]):
+                prov_id = "prov_1"
+                ctx.counters["prov"] = max(ctx.counters.get("prov", 0), 1)
+            else:
+                prov_id = ctx.next_id("prov")
 
-        # Generate 3-6 available slots over the next 2 weeks
-        num_slots = ctx.rng.randint(3, 6)
-        slots: list[dict[str, Any]] = []
-        for _ in range(num_slots):
-            days_ahead = ctx.rng.randint(1, 14)
-            hour = ctx.rng.randint(9, 16)
-            slot_dt = ctx.now.replace(hour=hour, minute=0, second=0, microsecond=0) + timedelta(days=days_ahead)
-            slot_type = ctx.rng.choice(["in-person", "telehealth"])
-            slots.append({
-                "datetime": slot_dt.isoformat(),
-                "type": slot_type,
-                "duration_minutes": 30,
-            })
-        # Sort slots by datetime
-        slots.sort(key=lambda s: s["datetime"])
+            prov_name = ctx.rng.choice(available_names)
+            used.add(prov_name)
+            accepting = spec not in ("billing", "admin")
+            npi = f"{ctx.rng.randint(1000000000, 9999999999)}"
 
-        prov_dict = {
-            "id": prov_id,
-            "name": prov_name,
-            "specialty": spec,
-            "department": dept,
-            "npi": npi,
-            "accepting_new": accepting,
-            "available_slots": slots,
-        }
-        ctx.base["providers"].append(prov_dict)
-        provider_ids.append(prov_id)
-        providers_by_specialty.setdefault(spec, []).append(prov_id)
+            # Generate 3-6 available slots over the next 2 weeks
+            num_slots = ctx.rng.randint(3, 6)
+            slots: list[dict[str, Any]] = []
+            for _ in range(num_slots):
+                days_ahead = ctx.rng.randint(1, 14)
+                hour = ctx.rng.randint(9, 16)
+                slot_dt = ctx.now.replace(hour=hour, minute=0, second=0, microsecond=0) + timedelta(days=days_ahead)
+                slot_type = ctx.rng.choice(["in-person", "telehealth"])
+                slots.append({
+                    "datetime": slot_dt.isoformat(),
+                    "type": slot_type,
+                    "duration_minutes": 30,
+                })
+            # Sort slots by datetime
+            slots.sort(key=lambda s: s["datetime"])
+
+            prov_dict = {
+                "id": prov_id,
+                "name": prov_name,
+                "specialty": spec,
+                "department": dept,
+                "npi": npi,
+                "accepting_new": accepting,
+                "available_slots": slots,
+            }
+            ctx.base["providers"].append(prov_dict)
+            provider_ids.append(prov_id)
+            providers_by_specialty.setdefault(spec, []).append(prov_id)
 
     # Update PCP name in outputs if we created a PCP
     if "pcp" in providers_by_specialty:
@@ -556,22 +592,60 @@ def build_provider_directory(ctx: PatientPortalSeedContext, params: dict[str, An
 def build_pharmacy_list(ctx: PatientPortalSeedContext, params: dict[str, Any]) -> dict[str, Any]:
     """Create pharmacies with one default. Optional mail-order.
 
-    Params: count (2-3), include_mail_order (bool)
-    Outputs: pharmacy_ids, default_pharmacy_id, mail_order_pharmacy_id
+    Params:
+        count (2-3)
+        include_mail_order (bool)
+        must_include_name (str | list[str]): case-insensitive substring(s) of
+            pharmacy template names that MUST be present in the selected
+            pharmacies. Each matched template is pinned before other
+            templates are appended up to `count`.
+        target_pharmacy_name (str): case-insensitive substring of a pharmacy
+            template name whose id should be exposed as `target_pharmacy_id`
+            in the outputs. The name must also match one of `must_include_name`
+            (or the caller must guarantee it ends up in the selection) —
+            otherwise `target_pharmacy_id` may be None.
+    Outputs: pharmacy_ids, default_pharmacy_id, mail_order_pharmacy_id,
+             target_pharmacy_id, new_default_pharmacy_id
+
+    ``new_default_pharmacy_id`` is the first non-default, non-mail-order
+    retail pharmacy in ``pharmacy_ids`` (i.e. ``selected[1]`` when count >= 2).
+    Tasks like ``pp_coordinate_rx_transfer`` that tell the agent to transfer
+    prescriptions to "another retail pharmacy in your pharmacy list" use this
+    as the canonical new-default answer.
     """
     count = params.get("count", 2)
     include_mail_order = params.get("include_mail_order", False)
+    must_include_raw = params.get("must_include_name") or []
+    if isinstance(must_include_raw, str):
+        must_include_names = [must_include_raw]
+    else:
+        must_include_names = list(must_include_raw)
+    target_pharmacy_name: str | None = params.get("target_pharmacy_name")
 
     if "pharmacies" not in ctx.base:
         ctx.base["pharmacies"] = []
 
     templates = list(_PHARMACY_TEMPLATES)
     ctx.rng.shuffle(templates)
+
+    # Pin must_include templates to the front (preserving shuffle for the rest).
+    pinned: list[dict[str, str]] = []
+    for needle in must_include_names:
+        match = next(
+            (t for t in templates if needle.lower() in t["name"].lower()),
+            None,
+        )
+        if match is not None:
+            templates.remove(match)
+            pinned.append(match)
+    templates = pinned + templates
     selected = templates[:min(count, len(templates))]
 
     pharmacy_ids: list[str] = []
     default_pharmacy_id: str = ""
     mail_order_pharmacy_id: str | None = None
+    target_pharmacy_id: str | None = None
+    new_default_pharmacy_id: str | None = None
 
     for i, tmpl in enumerate(selected):
         pharm_id = ctx.next_id("pharm")
@@ -591,6 +665,16 @@ def build_pharmacy_list(ctx: PatientPortalSeedContext, params: dict[str, Any]) -
         pharmacy_ids.append(pharm_id)
         if is_default:
             default_pharmacy_id = pharm_id
+        elif new_default_pharmacy_id is None:
+            # First non-default retail pharmacy — canonical "switch-to" answer
+            # for tasks that transfer prescriptions away from the closing default.
+            new_default_pharmacy_id = pharm_id
+        if (
+            target_pharmacy_name
+            and target_pharmacy_id is None
+            and target_pharmacy_name.lower() in tmpl["name"].lower()
+        ):
+            target_pharmacy_id = pharm_id
 
     if include_mail_order:
         pharm_id = ctx.next_id("pharm")
@@ -616,6 +700,8 @@ def build_pharmacy_list(ctx: PatientPortalSeedContext, params: dict[str, Any]) -
         "pharmacy_ids": pharmacy_ids,
         "default_pharmacy_id": default_pharmacy_id,
         "mail_order_pharmacy_id": mail_order_pharmacy_id,
+        "target_pharmacy_id": target_pharmacy_id,
+        "new_default_pharmacy_id": new_default_pharmacy_id,
     }
 
 
@@ -812,17 +898,34 @@ def build_prescription_cabinet(ctx: PatientPortalSeedContext, params: dict[str, 
     """Generate prescriptions with varying refill states.
 
     Params: active_count (int), expired_count (int), zero_refill_count (int),
-            expiring_soon_count (int), interaction_pair (bool)
+            expiring_soon_count (int), expiring_zero_refill_count (int),
+            interaction_pair (bool)
     Outputs: active_rx_ids, zero_refill_rx_id, expiring_rx_ids,
-             interacting_rx_ids, interacting_medications
+             expiring_zero_refill_rx_ids, interacting_rx_ids,
+             interacting_medications
+
+    Note on ``expiring_zero_refill_count``: forces the first N entries of
+    the ``expiring_rx_ids`` subset to have ``refills_remaining == 0``. This
+    lets tasks deterministically pin the "expiring AND zero-refill" target
+    intersection. Remaining expiring rxes get ``randint(1, 2)`` so the
+    distinction is meaningful.
     """
     active_count = params.get("active_count", 3)
     expired_count = params.get("expired_count", 0)
     zero_refill_count = params.get("zero_refill_count", 0)
     expiring_soon_count = params.get("expiring_soon_count", 0)
+    expiring_zero_refill_count = params.get("expiring_zero_refill_count", 0)
     interaction_pair = params.get("interaction_pair", False)
     target_medication_name: str | None = params.get("target_medication_name")
     target_exclude_mail_order = bool(params.get("target_exclude_mail_order", False))
+    target_exclude_pharmacy_name: str | None = params.get("target_exclude_pharmacy_name")
+    # When True, every active prescription starts on the default pharmacy.
+    # Used by tasks like pp_coordinate_rx_transfer where the scenario is
+    # "your default pharmacy is closing — transfer all your active rxes to
+    # another retail pharmacy". We need each rx to actually move (not be
+    # already at the destination) so the canonical_diff update[0] bijection
+    # saturates.
+    active_at_default_only = bool(params.get("active_at_default_only", False))
 
     if "prescriptions" not in ctx.base:
         ctx.base["prescriptions"] = []
@@ -850,6 +953,7 @@ def build_prescription_cabinet(ctx: PatientPortalSeedContext, params: dict[str, 
     zero_refill_medication: str = ""
     target_rx_id: str | None = None
     expiring_rx_ids: list[str] = []
+    expiring_zero_refill_rx_ids: list[str] = []
     interacting_rx_ids: list[str] = []
     interacting_medications: list[str] = []
 
@@ -860,15 +964,28 @@ def build_prescription_cabinet(ctx: PatientPortalSeedContext, params: dict[str, 
         expires_days: int,
         *,
         force_retail_pharmacy: bool = False,
+        exclude_pharmacy_name: str | None = None,
+        force_default_pharmacy: bool = False,
     ) -> dict[str, Any]:
         nonlocal med_idx
         rx_id = ctx.next_id("rx")
         provider_id = ctx.rng.choice([p["id"] for p in providers]) if providers else pcp_id
         available_pharmacies = list(pharmacies)
+        if force_default_pharmacy and pharmacies:
+            default_match = [p for p in pharmacies if p.get("is_default")]
+            if default_match:
+                available_pharmacies = default_match
         if force_retail_pharmacy and pharmacies:
             retail_pharmacies = [p for p in pharmacies if not p.get("is_mail_order")]
             if retail_pharmacies:
                 available_pharmacies = retail_pharmacies
+        if exclude_pharmacy_name:
+            filtered = [
+                p for p in available_pharmacies
+                if exclude_pharmacy_name.lower() not in p.get("name", "").lower()
+            ]
+            if filtered:
+                available_pharmacies = filtered
         pharm_id = ctx.rng.choice([p["id"] for p in available_pharmacies]) if available_pharmacies else default_pharm_id
         last_filled = ctx.now - timedelta(days=ctx.rng.randint(7, 60))
         expires_at = ctx.now + timedelta(days=expires_days)
@@ -893,10 +1010,13 @@ def build_prescription_cabinet(ctx: PatientPortalSeedContext, params: dict[str, 
             break
         med = med_pool[med_idx]
         med_idx += 1
-        force_retail_pharmacy = bool(
-            target_exclude_mail_order
-            and target_medication_name
+        is_target_med = bool(
+            target_medication_name
             and target_medication_name.lower() in med["name"].lower()
+        )
+        force_retail_pharmacy = bool(target_exclude_mail_order and is_target_med)
+        exclude_pharmacy_for_rx = (
+            target_exclude_pharmacy_name if is_target_med else None
         )
         rx = _make_rx(
             med,
@@ -904,6 +1024,8 @@ def build_prescription_cabinet(ctx: PatientPortalSeedContext, params: dict[str, 
             ctx.rng.randint(2, 6),
             ctx.rng.randint(90, 365),
             force_retail_pharmacy=force_retail_pharmacy,
+            exclude_pharmacy_name=exclude_pharmacy_for_rx,
+            force_default_pharmacy=active_at_default_only,
         )
         ctx.base["prescriptions"].append(rx)
         active_rx_ids.append(rx["id"])
@@ -925,16 +1047,30 @@ def build_prescription_cabinet(ctx: PatientPortalSeedContext, params: dict[str, 
             zero_refill_rx_id = rx["id"]
             zero_refill_medication = med["name"]
 
-    # Expiring-soon prescriptions
-    for _ in range(expiring_soon_count):
+    # Expiring-soon prescriptions. The first ``expiring_zero_refill_count``
+    # entries are forced to refills=0 so the "expiring AND zero-refill"
+    # intersection is deterministic across seeds; remaining ones get 1-2
+    # refills so they explicitly should NOT be renewed.
+    n_expiring_zero = min(expiring_zero_refill_count, expiring_soon_count)
+    for idx in range(expiring_soon_count):
         if med_idx >= len(med_pool):
             break
         med = med_pool[med_idx]
         med_idx += 1
-        rx = _make_rx(med, "active", ctx.rng.randint(0, 2), ctx.rng.randint(5, 25))
+        if idx < n_expiring_zero:
+            refills = 0
+        elif expiring_zero_refill_count > 0:
+            # Deterministic non-zero refill count for the "has refills" subset.
+            refills = ctx.rng.randint(1, 2)
+        else:
+            # Legacy behaviour for tasks that didn't opt in to the split.
+            refills = ctx.rng.randint(0, 2)
+        rx = _make_rx(med, "active", refills, ctx.rng.randint(5, 25))
         ctx.base["prescriptions"].append(rx)
         active_rx_ids.append(rx["id"])
         expiring_rx_ids.append(rx["id"])
+        if refills == 0:
+            expiring_zero_refill_rx_ids.append(rx["id"])
 
     # Expired prescriptions
     for _ in range(expired_count):
@@ -975,12 +1111,22 @@ def build_prescription_cabinet(ctx: PatientPortalSeedContext, params: dict[str, 
             interacting_rx_ids = rx_ids_pair
             interacting_medications = list(pair)
 
+    # Subset of expiring rxes that still have ≥1 refill remaining — this is
+    # the "request refill" target for tasks that distinguish refill-vs-renewal
+    # based on whether the expiring rx has refills left.
+    expiring_with_refills_rx_ids = [
+        rid for rid in expiring_rx_ids
+        if rid not in expiring_zero_refill_rx_ids
+    ]
+
     return {
         "active_rx_ids": active_rx_ids,
         "zero_refill_rx_id": zero_refill_rx_id,
         "zero_refill_medication": zero_refill_medication,
         "target_rx_id": target_rx_id,
         "expiring_rx_ids": expiring_rx_ids,
+        "expiring_zero_refill_rx_ids": expiring_zero_refill_rx_ids,
+        "expiring_with_refills_rx_ids": expiring_with_refills_rx_ids,
         "interacting_rx_ids": interacting_rx_ids,
         "interacting_medications": interacting_medications,
     }
@@ -1252,12 +1398,22 @@ def _generate_contextual_body(ctx: PatientPortalSeedContext, body_context: dict[
         omitted_name = meds[omit_idx]["medication"]
         lines.append(f"Note: {omitted_name} was discontinued during hospitalization.")
         if body_context.get("include_referral_mention"):
+            # An explicit `referral_specialty` override wins — downstream callers
+            # (e.g. `build_message_threads`) pre-compute a deterministic specialty
+            # and set it here so the seed's exposed
+            # `context_specialist_provider_ids` target exactly matches the
+            # specialty named in the rendered body.
+            override_specialty = body_context.get("referral_specialty")
             referral_mentions = [
                 ref.get("to_specialty", "specialist").title()
                 for ref in referrals
                 if ref.get("status") in ("approved", "requested")
             ]
-            if referral_mentions:
+            if override_specialty:
+                lines.append(
+                    f"Follow-up referral recommended: {str(override_specialty).title()} consultation."
+                )
+            elif referral_mentions:
                 lines.append(
                     "Follow-up referrals noted on discharge: "
                     + ", ".join(sorted(set(referral_mentions[:2])))
@@ -1442,6 +1598,26 @@ def build_message_threads(ctx: PatientPortalSeedContext, params: dict[str, Any])
     thread_ids: list[str] = []
     unread_msg_ids: list[str] = []
     all_msg_ids: list[str] = []
+    # Map of body_context type → the id of the first provider message in the
+    # thread seeded for that context. Downstream tasks (e.g.
+    # pp_respond_to_provider) use this to identify the specific incoming
+    # message the agent must read.
+    context_msg_ids: dict[str, str] = {}
+    # Per-context-type: the specialty string named inside the rendered body
+    # (currently populated for `discharge_summary` contexts that include a
+    # referral mention) and the list of provider ids matching that specialty
+    # in the seeded directory. Enables downstream tasks (e.g.
+    # pp_post_hospitalization) to look up the single legitimate set of
+    # "specialist follow-up" providers without re-parsing the body text.
+    context_specialties: dict[str, str] = {}
+    context_specialist_provider_ids: dict[str, list[str]] = {}
+    # Per-context-type: for `discharge_summary` contexts, the rx id the body
+    # text flags as "discontinued during hospitalization". Mirrors
+    # `_generate_contextual_body`'s logic — the omitted rx is the last entry
+    # of the first 4 active prescriptions, so downstream tasks (e.g.
+    # pp_medication_reconciliation) can identify the exact rx the agent must
+    # route through the renewal flow without re-parsing the body string.
+    context_discontinued_rx_ids: dict[str, list[str]] = {}
     billing_thread_id: str | None = None
     rx_renewal_thread_id: str | None = None
     unread_assigned = 0
@@ -1487,6 +1663,66 @@ def build_message_threads(ctx: PatientPortalSeedContext, params: dict[str, Any])
         else:
             subject = ctx.rng.choice(_CLINICAL_SUBJECTS)
 
+        # For discharge_summary contexts with include_referral_mention, pick a
+        # deterministic specialist specialty up-front so (a) the rendered body
+        # mentions an exact specialty string and (b) the seeder can export the
+        # matching specialist provider ids as a target for downstream tasks.
+        if (
+            thread_context
+            and str(thread_context.get("type", "")) == "discharge_summary"
+            and thread_context.get("include_referral_mention")
+            and "referral_specialty" not in thread_context
+        ):
+            ctx_type = str(thread_context.get("type", ""))
+            existing_referral_specs = [
+                ref.get("to_specialty")
+                for ref in ctx.base.get("referrals", [])
+                if ref.get("status") in ("approved", "requested") and ref.get("to_specialty")
+            ]
+            chosen_specialty: str | None = None
+            if existing_referral_specs:
+                chosen_specialty = str(existing_referral_specs[0])
+            else:
+                # Reproduce the fallback used by `_generate_contextual_body`:
+                # first non-pcp/billing/admin provider.
+                fallback_specialist = next(
+                    (
+                        p for p in providers
+                        if p.get("specialty") not in ("pcp", "billing", "admin")
+                    ),
+                    None,
+                )
+                if fallback_specialist is not None:
+                    chosen_specialty = fallback_specialist.get("specialty")
+            if chosen_specialty:
+                thread_context["referral_specialty"] = chosen_specialty
+                context_specialties[ctx_type] = chosen_specialty
+                context_specialist_provider_ids[ctx_type] = [
+                    p["id"] for p in providers
+                    if p.get("specialty") == chosen_specialty
+                ]
+
+        # For discharge_summary contexts, pre-compute which active rx the body
+        # will flag as "discontinued during hospitalization". The body
+        # generator operates on the first 4 active prescriptions and omits the
+        # last one (`meds[omit_idx]`); mirror that logic exactly so the target
+        # matches the text the agent reads.
+        if (
+            thread_context
+            and str(thread_context.get("type", "")) == "discharge_summary"
+        ):
+            ctx_type = str(thread_context.get("type", ""))
+            active_rxes = [
+                rx for rx in ctx.base.get("prescriptions", [])
+                if rx.get("status") == "active"
+            ]
+            if active_rxes:
+                meds_subset = active_rxes[:4]
+                discontinued_rx = meds_subset[-1]
+                context_discontinued_rx_ids.setdefault(ctx_type, []).append(
+                    discontinued_rx["id"]
+                )
+
         # Create 2-4 messages per thread (alternating provider/patient)
         msgs_in_thread = ctx.rng.randint(2, 4)
         for m in range(msgs_in_thread):
@@ -1501,6 +1737,12 @@ def build_message_threads(ctx: PatientPortalSeedContext, params: dict[str, Any])
             is_last = m == msgs_in_thread - 1
             is_read = True
             if is_last and from_type == "provider" and unread_assigned < unread_count:
+                is_read = False
+                unread_assigned += 1
+            # Force-unread the first provider message of a contextual thread
+            # (this is the seed carrier for the task's clinical content — if
+            # the task asks the agent to read it, it must actually be unread).
+            if thread_context and from_type == "provider" and m == 0 and is_read:
                 is_read = False
                 unread_assigned += 1
 
@@ -1529,6 +1771,12 @@ def build_message_threads(ctx: PatientPortalSeedContext, params: dict[str, Any])
             all_msg_ids.append(msg_id)
             if not is_read:
                 unread_msg_ids.append(msg_id)
+            # Record context-keyed id for the first provider message of
+            # contextual threads (e.g. bp_medication_adjustment → msg_X).
+            if thread_context and from_type == "provider" and m == 0:
+                ctx_type = str(thread_context.get("type", ""))
+                if ctx_type and ctx_type not in context_msg_ids:
+                    context_msg_ids[ctx_type] = msg_id
 
         if cat == "billing":
             billing_thread_id = thread_id
@@ -1541,6 +1789,22 @@ def build_message_threads(ctx: PatientPortalSeedContext, params: dict[str, Any])
         "billing_thread_id": billing_thread_id,
         "rx_renewal_thread_id": rx_renewal_thread_id,
         "all_msg_ids": all_msg_ids,
+        # Per-body-context-type id of the first provider message for that
+        # context (e.g. {"bp_medication_adjustment": "msg_1"}). Empty when
+        # no `body_context`/`body_contexts` was supplied.
+        "context_msg_ids": context_msg_ids,
+        # Per-body-context-type specialty named in the rendered body (currently
+        # populated for `discharge_summary` contexts with a referral mention).
+        # Empty when no such context exists.
+        "context_specialties": context_specialties,
+        # Per-body-context-type list of provider ids whose specialty matches
+        # the specialty named in the rendered body. Empty when no such
+        # context exists.
+        "context_specialist_provider_ids": context_specialist_provider_ids,
+        # Per-body-context-type list of prescription ids the body flags as
+        # "discontinued during hospitalization" (populated for
+        # `discharge_summary` contexts).
+        "context_discontinued_rx_ids": context_discontinued_rx_ids,
     }
 
 
@@ -1847,11 +2111,59 @@ def build_insurance_claims(ctx: PatientPortalSeedContext, params: dict[str, Any]
         ctx.base["claims"].append(claim)
         processing_claim_ids.append(claim["id"])
 
+    # Derived: the most-recent denied claim by service_date (cid tiebreaker).
+    # Canonical_diff filters need a scalar target id to narrow "all claims
+    # except the target one" without access to `initial` or lambdas inside
+    # the `filter:` scope (hazard: invariant filter only sees `a` + `target`).
+    def _claim_service_date(cid: str) -> str:
+        for c in ctx.base["claims"]:
+            if c["id"] == cid:
+                return c["service_date"]
+        return ""
+
+    most_recent_denied_claim_id: str | None = None
+    if denied_claim_ids:
+        most_recent_denied_claim_id = max(
+            denied_claim_ids,
+            key=lambda cid: (_claim_service_date(cid), cid),
+        )
+
+    # Derived: the top-3 appealable denied claims by patient responsibility
+    # (highest first, claim-id tiebreaker ascending). "Appealable" means
+    # status=='denied' AND eob_available AND appeal_deadline >= ctx.now.
+    # Canonical_diff needs a scalar list target to drive a bijection update;
+    # computing it in the builder keeps the diff simple and avoids pushing
+    # date/filter math into the invariant/where scope (hazard: filter sees
+    # only a+target, where sees only id+changed fields).
+    def _claim_by_id(cid: str) -> dict[str, Any] | None:
+        for c in ctx.base["claims"]:
+            if c["id"] == cid:
+                return c
+        return None
+
+    ctx_now_iso = ctx.now.isoformat()
+    appealable_ids = [
+        cid for cid in denied_claim_ids
+        if (c := _claim_by_id(cid)) is not None
+        and c.get("eob_available")
+        and c.get("appeal_deadline", "") >= ctx_now_iso
+    ]
+    appealable_ids_sorted = sorted(
+        appealable_ids,
+        key=lambda cid: (
+            -float(_claim_by_id(cid)["patient_responsibility"]),
+            cid,
+        ),
+    )
+    top_3_appealable_claim_ids = appealable_ids_sorted[:3]
+
     return {
         "approved_claim_ids": approved_claim_ids,
         "denied_claim_ids": denied_claim_ids,
         "processing_claim_ids": processing_claim_ids,
         "appealable_claim_id": appealable_claim_id,
+        "most_recent_denied_claim_id": most_recent_denied_claim_id,
+        "top_3_appealable_claim_ids": top_3_appealable_claim_ids,
         "total_patient_responsibility": str(total_patient_responsibility),
     }
 
@@ -1875,15 +2187,29 @@ def build_immunization_record(ctx: PatientPortalSeedContext, params: dict[str, A
         ctx.base["immunizations"] = []
 
     providers = ctx.base.get("providers", [])
-    # Constraint: administering_provider_id must reference a provider with available slots
-    providers_with_slots = [
+    # Immunizations are clinically administered by PCPs (not cardiologists /
+    # endocrinologists / dermatologists). Restrict admin-provider candidates
+    # to PCPs — this matches real healthcare AND avoids the referral-required
+    # gate in the patient_portal UI, which blocks booking with specialists
+    # unless an approved referral exists.
+    pcp_providers = [
         p for p in providers
-        if p.get("available_slots") and p.get("specialty") not in ("billing", "admin")
+        if p.get("available_slots") and p.get("specialty") == "pcp"
     ]
-    if not providers_with_slots:
-        providers_with_slots = [p for p in providers if p.get("specialty") not in ("billing", "admin")]
-    if not providers_with_slots:
-        providers_with_slots = providers[:1] if providers else [{"id": "prov_1"}]
+    if pcp_providers:
+        providers_with_slots = pcp_providers
+    else:
+        # Fallback: any non-billing/admin provider with slots, then any at all.
+        providers_with_slots = [
+            p for p in providers
+            if p.get("available_slots") and p.get("specialty") not in ("billing", "admin")
+        ]
+        if not providers_with_slots:
+            providers_with_slots = [
+                p for p in providers if p.get("specialty") not in ("billing", "admin")
+            ]
+        if not providers_with_slots:
+            providers_with_slots = providers[:1] if providers else [{"id": "prov_1"}]
 
     vaccine_pool = list(_VACCINES)
     ctx.rng.shuffle(vaccine_pool)
@@ -1893,8 +2219,22 @@ def build_immunization_record(ctx: PatientPortalSeedContext, params: dict[str, A
     due_imm_ids: list[str] = []
     incomplete_series_imm_id: str | None = None
     due_vaccine_names: list[str] = []
+    # When series_incomplete is True, these describe the remaining doses the
+    # agent must schedule: one slot per dose (e.g. doses 2 and 3 of a 3-dose
+    # series ⇒ two slot labels). series_admin_provider_id is the provider
+    # who administered the first dose — the agent is expected to continue
+    # with the same administering provider for clinical continuity.
+    remaining_dose_slots: list[str] = []
+    series_admin_provider_id: str | None = None
+    series_vaccine_name: str | None = None
+    series_doses_total: int = 0
 
-    # Completed immunizations
+    # Completed immunizations. Constrain administered_at so that if the
+    # vaccine has a recurring cadence (annual / interval_years), its computed
+    # next_due_at is strictly in the FUTURE. Otherwise the UI would display
+    # completed vaccines as "overdue" alongside the ones in due_imm_ids, and
+    # the agent would see more overdue entries than the task targets —
+    # making the bijection unsatisfiable in the agent's frame of reference.
     for _ in range(completed_count):
         if vax_idx >= len(vaccine_pool):
             vax_idx = 0
@@ -1902,15 +2242,21 @@ def build_immunization_record(ctx: PatientPortalSeedContext, params: dict[str, A
         vax_idx += 1
         imm_id = ctx.next_id("imm")
         admin_prov = ctx.rng.choice(providers_with_slots)
-        administered_at = ctx.now - timedelta(days=ctx.rng.randint(30, 730))
 
-        # Next due depends on vaccine type
+        # Pick administered_at based on cadence so next_due ends up in the future.
         if vax.get("annual"):
+            # Administered 30–335 days ago → next_due 30–335 days in the future.
+            administered_at = ctx.now - timedelta(days=ctx.rng.randint(30, 335))
             next_due = administered_at + timedelta(days=365)
         elif vax.get("interval_years"):
-            next_due = administered_at + timedelta(days=vax["interval_years"] * 365)
+            years = vax["interval_years"]
+            max_days_ago = max(60, years * 365 - 30)
+            administered_at = ctx.now - timedelta(days=ctx.rng.randint(30, max_days_ago))
+            next_due = administered_at + timedelta(days=years * 365)
         else:
-            next_due = None  # Series complete, no next due
+            # No recurring cadence — series complete, no next_due.
+            administered_at = ctx.now - timedelta(days=ctx.rng.randint(30, 730))
+            next_due = None
 
         imm_dict = {
             "id": imm_id,
@@ -1923,14 +2269,20 @@ def build_immunization_record(ctx: PatientPortalSeedContext, params: dict[str, A
         ctx.base["immunizations"].append(imm_dict)
         completed_imm_ids.append(imm_id)
 
-    # Due immunizations (next_due_at is in the past)
-    for _ in range(due_count):
+    # Due immunizations (next_due_at is in the past).
+    # Rotate through the PCP pool so that when multiple PCPs exist, each
+    # overdue vaccine is bound to a DIFFERENT administering provider. This
+    # preserves the bijection's identity-test property: the agent must
+    # actually look up which provider administered which vaccine, not just
+    # book any PCP for any vaccine.
+    for _idx_due in range(due_count):
         if vax_idx >= len(vaccine_pool):
             vax_idx = 0
         vax = vaccine_pool[vax_idx]
         vax_idx += 1
         imm_id = ctx.next_id("imm")
-        admin_prov = ctx.rng.choice(providers_with_slots)
+        # Round-robin: if N PCPs are available, vaccine i uses PCP (i mod N).
+        admin_prov = providers_with_slots[_idx_due % len(providers_with_slots)]
         administered_at = ctx.now - timedelta(days=ctx.rng.randint(365, 1095))
         # next_due is in the past (overdue)
         next_due = ctx.now - timedelta(days=ctx.rng.randint(1, 60))
@@ -1975,10 +2327,81 @@ def build_immunization_record(ctx: PatientPortalSeedContext, params: dict[str, A
         incomplete_series_imm_id = imm_id
         if series_vax["name"] not in due_vaccine_names:
             due_vaccine_names.append(series_vax["name"])
+        # Record series-level metadata for canonical_diff authoring. The
+        # patient has received exactly one dose (this record) — so
+        # remaining_doses = total_doses - 1. Emit one slot label per
+        # remaining dose so a bijection over remaining_dose_slots generates
+        # the right number of target slots. Each slot is distinct so the
+        # matcher's identity test doesn't degenerate (hazard Class 4).
+        series_admin_provider_id = admin_prov["id"]
+        series_vaccine_name = series_vax["name"]
+        series_doses_total = int(series_vax.get("doses", 3))
+        doses_received = 1
+        remaining = max(0, series_doses_total - doses_received)
+        remaining_dose_slots = [
+            f"{series_vax['name']} (dose {doses_received + i + 1} of {series_doses_total})"
+            for i in range(remaining)
+        ]
+
+    # -- Extension: admin_providers + scheduling window ------------------
+    # For each due immunization, look up the provider(s) who administered the
+    # most recent completed dose of the same vaccine. Falls back to the due
+    # imm's own administering_provider_id if no completed dose matches.
+    all_imms = ctx.base["immunizations"]
+    completed_imms = [
+        imm for imm in all_imms if imm["id"] in completed_imm_ids
+    ]
+    admin_providers: dict[str, list[str]] = {}
+    for due_id in due_imm_ids:
+        due_imm = next((imm for imm in all_imms if imm["id"] == due_id), None)
+        if due_imm is None:
+            continue
+        vaccine_name = due_imm["vaccine_name"]
+        # Find completed doses with matching vaccine_name (exact match — seed
+        # data uses the canonical vaccine_name strings from _VACCINES).
+        matching_completed = [
+            imm for imm in completed_imms
+            if imm["vaccine_name"] == vaccine_name
+        ]
+        if matching_completed:
+            # Most recent completed dose by administered_at
+            most_recent = max(
+                matching_completed, key=lambda i: i["administered_at"]
+            )
+            admin_providers[due_id] = [most_recent["administering_provider_id"]]
+        else:
+            # Fallback: use the due imm's own administering provider
+            admin_providers[due_id] = [due_imm["administering_provider_id"]]
+
+    # Use ctx.now (seed-derived anchor time) so windows stay deterministic
+    # across runs with the same seed.
+    _window_start = ctx.now
+    _window_end = _window_start + timedelta(days=30)
+
+    # Series window — needs to fit (doses_total - 1) consecutive slots with
+    # at least 1 month (30d) spacing. Add a generous buffer so the agent has
+    # some latitude in picking exact dates while still respecting spacing.
+    if series_doses_total > 0:
+        _series_window_start = ctx.now
+        _series_window_end = _series_window_start + timedelta(
+            days=30 * max(1, series_doses_total) + 60
+        )
+    else:
+        _series_window_start = ctx.now
+        _series_window_end = ctx.now + timedelta(days=180)
 
     return {
         "completed_imm_ids": completed_imm_ids,
         "due_imm_ids": due_imm_ids,
         "incomplete_series_imm_id": incomplete_series_imm_id,
         "due_vaccine_names": due_vaccine_names,
+        "admin_providers": admin_providers,
+        "window_start": _window_start.isoformat(),
+        "window_end": _window_end.isoformat(),
+        "remaining_dose_slots": remaining_dose_slots,
+        "series_admin_provider_id": series_admin_provider_id,
+        "series_vaccine_name": series_vaccine_name,
+        "series_doses_total": series_doses_total,
+        "series_window_start": _series_window_start.isoformat(),
+        "series_window_end": _series_window_end.isoformat(),
     }

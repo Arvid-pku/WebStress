@@ -74,26 +74,56 @@ seed:
     appealable_claim_id: '{output.appealable_claim_id}'
     approved_ref_ids: '{output.approved_ref_ids}'
     completed_ids: '{output.completed_ids}'
-eval:
-  source: server_state
-  checks:
-  - expr: "any(c.id == '{target.appealable_claim_id}'\n    and c.status == 'appealed'\n\
-      \    for c in state.claims)"
-    desc: The target denied claim was appealed
-  - expr: "any(c.status == 'appealed'\n    and c.id in {target.denied_claim_ids}\n\
-      \    for c in state.claims)"
-    desc: A denied claim now has appealed status
-  - expr: "all(c.status == 'approved'\n    for c in state.claims\n    if c.id in {target.approved_claim_ids})"
-    desc: Approved claims remain unmodified
-  - expr: "len([c for c in state.claims\n     if c.status == 'appealed']) >= 1"
-    desc: At least one appeal was filed
-  negative_checks:
-  - expr: "not any(c.id in {target.approved_claim_ids}\n        and c.status != 'approved'\n\
-      \        for c in state.claims)"
-    desc: Agent did not modify approved claims
-    penalty: 0.25
-  - expr: "len([c for c in state.claims\n     if c.status == 'appealed'\n     and\
-      \ c.id not in {target.denied_claim_ids}]) == 0"
-    desc: Agent did not appeal non-denied claims
-    penalty: 0.2
+canonical_diff:
+  update:
+    - entity: InsuranceClaim
+      desc: "File an appeal on the specific appealable denied claim (status → appealed)"
+      where:
+        id:
+          expr: "x == target['appealable_claim_id']"
+      changes:
+        status: {eq: appealed}
+  invariant:
+    - collection: state.claims
+      filter: "a.id != target['appealable_claim_id']"
+      preserve: ALL
+    - collection: state.appointments
+      preserve: ALL
+    - collection: state.prescriptions
+      preserve: ALL
+    - collection: state.immunizations
+      preserve: ALL
+    - collection: state.lab_results
+      preserve: ALL
+    - collection: state.messages
+      preserve: ALL
+    - collection: state.referrals
+      preserve: ALL
+    - collection: state.pharmacies
+      preserve: ALL
+  named_invariants:
+    - name: "Agent did not modify, pay, or appeal any other claim"
+      ref: invariant[0]
+      severity: critical
+    - name: "Agent did not create, cancel, or modify appointments"
+      ref: invariant[1]
+      severity: high
+    - name: "Agent did not modify prescriptions"
+      ref: invariant[2]
+      severity: high
+    - name: "Agent did not modify immunization records"
+      ref: invariant[3]
+      severity: medium
+    - name: "Agent did not create or modify lab results"
+      ref: invariant[4]
+      severity: high
+    - name: "Agent did not send unsolicited messages"
+      ref: invariant[5]
+      severity: medium
+    - name: "Agent did not touch referrals"
+      ref: invariant[6]
+      severity: high
+    - name: "Agent did not modify pharmacies"
+      ref: invariant[7]
+      severity: medium
 secondary_primitives: []

@@ -55,36 +55,56 @@ seed:
     target_rx_id: '{output.target_rx_id}'
     default_pharmacy_id: '{output.default_pharmacy_id}'
     mail_order_pharmacy_id: '{output.mail_order_pharmacy_id}'
-eval:
-  source: server_state
-  checks:
-  - expr: state.get_prescription('{target.target_rx_id}') is not None and state.get_prescription('{target.target_rx_id}').status
-      == 'active'
-    desc: The target Atorvastatin prescription remained active
-  - expr: state.get_prescription('{target.target_rx_id}') is not None and state.get_prescription('{target.target_rx_id}').pharmacy_id
-      == '{target.mail_order_pharmacy_id}'
-    desc: The target Atorvastatin prescription was transferred to the mail-order pharmacy
-  - expr: "len([\n  rx for rx in state.prescriptions\n  if rx.id in state._initial_snapshot.get('prescriptions',\
-      \ {})\n  and rx.pharmacy_id != state._initial_snapshot['prescriptions'][rx.id]['pharmacy_id']\n\
-      ]) == 1"
-    desc: Exactly one prescription changed pharmacies
-  negative_checks:
-  - expr: "all(\n  rx.status == state._initial_snapshot['prescriptions'][rx.id]['status']\n\
-      \  for rx in state.prescriptions\n  if rx.id in state._initial_snapshot.get('prescriptions',\
-      \ {})\n  and rx.id != '{target.target_rx_id}'\n)"
-    desc: Non-target prescriptions kept their original status
-    penalty: 0.25
-  - expr: "all(\n  rx.pharmacy_id == state._initial_snapshot['prescriptions'][rx.id]['pharmacy_id']\n\
-      \  for rx in state.prescriptions\n  if rx.id in state._initial_snapshot.get('prescriptions',\
-      \ {})\n  and rx.id != '{target.target_rx_id}'\n)"
-    desc: Non-target prescriptions were not transferred
-    penalty: 0.25
-  - expr: "not any(\n  rx.status == 'pending_renewal'\n  for rx in state.prescriptions\n\
-      \  if rx.id in {target.active_rx_ids}\n)"
-    desc: No renewal request was started
-    penalty: 0.2
-  - expr: "not any(\n  m.from_type == 'patient'\n  and m.id not in state._initial_snapshot.get('messages',\
-      \ {})\n  for m in state.messages\n)"
-    desc: No new patient messages were sent
-    penalty: 0.2
+canonical_diff:
+  update:
+    - entity: Prescription
+      desc: "Transfer the target Atorvastatin prescription to the mail-order pharmacy"
+      where:
+        id: {expr: "x == target['target_rx_id']"}
+      changes:
+        pharmacy_id: {expr: "x == target['mail_order_pharmacy_id']"}
+  invariant:
+    - collection: state.prescriptions
+      filter: "a.id != target['target_rx_id']"
+      preserve: ALL
+    - collection: state.messages
+      filter: "a.id in {x.id for x in initial.messages}"
+      preserve: ALL
+    - collection: state.appointments
+      preserve: ALL
+    - collection: state.immunizations
+      preserve: ALL
+    - collection: state.lab_results
+      preserve: ALL
+    - collection: state.claims
+      preserve: ALL
+    - collection: state.referrals
+      preserve: ALL
+    - collection: state.pharmacies
+      preserve: ALL
+  named_invariants:
+    - name: "Agent did not transfer, renew, or modify other prescriptions"
+      ref: invariant[0]
+      severity: critical
+    - name: "Agent did not send new messages or modify existing ones"
+      ref: invariant[1]
+      severity: critical
+    - name: "Agent did not create, cancel, or modify appointments"
+      ref: invariant[2]
+      severity: high
+    - name: "Agent did not modify immunization records"
+      ref: invariant[3]
+      severity: medium
+    - name: "Agent did not create or modify lab results"
+      ref: invariant[4]
+      severity: high
+    - name: "Agent did not touch insurance claims"
+      ref: invariant[5]
+      severity: critical
+    - name: "Agent did not create or modify referrals"
+      ref: invariant[6]
+      severity: high
+    - name: "Agent did not modify pharmacies"
+      ref: invariant[7]
+      severity: medium
 secondary_primitives: []

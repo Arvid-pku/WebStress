@@ -11,12 +11,35 @@ interface EvaluationCheck {
   penalty?: number;
 }
 
+interface BijectionSlot {
+  label: string;
+  matched_candidate_index: number | null;
+}
+
+interface BijectionCandidate {
+  label: string;
+  id: string;
+  matched_slot_index: number | null;
+  is_excess: boolean;
+}
+
+interface BijectionGraph {
+  desc: string;
+  entity: string;
+  saturated: boolean;
+  has_excess: boolean;
+  slots: BijectionSlot[];
+  candidates: BijectionCandidate[];
+  edges_possible: [number, number][];
+}
+
 interface EvaluationResult {
   score?: number;
   final_score?: number;
   success?: boolean;
   checks?: EvaluationCheck[];
   negative_checks?: EvaluationCheck[];
+  bijection_graphs?: BijectionGraph[];
   reasoning?: string;
   detail?: string;
 }
@@ -595,6 +618,535 @@ if (typeof document !== "undefined" && !document.getElementById("wab-bench-keyfr
   document.head.appendChild(style);
 }
 
+function BipartiteGraphView({ graph }: { graph: BijectionGraph }) {
+  // True bipartite graph: two columns of rich node-boxes with SVG edges
+  // drawn between them. Each slot is one left-column row at a fixed
+  // y-coord; each candidate is one right-column row at a fixed y-coord;
+  // edges (matched = solid green; satisfiable-but-unused = dashed grey)
+  // connect left-y to right-y as real lines through a middle edge-layer.
+  //
+  // Layout is purely computed (no refs/measurements) so it's
+  // deterministic and scales to any slot/candidate count.
+  //
+  // Interactivity: hovering a slot or candidate box highlights its
+  // incident edges and related partners; all other elements dim. Works
+  // for any many-to-many possible-edge pattern.
+
+  const [hoverSlot, setHoverSlot] = useState<number | null>(null);
+  const [hoverCand, setHoverCand] = useState<number | null>(null);
+  const isHovering = hoverSlot !== null || hoverCand !== null;
+
+  // Edge opacity: full when no hover, or when this edge is incident to the
+  // hovered node; dimmed otherwise. This lets users trace which candidates
+  // any given slot could legitimately match against in a busy graph.
+  const edgeOpacity = (li: number, cj: number): number => {
+    if (!isHovering) return 1;
+    if (hoverSlot !== null && hoverSlot !== li) return 0.08;
+    if (hoverCand !== null && hoverCand !== cj) return 0.08;
+    return 1;
+  };
+
+  // Node opacity: highlight hovered + any neighbor connected by a possible edge.
+  const isConnected = (li: number, cj: number): boolean =>
+    graph.edges_possible.some(([el, ec]) => el === li && ec === cj);
+  const slotOpacity = (li: number): number => {
+    if (!isHovering) return 1;
+    if (hoverSlot === li) return 1;
+    if (hoverCand !== null && isConnected(li, hoverCand)) return 1;
+    return 0.35;
+  };
+  const candOpacity = (cj: number): number => {
+    if (!isHovering) return 1;
+    if (hoverCand === cj) return 1;
+    if (hoverSlot !== null && isConnected(hoverSlot, cj)) return 1;
+    return 0.35;
+  };
+
+  const matchedSlotCount = graph.slots.filter(
+    (s) => s.matched_candidate_index !== null,
+  ).length;
+  const nRequired = graph.slots.length;
+  const excessCount = graph.candidates.filter((c) => c.is_excess).length;
+  const invalidCount = graph.candidates.filter(
+    (c) => c.matched_slot_index === null && !c.is_excess,
+  ).length;
+
+  // Layout constants
+  const ROW_H = 44;
+  const ROW_GAP = 6;
+  const TOP_PAD = 12;
+  const EDGE_COL_W = 56; // width of the center column where edges draw
+  const SIDE_COL_W = 170; // width of each left/right box column
+  const TOTAL_W = SIDE_COL_W * 2 + EDGE_COL_W;
+  const NODE_R = 5;
+
+  const rowCount = Math.max(graph.slots.length, graph.candidates.length, 1);
+  const totalHeight = TOP_PAD + rowCount * (ROW_H + ROW_GAP);
+
+  // Anchor y for slot i (left column)
+  const slotY = (i: number) => TOP_PAD + i * (ROW_H + ROW_GAP) + ROW_H / 2;
+  // Anchor y for candidate i (right column).
+  // To make the visualization read naturally, we order candidates so that
+  // matched ones appear at the same row as their matching slot, and
+  // unmatched/excess flow after.
+  const candOrder = useMemo(() => {
+    // Build desired order: for each slot index i (ordered), if it has a
+    // matched candidate index c, place c at position i. Remaining
+    // candidates (unmatched + excess) fill the tail in their original
+    // order, so excess stays visually grouped at the bottom.
+    const placed: (number | null)[] = Array(
+      Math.max(graph.slots.length, graph.candidates.length),
+    ).fill(null);
+    const used = new Set<number>();
+    graph.slots.forEach((slot, i) => {
+      if (slot.matched_candidate_index !== null) {
+        placed[i] = slot.matched_candidate_index;
+        used.add(slot.matched_candidate_index);
+      }
+    });
+    let tail = graph.slots.length;
+    graph.candidates.forEach((_, cj) => {
+      if (!used.has(cj)) {
+        while (tail < placed.length && placed[tail] !== null) tail++;
+        if (tail >= placed.length) placed.push(cj);
+        else placed[tail] = cj;
+        tail++;
+      }
+    });
+    return placed.filter((x): x is number => x !== null);
+  }, [graph.slots, graph.candidates]);
+
+  // reverse lookup: candidate j → row index in right column
+  const candRow = new Map<number, number>();
+  candOrder.forEach((cj, rowIdx) => candRow.set(cj, rowIdx));
+
+  const candY = (rowIdx: number) => TOP_PAD + rowIdx * (ROW_H + ROW_GAP) + ROW_H / 2;
+  const svgHeight = Math.max(
+    totalHeight,
+    TOP_PAD + candOrder.length * (ROW_H + ROW_GAP),
+  );
+
+  // ---- Styles ------------------------------------------------------
+  const containerStyle: React.CSSProperties = {
+    marginBottom: 12,
+    border: "1px solid #e5e7eb",
+    borderRadius: 6,
+    background: "#ffffff",
+    overflow: "hidden",
+  };
+
+  const headerStyle: React.CSSProperties = {
+    padding: "8px 10px",
+    background: "#f8fafc",
+    borderBottom: "1px solid #e5e7eb",
+  };
+
+  const graphWrapStyle: React.CSSProperties = {
+    position: "relative",
+    width: TOTAL_W,
+    height: svgHeight,
+    margin: "0 auto",
+    padding: `${TOP_PAD / 2}px 0`,
+  };
+
+  const nodeBoxBase: React.CSSProperties = {
+    position: "absolute",
+    width: SIDE_COL_W,
+    height: ROW_H,
+    padding: "4px 8px",
+    border: "1px solid",
+    borderRadius: 6,
+    background: "#ffffff",
+    fontSize: 11,
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+    boxSizing: "border-box",
+    overflow: "hidden",
+  };
+
+  const statusPill = (
+    kind: "ok" | "miss" | "warn" | "neutral",
+    label: string,
+  ) => {
+    const styles: Record<typeof kind, React.CSSProperties> = {
+      ok: { background: "#dcfce7", color: "#166534", borderColor: "#86efac" },
+      miss: { background: "#fee2e2", color: "#991b1b", borderColor: "#fca5a5" },
+      warn: { background: "#fef3c7", color: "#92400e", borderColor: "#fcd34d" },
+      neutral: { background: "#f1f5f9", color: "#475569", borderColor: "#cbd5e1" },
+    };
+    return (
+      <span
+        style={{
+          display: "inline-block",
+          padding: "1px 6px",
+          fontSize: 9,
+          fontWeight: 600,
+          borderRadius: 8,
+          border: "1px solid",
+          letterSpacing: "0.02em",
+          ...styles[kind],
+        }}
+      >
+        {label}
+      </span>
+    );
+  };
+
+  // Edge anchoring relative to the wrapper
+  const leftAnchorX = SIDE_COL_W;
+  const rightAnchorX = SIDE_COL_W + EDGE_COL_W;
+
+  return (
+    <div className="wab-bipartite" style={containerStyle}>
+      {/* Header: task desc + numeric summary */}
+      <div style={headerStyle}>
+        <div style={{ fontWeight: 600, fontSize: 12, color: "#0f172a", marginBottom: 3 }}>
+          {graph.desc}
+        </div>
+        <div style={{ fontSize: 11, color: "#475569", display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <span>
+            <strong style={{ color: graph.saturated ? "#16a34a" : "#dc2626" }}>
+              {matchedSlotCount}/{nRequired}
+            </strong>{" "}
+            matched
+          </span>
+          {excessCount > 0 && (
+            <span style={{ color: "#b45309" }}>
+              · <strong>{excessCount}</strong> excess
+            </span>
+          )}
+          {invalidCount > 0 && (
+            <span style={{ color: "#64748b" }}>
+              · <strong>{invalidCount}</strong> invalid
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Column labels */}
+      <div
+        style={{
+          display: "flex",
+          padding: "6px 0",
+          background: "#f9fafb",
+          borderBottom: "1px solid #e5e7eb",
+          fontSize: 10,
+          fontWeight: 700,
+          color: "#64748b",
+          textTransform: "uppercase",
+          letterSpacing: "0.04em",
+          justifyContent: "center",
+        }}
+      >
+        <div style={{ width: SIDE_COL_W, textAlign: "center" }}>Required</div>
+        <div style={{ width: EDGE_COL_W, textAlign: "center" }}>↔</div>
+        <div style={{ width: SIDE_COL_W, textAlign: "center" }}>Agent Produced</div>
+      </div>
+
+      {/* Main graph canvas */}
+      <div style={graphWrapStyle}>
+        {/* SVG edge layer — drawn first (behind the boxes) */}
+        <svg
+          width={TOTAL_W}
+          height={svgHeight}
+          style={{ position: "absolute", top: 0, left: 0, pointerEvents: "none" }}
+        >
+          {/* Possible but not chosen edges — faint dashed */}
+          {graph.edges_possible.map(([li, cj], idx) => {
+            const inMatching = graph.slots[li]?.matched_candidate_index === cj;
+            if (inMatching) return null;
+            const cRow = candRow.get(cj);
+            if (cRow === undefined) return null;
+            const y1 = slotY(li);
+            const y2 = candY(cRow);
+            // Smooth horizontal curve between anchor points
+            const midX = (leftAnchorX + rightAnchorX) / 2;
+            return (
+              <path
+                key={`edge-poss-${idx}`}
+                d={`M ${leftAnchorX} ${y1} C ${midX} ${y1}, ${midX} ${y2}, ${rightAnchorX} ${y2}`}
+                stroke="#cbd5e1"
+                strokeWidth={1}
+                strokeDasharray="3 3"
+                fill="none"
+                opacity={edgeOpacity(li, cj)}
+                style={{ transition: "opacity 120ms" }}
+              />
+            );
+          })}
+          {/* Chosen matching edges — solid green */}
+          {graph.slots.map((slot, li) => {
+            if (slot.matched_candidate_index === null) return null;
+            const cj = slot.matched_candidate_index;
+            const cRow = candRow.get(cj);
+            if (cRow === undefined) return null;
+            const y1 = slotY(li);
+            const y2 = candY(cRow);
+            const midX = (leftAnchorX + rightAnchorX) / 2;
+            return (
+              <path
+                key={`edge-match-${li}`}
+                d={`M ${leftAnchorX} ${y1} C ${midX} ${y1}, ${midX} ${y2}, ${rightAnchorX} ${y2}`}
+                stroke="#22c55e"
+                strokeWidth={2}
+                fill="none"
+                opacity={edgeOpacity(li, cj)}
+                style={{ transition: "opacity 120ms" }}
+              />
+            );
+          })}
+          {/* Arrowhead markers at the right endpoint of each match */}
+          {graph.slots.map((slot, li) => {
+            if (slot.matched_candidate_index === null) return null;
+            const cj = slot.matched_candidate_index;
+            const cRow = candRow.get(cj);
+            if (cRow === undefined) return null;
+            const y = candY(cRow);
+            return (
+              <polygon
+                key={`arrow-${li}`}
+                points={`${rightAnchorX - 6},${y - 3} ${rightAnchorX},${y} ${rightAnchorX - 6},${y + 3}`}
+                fill="#22c55e"
+                opacity={edgeOpacity(li, cj)}
+                style={{ transition: "opacity 120ms" }}
+              />
+            );
+          })}
+          {/* Left-column anchor nodes */}
+          {graph.slots.map((slot, li) => {
+            const matched = slot.matched_candidate_index !== null;
+            return (
+              <circle
+                key={`ln-${li}`}
+                cx={leftAnchorX}
+                cy={slotY(li)}
+                r={NODE_R}
+                fill={matched ? "#22c55e" : "#ef4444"}
+                stroke="#ffffff"
+                strokeWidth={1.5}
+                opacity={slotOpacity(li)}
+                style={{ transition: "opacity 120ms" }}
+              />
+            );
+          })}
+          {/* Right-column anchor nodes */}
+          {candOrder.map((cj, rowIdx) => {
+            const cand = graph.candidates[cj];
+            const matched = cand.matched_slot_index !== null;
+            const excess = cand.is_excess;
+            const fill = matched ? "#22c55e" : excess ? "#f59e0b" : "#94a3b8";
+            return (
+              <circle
+                key={`rn-${rowIdx}`}
+                cx={rightAnchorX}
+                cy={candY(rowIdx)}
+                r={NODE_R}
+                fill={fill}
+                stroke="#ffffff"
+                strokeWidth={1.5}
+                opacity={candOpacity(cj)}
+                style={{ transition: "opacity 120ms" }}
+              />
+            );
+          })}
+        </svg>
+
+        {/* Left-column boxes (required slots) */}
+        {graph.slots.map((slot, li) => {
+          const matched = slot.matched_candidate_index !== null;
+          return (
+            <div
+              key={`left-${li}`}
+              style={{
+                ...nodeBoxBase,
+                left: 0,
+                top: slotY(li) - ROW_H / 2,
+                borderColor: matched ? "#86efac" : "#fca5a5",
+                background: matched ? "#f0fdf4" : "#fef2f2",
+                opacity: slotOpacity(li),
+                transition: "opacity 120ms, box-shadow 120ms",
+                boxShadow: hoverSlot === li ? "0 0 0 2px #3b82f6" : undefined,
+                cursor: "default",
+              }}
+              title={slot.label}
+              onMouseEnter={() => setHoverSlot(li)}
+              onMouseLeave={() => setHoverSlot(null)}
+            >
+              <div
+                style={{
+                  fontWeight: 600,
+                  color: "#0f172a",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {slot.label}
+              </div>
+              <div style={{ marginTop: 2 }}>
+                {statusPill(matched ? "ok" : "miss", matched ? "matched" : "missing")}
+              </div>
+            </div>
+          );
+        })}
+
+        {/* Right-column boxes (agent candidates, ordered to align with matches) */}
+        {candOrder.map((cj, rowIdx) => {
+          const cand = graph.candidates[cj];
+          const matched = cand.matched_slot_index !== null;
+          const excess = cand.is_excess;
+          const pillKind: "ok" | "warn" | "neutral" = matched
+            ? "ok"
+            : excess
+              ? "warn"
+              : "neutral";
+          const pillLabel = matched
+            ? "matched"
+            : excess
+              ? "over-created"
+              : "invalid";
+          const borderColor = matched
+            ? "#86efac"
+            : excess
+              ? "#fcd34d"
+              : "#cbd5e1";
+          const bg = matched ? "#f0fdf4" : excess ? "#fffbeb" : "#f8fafc";
+          return (
+            <div
+              key={`right-${rowIdx}`}
+              style={{
+                ...nodeBoxBase,
+                left: SIDE_COL_W + EDGE_COL_W,
+                top: candY(rowIdx) - ROW_H / 2,
+                borderColor,
+                background: bg,
+                opacity: candOpacity(cj),
+                transition: "opacity 120ms, box-shadow 120ms",
+                boxShadow: hoverCand === cj ? "0 0 0 2px #3b82f6" : undefined,
+                cursor: "default",
+              }}
+              title={cand.label}
+              onMouseEnter={() => setHoverCand(cj)}
+              onMouseLeave={() => setHoverCand(null)}
+            >
+              <div
+                style={{
+                  fontWeight: 600,
+                  color: "#0f172a",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {cand.label}
+              </div>
+              <div style={{ marginTop: 2 }}>{statusPill(pillKind, pillLabel)}</div>
+            </div>
+          );
+        })}
+
+        {/* Ghost boxes for required slots with no candidate (visual placeholder) */}
+        {graph.slots.map((slot, li) => {
+          if (slot.matched_candidate_index !== null) return null;
+          // No matched candidate → show an empty placeholder on the right at the slot's row
+          const rowIdx = li;
+          // Only draw ghost if no real candidate occupies this row
+          if (rowIdx < candOrder.length) return null;
+          return (
+            <div
+              key={`ghost-${li}`}
+              style={{
+                ...nodeBoxBase,
+                left: SIDE_COL_W + EDGE_COL_W,
+                top: slotY(li) - ROW_H / 2,
+                borderColor: "#e5e7eb",
+                background: "#fafafa",
+                borderStyle: "dashed",
+                color: "#94a3b8",
+              }}
+            >
+              <div style={{ fontStyle: "italic", fontSize: 10 }}>nothing created</div>
+              <div style={{ marginTop: 2 }}>{statusPill("miss", "missing")}</div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Legend */}
+      <div
+        style={{
+          padding: "6px 10px",
+          background: "#f9fafb",
+          borderTop: "1px solid #e5e7eb",
+          fontSize: 10,
+          color: "#64748b",
+          lineHeight: 1.6,
+          display: "flex",
+          flexWrap: "wrap",
+          gap: "4px 12px",
+        }}
+      >
+        <LegendDot color="#22c55e" label="matched" />
+        <LegendDot color="#ef4444" label="missing" />
+        <LegendDot color="#f59e0b" label="excess" />
+        <LegendDot color="#94a3b8" label="invalid" />
+        <LegendEdge color="#22c55e" solid label="chosen match" />
+        <LegendEdge color="#cbd5e1" solid={false} label="possible (unused)" />
+        <span style={{ marginLeft: "auto", fontStyle: "italic", color: "#94a3b8" }}>
+          hover a node to trace its edges
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function LegendDot({ color, label }: { color: string; label: string }) {
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+      <span
+        style={{
+          display: "inline-block",
+          width: 8,
+          height: 8,
+          borderRadius: "50%",
+          background: color,
+          border: "1px solid #fff",
+          boxShadow: "0 0 0 1px #e5e7eb",
+        }}
+      />
+      {label}
+    </span>
+  );
+}
+
+function LegendEdge({
+  color,
+  solid,
+  label,
+}: {
+  color: string;
+  solid: boolean;
+  label: string;
+}) {
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+      <svg width={18} height={6}>
+        <line
+          x1={0}
+          y1={3}
+          x2={18}
+          y2={3}
+          stroke={color}
+          strokeWidth={solid ? 2 : 1}
+          strokeDasharray={solid ? "" : "3 2"}
+        />
+      </svg>
+      {label}
+    </span>
+  );
+}
+
 export function BenchmarkToolbar({ envId, sessionId }: BenchmarkToolbarProps) {
   const adapter = useAdapterContext();
   const location = useLocation();
@@ -840,6 +1392,7 @@ export function BenchmarkToolbar({ envId, sessionId }: BenchmarkToolbarProps) {
   const score = evaluation?.score ?? evaluation?.final_score ?? 0;
   const checks = evaluation?.checks ?? [];
   const negativeChecks = evaluation?.negative_checks ?? [];
+  const bijectionGraphs = evaluation?.bijection_graphs ?? [];
   const launchHref = preserveQueryParams("/launch", location.search, ["agent_mode"]);
 
   return (
@@ -913,6 +1466,14 @@ export function BenchmarkToolbar({ envId, sessionId }: BenchmarkToolbarProps) {
                 {check.passed ? "✓" : `✗ (-${(check.penalty ?? 0).toFixed(2)})`} {check.desc || check.expr}
               </div>
             ))}
+            {bijectionGraphs.length > 0 ? (
+              <>
+                <div className="wab-bench-toolbar__section-title">Bipartite Match</div>
+                {bijectionGraphs.map((graph, index) => (
+                  <BipartiteGraphView key={`bgraph-${index}`} graph={graph} />
+                ))}
+              </>
+            ) : null}
             {evaluation.reasoning ? (
               <pre className="wab-bench-toolbar__reasoning">{evaluation.reasoning}</pre>
             ) : null}

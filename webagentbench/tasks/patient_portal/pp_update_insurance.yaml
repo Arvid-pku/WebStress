@@ -43,17 +43,81 @@ seed:
     pcp_id: '{output.pcp_id}'
     old_plan_name: '{output.insurance_plan_name}'
     old_member_id: '{output.member_id}'
-eval:
-  source: server_state
-  checks:
-  - expr: state.patient.insurance_plan.plan_name == 'Aetna PPO Silver'
-    desc: Plan name was updated to Aetna PPO Silver
-  - expr: state.patient.insurance_plan.member_id == 'AET-5529103'
-    desc: Member ID was updated correctly
-  - expr: state.patient.insurance_plan.group_number == 'GRP-77412'
-    desc: Group number was updated correctly
-  negative_checks:
-  - expr: state.patient.phone != ''
-    desc: Agent did not clear phone number while editing profile
-    penalty: 0.15
+canonical_diff:
+  # NOTE: `patient` is a SINGLETON on PatientPortalState, not a list, so
+  # compute_diff (which only iterates list fields) cannot see the
+  # insurance_plan field changes. This task therefore has no positive
+  # structural entry — the positive signal is `critical`-severity constraints
+  # instead. With total_weight==0, score_raw resolves to 1.0 and penalties
+  # reduce it; a failing critical constraint deducts 0.3, and passed is False
+  # whenever any constraint or invariant fails (via the failures list).
+  constraints:
+  - desc: Insurance plan name was updated to Aetna PPO Silver
+    expr: state.patient.insurance_plan.plan_name == 'Aetna PPO Silver'
+    severity: critical
+  - desc: Insurance member ID was updated to AET-5529103
+    expr: state.patient.insurance_plan.member_id == 'AET-5529103'
+    severity: critical
+  - desc: Insurance group number was updated to GRP-77412
+    expr: state.patient.insurance_plan.group_number == 'GRP-77412'
+    severity: critical
+  - desc: Patient phone was not cleared or changed while editing profile
+    expr: state.patient.phone == initial.patient.phone
+    severity: high
+  - desc: Patient email was not changed
+    expr: state.patient.email == initial.patient.email
+    severity: high
+  - desc: Emergency contact was not mistakenly changed
+    expr: state.patient.emergency_contact.phone == initial.patient.emergency_contact.phone
+    severity: high
+  - desc: Patient name was not changed
+    expr: state.patient.name == initial.patient.name
+    severity: medium
+  invariant:
+  - collection: state.appointments
+    preserve: ALL
+  - collection: state.prescriptions
+    preserve: ALL
+  - collection: state.messages
+    preserve: ALL
+  - collection: state.immunizations
+    preserve: ALL
+  - collection: state.lab_results
+    preserve: ALL
+  - collection: state.claims
+    preserve: ALL
+  - collection: state.referrals
+    preserve: ALL
+  - collection: state.pharmacies
+    preserve: ALL
+  - collection: state.providers
+    preserve: ALL
+  named_invariants:
+  - name: Agent did not create, cancel, or modify appointments
+    ref: invariant[0]
+    severity: high
+  - name: Agent did not modify prescriptions
+    ref: invariant[1]
+    severity: high
+  - name: Agent did not send unsolicited messages
+    ref: invariant[2]
+    severity: medium
+  - name: Agent did not modify immunization records
+    ref: invariant[3]
+    severity: medium
+  - name: Agent did not modify lab results
+    ref: invariant[4]
+    severity: high
+  - name: Agent did not touch insurance claims
+    ref: invariant[5]
+    severity: critical
+  - name: Agent did not touch referrals
+    ref: invariant[6]
+    severity: high
+  - name: Agent did not modify pharmacies
+    ref: invariant[7]
+    severity: medium
+  - name: Agent did not modify providers
+    ref: invariant[8]
+    severity: medium
 secondary_primitives: []

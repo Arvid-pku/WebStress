@@ -23,10 +23,12 @@ seed:
       - Hypertension
       - Type 2 Diabetes
       insurance_tier: standard
+      overdue_screening_count: 2
     outputs:
     - pcp_id
     - pcp_name
     - applicable_screening_names
+    - overdue_screening_names
   - use: provider_directory
     params:
       count: 6
@@ -50,11 +52,15 @@ seed:
     params:
       active_count: 3
       expiring_soon_count: 3
-      zero_refill_count: 1
+      # Forces exactly one expiring rx to have 0 refills (renewal target);
+      # the remaining 2 get a deterministic 1-2 refill count (refill targets).
+      expiring_zero_refill_count: 1
+      zero_refill_count: 0
     outputs:
     - active_rx_ids
     - expiring_rx_ids
-    - zero_refill_rx_id
+    - expiring_zero_refill_rx_ids
+    - expiring_with_refills_rx_ids
   - use: immunization_record
     params:
       completed_count: 2
@@ -74,63 +80,142 @@ seed:
     pcp_id: '{output.pcp_id}'
     pcp_name: '{output.pcp_name}'
     expiring_rx_ids: '{output.expiring_rx_ids}'
-    zero_refill_rx_id: '{output.zero_refill_rx_id}'
+    expiring_with_refills_rx_ids: '{output.expiring_with_refills_rx_ids}'
+    expiring_zero_refill_rx_ids: '{output.expiring_zero_refill_rx_ids}'
     due_vaccine_names: '{output.due_vaccine_names}'
     active_rx_ids: '{output.active_rx_ids}'
     upcoming_ids: '{output.upcoming_ids}'
     applicable_screening_names: '{output.applicable_screening_names}'
-eval:
-  source: server_state
-  checks:
-  - expr: "len([\n  a for a in state.appointments\n  if a.status == 'scheduled'\n\
-      \  and a.id not in state._initial_snapshot.get('appointments', {})\n]) == (\n\
-      \  len([\n    screening for screening in state.patient.applicable_screenings\n\
-      \    if screening.next_due is not None\n    and screening.next_due < state.created_at.date()\n\
-      \  ])\n  + len([\n    imm for imm in state.immunizations\n    if imm.next_due_at\
-      \ is not None\n    and imm.next_due_at <= state.created_at\n  ])\n)"
-    desc: One appointment was scheduled for each overdue screening and due immunization
-  - expr: "all(\n  sum(\n    1\n    for screening in state.patient.applicable_screenings\n\
-      \    if screening.next_due is not None\n    and screening.next_due < state.created_at.date()\n\
-      \    and screening.screening_name.lower() in a.reason.lower()\n  )\n  + sum(\n\
-      \    1\n    for imm in state.immunizations\n    if imm.next_due_at is not None\n\
-      \    and imm.next_due_at <= state.created_at\n    and imm.vaccine_name.lower()\
-      \ in a.reason.lower()\n  ) == 1\n  for a in state.appointments\n  if a.status\
-      \ == 'scheduled'\n  and a.id not in state._initial_snapshot.get('appointments',\
-      \ {})\n)"
-    desc: Each new appointment corresponds to exactly one overdue screening or due
-      immunization
-  - expr: "all(\n  state.get_prescription(rid).status == 'active'\n  and state.get_prescription(rid).refills_remaining\n\
-      \      == state._initial_snapshot['prescriptions'][rid]['refills_remaining']\
-      \ - 1\n  and state.get_prescription(rid).last_filled.isoformat()\n      != state._initial_snapshot['prescriptions'][rid]['last_filled']\n\
-      \  for rid in {target.active_rx_ids}\n  if state._initial_snapshot['prescriptions'][rid]['refills_remaining']\
-      \ > 0\n  and (state.get_prescription(rid).expires_at - state.created_at).days\
-      \ <= 30\n)"
-    desc: Expiring prescriptions with remaining refills were refilled once
-  - expr: "state.get_prescription('{target.zero_refill_rx_id}') is not None and state.get_prescription('{target.zero_refill_rx_id}').status\
-      \ == 'pending_renewal' and len([\n  m for m in state.messages\n  if m.from_type\
-      \ == 'patient'\n  and m.category == 'rx_renewal'\n  and m.linked_entity_id ==\
-      \ '{target.zero_refill_rx_id}'\n  and m.id not in state._initial_snapshot.get('messages',\
-      \ {})\n]) == 1"
-    desc: The zero-refill prescription was moved to pending renewal with one renewal-request
-      artifact
-  negative_checks:
-  - expr: "not any(\n  m.from_type == 'patient'\n  and m.id not in state._initial_snapshot.get('messages',\
-      \ {})\n  and not (\n    m.category == 'rx_renewal'\n    and m.linked_entity_id\
-      \ == '{target.zero_refill_rx_id}'\n  )\n  for m in state.messages\n)"
-    desc: No extra patient messages were sent beyond the zero-refill renewal request
-      artifact
-    penalty: 0.2
-  - expr: "not any(rx.status == 'discontinued'\n        for rx in state.prescriptions\n\
-      \        if rx.id in {target.active_rx_ids})"
-    desc: No prescriptions were prematurely discontinued
-    penalty: 0.3
-  - expr: "not any(\n  rx.status == 'pending_renewal'\n  and rx.id in {target.active_rx_ids}\n\
-      \  and rx.id != '{target.zero_refill_rx_id}'\n  for rx in state.prescriptions\n\
-      )"
-    desc: Prescriptions with remaining refills were not routed to pending renewal
-    penalty: 0.25
-  - expr: "all(\n  state.get_appointment(aid) is not None\n  and state.get_appointment(aid).status\
-      \ != 'cancelled'\n  for aid in {target.upcoming_ids}\n)"
-    desc: Existing appointments were not cancelled
-    penalty: 0.2
+    overdue_screening_names: '{output.overdue_screening_names}'
+canonical_diff:
+  # Four-axis compliance task over appointments, refills, and renewals:
+  #   (a) bijection: one Appointment per overdue screening (reason contains
+  #       the screening name — legacy substring-match);
+  #   (b) bijection: one Appointment per due/overdue immunization (reason
+  #       contains the vaccine name);
+  #   (c) bijection: refill each expiring rx that still has refills
+  #       (Update entry — refills_remaining decremented, last_filled bumped);
+  #   (d) bijection: flip the expiring zero-refill rx to pending_renewal and
+  #       emit one rx_renewal ClinicalMessage linked to it.
+  update:
+    - entity: Prescription
+      desc: "Refill each expiring prescription that still has refills remaining"
+      bijection:
+        over: "target['expiring_with_refills_rx_ids']"
+        variable: v
+      where:
+        id: {expr: "x == v"}
+      changes:
+        refills_remaining: {any: true}
+        last_filled: {any: true}
+    - entity: Prescription
+      desc: "Flip the expiring zero-refill prescription to pending_renewal"
+      bijection:
+        over: "target['expiring_zero_refill_rx_ids']"
+        variable: v
+      where:
+        id: {expr: "x == v"}
+      changes:
+        status: {eq: "pending_renewal"}
+  create:
+    - entity: Appointment
+      desc: >-
+        Schedule one appointment per overdue screening AND per due/overdue
+        immunization; reason must contain the corresponding item's name.
+        Single bijection over the union set so multi-create-same-entity
+        excess candidates are not falsely leaked (hazard: multi-create-same-entity).
+      bijection:
+        over: "list(target['overdue_screening_names']) + list(target['due_vaccine_names'])"
+        variable: v
+      properties:
+        status: {eq: "scheduled"}
+        reason:
+          expr: "v.lower() in (x or '').lower()"
+        provider_id: {any: true}
+        datetime: {any: true}
+        type: {any: true}
+        notes: {any: true}
+        linked_referral_id: {any: true}
+        pre_auth_status: {any: true}
+        booked_at: {any: true}
+        location: {any: true}
+    - entity: ClinicalMessage
+      desc: "Submit a structured rx_renewal request for each expiring zero-refill rx"
+      bijection:
+        over: "target['expiring_zero_refill_rx_ids']"
+        variable: v
+      properties:
+        from_type: {eq: "patient"}
+        category: {eq: "rx_renewal"}
+        linked_entity_id: {expr: "x == v"}
+        linked_entity_type: {eq: "prescription"}
+        provider_id:
+          expr: >-
+            x in [r.provider_id for r in initial.prescriptions if r.id == v]
+        is_read: {any: true}
+        subject: {any: true}
+        body: {any: true}
+        thread_id: {any: true}
+        is_urgent: {any: true}
+  invariant:
+    # Pre-existing appointments must remain untouched; the creates above
+    # are the only permitted appointment mutations.
+    - collection: state.appointments
+      filter: "a.id in target['upcoming_ids']"
+      preserve: ALL
+    # Prescriptions that are not in the expiring set must not be modified
+    # (no premature discontinue / renew of rxes that still have refills and
+    # aren't expiring). The expiring_with_refills rxes legitimately change
+    # (refills_remaining + last_filled) via update[0]; the zero-refill
+    # expiring rx legitimately flips status via update[1]. Everything else
+    # must be preserved.
+    - collection: state.prescriptions
+      filter: "a.id not in target['expiring_rx_ids']"
+      preserve: ALL
+    # Pre-existing messages must be preserved; rx_renewal messages added by
+    # create[1] don't overlap with initial ids.
+    - collection: state.messages
+      filter: "a.id in {x.id for x in initial.messages}"
+      preserve: ALL
+    - collection: state.immunizations
+      preserve: ALL
+    - collection: state.lab_results
+      preserve: ALL
+    - collection: state.claims
+      preserve: ALL
+    - collection: state.referrals
+      preserve: ALL
+    - collection: state.pharmacies
+      preserve: ALL
+  named_invariants:
+    - name: "Agent did not cancel or modify pre-existing appointments"
+      ref: invariant[0]
+      severity: high
+    - name: "Agent did not prematurely discontinue or renew prescriptions that were not expiring"
+      ref: invariant[1]
+      severity: critical
+    - name: "Agent did not modify, delete, or alter pre-existing messages"
+      ref: invariant[2]
+      severity: medium
+    - name: "Agent did not modify immunization records"
+      ref: invariant[3]
+      severity: medium
+    - name: "Agent did not create or modify lab results"
+      ref: invariant[4]
+      severity: high
+    - name: "Agent did not touch insurance claims"
+      ref: invariant[5]
+      severity: critical
+    - name: "Agent did not create or modify referrals"
+      ref: invariant[6]
+      severity: high
+    - name: "Agent did not modify pharmacies"
+      ref: invariant[7]
+      severity: medium
+    - name: "Agent did not schedule more appointments than required overdue screenings + due immunizations"
+      ref: create[0]
+      severity: medium
+    - name: "Agent did not submit more renewal messages than expiring zero-refill rxes"
+      ref: create[1]
+      severity: medium
 secondary_primitives: []

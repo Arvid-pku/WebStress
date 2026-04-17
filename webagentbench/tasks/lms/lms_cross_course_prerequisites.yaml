@@ -29,6 +29,10 @@ seed:
     outputs:
     - course_ids
     - course_codes
+    - course_id_1
+    - course_id_2
+    - course_code_1
+    - course_code_2
   - use: enrollment_set
     params: {}
     outputs:
@@ -45,36 +49,149 @@ seed:
     - grade_ids
   - use: module_sequence
     params:
+      course_id: '{output.course_id_1}'
+      output_prefix: course_1
       count: 4
       chain_type: linear
       completed_count: 1
     outputs:
-    - module_ids
-    - next_available_module_id
-    - first_locked_module_id
+    - course_1_module_ids
+    - course_1_next_available_module_id
+    - course_1_first_locked_module_id
+  - use: module_sequence
+    params:
+      course_id: '{output.course_id_2}'
+      output_prefix: course_2
+      count: 4
+      chain_type: linear
+      completed_count: 1
+    outputs:
+    - course_2_module_ids
+    - course_2_next_available_module_id
+    - course_2_first_locked_module_id
   targets:
-    course_code_1: CS101
-    course_code_2: MATH201
-    next_available_module_id: '{output.next_available_module_id}'
-    first_locked_module_id: '{output.first_locked_module_id}'
-    module_ids: '{output.module_ids}'
+    course_code_1: '{output.course_code_1}'
+    course_code_2: '{output.course_code_2}'
+    course_id_1: '{output.course_id_1}'
+    course_id_2: '{output.course_id_2}'
+    module_ids_course_1: '{output.course_1_module_ids}'
+    module_ids_course_2: '{output.course_2_module_ids}'
+    next_available_module_id_1: '{output.course_1_next_available_module_id}'
+    first_locked_module_id_1: '{output.course_1_first_locked_module_id}'
+    next_available_module_id_2: '{output.course_2_next_available_module_id}'
+    first_locked_module_id_2: '{output.course_2_first_locked_module_id}'
+canonical_diff:
+  update:
+  - entity: Module
+    desc: Complete the next available module in the first course only after all content items are finished
+    where:
+      id:
+        expr: "x == target['next_available_module_id_1']"
+    changes:
+      status: {eq: completed}
+      content_items:
+        expr: "all(item.get('completed') is True for item in x)"
+  - entity: Module
+    desc: Complete the next available module in the second course only after all content items are finished
+    where:
+      id:
+        expr: "x == target['next_available_module_id_2']"
+    changes:
+      status: {eq: completed}
+      content_items:
+        expr: "all(item.get('completed') is True for item in x)"
+  invariant:
+  - collection: state.modules
+    filter: "a.id not in [target['next_available_module_id_1'], target['next_available_module_id_2']]"
+    preserve: ALL
+  - collection: state.courses
+    preserve: ALL
+  - collection: state.enrollments
+    preserve: ALL
+  - collection: state.assignments
+    preserve: ALL
+  - collection: state.discussions
+    preserve: ALL
+  - collection: state.discussion_posts
+    preserve: ALL
+  - collection: state.peer_reviews
+    preserve: ALL
+  - collection: state.announcements
+    preserve: ALL
+  - collection: state.grades
+    preserve: ALL
+  - collection: state.calendar_events
+    preserve: ALL
+  - collection: state.sent_messages
+    preserve: ALL
+  named_invariants:
+  - name: Agent completed the next available module in the first course
+    ref: update[0]
+    severity: high
+  - name: Agent completed the next available module in the second course
+    ref: update[1]
+    severity: high
+  - name: Agent did not modify other modules
+    ref: invariant[0]
+    severity: high
+  - name: Agent did not modify course records
+    ref: invariant[1]
+    severity: medium
+  - name: Agent did not drop or alter enrollments
+    ref: invariant[2]
+    severity: high
+  - name: Agent did not modify assignments
+    ref: invariant[3]
+    severity: medium
+  - name: Agent did not modify discussions
+    ref: invariant[4]
+    severity: medium
+  - name: Agent did not create or edit discussion posts
+    ref: invariant[5]
+    severity: medium
+  - name: Agent did not alter peer reviews
+    ref: invariant[6]
+    severity: medium
+  - name: Agent did not modify announcements
+    ref: invariant[7]
+    severity: medium
+  - name: Agent did not modify grades
+    ref: invariant[8]
+    severity: high
+  - name: Agent did not modify calendar events
+    ref: invariant[9]
+    severity: low
+  - name: Agent did not send messages
+    ref: invariant[10]
+    severity: medium
+  constraints:
+  - desc: Completing the first course module unlocks the following module in that course
+    expr: >-
+      state.get_module(target['first_locked_module_id_1']) is not None
+      and state.is_module_unlocked(target['first_locked_module_id_1'])
+    severity: high
+  - desc: Completing the second course module unlocks the following module in that course
+    expr: >-
+      state.get_module(target['first_locked_module_id_2']) is not None
+      and state.is_module_unlocked(target['first_locked_module_id_2'])
+    severity: high
 eval:
   source: server_state
   checks:
-  - expr: sum(1 for m in state.modules if m.status == 'completed') >= 3
-    desc: At least 3 modules total are completed (1 initial + 2 new)
-  - expr: "any(m.id == '{target.next_available_module_id}' and m.status == 'completed'\n\
-      \    for m in state.modules)"
-    desc: The next available module was completed
-  - expr: "any(m.status == 'completed'\n    and all(ci.completed for ci in m.content_items)\n\
-      \    for m in state.modules\n    if m.id == '{target.next_available_module_id}')"
-    desc: All content items in the completed module are marked done
+  - expr: sum(1 for m in state.modules if m.status == 'completed') >= 4
+    desc: At least 4 modules total are completed (2 initial + 2 new)
+  - expr: "all(any(m.id == mid and m.status == 'completed' for m in state.modules)\n\
+      \    for mid in ['{target.next_available_module_id_1}', '{target.next_available_module_id_2}'])"
+    desc: Both next available modules were completed
+  - expr: "all(any(m.id == mid and m.status == 'completed'\n    and all(ci.completed for ci in m.content_items)\n\
+      \    for m in state.modules)\n    for mid in ['{target.next_available_module_id_1}', '{target.next_available_module_id_2}'])"
+    desc: All content items in both completed modules are marked done
   - expr: "sum(1 for m in state.modules\n    if m.status == 'completed'\n    and all(ci.completed\
-      \ for ci in m.content_items)) >= 3"
-    desc: At least 3 modules have all content items completed
-  - expr: "any(m.id == '{target.first_locked_module_id}'\n    and m.status in ('available',\
-      \ 'completed')\n    for m in state.modules)"
-    desc: Previously locked module is now available or completed
+      \ for ci in m.content_items)) >= 4"
+    desc: At least 4 modules have all content items completed
+  - expr: "all(any(m.id == mid and m.status in ('available', 'completed')\n    for m in state.modules)\n\
+      \    for mid in ['{target.first_locked_module_id_1}', '{target.first_locked_module_id_2}'])"
+    desc: Both previously locked modules are now available or completed
   negative_checks:
   - expr: all(e.status != 'dropped' for e in state.enrollments)
     desc: No courses were dropped

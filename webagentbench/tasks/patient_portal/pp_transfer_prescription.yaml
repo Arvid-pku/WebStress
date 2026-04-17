@@ -36,34 +36,74 @@ seed:
   - use: pharmacy_list
     params:
       count: 3
+      must_include_name:
+      - Walgreens
+      target_pharmacy_name: Walgreens
     outputs:
     - pharmacy_ids
     - default_pharmacy_id
+    - target_pharmacy_id
   - use: prescription_cabinet
     params:
       active_count: 4
       expired_count: 1
       zero_refill_count: 0
+      target_medication_name: Metformin 500mg
+      target_exclude_pharmacy_name: Walgreens
     outputs:
     - active_rx_ids
+    - target_rx_id
   targets:
     pcp_id: '{output.pcp_id}'
     active_rx_ids: '{output.active_rx_ids}'
     pharmacy_ids: '{output.pharmacy_ids}'
     default_pharmacy_id: '{output.default_pharmacy_id}'
-eval:
-  source: server_state
-  checks:
-  - expr: "any(r.medication == 'Metformin 500mg'\n    and state.get_pharmacy(r.pharmacy_id)\
-      \ is not None\n    and 'Walgreens' in state.get_pharmacy(r.pharmacy_id).name\n\
-      \    for r in state.prescriptions)"
-    desc: Metformin was transferred to the Walgreens pharmacy
-  negative_checks:
-  - expr: "not any(r.medication != 'Metformin 500mg'\n        and r.status == 'active'\n\
-      \        and r.id in {target.active_rx_ids}\n        and state._initial_snapshot.get('prescriptions',\
-      \ {}).get(r.id, {}).get('pharmacy_id') != r.pharmacy_id\n        for r in state.prescriptions\n\
-      \        if state.get_pharmacy(r.pharmacy_id) is not None\n        and 'Walgreens'\
-      \ in state.get_pharmacy(r.pharmacy_id).name)"
-    desc: Agent did not transfer other prescriptions to Walgreens
-    penalty: 0.15
+    target_rx_id: '{output.target_rx_id}'
+    target_pharmacy_id: '{output.target_pharmacy_id}'
+canonical_diff:
+  update:
+    - entity: Prescription
+      desc: "Transfer Metformin to the Walgreens pharmacy"
+      where:
+        id: {expr: "x == target['target_rx_id']"}
+      changes:
+        pharmacy_id: {expr: "x == target['target_pharmacy_id']"}
+  invariant:
+    - collection: state.prescriptions
+      filter: "a.id != target['target_rx_id']"
+      preserve: ALL
+    - collection: state.appointments
+      preserve: ALL
+    - collection: state.immunizations
+      preserve: ALL
+    - collection: state.lab_results
+      preserve: ALL
+    - collection: state.messages
+      preserve: ALL
+    - collection: state.claims
+      preserve: ALL
+    - collection: state.referrals
+      preserve: ALL
+  named_invariants:
+    - name: "Agent did not transfer or modify other prescriptions"
+      ref: invariant[0]
+      severity: high
+    - name: "Agent did not create, cancel, or modify appointments"
+      ref: invariant[1]
+      severity: high
+    - name: "Agent did not modify immunization records"
+      ref: invariant[2]
+      severity: medium
+    - name: "Agent did not create or modify lab results"
+      ref: invariant[3]
+      severity: high
+    - name: "Agent did not send unsolicited messages"
+      ref: invariant[4]
+      severity: medium
+    - name: "Agent did not touch insurance claims"
+      ref: invariant[5]
+      severity: critical
+    - name: "Agent did not touch referrals"
+      ref: invariant[6]
+      severity: high
 secondary_primitives: []

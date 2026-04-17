@@ -59,6 +59,19 @@ class AuditEntry(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
+class ChatMessage(BaseModel):
+    """An agent-produced chat message recorded in state.chat.
+
+    Role is typically 'assistant' (send_msg_to_user) or 'infeasible'
+    (report_infeasible). Content is the raw message string.
+    """
+    role: str
+    content: str
+    timestamp: datetime = Field(default_factory=utc_now)
+
+    model_config = ConfigDict(extra="forbid")
+
+
 class BaseEnvState(BaseModel):
     env_id: str
     task_id: str
@@ -66,10 +79,16 @@ class BaseEnvState(BaseModel):
     updated_at: datetime = Field(default_factory=utc_now)
     audit_log: list[AuditEntry] = Field(default_factory=list)
     benchmark_state: dict[str, Any] = Field(default_factory=dict)
+    chat: list[ChatMessage] = Field(default_factory=list)
     _resolved_targets: dict[str, Any] = PrivateAttr(default_factory=dict)
     _seed: int | None = PrivateAttr(default=None)
     _degradation: dict[str, Any] = PrivateAttr(default_factory=dict)
     _initial_snapshot: dict[str, Any] | None = PrivateAttr(default=None)
+    # Post-seed deep-copy of this state (for canonical_diff evaluation).
+    # Set by ``SessionManager.create_session``. Distinct from the legacy
+    # ``_initial_snapshot`` dict which is populated at eval-time via
+    # ``state_snapshot()`` for collateral-damage detection.
+    _initial_state_copy: "BaseEnvState | None" = PrivateAttr(default=None)
 
     model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 

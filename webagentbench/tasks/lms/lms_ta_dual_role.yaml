@@ -41,6 +41,7 @@ seed:
       per_course_count: 5
       graded_fraction: 0.4
       target_assignment_status: not_submitted
+      exclude_course_id: '{output.ta_course_id}'
     outputs:
     - assignment_ids
     - target_assignment_id
@@ -55,6 +56,7 @@ seed:
   - use: peer_review_assignments
     params:
       count: 3
+      course_id: '{output.ta_course_id}'
       statuses:
       - assigned
       - assigned
@@ -70,6 +72,106 @@ seed:
     decoy_assignment_id: '{output.decoy_assignment_id}'
     ta_course_id: '{output.ta_course_id}'
     pending_review_ids: '{output.pending_review_ids}'
+canonical_diff:
+  update:
+    - entity: PeerReview
+      desc: Complete every pending TA peer review with all rubric scores and a 30+ character comment
+      bijection:
+        over: "[v.strip() for v in target['pending_review_ids'].split(',') if v.strip()]"
+        variable: v
+      where:
+        id:
+          expr: "x == v"
+      changes:
+        rubric_scores:
+          expr: >-
+            len(x) == 3
+            and set(x) == {'clarity', 'depth', 'originality'}
+            and all(1 <= v <= 5 for v in x.values())
+        comments:
+          expr: "len(x.strip()) >= 30"
+        status: {eq: submitted}
+    - entity: Assignment
+      desc: Submit the student-course assignment with the required file name
+      where:
+        id:
+          expr: "x == target['target_assignment_id']"
+      changes:
+        submission_status:
+          in:
+          - submitted
+          - late
+        file_name:
+          eq: ta_student_submission.pdf
+        attempt_count:
+          eq: 1
+        submitted_at:
+          expr: "x >= session_start"
+  invariant:
+    - collection: state.peer_reviews
+      filter: "a.id not in [v.strip() for v in target['pending_review_ids'].split(',') if v.strip()]"
+      preserve: ALL
+    - collection: state.assignments
+      filter: "a.id != target['target_assignment_id']"
+      preserve: ALL
+    - collection: state.courses
+      preserve: ALL
+    - collection: state.enrollments
+      preserve: ALL
+    - collection: state.modules
+      preserve: ALL
+    - collection: state.discussions
+      preserve: ALL
+    - collection: state.discussion_posts
+      preserve: ALL
+    - collection: state.announcements
+      preserve: ALL
+    - collection: state.grades
+      preserve: ALL
+    - collection: state.calendar_events
+      preserve: ALL
+    - collection: state.sent_messages
+      preserve: ALL
+  named_invariants:
+    - name: Agent completed every pending TA peer review
+      ref: update[0]
+      severity: high
+    - name: Agent submitted the student-course assignment
+      ref: update[1]
+      severity: high
+    - name: Agent did not modify other peer reviews
+      ref: invariant[0]
+      severity: high
+    - name: Agent did not modify other assignments
+      ref: invariant[1]
+      severity: high
+    - name: Agent did not modify course records
+      ref: invariant[2]
+      severity: medium
+    - name: Agent did not drop or alter enrollments
+      ref: invariant[3]
+      severity: high
+    - name: Agent did not modify modules
+      ref: invariant[4]
+      severity: medium
+    - name: Agent did not modify discussions
+      ref: invariant[5]
+      severity: medium
+    - name: Agent did not create or edit discussion posts
+      ref: invariant[6]
+      severity: medium
+    - name: Agent did not modify announcements
+      ref: invariant[7]
+      severity: medium
+    - name: Agent did not modify grades
+      ref: invariant[8]
+      severity: high
+    - name: Agent did not modify calendar events
+      ref: invariant[9]
+      severity: low
+    - name: Agent did not send messages
+      ref: invariant[10]
+      severity: medium
 eval:
   source: server_state
   checks:

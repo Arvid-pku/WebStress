@@ -354,6 +354,8 @@ def _build_course_catalog(ctx: LMSSeedContext, params: dict[str, Any]) -> dict[s
     must_include = set(params.get("must_include", []))
     vary_late = params.get("vary_late_policies", False)
     semester = params.get("semester", "Spring 2026")
+    grading_template_indices = params.get("grading_template_indices")
+    grading_template_index = params.get("grading_template_index")
 
     # Select courses: must_include first, then random fill
     available = list(_COURSE_CATALOG)
@@ -381,7 +383,13 @@ def _build_course_catalog(ctx: LMSSeedContext, params: dict[str, Any]) -> dict[s
         instructor_name = f"Prof. {ctx.fake.name().split()[-1]}"
 
         # Pick grading policy
-        template = _GRADING_TEMPLATES[ctx.rng.randint(0, len(_GRADING_TEMPLATES) - 1)]
+        if isinstance(grading_template_indices, list) and i < len(grading_template_indices):
+            template_idx = int(grading_template_indices[i]) % len(_GRADING_TEMPLATES)
+            template = _GRADING_TEMPLATES[template_idx]
+        elif grading_template_index is not None and i == 0:
+            template = _GRADING_TEMPLATES[int(grading_template_index) % len(_GRADING_TEMPLATES)]
+        else:
+            template = _GRADING_TEMPLATES[ctx.rng.randint(0, len(_GRADING_TEMPLATES) - 1)]
         grading_policy: dict[str, CategoryPolicy] = {}
         for cat_name, (weight_str, drop_low) in template.items():
             grading_policy[cat_name] = CategoryPolicy(
@@ -447,6 +455,10 @@ def _build_course_catalog(ctx: LMSSeedContext, params: dict[str, Any]) -> dict[s
         "course_code": first_course_code or "",
         "course_title": first_course_title or "",
         "target_course_id": first_course_id or "",
+        "course_id_1": course_ids[0] if len(course_ids) > 0 else "",
+        "course_id_2": course_ids[1] if len(course_ids) > 1 else "",
+        "course_code_1": course_codes[0] if len(course_codes) > 0 else "",
+        "course_code_2": course_codes[1] if len(course_codes) > 1 else "",
     }
 
 
@@ -474,6 +486,8 @@ def _build_enrollment_set(ctx: LMSSeedContext, params: dict[str, Any]) -> dict[s
 
     enrollment_ids: list[str] = []
     ta_course_id: str | None = None
+    target_course_id = ctx.outputs.get("target_course_id", "")
+    target_enrollment_id: str | None = None
 
     for i, course_data in enumerate(courses):
         course_id = course_data["id"]
@@ -494,10 +508,13 @@ def _build_enrollment_set(ctx: LMSSeedContext, params: dict[str, Any]) -> dict[s
 
         if role == "ta":
             ta_course_id = course_id
+        if course_id == target_course_id and target_enrollment_id is None:
+            target_enrollment_id = enrollment.id
 
     return {
         "enrollment_ids": enrollment_ids,
         "ta_course_id": ta_course_id or "",
+        "target_enrollment_id": target_enrollment_id or "",
     }
 
 
@@ -528,6 +545,7 @@ def _build_assignment_battery(ctx: LMSSeedContext, params: dict[str, Any]) -> di
     unrecoverable_missing_count : int -- how many missing assignments are past max late days (default 0)
     resubmit_count : int       -- how many request resubmission (default 0)
     target_assignment_status : str -- filter target selection by status
+    exclude_course_id : str    -- optionally exclude a course when choosing the target assignment
     """
     per_course = params.get("per_course_count", 6)
     graded_frac = params.get("graded_fraction", 0.5)
@@ -537,6 +555,7 @@ def _build_assignment_battery(ctx: LMSSeedContext, params: dict[str, Any]) -> di
     unrecoverable_missing_count = params.get("unrecoverable_missing_count", 0)
     resubmit_count = params.get("resubmit_count", 0)
     target_status = params.get("target_assignment_status", None)
+    exclude_course_id = params.get("exclude_course_id", "")
 
     courses = ctx.base.get("courses", [])
     courses_by_id = {course["id"]: course for course in courses}
@@ -548,6 +567,9 @@ def _build_assignment_battery(ctx: LMSSeedContext, params: dict[str, Any]) -> di
     late_ids: list[str] = []
     late_within_grace_ids: list[str] = []
     resubmit_ids: list[str] = []
+    quiz_ids: list[str] = []
+    project_ids: list[str] = []
+    essay_ids: list[str] = []
     lowest_homework_id: str | None = None
     lowest_homework_score: Decimal | None = None
     # Also track lowest homework ID within the target course specifically.
@@ -717,6 +739,13 @@ def _build_assignment_battery(ctx: LMSSeedContext, params: dict[str, Any]) -> di
             ctx.base["assignments"].append(assignment.model_dump())
             all_assignment_ids.append(assignment_id)
 
+            if atype == "quiz":
+                quiz_ids.append(assignment_id)
+            elif atype == "project":
+                project_ids.append(assignment_id)
+            elif atype == "essay":
+                essay_ids.append(assignment_id)
+
             # Track lowest homework score for drop-lowest (global and target-course-specific)
             if cat == "homework" and score is not None:
                 pct = score / points_possible
@@ -876,10 +905,16 @@ def _build_assignment_battery(ctx: LMSSeedContext, params: dict[str, Any]) -> di
     target_course_code: str = ""
     decoy_assignment_id: str | None = None
 
-    candidates = all_assignments
+    candidates = list(all_assignments)
+    if exclude_course_id:
+        candidates = [a for a in candidates if a["course_id"] != exclude_course_id]
     if target_status:
-        candidates = [a for a in all_assignments if a["submission_status"] == target_status]
+        candidates = [a for a in candidates if a["submission_status"] == target_status]
     if not candidates:
+        if exclude_course_id:
+            raise ValueError(
+                f"assignment_battery could not find a target assignment outside excluded course {exclude_course_id!r}"
+            )
         candidates = all_assignments
 
     if candidates:
@@ -1067,11 +1102,16 @@ def _build_assignment_battery(ctx: LMSSeedContext, params: dict[str, Any]) -> di
             break
 
     # ── recoverable / unrecoverable assignment IDs ──
-    # Recoverable = missing + not past max_late_days; unrecoverable = past max_late_days
+    # recoverable_assignment_ids remains the legacy "missing-only" output used by
+    # existing LMS tasks. recoverable_submission_ids is the broader combined set
+    # for tasks that can submit both late and missing work.
     recoverable_ids: list[str] = []
     unrecoverable_ids: list[str] = []
+    recoverable_submission_ids: list[str] = []
+    recoverable_missing_ids: list[str] = []
+    recoverable_late_ids: list[str] = []
     for a in all_assignments:
-        if a["submission_status"] != "not_submitted":
+        if a["submission_status"] not in ("not_submitted", "late"):
             continue
         due_at_raw = a["due_at"]
         due_dt = datetime.fromisoformat(due_at_raw) if isinstance(due_at_raw, str) else due_at_raw
@@ -1085,7 +1125,12 @@ def _build_assignment_battery(ctx: LMSSeedContext, params: dict[str, Any]) -> di
                 max_late = c["syllabus"]["late_policy"]["max_late_days"]
                 break
         if days_late <= max_late:
-            recoverable_ids.append(a["id"])
+            recoverable_submission_ids.append(a["id"])
+            if a["submission_status"] == "not_submitted":
+                recoverable_ids.append(a["id"])
+                recoverable_missing_ids.append(a["id"])
+            else:
+                recoverable_late_ids.append(a["id"])
         else:
             unrecoverable_ids.append(a["id"])
 
@@ -1254,6 +1299,74 @@ def _build_assignment_battery(ctx: LMSSeedContext, params: dict[str, Any]) -> di
         else:
             achievable_cids.append(cid)
 
+    def _first_assignment_id(
+        *,
+        assignment_type: str,
+        course_id: str | None = None,
+        status: str | None = None,
+    ) -> str:
+        for a in all_assignments:
+            if a["type"] != assignment_type:
+                continue
+            if course_id and a["course_id"] != course_id:
+                continue
+            if status and a["submission_status"] != status:
+                continue
+            return a["id"]
+        return ""
+
+    target_course_id_for_semantics = ctx.outputs.get("target_course_id", "")
+    target_quiz_assignment_id = _first_assignment_id(
+        assignment_type="quiz",
+        course_id=target_course_id_for_semantics or None,
+        status="not_submitted",
+    )
+    if not target_quiz_assignment_id:
+        target_quiz_assignment_id = _first_assignment_id(
+            assignment_type="quiz",
+            status="not_submitted",
+        )
+    if not target_quiz_assignment_id and quiz_ids:
+        target_quiz_assignment_id = quiz_ids[0]
+        quiz_assignment = next((a for a in all_assignments if a["id"] == target_quiz_assignment_id), None)
+        if quiz_assignment is not None:
+            quiz_assignment["submission_status"] = "not_submitted"
+            quiz_assignment["score"] = None
+            quiz_assignment["feedback"] = None
+            quiz_assignment["submitted_at"] = None
+            quiz_assignment["file_name"] = None
+            quiz_assignment["attempt_count"] = 0
+
+    target_project_assignment_id = _first_assignment_id(
+        assignment_type="project",
+        course_id=target_course_id_for_semantics or None,
+        status="not_submitted",
+    )
+    if not target_project_assignment_id:
+        target_project_assignment_id = _first_assignment_id(
+            assignment_type="project",
+            status="not_submitted",
+        )
+    if not target_project_assignment_id and project_ids:
+        target_project_assignment_id = project_ids[0]
+        project_assignment = next((a for a in all_assignments if a["id"] == target_project_assignment_id), None)
+        if project_assignment is not None:
+            project_assignment["submission_status"] = "not_submitted"
+            project_assignment["score"] = None
+            project_assignment["feedback"] = None
+            project_assignment["submitted_at"] = None
+            project_assignment["file_name"] = None
+            project_assignment["attempt_count"] = 0
+
+    target_essay_assignment_id = _first_assignment_id(
+        assignment_type="essay",
+        status="not_submitted",
+    )
+    if not target_essay_assignment_id:
+        target_essay_assignment_id = _first_assignment_id(assignment_type="essay")
+    if not target_essay_assignment_id and essay_ids:
+        target_essay_assignment_id = essay_ids[0]
+
     return {
         "assignment_ids": all_assignment_ids,
         "missing_assignment_ids": missing_ids,
@@ -1285,6 +1398,9 @@ def _build_assignment_battery(ctx: LMSSeedContext, params: dict[str, Any]) -> di
         "allows_late_submit": allows_late_submit,
         "missing_assignment_in_lenient_course_id": missing_assignment_in_lenient_course_id,
         "recoverable_assignment_ids": ",".join(recoverable_ids),
+        "recoverable_missing_assignment_ids": ",".join(recoverable_missing_ids),
+        "recoverable_late_assignment_ids": ",".join(recoverable_late_ids),
+        "recoverable_submission_ids": ",".join(recoverable_submission_ids),
         "unrecoverable_assignment_ids": ",".join(unrecoverable_ids),
         "worth_submitting_ids": ",".join(recoverable_ids),
         "not_worth_ids": ",".join(unrecoverable_ids),
@@ -1305,6 +1421,9 @@ def _build_assignment_battery(ctx: LMSSeedContext, params: dict[str, Any]) -> di
         "lowest_hw_id": lowest_homework_id or "",
         "most_impactful_graded_id": most_disputed_ids[0] if most_disputed_ids else "",
         "worst_category_assignment_id": "",
+        "target_quiz_assignment_id": target_quiz_assignment_id,
+        "target_project_assignment_id": target_project_assignment_id,
+        "target_essay_assignment_id": target_essay_assignment_id,
     }
 
 
@@ -1729,13 +1848,15 @@ def _build_grade_book(ctx: LMSSeedContext, params: dict[str, Any]) -> dict[str, 
         if fa:
             final_exam_assignment_ids_list.append(fa["id"])
 
-    # ── lower_grade_course_id: course with lower weighted score ──
+    # ── lower_grade_course_id / lower_grade_enrollment_id ──
     lower_grade_course_id = ""
+    lower_grade_enrollment_id = ""
     if len(courses) >= 2:
         scored = [(cid, Decimal(s)) for cid, s in current_weighted_scores.items()]
         if scored:
             scored.sort(key=lambda x: x[1])
             lower_grade_course_id = scored[0][0]
+            lower_grade_enrollment_id = enrollment_by_course.get(lower_grade_course_id, "")
 
     # ── lowest_hw_id: lowest homework assignment in the target course (by grade record ratio) ──
     # Recompute from grade records (post victim-modification) so that the result matches
@@ -1938,6 +2059,23 @@ def _build_grade_book(ctx: LMSSeedContext, params: dict[str, Any]) -> dict[str, 
             # Update current_weighted_scores for the victim course
             current_weighted_scores[victim_cid] = "1.00"
 
+    impossible_b_enrollment_ids: list[str] = []
+    for cid in impossible_b_course_ids:
+        enrollment_id = enrollment_by_course.get(cid)
+        if enrollment_id:
+            impossible_b_enrollment_ids.append(enrollment_id)
+
+    achievable_final_exam_assignment_ids: list[str] = []
+    for cid in achievable_course_ids:
+        fa = next(
+            (a for a in assignments if a["course_id"] == cid and a["type"] == "exam" and a["weight_category"] == "final"),
+            None,
+        )
+        if not fa:
+            fa = next((a for a in assignments if a["course_id"] == cid and a["type"] == "exam"), None)
+        if fa:
+            achievable_final_exam_assignment_ids.append(fa["id"])
+
     # ── priority_order_ids (with grade data) ──
     unsubmitted_all = [a for a in assignments if a["submission_status"] == "not_submitted"]
     wl: dict[str, dict[str, Decimal]] = {}
@@ -2110,7 +2248,10 @@ def _build_grade_book(ctx: LMSSeedContext, params: dict[str, Any]) -> dict[str, 
         "min_score_achievable": min_score_achievable,
         "final_exam_assignment_id": final_exam_assignment_id,
         "final_exam_assignment_ids": ",".join(final_exam_assignment_ids_list),
+        "impossible_b_enrollment_ids": ",".join(impossible_b_enrollment_ids),
+        "achievable_final_exam_assignment_ids": ",".join(achievable_final_exam_assignment_ids),
         "lower_grade_course_id": lower_grade_course_id,
+        "lower_grade_enrollment_id": lower_grade_enrollment_id,
         "lowest_hw_id": lowest_hw_id,
         "lowest_homework_id": lowest_hw_id,  # alias for YAML outputs that use this key
         "grade_below_80": grade_below_80,
@@ -2156,6 +2297,8 @@ def _build_module_sequence(ctx: LMSSeedContext, params: dict[str, Any]) -> dict[
     count = params.get("count", 5)
     chain_type = params.get("chain_type", "linear")
     completed_count = params.get("completed_count", 2)
+    output_prefix = params.get("output_prefix", "")
+    linked_assignment_id = params.get("linked_assignment_id", "")
 
     if not course_id:
         courses = ctx.base.get("courses", [])
@@ -2218,6 +2361,7 @@ def _build_module_sequence(ctx: LMSSeedContext, params: dict[str, Any]) -> dict[
                 title=f"Video Lecture {i + 1}",
                 type="video",
                 completed=i < completed_count,
+                linked_assignment_id=(linked_assignment_id or None) if i == completed_count else None,
             ),
         ]
 
@@ -2238,11 +2382,20 @@ def _build_module_sequence(ctx: LMSSeedContext, params: dict[str, Any]) -> dict[
         if status == "available" and next_available_id is None:
             next_available_id = module_id
 
-    return {
+    result = {
         "module_ids": module_ids,
         "first_locked_module_id": first_locked_id or "",
         "next_available_module_id": next_available_id or "",
     }
+    if linked_assignment_id:
+        result["linked_assignment_id"] = linked_assignment_id
+
+    if output_prefix:
+        result[f"{output_prefix}_module_ids"] = module_ids
+        result[f"{output_prefix}_first_locked_module_id"] = first_locked_id or ""
+        result[f"{output_prefix}_next_available_module_id"] = next_available_id or ""
+
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -2680,6 +2833,7 @@ def _build_calendar_events(ctx: LMSSeedContext, params: dict[str, Any]) -> dict[
     # ── lower/higher grade conflict course IDs ──
     lower_grade_conflict_course_id = ""
     higher_grade_conflict_course_id = ""
+    lower_grade_conflict_enrollment_id = ""
     if len(conflicting_cids) >= 2:
         current_scores = ctx.outputs.get("current_weighted_scores", {})
         scored_conflicts = []
@@ -2689,6 +2843,10 @@ def _build_calendar_events(ctx: LMSSeedContext, params: dict[str, Any]) -> dict[
         scored_conflicts.sort(key=lambda x: x[1])
         lower_grade_conflict_course_id = scored_conflicts[0][0]
         higher_grade_conflict_course_id = scored_conflicts[-1][0]
+        for enrollment in ctx.base.get("enrollments", []):
+            if enrollment.get("course_id") == lower_grade_conflict_course_id:
+                lower_grade_conflict_enrollment_id = enrollment.get("id", "")
+                break
 
     return {
         "event_ids": event_ids,
@@ -2700,6 +2858,7 @@ def _build_calendar_events(ctx: LMSSeedContext, params: dict[str, Any]) -> dict[
         "conflicting_course_ids": ",".join(conflicting_cids),
         "lower_grade_conflict_course_id": lower_grade_conflict_course_id,
         "higher_grade_conflict_course_id": higher_grade_conflict_course_id,
+        "lower_grade_conflict_enrollment_id": lower_grade_conflict_enrollment_id,
     }
 
 
@@ -2827,4 +2986,5 @@ def _build_peer_review_assignments(ctx: LMSSeedContext, params: dict[str, Any]) 
         "pending_review_ids": pending_review_ids,
         "completed_review_ids": completed_review_ids,
         "returned_review_ids": returned_review_ids,
+        "target_review_id": pending_review_ids[0] if pending_review_ids else (review_ids[0] if review_ids else ""),
     }

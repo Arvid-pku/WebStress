@@ -65,6 +65,87 @@ seed:
     approved_ref_ids: '{output.approved_ref_ids}'
     upcoming_ids: '{output.upcoming_ids}'
     active_rx_ids: '{output.active_rx_ids}'
+canonical_diff:
+  # Positive signal: schedule exactly one new Appointment with an
+  # endocrinologist who is accepting_new, linked to one of the approved
+  # endocrinology referrals, with the exact required reason string, booked
+  # into the earliest available slot offered by that endocrinologist.
+  create:
+    - entity: Appointment
+      desc: "Schedule one transfer-of-care endocrinology appointment at the next available slot across endocrinologists accepting new patients, linked to the approved endocrinology referral"
+      properties:
+        status: {eq: "scheduled"}
+        reason: {eq: "Endocrinology transfer of care"}
+        provider_id:
+          expr: >
+            x in target['endo_provider_ids']
+            and any(p.id == x and p.accepting_new and p.specialty == 'endocrinology' for p in initial.providers)
+        linked_referral_id:
+          expr: >
+            x is not None
+            and x in target['approved_ref_ids']
+            and any(r.id == x and r.status == 'approved' and r.to_specialty == 'endocrinology' for r in initial.referrals)
+        datetime:
+          expr: >
+            x == min(
+              s.datetime
+              for p in initial.providers
+              if p.id in target['endo_provider_ids']
+              and p.accepting_new
+              and p.specialty == 'endocrinology'
+              for s in p.available_slots
+            )
+        type: {any: true}
+        notes: {any: true}
+        pre_auth_status: {any: true}
+        booked_at: {any: true}
+        location: {any: true}
+  invariant:
+    # Existing appointments (upcoming + completed history) must not be
+    # cancelled or modified. The new create above is scoped to IDs not in
+    # the initial snapshot, so a filter over initial.appointments ids is
+    # equivalent to "preserve every pre-existing appointment".
+    - collection: state.appointments
+      filter: "a.id in {x.id for x in initial.appointments}"
+      preserve: ALL
+    # Prescriptions untouched (explicit instruction).
+    - collection: state.prescriptions
+      preserve: ALL
+    # No new patient messages ("without using messages").
+    - collection: state.messages
+      preserve: ALL
+    # Referrals remain as seeded; the approved endocrinology referral stays
+    # approved and no new referrals are created.
+    - collection: state.referrals
+      preserve: ALL
+    - collection: state.immunizations
+      preserve: ALL
+    - collection: state.lab_results
+      preserve: ALL
+    - collection: state.claims
+      preserve: ALL
+  named_invariants:
+    - name: "Agent did not cancel or modify any existing appointments"
+      ref: invariant[0]
+      severity: high
+    - name: "Agent did not modify any prescriptions"
+      ref: invariant[1]
+      severity: high
+    - name: "Agent did not send any messages"
+      ref: invariant[2]
+      severity: high
+    - name: "Agent did not create or modify referrals"
+      ref: invariant[3]
+      severity: high
+    - name: "Agent did not modify immunization records"
+      ref: invariant[4]
+      severity: medium
+    - name: "Agent did not create or modify lab results"
+      ref: invariant[5]
+      severity: high
+    - name: "Agent did not touch insurance claims"
+      ref: invariant[6]
+      severity: critical
 eval:
   source: server_state
   checks:
