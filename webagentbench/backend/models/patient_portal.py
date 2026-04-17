@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Any, Literal
+from typing import Any, ClassVar, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 
@@ -68,6 +68,12 @@ class Provider(BaseEntity):
     npi: str
     accepting_new: bool = True
     available_slots: list[SlotInfo] = Field(default_factory=list)
+
+    # Fields that are side-effects of legitimate agent actions (scheduling
+    # an appointment consumes a slot) and must not appear in the canonical-
+    # diff collateral-damage sweep. compute_diff reads this tuple and strips
+    # the listed fields before comparing provider entities.
+    DIFF_IGNORE_FIELDS: ClassVar[tuple[str, ...]] = ("available_slots",)
 
 
 class Appointment(BaseEntity):

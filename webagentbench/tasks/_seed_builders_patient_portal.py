@@ -1929,7 +1929,12 @@ def build_immunization_record(ctx: PatientPortalSeedContext, params: dict[str, A
     incomplete_series_imm_id: str | None = None
     due_vaccine_names: list[str] = []
 
-    # Completed immunizations
+    # Completed immunizations. Constrain administered_at so that if the
+    # vaccine has a recurring cadence (annual / interval_years), its computed
+    # next_due_at is strictly in the FUTURE. Otherwise the UI would display
+    # completed vaccines as "overdue" alongside the ones in due_imm_ids, and
+    # the agent would see more overdue entries than the task targets —
+    # making the bijection unsatisfiable in the agent's frame of reference.
     for _ in range(completed_count):
         if vax_idx >= len(vaccine_pool):
             vax_idx = 0
@@ -1937,15 +1942,21 @@ def build_immunization_record(ctx: PatientPortalSeedContext, params: dict[str, A
         vax_idx += 1
         imm_id = ctx.next_id("imm")
         admin_prov = ctx.rng.choice(providers_with_slots)
-        administered_at = ctx.now - timedelta(days=ctx.rng.randint(30, 730))
 
-        # Next due depends on vaccine type
+        # Pick administered_at based on cadence so next_due ends up in the future.
         if vax.get("annual"):
+            # Administered 30–335 days ago → next_due 30–335 days in the future.
+            administered_at = ctx.now - timedelta(days=ctx.rng.randint(30, 335))
             next_due = administered_at + timedelta(days=365)
         elif vax.get("interval_years"):
-            next_due = administered_at + timedelta(days=vax["interval_years"] * 365)
+            years = vax["interval_years"]
+            max_days_ago = max(60, years * 365 - 30)
+            administered_at = ctx.now - timedelta(days=ctx.rng.randint(30, max_days_ago))
+            next_due = administered_at + timedelta(days=years * 365)
         else:
-            next_due = None  # Series complete, no next due
+            # No recurring cadence — series complete, no next_due.
+            administered_at = ctx.now - timedelta(days=ctx.rng.randint(30, 730))
+            next_due = None
 
         imm_dict = {
             "id": imm_id,

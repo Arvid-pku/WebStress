@@ -284,6 +284,15 @@ DiffEntry = Create | Update | Delete
 # compute_diff helpers
 # ------------------------------------------------------------------
 
+def _strip_ignored_fields(entity_dict: dict, ignore_fields: tuple[str, ...]) -> dict:
+    """Remove system-managed / side-effect fields from an entity dump so they
+    don't appear in the diff. Caller passes the entity's
+    ``DIFF_IGNORE_FIELDS`` class attribute."""
+    if not ignore_fields:
+        return entity_dict
+    return {k: v for k, v in entity_dict.items() if k not in ignore_fields}
+
+
 def _collections_of(state: Any) -> dict[str, list[dict]]:
     """Return ``{collection_name: [entity_dict, ...]}`` for a state snapshot.
 
@@ -294,6 +303,10 @@ def _collections_of(state: Any) -> dict[str, list[dict]]:
 
     Non-list fields are ignored. Entities are normalised to plain dicts
     via ``model_dump()`` so the diff logic can treat both inputs uniformly.
+    Fields listed in an entity class's ``DIFF_IGNORE_FIELDS`` attribute are
+    stripped before comparison — this is how side-effect fields (e.g.
+    ``Provider.available_slots`` consumed by appointment booking) become
+    invisible to the collateral-damage sweep.
     """
     if isinstance(state, dict):
         return {k: list(v) for k, v in state.items() if isinstance(v, list)}
@@ -304,10 +317,17 @@ def _collections_of(state: Any) -> dict[str, list[dict]]:
         for name in type(state).model_fields:
             val = getattr(state, name)
             if isinstance(val, list):
-                out[name] = [
-                    v.model_dump() if hasattr(v, "model_dump") else dict(v)
-                    for v in val
-                ]
+                dumped = []
+                for v in val:
+                    if hasattr(v, "model_dump"):
+                        entity_dict = v.model_dump()
+                        ignore = getattr(type(v), "DIFF_IGNORE_FIELDS", ())
+                        if ignore:
+                            entity_dict = _strip_ignored_fields(entity_dict, ignore)
+                    else:
+                        entity_dict = dict(v)
+                    dumped.append(entity_dict)
+                out[name] = dumped
         return out
     raise TypeError(f"compute_diff: unsupported state type {type(state)!r}")
 
