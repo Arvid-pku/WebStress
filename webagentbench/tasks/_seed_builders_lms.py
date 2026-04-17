@@ -1102,11 +1102,16 @@ def _build_assignment_battery(ctx: LMSSeedContext, params: dict[str, Any]) -> di
             break
 
     # ── recoverable / unrecoverable assignment IDs ──
-    # Recoverable = missing + not past max_late_days; unrecoverable = past max_late_days
+    # recoverable_assignment_ids remains the legacy "missing-only" output used by
+    # existing LMS tasks. recoverable_submission_ids is the broader combined set
+    # for tasks that can submit both late and missing work.
     recoverable_ids: list[str] = []
     unrecoverable_ids: list[str] = []
+    recoverable_submission_ids: list[str] = []
+    recoverable_missing_ids: list[str] = []
+    recoverable_late_ids: list[str] = []
     for a in all_assignments:
-        if a["submission_status"] != "not_submitted":
+        if a["submission_status"] not in ("not_submitted", "late"):
             continue
         due_at_raw = a["due_at"]
         due_dt = datetime.fromisoformat(due_at_raw) if isinstance(due_at_raw, str) else due_at_raw
@@ -1120,7 +1125,12 @@ def _build_assignment_battery(ctx: LMSSeedContext, params: dict[str, Any]) -> di
                 max_late = c["syllabus"]["late_policy"]["max_late_days"]
                 break
         if days_late <= max_late:
-            recoverable_ids.append(a["id"])
+            recoverable_submission_ids.append(a["id"])
+            if a["submission_status"] == "not_submitted":
+                recoverable_ids.append(a["id"])
+                recoverable_missing_ids.append(a["id"])
+            else:
+                recoverable_late_ids.append(a["id"])
         else:
             unrecoverable_ids.append(a["id"])
 
@@ -1388,6 +1398,9 @@ def _build_assignment_battery(ctx: LMSSeedContext, params: dict[str, Any]) -> di
         "allows_late_submit": allows_late_submit,
         "missing_assignment_in_lenient_course_id": missing_assignment_in_lenient_course_id,
         "recoverable_assignment_ids": ",".join(recoverable_ids),
+        "recoverable_missing_assignment_ids": ",".join(recoverable_missing_ids),
+        "recoverable_late_assignment_ids": ",".join(recoverable_late_ids),
+        "recoverable_submission_ids": ",".join(recoverable_submission_ids),
         "unrecoverable_assignment_ids": ",".join(unrecoverable_ids),
         "worth_submitting_ids": ",".join(recoverable_ids),
         "not_worth_ids": ",".join(unrecoverable_ids),
