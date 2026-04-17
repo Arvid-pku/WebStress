@@ -52,28 +52,98 @@ seed:
     - courses_without_upcoming_exams
   - use: announcements_feed
     params:
-      count: 6
-      unread_count: 4
+      count: 3
+      unread_count: 2
     outputs:
     - announcement_ids
     - unread_announcement_ids
   targets:
     courses_with_upcoming_exams: '{output.courses_with_upcoming_exams}'
     courses_without_upcoming_exams: '{output.courses_without_upcoming_exams}'
+    unread_announcement_ids: '{output.unread_announcement_ids}'
+
+canonical_diff:
+  update:
+  - entity: Announcement
+    desc: Mark unread announcements for courses with upcoming exams as read
+    bijection:
+      over: "target['unread_announcement_ids'].split(',') if target['unread_announcement_ids'] else []"
+      variable: v
+    where:
+      id:
+        expr: "x == v"
+    changes:
+      is_read:
+        eq: true
+  invariant:
+  - collection: state.announcements
+    filter: "a.id not in (target['unread_announcement_ids'].split(',') if target['unread_announcement_ids'] else [])"
+    preserve: ALL
+  - collection: state.courses
+    preserve: ALL
+  - collection: state.enrollments
+    preserve: ALL
+  - collection: state.assignments
+    preserve: ALL
+  - collection: state.modules
+    preserve: ALL
+  - collection: state.discussions
+    preserve: ALL
+  - collection: state.discussion_posts
+    preserve: ALL
+  - collection: state.peer_reviews
+    preserve: ALL
+  - collection: state.grades
+    preserve: ALL
+  - collection: state.calendar_events
+    preserve: ALL
+  - collection: state.sent_messages
+    preserve: ALL
+  named_invariants:
+  - name: Agent marked the unread target announcements as read
+    ref: update[0]
+    severity: high
+  - name: Agent did not modify already-read announcements
+    ref: invariant[0]
+    severity: medium
+  - name: Agent did not modify course records
+    ref: invariant[1]
+    severity: medium
+  - name: Agent did not drop or alter enrollments
+    ref: invariant[2]
+    severity: high
+  - name: Agent did not modify assignments
+    ref: invariant[3]
+    severity: medium
+  - name: Agent did not modify modules
+    ref: invariant[4]
+    severity: medium
+  - name: Agent did not modify discussions
+    ref: invariant[5]
+    severity: medium
+  - name: Agent did not create or edit discussion posts
+    ref: invariant[6]
+    severity: medium
+  - name: Agent did not alter peer reviews
+    ref: invariant[7]
+    severity: medium
+  - name: Agent did not modify grades
+    ref: invariant[8]
+    severity: high
+  - name: Agent did not modify calendar events
+    ref: invariant[9]
+    severity: low
+  - name: Agent did not send messages
+    ref: invariant[10]
+    severity: medium
 eval:
   source: server_state
   checks:
-  - expr: "all(\n    all(a.is_read for a in state.announcements\n        if a.course_id\
-      \ == cid)\n    for cid in '{target.courses_with_upcoming_exams}'.split(',')\n\
-      \    if cid.strip()\n)"
+  - expr: "all(a.is_read for a in state.announcements if a.course_id in '{target.courses_with_upcoming_exams}'.split(',') and a.course_id.strip())"
     desc: All announcements for courses with upcoming exams are marked as read
   negative_checks:
-  - expr: "(len([cid for cid in '{target.courses_without_upcoming_exams}'.split(',')\
-      \ if cid.strip()]) == 0 or not all(\n    all(a.is_read for a in state.announcements\
-      \ if a.course_id == cid)\n    for cid in '{target.courses_without_upcoming_exams}'.split(',')\n\
-      \    if cid.strip()\n))"
-    desc: Not all announcements in non-exam courses were marked read (should be left
-      unread)
+  - expr: all(a.is_read for a in state.announcements if a.course_id in '{target.courses_without_upcoming_exams}'.split(',') and a.course_id.strip())
+    desc: Announcements in courses without upcoming exams remain in the seeded read state
     penalty: 0.25
   - expr: all(e.status != 'dropped' for e in state.enrollments)
     desc: No courses were dropped
