@@ -407,6 +407,148 @@ land reviewed task files into the main checkout after validation passes.
 
 ---
 
+## Class 13 — Primitive-list collection crashes compute_diff
+
+**Symptom.** Any canonical-diff validation or test crashes in
+`webagentbench/evaluator_diff.py:_collections_of` with
+`ValueError: dictionary update sequence element #0 has length 1; 2 is required`
+the moment you evaluate a task in an env whose state model has a
+`list[str]`-style collection (ids, tags, recently-viewed, etc.).
+
+**Root cause.** `_collections_of` iterated every list-typed field on the
+pydantic state model and fell through to `dict(v)` when `v` lacked
+`model_dump`. Strings are iterable, so `dict("prop_1")` immediately
+raises. Booking's `BookingState.recently_viewed: list[str]` was the
+first env to hit this; any env with similar list-of-primitive fields
+would do the same.
+
+**Where.** `webagentbench/evaluator_diff.py:_collections_of`.
+
+**Fix applied.** Non-entity list elements (no `model_dump`, not a `dict`)
+are skipped. These collections cannot be keyed by entity id and are
+therefore not tracked by the entity-level diff; verify them via
+canonical_diff `constraints:` instead.
+
+**Prevention checklist per env.**
+
+1. Grep the env's `state.py` for `list[str]`, `list[int]`,
+   `list[<primitive>]` fields: those collections will never appear in
+   `compute_diff` output. Tasks that need to verify them must use
+   `constraints:` expressions that read `state.<field>` directly.
+2. Nested containers of pydantic `BaseModel` (e.g. `list[SearchHistoryEntry]`
+   where `SearchHistoryEntry` has no `id`) are also silent — they get
+   dumped by `model_dump` but `_index_by_id` drops them because there is
+   no `id` field. Treat these as constraints-only too.
+
+**Regression guard.** The fix skips non-entity list elements silently so
+such fields degrade to "invisible" rather than "crash." Authors writing
+a canonical_diff for a task that touches an untracked list must not
+write `invariant: [{collection: state.recently_viewed, ...}]`; those
+invariants are no-ops because the matcher never receives diff entries
+for that collection. Use `constraints:` for such checks.
+
+---
+
+## Class 14 — Non-list single-entity state (settings, profile, wallet)
+
+**Symptom.** A task that mutates a single-instance state field — e.g.
+`state.settings.language = "French"`, `state.owner_phone = "..."` —
+cannot be expressed via `create`/`update`/`delete`. Any
+`update:` entry referencing such an entity never matches because
+`compute_diff` only tracks `list`-typed collections on the state model.
+Authors writing these tasks discover the issue at Stage 4 when the
+correct trajectory fails with `score < 1.0` and "no candidate satisfied
+predicates."
+
+**Root cause.** `_collections_of` reads only list-typed fields. Booking's
+`BookingState.settings: BookingSettings` (single instance), plus scalar
+owner fields like `owner_phone`, `owner_nationality`, live outside the
+compute_diff worldview.
+
+**Where.** `webagentbench/evaluator_diff.py:_collections_of` and
+`_build_collection_map`.
+
+**Fix applied.** None at the matcher level — single-instance mutations
+are genuinely out of scope for the entity-level diff. The workaround is
+`constraints:` expressions against `state.<field>`:
+
+```yaml
+canonical_diff:
+  constraints:
+    - desc: Language preference is set to French
+      expr: "state.settings.language == 'French'"
+      severity: critical
+  invariant:
+    - collection: state.messages
+      preserve: ALL
+    # ...remaining collections
+```
+
+Since `constraints:` are penalty-only, a "do nothing" trajectory scores
+`1.0 - <critical-penalty>` = 0.7 instead of the Class 1 regression
+guard's ideal of 0.0. `passed` is still correctly `False` because the
+failing constraint emits a `Failure`. Tests for such tasks should
+assert `report.passed is False` for the do-nothing case but not
+`report.score == 0.0`.
+
+**Prevention checklist per task.**
+
+1. Before authoring, open the env's `state.py` and list every
+   single-instance state field (anything that isn't `list[...]`). Tasks
+   whose only mutation target is one of those fields are "constraint-only."
+2. Constraint-only tasks must still include the full invariant sweep
+   over every list collection — the task can be cheated by touching an
+   unrelated collection without it.
+3. In the canonical_diff test file, write a dedicated
+   `test_wrong_value_fails` that asserts `report.passed is False` when
+   the agent sets the field to an incorrect value, and a
+   `test_no_mutation_fails` that only asserts `passed is False`.
+
+---
+
+## Class 15 — Positive-target invariant requires a filter
+
+**Symptom.** Task load fails with
+`invariant on 'state.<collection>' overlaps with positive diff target
+and has no filter — scope it with a filter: expression`.
+
+**Root cause.** `_registry._validate_invariant_positive_overlap` enforces
+spec §4: if any `create`/`update`/`delete` entry targets collection
+X, then any invariant on X must have a `filter:` that narrows its
+scope. Without a filter, the invariant would conflict with the positive
+entry (the matcher uses `matched_ids` to dedupe at runtime, but the
+static validator is more conservative).
+
+**Where.** `webagentbench/tasks/_registry.py:_validate_canonical_diff_refs`.
+
+**Fix.** Add a `filter:` that excludes entries matching the positive
+entry's shape. For a "send one specific message" task:
+
+```yaml
+create:
+  - entity: Message
+    properties:
+      sender: {eq: guest}
+      subject: {eq: "Check-in time inquiry"}
+invariant:
+  - collection: state.messages
+    filter: "a.sender == 'property' or 'Check-in time inquiry' not in (a.subject or '')"
+    preserve: ALL
+```
+
+The filter carves out "everything that is not the created entry" so
+the invariant targets existing rows. Extra matching creates are caught
+by the unaccounted sweep (filtered invariants do not add their
+collection to `invariant_cols_full`), so strict excess-protection is
+still in place.
+
+**Prevention.** Any canonical_diff with both a positive entry on
+collection X and an invariant on X needs a filter. The filter
+expression should be `False` on the shape the positive entry creates
+and `True` on everything else.
+
+---
+
 ## Migration pre-flight checklist
 
 Before opening a task migration PR, run through these for that specific task:

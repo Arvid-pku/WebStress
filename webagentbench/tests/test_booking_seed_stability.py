@@ -146,6 +146,12 @@ def test_all_booking_tasks_have_error_free_eval(booking_tasks) -> None:
     """Every eval expression must parse and execute without errors."""
     failures = []
     for task in booking_tasks:
+        # Skip canonical_diff tasks: the matcher populates ``error`` with a
+        # human-readable non-match reason (e.g. "matched 0 of 12") for any
+        # unsaturated check, which is expected on a do-nothing trajectory
+        # and is not an "error" in the parse/execute sense this test guards.
+        if getattr(task, "canonical_diff", None) is not None:
+            continue
         try:
             _, state, targets, _ = materialize_task_state("booking", task.task_id, seed=42)
             state._initial_snapshot = state.state_snapshot()

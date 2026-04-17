@@ -256,4 +256,9 @@ def materialize_task_state(
     state._seed = actual_seed
     if hasattr(state, "state_snapshot"):
         state._initial_snapshot = state.state_snapshot()
+    # Mirror SessionManager.create_session: canonical_diff evaluation
+    # expects a pydantic deep-copy of the post-seed state so that
+    # filter/expression predicates can access fields via attribute
+    # lookup uniformly.
+    state._initial_state_copy = state.model_copy(deep=True)
     return task, state, resolved_targets, actual_seed
