@@ -447,6 +447,10 @@ def _build_course_catalog(ctx: LMSSeedContext, params: dict[str, Any]) -> dict[s
         "course_code": first_course_code or "",
         "course_title": first_course_title or "",
         "target_course_id": first_course_id or "",
+        "course_id_1": course_ids[0] if len(course_ids) > 0 else "",
+        "course_id_2": course_ids[1] if len(course_ids) > 1 else "",
+        "course_code_1": course_codes[0] if len(course_codes) > 0 else "",
+        "course_code_2": course_codes[1] if len(course_codes) > 1 else "",
     }
 
 
@@ -2164,6 +2168,7 @@ def _build_module_sequence(ctx: LMSSeedContext, params: dict[str, Any]) -> dict[
     count = params.get("count", 5)
     chain_type = params.get("chain_type", "linear")
     completed_count = params.get("completed_count", 2)
+    output_prefix = params.get("output_prefix", "")
 
     if not course_id:
         courses = ctx.base.get("courses", [])
@@ -2246,11 +2251,18 @@ def _build_module_sequence(ctx: LMSSeedContext, params: dict[str, Any]) -> dict[
         if status == "available" and next_available_id is None:
             next_available_id = module_id
 
-    return {
+    result = {
         "module_ids": module_ids,
         "first_locked_module_id": first_locked_id or "",
         "next_available_module_id": next_available_id or "",
     }
+
+    if output_prefix:
+        result[f"{output_prefix}_module_ids"] = module_ids
+        result[f"{output_prefix}_first_locked_module_id"] = first_locked_id or ""
+        result[f"{output_prefix}_next_available_module_id"] = next_available_id or ""
+
+    return result
 
 
 # ---------------------------------------------------------------------------
