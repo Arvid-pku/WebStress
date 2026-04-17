@@ -605,7 +605,13 @@ def build_pharmacy_list(ctx: PatientPortalSeedContext, params: dict[str, Any]) -
             (or the caller must guarantee it ends up in the selection) —
             otherwise `target_pharmacy_id` may be None.
     Outputs: pharmacy_ids, default_pharmacy_id, mail_order_pharmacy_id,
-             target_pharmacy_id
+             target_pharmacy_id, new_default_pharmacy_id
+
+    ``new_default_pharmacy_id`` is the first non-default, non-mail-order
+    retail pharmacy in ``pharmacy_ids`` (i.e. ``selected[1]`` when count >= 2).
+    Tasks like ``pp_coordinate_rx_transfer`` that tell the agent to transfer
+    prescriptions to "another retail pharmacy in your pharmacy list" use this
+    as the canonical new-default answer.
     """
     count = params.get("count", 2)
     include_mail_order = params.get("include_mail_order", False)
@@ -639,6 +645,7 @@ def build_pharmacy_list(ctx: PatientPortalSeedContext, params: dict[str, Any]) -
     default_pharmacy_id: str = ""
     mail_order_pharmacy_id: str | None = None
     target_pharmacy_id: str | None = None
+    new_default_pharmacy_id: str | None = None
 
     for i, tmpl in enumerate(selected):
         pharm_id = ctx.next_id("pharm")
@@ -658,6 +665,10 @@ def build_pharmacy_list(ctx: PatientPortalSeedContext, params: dict[str, Any]) -
         pharmacy_ids.append(pharm_id)
         if is_default:
             default_pharmacy_id = pharm_id
+        elif new_default_pharmacy_id is None:
+            # First non-default retail pharmacy — canonical "switch-to" answer
+            # for tasks that transfer prescriptions away from the closing default.
+            new_default_pharmacy_id = pharm_id
         if (
             target_pharmacy_name
             and target_pharmacy_id is None
@@ -690,6 +701,7 @@ def build_pharmacy_list(ctx: PatientPortalSeedContext, params: dict[str, Any]) -
         "default_pharmacy_id": default_pharmacy_id,
         "mail_order_pharmacy_id": mail_order_pharmacy_id,
         "target_pharmacy_id": target_pharmacy_id,
+        "new_default_pharmacy_id": new_default_pharmacy_id,
     }
 
 
@@ -907,6 +919,13 @@ def build_prescription_cabinet(ctx: PatientPortalSeedContext, params: dict[str, 
     target_medication_name: str | None = params.get("target_medication_name")
     target_exclude_mail_order = bool(params.get("target_exclude_mail_order", False))
     target_exclude_pharmacy_name: str | None = params.get("target_exclude_pharmacy_name")
+    # When True, every active prescription starts on the default pharmacy.
+    # Used by tasks like pp_coordinate_rx_transfer where the scenario is
+    # "your default pharmacy is closing — transfer all your active rxes to
+    # another retail pharmacy". We need each rx to actually move (not be
+    # already at the destination) so the canonical_diff update[0] bijection
+    # saturates.
+    active_at_default_only = bool(params.get("active_at_default_only", False))
 
     if "prescriptions" not in ctx.base:
         ctx.base["prescriptions"] = []
@@ -946,11 +965,16 @@ def build_prescription_cabinet(ctx: PatientPortalSeedContext, params: dict[str, 
         *,
         force_retail_pharmacy: bool = False,
         exclude_pharmacy_name: str | None = None,
+        force_default_pharmacy: bool = False,
     ) -> dict[str, Any]:
         nonlocal med_idx
         rx_id = ctx.next_id("rx")
         provider_id = ctx.rng.choice([p["id"] for p in providers]) if providers else pcp_id
         available_pharmacies = list(pharmacies)
+        if force_default_pharmacy and pharmacies:
+            default_match = [p for p in pharmacies if p.get("is_default")]
+            if default_match:
+                available_pharmacies = default_match
         if force_retail_pharmacy and pharmacies:
             retail_pharmacies = [p for p in pharmacies if not p.get("is_mail_order")]
             if retail_pharmacies:
@@ -1001,6 +1025,7 @@ def build_prescription_cabinet(ctx: PatientPortalSeedContext, params: dict[str, 
             ctx.rng.randint(90, 365),
             force_retail_pharmacy=force_retail_pharmacy,
             exclude_pharmacy_name=exclude_pharmacy_for_rx,
+            force_default_pharmacy=active_at_default_only,
         )
         ctx.base["prescriptions"].append(rx)
         active_rx_ids.append(rx["id"])
