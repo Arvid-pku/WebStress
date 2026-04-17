@@ -334,7 +334,8 @@ def build_patient_profile(ctx: PatientPortalSeedContext, params: dict[str, Any])
     Params: allergies (list[str]), conditions (list[str]), insurance_tier (str),
             overdue_screening_count (int) — force this many screenings to be overdue
     Outputs: patient_name, pcp_id, pcp_name, insurance_plan_name, member_id,
-             group_number, conditions_list, allergies_list, applicable_screening_names
+             group_number, conditions_list, allergies_list, applicable_screening_names,
+             overdue_screening_names (the subset whose next_due has already passed)
     """
     allergies = params.get("allergies", [])
     conditions = params.get("conditions", [])
@@ -441,6 +442,19 @@ def build_patient_profile(ctx: PatientPortalSeedContext, params: dict[str, Any])
 
     ctx.base["patient"] = patient_dict
 
+    # Compute the overdue subset — every screening whose next_due has already
+    # passed relative to the seeded clock. Consumers (e.g. the
+    # pp_preventive_screening_review canonical_diff) need this as a target
+    # so a bijection can create one appointment per overdue screening
+    # without reconstructing the filter inside a predicate (Class 8
+    # comprehension-scope hazard).
+    _today = ctx.now.date()
+    overdue_screening_names = [
+        s["screening_name"]
+        for s in screening_models
+        if s["next_due"] is not None and date.fromisoformat(s["next_due"]) < _today
+    ]
+
     return {
         "patient_name": patient_name,
         "pcp_id": pcp_id,
@@ -451,6 +465,7 @@ def build_patient_profile(ctx: PatientPortalSeedContext, params: dict[str, Any])
         "conditions_list": conditions,
         "allergies_list": allergies,
         "applicable_screening_names": [s["screening_name"] for s in screening_models],
+        "overdue_screening_names": overdue_screening_names,
     }
 
 
@@ -871,14 +886,23 @@ def build_prescription_cabinet(ctx: PatientPortalSeedContext, params: dict[str, 
     """Generate prescriptions with varying refill states.
 
     Params: active_count (int), expired_count (int), zero_refill_count (int),
-            expiring_soon_count (int), interaction_pair (bool)
+            expiring_soon_count (int), expiring_zero_refill_count (int),
+            interaction_pair (bool)
     Outputs: active_rx_ids, zero_refill_rx_id, expiring_rx_ids,
-             interacting_rx_ids, interacting_medications
+             expiring_zero_refill_rx_ids, interacting_rx_ids,
+             interacting_medications
+
+    Note on ``expiring_zero_refill_count``: forces the first N entries of
+    the ``expiring_rx_ids`` subset to have ``refills_remaining == 0``. This
+    lets tasks deterministically pin the "expiring AND zero-refill" target
+    intersection. Remaining expiring rxes get ``randint(1, 2)`` so the
+    distinction is meaningful.
     """
     active_count = params.get("active_count", 3)
     expired_count = params.get("expired_count", 0)
     zero_refill_count = params.get("zero_refill_count", 0)
     expiring_soon_count = params.get("expiring_soon_count", 0)
+    expiring_zero_refill_count = params.get("expiring_zero_refill_count", 0)
     interaction_pair = params.get("interaction_pair", False)
     target_medication_name: str | None = params.get("target_medication_name")
     target_exclude_mail_order = bool(params.get("target_exclude_mail_order", False))
@@ -910,6 +934,7 @@ def build_prescription_cabinet(ctx: PatientPortalSeedContext, params: dict[str, 
     zero_refill_medication: str = ""
     target_rx_id: str | None = None
     expiring_rx_ids: list[str] = []
+    expiring_zero_refill_rx_ids: list[str] = []
     interacting_rx_ids: list[str] = []
     interacting_medications: list[str] = []
 
@@ -997,16 +1022,30 @@ def build_prescription_cabinet(ctx: PatientPortalSeedContext, params: dict[str, 
             zero_refill_rx_id = rx["id"]
             zero_refill_medication = med["name"]
 
-    # Expiring-soon prescriptions
-    for _ in range(expiring_soon_count):
+    # Expiring-soon prescriptions. The first ``expiring_zero_refill_count``
+    # entries are forced to refills=0 so the "expiring AND zero-refill"
+    # intersection is deterministic across seeds; remaining ones get 1-2
+    # refills so they explicitly should NOT be renewed.
+    n_expiring_zero = min(expiring_zero_refill_count, expiring_soon_count)
+    for idx in range(expiring_soon_count):
         if med_idx >= len(med_pool):
             break
         med = med_pool[med_idx]
         med_idx += 1
-        rx = _make_rx(med, "active", ctx.rng.randint(0, 2), ctx.rng.randint(5, 25))
+        if idx < n_expiring_zero:
+            refills = 0
+        elif expiring_zero_refill_count > 0:
+            # Deterministic non-zero refill count for the "has refills" subset.
+            refills = ctx.rng.randint(1, 2)
+        else:
+            # Legacy behaviour for tasks that didn't opt in to the split.
+            refills = ctx.rng.randint(0, 2)
+        rx = _make_rx(med, "active", refills, ctx.rng.randint(5, 25))
         ctx.base["prescriptions"].append(rx)
         active_rx_ids.append(rx["id"])
         expiring_rx_ids.append(rx["id"])
+        if refills == 0:
+            expiring_zero_refill_rx_ids.append(rx["id"])
 
     # Expired prescriptions
     for _ in range(expired_count):
@@ -1053,6 +1092,7 @@ def build_prescription_cabinet(ctx: PatientPortalSeedContext, params: dict[str, 
         "zero_refill_medication": zero_refill_medication,
         "target_rx_id": target_rx_id,
         "expiring_rx_ids": expiring_rx_ids,
+        "expiring_zero_refill_rx_ids": expiring_zero_refill_rx_ids,
         "interacting_rx_ids": interacting_rx_ids,
         "interacting_medications": interacting_medications,
     }
