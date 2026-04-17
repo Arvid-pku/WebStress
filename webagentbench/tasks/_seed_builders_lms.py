@@ -354,6 +354,8 @@ def _build_course_catalog(ctx: LMSSeedContext, params: dict[str, Any]) -> dict[s
     must_include = set(params.get("must_include", []))
     vary_late = params.get("vary_late_policies", False)
     semester = params.get("semester", "Spring 2026")
+    grading_template_indices = params.get("grading_template_indices")
+    grading_template_index = params.get("grading_template_index")
 
     # Select courses: must_include first, then random fill
     available = list(_COURSE_CATALOG)
@@ -381,7 +383,13 @@ def _build_course_catalog(ctx: LMSSeedContext, params: dict[str, Any]) -> dict[s
         instructor_name = f"Prof. {ctx.fake.name().split()[-1]}"
 
         # Pick grading policy
-        template = _GRADING_TEMPLATES[ctx.rng.randint(0, len(_GRADING_TEMPLATES) - 1)]
+        if isinstance(grading_template_indices, list) and i < len(grading_template_indices):
+            template_idx = int(grading_template_indices[i]) % len(_GRADING_TEMPLATES)
+            template = _GRADING_TEMPLATES[template_idx]
+        elif grading_template_index is not None and i == 0:
+            template = _GRADING_TEMPLATES[int(grading_template_index) % len(_GRADING_TEMPLATES)]
+        else:
+            template = _GRADING_TEMPLATES[ctx.rng.randint(0, len(_GRADING_TEMPLATES) - 1)]
         grading_policy: dict[str, CategoryPolicy] = {}
         for cat_name, (weight_str, drop_low) in template.items():
             grading_policy[cat_name] = CategoryPolicy(
@@ -559,6 +567,9 @@ def _build_assignment_battery(ctx: LMSSeedContext, params: dict[str, Any]) -> di
     late_ids: list[str] = []
     late_within_grace_ids: list[str] = []
     resubmit_ids: list[str] = []
+    quiz_ids: list[str] = []
+    project_ids: list[str] = []
+    essay_ids: list[str] = []
     lowest_homework_id: str | None = None
     lowest_homework_score: Decimal | None = None
     # Also track lowest homework ID within the target course specifically.
@@ -727,6 +738,13 @@ def _build_assignment_battery(ctx: LMSSeedContext, params: dict[str, Any]) -> di
             )
             ctx.base["assignments"].append(assignment.model_dump())
             all_assignment_ids.append(assignment_id)
+
+            if atype == "quiz":
+                quiz_ids.append(assignment_id)
+            elif atype == "project":
+                project_ids.append(assignment_id)
+            elif atype == "essay":
+                essay_ids.append(assignment_id)
 
             # Track lowest homework score for drop-lowest (global and target-course-specific)
             if cat == "homework" and score is not None:
@@ -1271,6 +1289,74 @@ def _build_assignment_battery(ctx: LMSSeedContext, params: dict[str, Any]) -> di
         else:
             achievable_cids.append(cid)
 
+    def _first_assignment_id(
+        *,
+        assignment_type: str,
+        course_id: str | None = None,
+        status: str | None = None,
+    ) -> str:
+        for a in all_assignments:
+            if a["type"] != assignment_type:
+                continue
+            if course_id and a["course_id"] != course_id:
+                continue
+            if status and a["submission_status"] != status:
+                continue
+            return a["id"]
+        return ""
+
+    target_course_id_for_semantics = ctx.outputs.get("target_course_id", "")
+    target_quiz_assignment_id = _first_assignment_id(
+        assignment_type="quiz",
+        course_id=target_course_id_for_semantics or None,
+        status="not_submitted",
+    )
+    if not target_quiz_assignment_id:
+        target_quiz_assignment_id = _first_assignment_id(
+            assignment_type="quiz",
+            status="not_submitted",
+        )
+    if not target_quiz_assignment_id and quiz_ids:
+        target_quiz_assignment_id = quiz_ids[0]
+        quiz_assignment = next((a for a in all_assignments if a["id"] == target_quiz_assignment_id), None)
+        if quiz_assignment is not None:
+            quiz_assignment["submission_status"] = "not_submitted"
+            quiz_assignment["score"] = None
+            quiz_assignment["feedback"] = None
+            quiz_assignment["submitted_at"] = None
+            quiz_assignment["file_name"] = None
+            quiz_assignment["attempt_count"] = 0
+
+    target_project_assignment_id = _first_assignment_id(
+        assignment_type="project",
+        course_id=target_course_id_for_semantics or None,
+        status="not_submitted",
+    )
+    if not target_project_assignment_id:
+        target_project_assignment_id = _first_assignment_id(
+            assignment_type="project",
+            status="not_submitted",
+        )
+    if not target_project_assignment_id and project_ids:
+        target_project_assignment_id = project_ids[0]
+        project_assignment = next((a for a in all_assignments if a["id"] == target_project_assignment_id), None)
+        if project_assignment is not None:
+            project_assignment["submission_status"] = "not_submitted"
+            project_assignment["score"] = None
+            project_assignment["feedback"] = None
+            project_assignment["submitted_at"] = None
+            project_assignment["file_name"] = None
+            project_assignment["attempt_count"] = 0
+
+    target_essay_assignment_id = _first_assignment_id(
+        assignment_type="essay",
+        status="not_submitted",
+    )
+    if not target_essay_assignment_id:
+        target_essay_assignment_id = _first_assignment_id(assignment_type="essay")
+    if not target_essay_assignment_id and essay_ids:
+        target_essay_assignment_id = essay_ids[0]
+
     return {
         "assignment_ids": all_assignment_ids,
         "missing_assignment_ids": missing_ids,
@@ -1322,6 +1408,9 @@ def _build_assignment_battery(ctx: LMSSeedContext, params: dict[str, Any]) -> di
         "lowest_hw_id": lowest_homework_id or "",
         "most_impactful_graded_id": most_disputed_ids[0] if most_disputed_ids else "",
         "worst_category_assignment_id": "",
+        "target_quiz_assignment_id": target_quiz_assignment_id,
+        "target_project_assignment_id": target_project_assignment_id,
+        "target_essay_assignment_id": target_essay_assignment_id,
     }
 
 
@@ -2196,6 +2285,7 @@ def _build_module_sequence(ctx: LMSSeedContext, params: dict[str, Any]) -> dict[
     chain_type = params.get("chain_type", "linear")
     completed_count = params.get("completed_count", 2)
     output_prefix = params.get("output_prefix", "")
+    linked_assignment_id = params.get("linked_assignment_id", "")
 
     if not course_id:
         courses = ctx.base.get("courses", [])
@@ -2258,6 +2348,7 @@ def _build_module_sequence(ctx: LMSSeedContext, params: dict[str, Any]) -> dict[
                 title=f"Video Lecture {i + 1}",
                 type="video",
                 completed=i < completed_count,
+                linked_assignment_id=linked_assignment_id if i == completed_count else None,
             ),
         ]
 
@@ -2283,6 +2374,8 @@ def _build_module_sequence(ctx: LMSSeedContext, params: dict[str, Any]) -> dict[
         "first_locked_module_id": first_locked_id or "",
         "next_available_module_id": next_available_id or "",
     }
+    if linked_assignment_id:
+        result["linked_assignment_id"] = linked_assignment_id
 
     if output_prefix:
         result[f"{output_prefix}_module_ids"] = module_ids
@@ -2880,4 +2973,5 @@ def _build_peer_review_assignments(ctx: LMSSeedContext, params: dict[str, Any]) 
         "pending_review_ids": pending_review_ids,
         "completed_review_ids": completed_review_ids,
         "returned_review_ids": returned_review_ids,
+        "target_review_id": pending_review_ids[0] if pending_review_ids else (review_ids[0] if review_ids else ""),
     }
