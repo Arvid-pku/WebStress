@@ -91,37 +91,83 @@ seed:
     active_rx_ids: '{output.active_rx_ids}'
     approved_ref_ids: '{output.approved_ref_ids}'
     upcoming_ids: '{output.upcoming_ids}'
-eval:
-  source: server_state
-  checks:
-  - expr: "len([\n  a for a in state.appointments\n  if a.status == 'scheduled'\n\
-      \  and a.provider_id in {target.admin_provider_ids}\n  and a.reason == 'Account\
-      \ audit review'\n  and a.id not in state._initial_snapshot.get('appointments',\
-      \ {})\n]) == 1"
-    desc: Exactly one Patient Services follow-up appointment was scheduled
-  - expr: "any(\n  a.status == 'scheduled'\n  and a.provider_id in {target.admin_provider_ids}\n\
-      \  and a.reason == 'Account audit review'\n  and a.datetime == min(\n    slot['datetime']\n\
-      \    for provider_id in {target.admin_provider_ids}\n    for slot in state._initial_snapshot['providers'][provider_id]['available_slots']\n\
-      \  )\n  and a.id not in state._initial_snapshot.get('appointments', {})\n  for\
-      \ a in state.appointments\n)"
-    desc: The audit follow-up used the next available admin slot
-  negative_checks:
-  - expr: "all(\n  state.get_appointment(aid) is not None\n  and state.get_appointment(aid).status\
-      \ != 'cancelled'\n  for aid in {target.upcoming_ids}\n)"
-    desc: Existing appointments were not cancelled during audit
-    penalty: 0.2
-  - expr: "all(rx.status == state._initial_snapshot['prescriptions'][rx.id]['status']\n\
-      \    for rx in state.prescriptions\n    if rx.id in state._initial_snapshot.get('prescriptions',\
-      \ {}))"
-    desc: No prescriptions were modified during audit
-    penalty: 0.2
-  - expr: "not any(\n  state.get_referral(rid) is not None\n  and state.get_referral(rid).status\
-      \ != state._initial_snapshot['referrals'][rid]['status']\n  for rid in {target.approved_ref_ids}\n\
-      \  if rid in state._initial_snapshot.get('referrals', {})\n)"
-    desc: Referral statuses were not changed during audit
-    penalty: 0.2
-  - expr: "len([\n  m for m in state.messages\n  if m.from_type == 'patient'\n  and\
-      \ m.id not in state._initial_snapshot.get('messages', {})\n]) == 0"
-    desc: Agent did not send any patient messages
-    penalty: 0.15
+canonical_diff:
+  # Single-appointment audit task:
+  #   - Create exactly one new Appointment with a Patient Services (admin)
+  #     provider, reason "Account audit review", datetime == the earliest slot
+  #     across ALL admin providers' initial available_slots.
+  #   - All other collections (prescriptions, referrals, messages, labs,
+  #     claims, immunizations, pharmacies, non-new appointments) preserved.
+  create:
+    - entity: Appointment
+      desc: >-
+        Schedule exactly one appointment with a Patient Services admin provider
+        at the earliest available admin slot; reason must be "Account audit review".
+      properties:
+        status: {eq: "scheduled"}
+        reason: {eq: "Account audit review"}
+        provider_id:
+          expr: "x in target['admin_provider_ids']"
+        datetime:
+          expr: >
+            x == min(s.datetime for p in initial.providers
+                     if p.id in target['admin_provider_ids']
+                     for s in p.available_slots)
+        type: {any: true}
+        notes: {any: true}
+        linked_referral_id: {any: true}
+        pre_auth_status: {any: true}
+        booked_at: {any: true}
+        location: {any: true}
+  invariant:
+    # Pre-existing appointments must remain untouched; create[0] above is
+    # the only permitted appointment mutation.
+    - collection: state.appointments
+      filter: "a.id in {x.id for x in initial.appointments}"
+      preserve: ALL
+    # Audit says: do not modify prescriptions, do not change referral statuses,
+    # do not send any messages. All other env collections are not mentioned
+    # by the instruction so they get broad preserve-ALL invariants.
+    - collection: state.prescriptions
+      preserve: ALL
+    - collection: state.referrals
+      preserve: ALL
+    - collection: state.messages
+      preserve: ALL
+    - collection: state.immunizations
+      preserve: ALL
+    - collection: state.lab_results
+      preserve: ALL
+    - collection: state.claims
+      preserve: ALL
+    - collection: state.pharmacies
+      preserve: ALL
+  named_invariants:
+    - name: "Agent did not cancel or modify pre-existing appointments"
+      ref: invariant[0]
+      severity: high
+    - name: "Agent did not modify prescriptions"
+      ref: invariant[1]
+      severity: high
+    - name: "Agent did not change referral statuses"
+      ref: invariant[2]
+      severity: high
+    - name: "Agent did not send any patient messages"
+      ref: invariant[3]
+      severity: medium
+    - name: "Agent did not modify immunization records"
+      ref: invariant[4]
+      severity: medium
+    - name: "Agent did not create or modify lab results"
+      ref: invariant[5]
+      severity: high
+    - name: "Agent did not touch insurance claims"
+      ref: invariant[6]
+      severity: critical
+    - name: "Agent did not modify pharmacies"
+      ref: invariant[7]
+      severity: medium
+    - name: "Agent scheduled exactly one Patient Services audit appointment"
+      ref: create[0]
+      severity: high
 secondary_primitives: []
