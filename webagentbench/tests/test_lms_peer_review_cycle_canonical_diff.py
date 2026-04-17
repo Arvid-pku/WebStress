@@ -21,8 +21,13 @@ def _pending_review_ids(targets: dict[str, str]) -> list[str]:
     return [rid.strip() for rid in targets["pending_review_ids"].split(",") if rid.strip()]
 
 
-def _other_review_id(state, excluded_ids: set[str]) -> str:
-    return next(r.id for r in state.peer_reviews if r.id not in excluded_ids)
+def _append_decoy_review(state, source_review_id: str) -> str:
+    source = state.get_peer_review(source_review_id)
+    if source is None:
+        raise ValueError(f"review {source_review_id!r} not found")
+    decoy = source.model_copy(update={"id": f"{source_review_id}_decoy"})
+    state.peer_reviews.append(decoy)
+    return decoy.id
 
 
 def _apply_review_update(state, review_id: str, rubric_scores: dict[str, int], comments: str) -> None:
@@ -85,7 +90,7 @@ def test_wrong_field_fails():
 
 def test_wrong_id_fails():
     _, _, targets, initial, state = _setup_session()
-    wrong_review_id = _other_review_id(state, set(_pending_review_ids(targets)))
+    wrong_review_id = _append_decoy_review(state, _pending_review_ids(targets)[0])
     _apply_review_update(
         state,
         wrong_review_id,
@@ -99,20 +104,14 @@ def test_wrong_id_fails():
 
 def test_extra_mutation_fails():
     _, _, targets, initial, state = _setup_session()
-    pending_ids = _pending_review_ids(targets)
-    for review_id in pending_ids:
+    for review_id in _pending_review_ids(targets):
         _apply_review_update(
             state,
             review_id,
             {"clarity": 5, "depth": 4, "originality": 5},
             "Detailed feedback covering rubric criteria and next-step revisions.",
         )
-    _apply_review_update(
-        state,
-        _other_review_id(state, set(pending_ids)),
-        {"clarity": 3, "depth": 3, "originality": 3},
-        "Extra review modified as collateral damage.",
-    )
+    state.enrollments[0].status = "dropped"
 
     report = _report_for(state, initial, targets)
-    assert report.passed is False, "modifying an extra review should fail"
+    assert report.passed is False, "mutating an unrelated enrollment should fail"
