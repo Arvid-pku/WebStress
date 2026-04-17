@@ -1019,11 +1019,21 @@ def _match_single_block(
     # 2.5 Constraints — state-level aggregates (spec §3.6). Also penalty-only
     # on the negative side; do not contribute to positive score.
     for i, c in enumerate(block.constraints):
-        globs = {"__builtins__": _SAFE_BUILTINS}
-        locs = {"state": final, "initial": initial, "target": targets}
+        # Merge scope vars into GLOBALS (not locals) so list/gen
+        # comprehensions and lambdas can see `state`, `initial`, `target`.
+        # Same rationale as the {expr: ...} predicate path (hazard Class 8):
+        # comprehensions run in a nested function scope that only reads
+        # from globals — scope-as-locals makes them invisible inside
+        # e.g. `max(..., key=lambda cid: initial.get_claim(cid)...)`.
+        globs = {
+            "__builtins__": _SAFE_BUILTINS,
+            "state": final,
+            "initial": initial,
+            "target": targets,
+        }
         try:
             # Restricted eval -- author-controlled source, safe-builtins only.
-            ok = bool(eval(c.expr, globs, locs))  # noqa: S307
+            ok = bool(eval(c.expr, globs, {}))  # noqa: S307
         except Exception:
             ok = False
         negative_checks.append({
