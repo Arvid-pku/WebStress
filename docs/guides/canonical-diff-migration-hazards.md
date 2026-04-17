@@ -326,6 +326,50 @@ evaluates truly on a correct trajectory.
 
 ---
 
+## Class 11 — Resolved-target collection serialization
+
+**Symptom.** A canonical diff or hand-written test iterates a target that was
+expected to be a Python list, but runtime behavior looks like character-wise
+iteration (`'a'`, `'n'`, `'n'`, ...) or a selector silently misses every
+candidate.
+
+**Root cause.** Environment seeders may intentionally coerce list- and
+dict-shaped targets into strings when promoting them into `resolved_targets`.
+The LMS seeder does this so legacy string-based eval expressions can keep using
+`'{target.xxx}'.split(',')` uniformly. A migration that assumes
+`target['unread_announcement_ids']` is a list will author the right logical
+shape against the wrong runtime type.
+
+**Where.** `webagentbench/backend/seeders/lms.py::_resolve_targets` and any
+other env seeder that performs similar coercion. The relevant LMS behavior is:
+
+```python
+if isinstance(val, list):
+    val = ",".join(str(v) for v in val)
+elif isinstance(val, dict):
+    val = ",".join(f"{k}:{v}" for k, v in val.items())
+```
+
+**Fix applied.** Author the canonical diff against the actual resolved-target
+shape. For list-like targets in LMS, use expressions such as:
+
+```yaml
+bijection:
+  over: "target['unread_announcement_ids'].split(',') if target['unread_announcement_ids'] else []"
+```
+
+and mirror the same normalization in canonical-diff tests.
+
+**Regression guard.** Before writing a bijection or membership predicate
+against any seed-derived list/dict target:
+
+1. Inspect the runtime target once with `SessionManager().create_session(...)`.
+2. If it is a string, split/parse it explicitly in both the YAML and tests.
+3. Add a wrong-target test that would have vacuously passed if the selector had
+   iterated characters or unmatched raw strings instead of parsed ids.
+
+---
+
 ## Migration pre-flight checklist
 
 Before opening a task migration PR, run through these for that specific task:

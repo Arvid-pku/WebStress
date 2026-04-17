@@ -104,12 +104,11 @@ def test_extra_course_drop_fails():
     assert report.passed is False, "dropping two courses should violate the enrollment invariant"
 
 
-def test_unrelated_assignment_mutation_fails():
+def test_unrelated_course_mutation_fails():
     sm, sid, targets, initial, state = _setup_session()
 
     _drop_course(state, targets["target_course_id"])
-    state.assignments[0].submission_status = "submitted"
-    state.assignments[0].file_name = "collateral_upload.pdf"
+    state.courses[0].title = "Collateral course edit"
 
     task = get_task("lms_drop_course")
     agent_diff = compute_diff(initial, state)
@@ -121,6 +120,6 @@ def test_unrelated_assignment_mutation_fails():
         final=state,
     )
     assert report.passed is False, (
-        "mutating an assignment while dropping a course should violate the "
-        "assignment invariant"
+        "mutating a course record while dropping a course should violate the "
+        "course invariant"
     )
