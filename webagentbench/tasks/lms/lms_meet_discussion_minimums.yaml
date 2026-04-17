@@ -40,6 +40,121 @@ seed:
     discussion_title: '{output.target_discussion_title}'
     course_code: '{output.target_course_code}'
     target_discussion_id: '{output.target_discussion_id}'
+canonical_diff:
+  create:
+    - entity: DiscussionPost
+      desc: Create one top-level post in the target discussion
+      count: 1
+      properties:
+        discussion_id:
+          expr: "x == target['target_discussion_id']"
+        author_id:
+          expr: "x == state.student.id"
+        author_name:
+          expr: "x == state.student.name"
+        body:
+          any: true
+        parent_post_id:
+          eq: null
+        timestamp:
+          expr: "x >= datetime.fromisoformat(target['session_start'])"
+        updated_at:
+          eq: null
+        is_anonymous:
+          eq: false
+    - entity: DiscussionPost
+      desc: Create one reply in the target discussion
+      count: 1
+      properties:
+        discussion_id:
+          expr: "x == target['target_discussion_id']"
+        author_id:
+          expr: "x == state.student.id"
+        author_name:
+          expr: "x == state.student.name"
+        body:
+          any: true
+        parent_post_id:
+          expr: "x is not None"
+        timestamp:
+          expr: "x >= datetime.fromisoformat(target['session_start'])"
+        updated_at:
+          eq: null
+        is_anonymous:
+          eq: false
+  invariant:
+    - collection: state.discussion_posts
+      filter: "a.discussion_id != target['target_discussion_id']"
+      preserve: ALL
+      weight: 1.0
+    - collection: state.discussions
+      preserve: ALL
+      weight: 1.0
+    - collection: state.courses
+      preserve: ALL
+      weight: 1.0
+    - collection: state.enrollments
+      preserve: ALL
+      weight: 1.0
+    - collection: state.assignments
+      preserve: ALL
+      weight: 1.0
+    - collection: state.modules
+      preserve: ALL
+      weight: 1.0
+    - collection: state.peer_reviews
+      preserve: ALL
+      weight: 1.0
+    - collection: state.announcements
+      preserve: ALL
+      weight: 1.0
+    - collection: state.grades
+      preserve: ALL
+      weight: 1.0
+    - collection: state.calendar_events
+      preserve: ALL
+      weight: 1.0
+    - collection: state.sent_messages
+      preserve: ALL
+      weight: 1.0
+  named_invariants:
+    - name: Agent did not post in non-target discussions
+      ref: invariant[0]
+      severity: high
+    - name: Agent did not modify discussions
+      ref: invariant[1]
+      severity: medium
+    - name: Agent did not modify course records
+      ref: invariant[2]
+      severity: medium
+    - name: Agent did not drop or alter enrollments
+      ref: invariant[3]
+      severity: high
+    - name: Agent did not modify assignments
+      ref: invariant[4]
+      severity: medium
+    - name: Agent did not modify modules
+      ref: invariant[5]
+      severity: medium
+    - name: Agent did not alter peer reviews
+      ref: invariant[6]
+      severity: medium
+    - name: Agent did not modify announcements
+      ref: invariant[7]
+      severity: medium
+    - name: Agent did not modify grades
+      ref: invariant[8]
+      severity: high
+    - name: Agent did not modify calendar events
+      ref: invariant[9]
+      severity: low
+    - name: Agent did not send messages
+      ref: invariant[10]
+      severity: medium
+  constraints:
+    - desc: Target discussion minimum participation requirements are met
+      expr: "state.meets_discussion_requirements(target['target_discussion_id'])"
+      severity: high
 eval:
   source: server_state
   checks:
