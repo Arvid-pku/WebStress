@@ -52,6 +52,117 @@ seed:
     advisor_name: '{output.advisor_name}'
     missing_assignment_ids: '{output.missing_assignment_ids}'
     course_codes: '{output.course_codes}'
+canonical_diff:
+  update:
+  - entity: Assignment
+    desc: Submit the highest-impact unsubmitted assignment with sprint_submission.pdf
+    where:
+      id:
+        expr: "x == sorted([(Decimal(str(initial.get_course(a.course_id).syllabus.grading_policy[a.weight_category].weight)) * Decimal(str(a.points_possible)) * (Decimal('1') - initial.late_penalty_for_assignment(a.id, now())), Decimal(str(initial.get_course(a.course_id).syllabus.grading_policy[a.weight_category].weight)) * Decimal(str(a.points_possible)), -a.due_at.timestamp(), a.id) for a in initial.assignments if a.submission_status == 'not_submitted'], reverse=True)[0][3]"
+    changes:
+      submission_status:
+        in:
+        - submitted
+        - late
+      file_name:
+        eq: sprint_submission.pdf
+      attempt_count:
+        eq: 1
+      submitted_at:
+        expr: "x is not None"
+  - entity: Assignment
+    desc: Submit the second-highest-impact unsubmitted assignment with sprint_submission.pdf
+    where:
+      id:
+        expr: "x == sorted([(Decimal(str(initial.get_course(a.course_id).syllabus.grading_policy[a.weight_category].weight)) * Decimal(str(a.points_possible)) * (Decimal('1') - initial.late_penalty_for_assignment(a.id, now())), Decimal(str(initial.get_course(a.course_id).syllabus.grading_policy[a.weight_category].weight)) * Decimal(str(a.points_possible)), -a.due_at.timestamp(), a.id) for a in initial.assignments if a.submission_status == 'not_submitted'], reverse=True)[1][3]"
+    changes:
+      submission_status:
+        in:
+        - submitted
+        - late
+      file_name:
+        eq: sprint_submission.pdf
+      attempt_count:
+        eq: 1
+      submitted_at:
+        expr: "x is not None"
+  - entity: Assignment
+    desc: Submit the third-highest-impact unsubmitted assignment with sprint_submission.pdf
+    where:
+      id:
+        expr: "x == sorted([(Decimal(str(initial.get_course(a.course_id).syllabus.grading_policy[a.weight_category].weight)) * Decimal(str(a.points_possible)) * (Decimal('1') - initial.late_penalty_for_assignment(a.id, now())), Decimal(str(initial.get_course(a.course_id).syllabus.grading_policy[a.weight_category].weight)) * Decimal(str(a.points_possible)), -a.due_at.timestamp(), a.id) for a in initial.assignments if a.submission_status == 'not_submitted'], reverse=True)[2][3]"
+    changes:
+      submission_status:
+        in:
+        - submitted
+        - late
+      file_name:
+        eq: sprint_submission.pdf
+      attempt_count:
+        eq: 1
+      submitted_at:
+        expr: "x is not None"
+  invariant:
+  - collection: state.courses
+    preserve: ALL
+  - collection: state.enrollments
+    preserve: ALL
+  - collection: state.modules
+    preserve: ALL
+  - collection: state.discussions
+    preserve: ALL
+  - collection: state.discussion_posts
+    preserve: ALL
+  - collection: state.peer_reviews
+    preserve: ALL
+  - collection: state.announcements
+    preserve: ALL
+  - collection: state.grades
+    preserve: ALL
+  - collection: state.calendar_events
+    preserve: ALL
+  - collection: state.sent_messages
+    preserve: ALL
+  named_invariants:
+  - name: Agent submitted the highest-impact assignment
+    ref: update[0]
+    severity: high
+  - name: Agent submitted the second-highest-impact assignment
+    ref: update[1]
+    severity: high
+  - name: Agent submitted the third-highest-impact assignment
+    ref: update[2]
+    severity: high
+  - name: Agent did not modify course records
+    ref: invariant[0]
+    severity: medium
+  - name: Agent did not drop or alter enrollments
+    ref: invariant[1]
+    severity: high
+  - name: Agent did not modify modules
+    ref: invariant[2]
+    severity: medium
+  - name: Agent did not modify discussions
+    ref: invariant[3]
+    severity: medium
+  - name: Agent did not create or edit discussion posts
+    ref: invariant[4]
+    severity: medium
+  - name: Agent did not alter peer reviews
+    ref: invariant[5]
+    severity: medium
+  - name: Agent did not modify announcements
+    ref: invariant[6]
+    severity: medium
+  - name: Agent did not modify grades
+    ref: invariant[7]
+    severity: high
+  - name: Agent did not modify calendar events
+    ref: invariant[8]
+    severity: low
+  - name: Agent did not send messages
+    ref: invariant[9]
+    severity: medium
 eval:
   source: server_state
   checks:
