@@ -73,81 +73,143 @@ seed:
     cardio_provider_ids: '{output.providers_by_specialty.cardiology}'
     approved_ref_ids: '{output.approved_ref_ids}'
     upcoming_ids: '{output.upcoming_ids}'
-eval:
-  source: server_state
-  checks:
-  - expr: "len([\n  a for a in state.appointments\n  if a.status == 'scheduled'\n\
-      \  and a.id not in {target.upcoming_ids}\n]) == 3"
-    desc: Exactly three new appointments were scheduled
-  - expr: "len([\n  a for a in state.appointments\n  if a.status == 'scheduled'\n\
-      \  and a.id not in {target.upcoming_ids}\n  and any(word in a.reason.lower()\
-      \ for word in ('lab', 'blood'))\n]) == 1"
-    desc: Exactly one new lab appointment was scheduled
-  - expr: "len([\n  a for a in state.appointments\n  if a.status == 'scheduled'\n\
-      \  and a.id not in {target.upcoming_ids}\n  and state.get_provider(a.provider_id)\
-      \ is not None\n  and a.provider_id in {target.cardio_provider_ids}\n  and not\
-      \ any(word in a.reason.lower() for word in ('lab', 'blood'))\n]) == 1"
-    desc: Exactly one new cardiology appointment was scheduled
-  - expr: "len([\n  a for a in state.appointments\n  if a.status == 'scheduled'\n\
-      \  and a.id not in {target.upcoming_ids}\n  and a.provider_id == '{target.pcp_id}'\n\
-      \  and not any(word in a.reason.lower() for word in ('lab', 'blood'))\n]) ==\
-      \ 1"
-    desc: Exactly one PCP follow-up appointment was scheduled
-  - expr: "(\n  lambda lab_id=next(\n    (a.id for a in state.appointments\n    if\
-      \ a.status == 'scheduled'\n    and a.id not in {target.upcoming_ids}\n    and\
-      \ any(word in a.reason.lower() for word in ('lab', 'blood'))),\n    None,\n\
-      \  ),\n  cardio_id=next(\n    (a.id for a in state.appointments\n    if a.status\
-      \ == 'scheduled'\n    and a.id not in {target.upcoming_ids}\n    and state.get_provider(a.provider_id)\
-      \ is not None\n    and a.provider_id in {target.cardio_provider_ids}\n    and\
-      \ not any(word in a.reason.lower() for word in ('lab', 'blood'))),\n    None,\n\
-      \  ),\n  pcp_id=next(\n    (a.id for a in state.appointments\n    if a.status\
-      \ == 'scheduled'\n    and a.id not in {target.upcoming_ids}\n    and a.provider_id\
-      \ == '{target.pcp_id}'\n    and not any(word in a.reason.lower() for word in\
-      \ ('lab', 'blood'))),\n    None,\n  ):\n  lab_id is not None and cardio_id is\
-      \ not None and pcp_id is not None\n  and [\n    a.id\n    for a in sorted(\n\
-      \      [a for a in state.appointments\n       if a.status == 'scheduled' and\
-      \ a.id not in {target.upcoming_ids}],\n      key=lambda a: a.booked_at,\n  \
-      \  )\n  ] == [lab_id, cardio_id, pcp_id]\n)()"
-    desc: The appointments were created in the required booking order
-  - expr: "(\n  lambda lab_dt=next(\n    (a.datetime for a in state.appointments\n\
-      \    if a.status == 'scheduled'\n    and a.id not in {target.upcoming_ids}\n\
-      \    and any(word in a.reason.lower() for word in ('lab', 'blood'))),\n    None,\n\
-      \  ),\n  cardio_dt=next(\n    (a.datetime for a in state.appointments\n    if\
-      \ a.status == 'scheduled'\n    and a.id not in {target.upcoming_ids}\n    and\
-      \ state.get_provider(a.provider_id) is not None\n    and a.provider_id in {target.cardio_provider_ids}\n\
-      \    and not any(word in a.reason.lower() for word in ('lab', 'blood'))),\n\
-      \    None,\n  ):\n  lab_dt is not None and cardio_dt is not None\n  and (cardio_dt\
-      \ - lab_dt).days >= 5\n)()"
-    desc: The cardiology visit was at least 5 days after the labs
-  - expr: "(\n  lambda pcp_dt=next(\n    (a.datetime for a in state.appointments\n\
-      \    if a.status == 'scheduled'\n    and a.id not in {target.upcoming_ids}\n\
-      \    and a.provider_id == '{target.pcp_id}'\n    and not any(word in a.reason.lower()\
-      \ for word in ('lab', 'blood'))),\n    None,\n  ),\n  cardio_dt=next(\n    (a.datetime\
-      \ for a in state.appointments\n    if a.status == 'scheduled'\n    and a.id\
-      \ not in {target.upcoming_ids}\n    and state.get_provider(a.provider_id) is\
-      \ not None\n    and a.provider_id in {target.cardio_provider_ids}\n    and not\
-      \ any(word in a.reason.lower() for word in ('lab', 'blood'))),\n    None,\n\
-      \  ):\n  pcp_dt is not None and cardio_dt is not None\n  and (pcp_dt - cardio_dt).days\
-      \ >= 3\n)()"
-    desc: The PCP follow-up was at least 3 days after the cardiology visit
-  - expr: "all(\n  state.get_referral(a.linked_referral_id) is not None\n  and state.get_referral(a.linked_referral_id).status\
-      \ == 'approved'\n  and state.get_referral(a.linked_referral_id).to_specialty\
-      \ == state.get_provider(a.provider_id).specialty\n  for a in state.appointments\n\
-      \  if a.status == 'scheduled'\n  and a.id not in {target.upcoming_ids}\n  and\
-      \ state.get_provider(a.provider_id) is not None\n  and state.get_provider(a.provider_id).specialty\
-      \ not in ('pcp', 'billing', 'admin')\n)"
-    desc: Every specialist appointment had an approved referral in place
-  negative_checks:
-  - expr: "all(\n  state.get_appointment(aid) is not None\n  and state.get_appointment(aid).status\
-      \ != 'cancelled'\n  for aid in {target.upcoming_ids}\n)"
-    desc: Existing appointments were not cancelled
-    penalty: 0.2
-  - expr: "not any(\n  a.status == 'scheduled'\n  and a.id not in {target.upcoming_ids}\n\
-      \  and state.get_provider(a.provider_id) is not None\n  and state.get_provider(a.provider_id).specialty\
-      \ not in ('pcp', 'billing', 'admin')\n  and (\n    a.linked_referral_id is None\n\
-      \    or state.get_referral(a.linked_referral_id) is None\n    or state.get_referral(a.linked_referral_id).status\
-      \ != 'approved'\n    or state.get_provider(a.provider_id).specialty != state.get_referral(a.linked_referral_id).to_specialty\n\
-      \  )\n  for a in state.appointments\n)"
-    desc: No specialist appointment was scheduled without an approved referral
-    penalty: 0.15
+canonical_diff:
+  create:
+    - entity: Appointment
+      desc: "Schedule an in-person lab / blood work appointment (scheduled first)"
+      properties:
+        status: {eq: "scheduled"}
+        type: {eq: "in-person"}
+        provider_id: {any: true}
+        datetime: {any: true}
+        reason:
+          expr: "any(w in x.lower() for w in ['lab', 'blood', 'pre-visit', 'bloodwork'])"
+        notes: {any: true}
+        linked_referral_id: {any: true}
+        pre_auth_status: {any: true}
+        booked_at: {any: true}
+        location: {any: true}
+    - entity: Appointment
+      desc: "Schedule an in-person cardiology appointment with an approved referral"
+      properties:
+        status: {eq: "scheduled"}
+        type: {eq: "in-person"}
+        provider_id:
+          expr: "x in target['cardio_provider_ids']"
+        linked_referral_id:
+          expr: "x is not None and x in target['approved_ref_ids']"
+        datetime: {any: true}
+        reason: {any: true}
+        notes: {any: true}
+        pre_auth_status: {any: true}
+        booked_at: {any: true}
+        location: {any: true}
+    - entity: Appointment
+      desc: "Schedule an in-person PCP follow-up appointment"
+      properties:
+        status: {eq: "scheduled"}
+        type: {eq: "in-person"}
+        provider_id:
+          expr: "x == target['pcp_id']"
+        reason:
+          expr: "any(w in x.lower() for w in ['follow-up', 'follow up', 'followup'])"
+        datetime: {any: true}
+        notes: {any: true}
+        linked_referral_id: {any: true}
+        pre_auth_status: {any: true}
+        booked_at: {any: true}
+        location: {any: true}
+  constraints:
+    - desc: "Cardiology visit is at least 5 days after the lab appointment"
+      expr: >
+        all(
+          (cardio.datetime - lab.datetime).days >= 5
+          for cardio in state.appointments
+          if cardio.status == 'scheduled'
+          and cardio.provider_id in target['cardio_provider_ids']
+          and cardio.id not in {x.id for x in initial.appointments}
+          for lab in state.appointments
+          if lab.status == 'scheduled'
+          and any(w in lab.reason.lower() for w in ['lab', 'blood', 'pre-visit', 'bloodwork'])
+          and lab.id not in {x.id for x in initial.appointments}
+        )
+        and any(
+          cardio.status == 'scheduled'
+          and cardio.provider_id in target['cardio_provider_ids']
+          and cardio.id not in {x.id for x in initial.appointments}
+          for cardio in state.appointments
+        )
+        and any(
+          lab.status == 'scheduled'
+          and any(w in lab.reason.lower() for w in ['lab', 'blood', 'pre-visit', 'bloodwork'])
+          and lab.id not in {x.id for x in initial.appointments}
+          for lab in state.appointments
+        )
+      severity: high
+    - desc: "PCP follow-up is at least 3 days after the cardiology visit"
+      expr: >
+        all(
+          (pcp.datetime - cardio.datetime).days >= 3
+          for pcp in state.appointments
+          if pcp.status == 'scheduled'
+          and pcp.provider_id == target['pcp_id']
+          and any(w in pcp.reason.lower() for w in ['follow-up', 'follow up', 'followup'])
+          and pcp.id not in {x.id for x in initial.appointments}
+          for cardio in state.appointments
+          if cardio.status == 'scheduled'
+          and cardio.provider_id in target['cardio_provider_ids']
+          and cardio.id not in {x.id for x in initial.appointments}
+        )
+        and any(
+          pcp.status == 'scheduled'
+          and pcp.provider_id == target['pcp_id']
+          and any(w in pcp.reason.lower() for w in ['follow-up', 'follow up', 'followup'])
+          and pcp.id not in {x.id for x in initial.appointments}
+          for pcp in state.appointments
+        )
+        and any(
+          cardio.status == 'scheduled'
+          and cardio.provider_id in target['cardio_provider_ids']
+          and cardio.id not in {x.id for x in initial.appointments}
+          for cardio in state.appointments
+        )
+      severity: high
+  invariant:
+    - collection: state.appointments
+      filter: "a.id in {x.id for x in initial.appointments}"
+      preserve: ALL
+    - collection: state.prescriptions
+      preserve: ALL
+    - collection: state.messages
+      preserve: ALL
+    - collection: state.immunizations
+      preserve: ALL
+    - collection: state.lab_results
+      preserve: ALL
+    - collection: state.claims
+      preserve: ALL
+    - collection: state.referrals
+      preserve: ALL
+  named_invariants:
+    - name: "Agent did not cancel or modify pre-existing appointments"
+      ref: invariant[0]
+      severity: high
+    - name: "Agent did not modify prescriptions"
+      ref: invariant[1]
+      severity: high
+    - name: "Agent did not send unsolicited messages"
+      ref: invariant[2]
+      severity: medium
+    - name: "Agent did not modify immunization records"
+      ref: invariant[3]
+      severity: medium
+    - name: "Agent did not create or modify lab results"
+      ref: invariant[4]
+      severity: high
+    - name: "Agent did not touch insurance claims"
+      ref: invariant[5]
+      severity: critical
+    - name: "Agent did not create or modify referrals"
+      ref: invariant[6]
+      severity: high
 secondary_primitives: []
