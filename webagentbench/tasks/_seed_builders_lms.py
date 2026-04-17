@@ -537,6 +537,7 @@ def _build_assignment_battery(ctx: LMSSeedContext, params: dict[str, Any]) -> di
     unrecoverable_missing_count : int -- how many missing assignments are past max late days (default 0)
     resubmit_count : int       -- how many request resubmission (default 0)
     target_assignment_status : str -- filter target selection by status
+    exclude_course_id : str    -- optionally exclude a course when choosing the target assignment
     """
     per_course = params.get("per_course_count", 6)
     graded_frac = params.get("graded_fraction", 0.5)
@@ -546,6 +547,7 @@ def _build_assignment_battery(ctx: LMSSeedContext, params: dict[str, Any]) -> di
     unrecoverable_missing_count = params.get("unrecoverable_missing_count", 0)
     resubmit_count = params.get("resubmit_count", 0)
     target_status = params.get("target_assignment_status", None)
+    exclude_course_id = params.get("exclude_course_id", "")
 
     courses = ctx.base.get("courses", [])
     courses_by_id = {course["id"]: course for course in courses}
@@ -885,10 +887,16 @@ def _build_assignment_battery(ctx: LMSSeedContext, params: dict[str, Any]) -> di
     target_course_code: str = ""
     decoy_assignment_id: str | None = None
 
-    candidates = all_assignments
+    candidates = list(all_assignments)
+    if exclude_course_id:
+        candidates = [a for a in candidates if a["course_id"] != exclude_course_id]
     if target_status:
-        candidates = [a for a in all_assignments if a["submission_status"] == target_status]
+        candidates = [a for a in candidates if a["submission_status"] == target_status]
     if not candidates:
+        if exclude_course_id:
+            raise ValueError(
+                f"assignment_battery could not find a target assignment outside excluded course {exclude_course_id!r}"
+            )
         candidates = all_assignments
 
     if candidates:
