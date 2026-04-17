@@ -427,6 +427,58 @@ Before opening a task migration PR, run through these for that specific task:
       passed == True` (not one without the other). Run the wrong-trajectory
       test; verify every `failures` entry has a corresponding visible
       `checks`/`negative_checks` failure with a user-readable description.
+- [ ] Class 9 — Run the do-nothing trajectory. Score should reflect actual
+      agent work, not seed-dependent vacuities. If the task has a bijection
+      whose `over:` expression could resolve to `[]` on some seed, verify
+      that empty-target bijections don't inflate score (they should be
+      neutral, not trivially-satisfied).
 
 These are in addition to the positive/adversarial tests the authoring
 protocol already prescribes.
+
+---
+
+## Class 9 — Vacuously-satisfied bijections inflate do-nothing score
+
+**Symptom.** A task's do-nothing trajectory scores in round multiples of
+`1/N` (e.g., 0.5, 0.67, 0.8) when N = count of positive diff entries.
+Expected: 0.0 on tasks with positive entries. The score shape reveals
+that (N − k) of N entries are being silently awarded full credit.
+
+**Root cause.** When a bijection's `over:` expression evaluates to an
+empty list for a particular seed — e.g.,
+`target['discrepant_course_ids'].split(',')` returns `[]` when no
+courses happen to be discrepant — the matcher used to treat the entry
+as vacuously satisfied and add `entry.weight` to `passed_weight` while
+also adding it to `total_weight`. On a do-nothing trajectory, every
+empty-target bijection contributed full credit to the positive pool.
+
+**Where.** `webagentbench/evaluator_diff.py` — the `n_left == 0` branches
+in both the `create:` loop (~line 686) and the `update:` loop (~line 876).
+
+**Fix applied.** Empty-target bijections are now **neutral**: they
+contribute to neither `passed_weight` nor `total_weight`. The entry
+emits a `check` entry marked "not applicable for this seed" so the
+outcome stays visible, and `bijection_excess[i]` is still tracked so
+`named_invariants` on `create[N]` can flag over-creation when the agent
+creates entities anyway. Implementation: a `total_weight -= entry.weight`
+line undoes the unconditional increment above the n_left check.
+
+**Why neutral, not zero-credit.** Forcing empty-target entries to
+score 0 would punish agents for correctly doing nothing when the seed
+made the action unnecessary. Forcing them to score 1 inflates
+do-nothing. Neutral is the only choice consistent with the positive-pool
+principle: the pool measures *agent actions*, and "no action required"
+is neither an action nor a non-action — it's a non-applicable entry.
+
+**Regression guard.** Author-side: in every happy-path test, include a
+do-nothing assertion that checks `score == 0.0` (not just
+`passed is False`) for any task whose positive entries should all be
+applicable on the test seed. For tasks where some entries may be
+vacuous on the default seed, pick a seed where all entries are
+applicable before asserting zero.
+
+**Common trigger.** Seeds with `count: N` parameters for entities that
+feed bijections — e.g., `assignment_battery` with `discrepant_count: 0`.
+When authoring, run the bijection's `over:` expression mentally against
+the seed's most conservative output to confirm it's non-empty.

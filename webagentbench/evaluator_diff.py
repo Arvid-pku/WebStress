@@ -684,10 +684,13 @@ def _match_single_block(
             n_left = len(left) if hasattr(left, "__len__") else 0
 
             if n_left == 0:
-                # Degenerate case — zero slots required.
-                # Any existing Create candidates on this entity become
-                # "excess" (the agent scheduled N>0 appointments when 0
-                # were needed). Detect and flag accordingly.
+                # Empty target set for this seed — entry is not applicable.
+                # Make it neutral: neither pool counts it, so score emerges
+                # from the actually-applicable entries rather than being
+                # inflated by vacuous satisfaction. Keep excess tracking so
+                # named_invariants can still flag over-creation (agent
+                # scheduled N>0 when 0 were needed).
+                total_weight -= entry.weight
                 collection_name = _collection_for(entry.entity, collection_map)
                 excess_candidates = [
                     c for c in agent_diff
@@ -695,10 +698,9 @@ def _match_single_block(
                     and (c.entity, c.entity_id) not in matched_ids
                 ]
                 bijection_excess[i] = len(excess_candidates) > 0
-                passed_weight += entry.weight
                 base_desc = entry.desc or f"Create {entry.entity}(s) — 0 required"
                 checks.append({
-                    "desc": f"{base_desc} (trivially satisfied — nothing required)",
+                    "desc": f"{base_desc} (not applicable for this seed)",
                     "passed": True,
                     "error": None,
                 })
@@ -874,9 +876,12 @@ def _match_single_block(
                 continue
             n_left = len(left) if hasattr(left, "__len__") else 0
             if n_left == 0:
-                passed_weight += entry.weight
+                # Empty target set — entry not applicable for this seed.
+                # Neutralize both pools so score reflects actually-applicable
+                # entries (see Class 9 hazard).
+                total_weight -= entry.weight
                 checks.append({
-                    "desc": f"{base_desc} (empty target set)",
+                    "desc": f"{base_desc} (not applicable for this seed)",
                     "passed": True, "error": None,
                 })
                 continue
