@@ -1111,6 +1111,14 @@ def build_prescription_cabinet(ctx: PatientPortalSeedContext, params: dict[str, 
             interacting_rx_ids = rx_ids_pair
             interacting_medications = list(pair)
 
+    # Subset of expiring rxes that still have ≥1 refill remaining — this is
+    # the "request refill" target for tasks that distinguish refill-vs-renewal
+    # based on whether the expiring rx has refills left.
+    expiring_with_refills_rx_ids = [
+        rid for rid in expiring_rx_ids
+        if rid not in expiring_zero_refill_rx_ids
+    ]
+
     return {
         "active_rx_ids": active_rx_ids,
         "zero_refill_rx_id": zero_refill_rx_id,
@@ -1118,6 +1126,7 @@ def build_prescription_cabinet(ctx: PatientPortalSeedContext, params: dict[str, 
         "target_rx_id": target_rx_id,
         "expiring_rx_ids": expiring_rx_ids,
         "expiring_zero_refill_rx_ids": expiring_zero_refill_rx_ids,
+        "expiring_with_refills_rx_ids": expiring_with_refills_rx_ids,
         "interacting_rx_ids": interacting_rx_ids,
         "interacting_medications": interacting_medications,
     }
