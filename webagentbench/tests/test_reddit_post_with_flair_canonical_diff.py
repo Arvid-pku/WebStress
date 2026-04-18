@@ -55,3 +55,12 @@ def test_missing_flair_fails():
     report = match_diff(compute_diff(initial, state), task.canonical_diff,
                         targets=targets, initial=initial, final=state)
     assert report.passed is False
+
+
+def test_no_mutation_fails():
+    _, _, targets, initial, state = _setup()
+    task = get_task("reddit_post_with_flair")
+    report = match_diff(compute_diff(initial, state), task.canonical_diff,
+                        targets=targets, initial=initial, final=state)
+    assert report.passed is False
+    assert report.score == 0.0
