@@ -153,37 +153,4 @@ canonical_diff:
     - name: Agent did not create or modify notifications
       ref: invariant[6]
       severity: low
-eval:
-  source: server_state
-  checks:
-  - expr: "any(\n  m.id == '{target.message_id}' and m.read == True\n  for m in state.messages\n\
-      )\n"
-    desc: The incoming message was marked as read
-  - expr: "sum(\n  1 for m in state.messages\n  if m.sender == 'guest'\n  and m.id\
-      \ not in state._initial_snapshot.get('messages', {})\n) == 1\n"
-    desc: Exactly one new guest reply was sent
-  - expr: "any(\n  m.property_id == '{target.property_id}' and\n  m.subject == 'Re:\
-      \ {target.message_subject}' and\n  m.sender == 'guest'\n  for m in state.messages\n\
-      \  if m.id not in state._initial_snapshot.get('messages', {})\n)\n"
-    desc: "Reply subject is exactly 'Re: <original subject>' and addressed to the correct property"
-  - expr: "any(\n  m.property_id == '{target.property_id}' and\n  m.sender == 'guest'\
-      \ and\n  '3 PM' in m.body and\n  'quiet room' in m.body.lower() and\n  'higher\
-      \ floor' in m.body.lower() and\n  'thank you' in m.body.lower()\n  for m in\
-      \ state.messages\n  if m.id not in state._initial_snapshot.get('messages', {})\n\
-      )\n"
-    desc: Reply body contains arrival time, quiet room, higher floor, and a polite
-      closing
-  - expr: "not any(\n  m.sender == 'guest'\n  and m.property_id != '{target.property_id}'\n\
-      \  for m in state.messages\n  if m.id not in state._initial_snapshot.get('messages',\
-      \ {})\n)\n"
-    desc: No new guest messages were sent to other properties
-  negative_checks:
-  - expr: "sum(\n  1 for m in state.messages\n  if m.sender == 'guest'\n  and m.id\
-      \ not in state._initial_snapshot.get('messages', {})\n) == 1\n"
-    desc: Must send exactly one reply (zero or extras are penalised)
-    penalty: 0.2
-  - expr: "not any(\n  m.sender == 'guest' and len(m.body) > 600\n  for m in state.messages\n\
-      \  if m.id not in state._initial_snapshot.get('messages', {})\n)\n"
-    desc: Reply body must stay under 600 chars (stuffing guard)
-    penalty: 0.15
 secondary_primitives: []

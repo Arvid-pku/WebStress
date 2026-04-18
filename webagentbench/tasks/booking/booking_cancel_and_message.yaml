@@ -140,29 +140,4 @@ canonical_diff:
     - name: Agent did not create notifications
       ref: invariant[6]
       severity: low
-eval:
-  source: server_state
-  checks:
-  - expr: "any(\n  r.id == '{target.reservation_id}' and r.status == 'cancelled'\n\
-      \  for r in state.reservations\n)\n"
-    desc: The target reservation was cancelled
-  - expr: "any(\n  m.property_id == '{target.property_id}' and\n  'Cancellation' in\
-      \ m.subject and\n  m.sender == 'guest'\n  for m in state.messages\n  if not\
-      \ m.id.startswith('msg_initial_')\n)\n"
-    desc: A message about the cancellation was sent to the property
-  - expr: "any(\n  m.property_id == '{target.property_id}' and\n  len(m.body) > 20\
-      \ and\n  m.sender == 'guest'\n  for m in state.messages\n  if not m.id.startswith('msg_initial_')\n\
-      )\n"
-    desc: The message has a meaningful body explaining the cancellation
-  negative_checks:
-  - expr: "not any(\n  e.action == 'reservation.cancel' and e.payload.get('reservation_id')\
-      \ != '{target.reservation_id}'\n  for e in state.audit_log\n)\n"
-    desc: No other reservation was cancelled by the agent
-    penalty: 0.3
-  - expr: 'sum(1 for m in state.messages if not m.id.startswith(''msg_initial_'')
-      and m.sender == ''guest'') <= 1
-
-      '
-    desc: Only one message was sent
-    penalty: 0.15
 secondary_primitives: []

@@ -147,25 +147,3 @@ canonical_diff:
     - name: Agent did not create or modify notifications
       ref: invariant[6]
       severity: low
-eval:
-  source: server_state
-  checks:
-  - expr: "any(\n  rv.property_id == '{target.prop_id}' and\n  rv.overall_score ==\
-      \ 8.5 and\n  rv.title == 'Stunning views and warm hospitality'\n  for rv in\
-      \ state.reviews\n)"
-    desc: Review exists for correct property with score 8.5 and correct title
-  - expr: "any(\n  rv.property_id == '{target.prop_id}' and\n  'sea view' in rv.positive.lower()\n\
-      \  for rv in state.reviews\n)"
-    desc: Review body mentions the sea view
-  - expr: "any(\n  rv.property_id == '{target.prop_id}' and\n  'breakfast' in rv.positive.lower()\n\
-      \  for rv in state.reviews\n)"
-    desc: Review body mentions the breakfast
-  negative_checks:
-  - expr: "not any(\n  rv.property_id == '{target.distractor_prop_id}'\n  for rv in\
-      \ state.reviews\n  if rv.author_name == 'Jordan Parker'\n)"
-    desc: No review written for the wrong property
-    penalty: 0.4
-  - expr: "not any(\n  rv.property_id == '{target.prop_id}' and rv.overall_score !=\
-      \ 8.5\n  for rv in state.reviews\n  if rv.author_name == 'Jordan Parker'\n)"
-    desc: Review score is exactly 8.5, not a different value
-    penalty: 0.2

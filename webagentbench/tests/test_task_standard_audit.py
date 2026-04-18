@@ -57,8 +57,14 @@ def _instruction(task_id: str) -> str:
 
 
 def test_every_task_has_wrong_trajectory_coverage() -> None:
-    """Every task should have at least one explicit negative guard."""
-    for task_id in load_all_tasks():
+    """Every legacy-eval task should have at least one explicit negative guard.
+
+    Skips tasks migrated to canonical_diff — negative-trajectory coverage there
+    is enforced by the adversarial battery and per-task canonical_diff tests.
+    """
+    for task_id, task in load_all_tasks().items():
+        if getattr(task, "eval", None) is None:
+            continue
         assert _exprs(task_id, "negative_checks"), f"{task_id} is missing negative coverage"
 
 
@@ -84,7 +90,9 @@ def test_exclusive_instructions_have_cardinality_or_exclusion_guards() -> None:
         "wrong",
         "collateral",
     )
-    for task_id in load_all_tasks():
+    for task_id, task in load_all_tasks().items():
+        if getattr(task, "eval", None) is None:
+            continue
         instruction = f" {_instruction(task_id)} "
         if not any(keyword in instruction for keyword in keywords):
             continue
@@ -166,23 +174,17 @@ def test_lms_reporting_tasks_bind_recipient_and_required_facts() -> None:
 
 
 def test_booking_rebooking_tasks_bind_exact_reservation_identity() -> None:
-    """Booking workflows must lock onto the exact room/cardinality outcome."""
-    checks = {
-        "booking_cancel_rebook_cheaper": (
-            "room_type_name",
-            "payment_method_id",
-            "sum(1 for r in state.reservations",
-        ),
-        "booking_find_genius_deal": (
-            "room_type_name",
-            "payment_method_id",
-            "sum(1 for r in state.reservations",
-        ),
-    }
-    for task_id, required_tokens in checks.items():
-        blob = "\n".join(_exprs(task_id)).lower()
-        for token in required_tokens:
-            assert token.lower() in blob, f"{task_id} is missing exact-booking token: {token}"
+    """Booking workflows must lock onto the exact room/cardinality outcome.
+
+    Obsolete post canonical_diff migration: both tasks now use canonical_diff
+    bindings (room_type_name / payment_method_id / reservation cardinality)
+    enforced by their per-task canonical_diff tests + the adversarial battery.
+    Retained as a skip so git blame still surfaces the original intent.
+    """
+    for task_id in ("booking_cancel_rebook_cheaper", "booking_find_genius_deal"):
+        assert _task(task_id).eval is None, (
+            f"{task_id} still has legacy eval — this audit should be re-enabled"
+        )
 
 
 def test_robinhood_alert_and_limit_tasks_bind_trigger_math_and_order_timing() -> None:

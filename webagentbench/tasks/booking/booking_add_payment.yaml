@@ -71,21 +71,4 @@ canonical_diff:
     - name: Agent did not create notifications
       ref: invariant[6]
       severity: low
-eval:
-  source: server_state
-  checks:
-  - expr: "any(\n  pm.card_type == 'Discover' and pm.last_four == '7777'\n  for pm\
-      \ in state.payment_methods\n)\n"
-    desc: A Discover card ending in 7777 has been added
-  - expr: "any(\n  pm.card_type == 'Discover' and pm.last_four == '7777' and pm.expiry\
-      \ == '09/28'\n  for pm in state.payment_methods\n)\n"
-    desc: The new card has the correct expiry date
-  - expr: "any(\n  pm.card_type == 'Discover' and pm.last_four == '7777' and pm.holder_name\
-      \ == 'Jordan Parker'\n  for pm in state.payment_methods\n)\n"
-    desc: The new card has the correct holder name
-  negative_checks:
-  - expr: "not any(\n  e.action == 'payment.remove'\n  for e in state.audit_log\n\
-      )\n"
-    desc: No existing payment method was removed
-    penalty: 0.2
 secondary_primitives: []

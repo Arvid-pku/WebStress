@@ -55,20 +55,3 @@ canonical_diff:
     - name: Agent did not create or modify notifications
       ref: invariant[5]
       severity: low
-eval:
-  source: server_state
-  checks:
-    - expr: >
-        any(
-          pm.id == state.settings.default_payment_id and pm.card_type == 'Amex' and pm.last_four == '1234'
-          for pm in state.payment_methods
-        )
-      desc: "Default payment is now the Amex card ending in 1234"
-  negative_checks:
-    - expr: >
-        not any(
-          e.action == 'payment.remove'
-          for e in state.audit_log
-        )
-      desc: "No payment method was deleted"
-      penalty: 0.3

@@ -133,24 +133,4 @@ canonical_diff:
     - name: Agent did not create or modify notifications
       ref: invariant[6]
       severity: low
-eval:
-  source: server_state
-  checks:
-  - expr: "any(\n  r.id == '{target.reservation_id}' and\n  r.check_in == '2026-05-25'\
-      \ and\n  r.check_out == '2026-05-29' and\n  r.status == 'confirmed'\n  for r\
-      \ in state.reservations\n)\n"
-    desc: Reservation was modified to the new check-in and check-out dates
-  - expr: "any(\n  r.id == '{target.reservation_id}' and r.guests == 2\n  for r in\
-      \ state.reservations\n)\n"
-    desc: Guest count was preserved during modification
-  negative_checks:
-  - expr: "not any(\n  e.action == 'reservation.cancel' and e.payload.get('reservation_id')\
-      \ == '{target.reservation_id}'\n  for e in state.audit_log\n)\n"
-    desc: The reservation was not cancelled (it should be modified, not cancelled
-      and rebooked)
-    penalty: 0.3
-  - expr: "not any(\n  e.action == 'reservation.modify' and e.payload.get('reservation_id')\
-      \ != '{target.reservation_id}'\n  for e in state.audit_log\n)\n"
-    desc: No other reservation was modified
-    penalty: 0.2
 secondary_primitives: []

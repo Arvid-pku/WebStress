@@ -93,15 +93,4 @@ canonical_diff:
     - name: Agent did not create notifications
       ref: invariant[6]
       severity: low
-eval:
-  source: server_state
-  checks:
-  - expr: "any(\n  r.id == '{target.reservation_id}' and r.status == 'cancelled'\n\
-      \  for r in state.reservations\n)\n"
-    desc: The target reservation was cancelled
-  negative_checks:
-  - expr: "not any(\n  e.action == 'reservation.cancel' and e.payload.get('reservation_id')\
-      \ != '{target.reservation_id}'\n  for e in state.audit_log\n)\n"
-    desc: No other reservation was cancelled by the agent
-    penalty: 0.3
 secondary_primitives: []

@@ -185,28 +185,4 @@ canonical_diff:
     - name: Agent did not create notifications
       ref: invariant[6]
       severity: low
-eval:
-  source: server_state
-  checks:
-  - expr: "any(\n  r.property_id == '{target.property_id}' and\n  r.check_in == '2026-08-01'\
-      \ and\n  r.check_out == '2026-08-06' and\n  r.status == 'confirmed'\n  for r\
-      \ in state.reservations\n)\n"
-    desc: Reservation was created for the correct property and dates (5 nights)
-  - expr: "any(\n  r.property_id == '{target.property_id}' and\n  r.room_type_id ==\
-      \ '{target.room_id}' and\n  r.guests == 4\n  for r in state.reservations\n \
-      \ if not r.id.startswith('res_initial_')\n)\n"
-    desc: Reservation is for the Family Room with 4 guests
-  - expr: "any(\n  r.property_id == '{target.property_id}' and\n  r.meals_included\
-      \ == 'breakfast'\n  for r in state.reservations\n  if not r.id.startswith('res_initial_')\n\
-      )\n"
-    desc: Breakfast is included in the reservation
-  negative_checks:
-  - expr: "not any(\n  e.action == 'reservation.create' and e.payload.get('property_id')\
-      \ != '{target.property_id}'\n  for e in state.audit_log\n)\n"
-    desc: No reservation made for wrong property
-    penalty: 0.3
-  - expr: "not any(\n  r.property_id == '{target.property_id}' and r.guests < 4\n\
-      \  for r in state.reservations\n  if not r.id.startswith('res_initial_')\n)\n"
-    desc: Reservation was not booked with fewer than 4 guests
-    penalty: 0.2
 secondary_primitives: []

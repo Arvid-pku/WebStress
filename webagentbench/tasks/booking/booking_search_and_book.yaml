@@ -184,29 +184,4 @@ canonical_diff:
     - name: Agent did not create or modify notifications
       ref: invariant[6]
       severity: low
-eval:
-  source: server_state
-  checks:
-  - expr: "any(\n  r.property_id == '{target.property_id}' and\n  r.check_in == '2026-05-15'\
-      \ and\n  r.check_out == '2026-05-18' and\n  r.status == 'confirmed'\n  for r\
-      \ in state.reservations\n)\n"
-    desc: Reservation was created for the correct property and dates (3 nights)
-  - expr: "any(\n  r.property_id == '{target.property_id}' and\n  r.room_type_id ==\
-      \ '{target.room_id}' and\n  r.guests == 2\n  for r in state.reservations\n)\n"
-    desc: Reservation is for the Deluxe King Room with 2 guests
-  - expr: "any(\n  r.property_id == '{target.property_id}' and\n  r.payment_method_id\
-      \ == 'pm_1'\n  for r in state.reservations\n  if not r.id.startswith('res_initial_')\n\
-      )\n"
-    desc: Reservation uses the default Visa payment method (pm_1)
-  negative_checks:
-  - expr: "not any(\n  e.action == 'reservation.create' and e.payload.get('property_id')\
-      \ != '{target.property_id}'\n  for e in state.audit_log\n)\n"
-    desc: No reservation made for wrong property
-    penalty: 0.3
-  - expr: 'sum(1 for r in state.reservations if not r.id.startswith(''res_initial_'')
-      and r.property_id == ''{target.property_id}'') <= 1
-
-      '
-    desc: At most one reservation was created for this property
-    penalty: 0.2
 secondary_primitives: []

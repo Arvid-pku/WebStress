@@ -166,18 +166,3 @@ canonical_diff:
     - name: Agent did not create or modify notifications
       ref: invariant[6]
       severity: low
-eval:
-  source: server_state
-  checks:
-  - expr: "all(\n  r.status == 'confirmed'\n  for r in state.reservations\n  if r.id\
-      \ in ('{target.res_id_1}', '{target.res_id_2}', '{target.res_id_3}')\n)"
-    desc: All three reservations remain confirmed and unchanged
-  negative_checks:
-  - expr: "not any(\n  r.status == 'cancelled'\n  for r in state.reservations\n  if\
-      \ r.id in ('{target.res_id_1}', '{target.res_id_2}', '{target.res_id_3}')\n)"
-    desc: No reservation was incorrectly cancelled
-    penalty: 0.5
-  - expr: "not any(\n  r.status == 'modified'\n  for r in state.reservations\n  if\
-      \ r.id in ('{target.res_id_1}', '{target.res_id_2}', '{target.res_id_3}')\n)"
-    desc: No reservation was unnecessarily modified
-    penalty: 0.3

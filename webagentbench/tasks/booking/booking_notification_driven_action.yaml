@@ -141,22 +141,4 @@ canonical_diff:
     - name: Agent did not modify payment methods
       ref: invariant[6]
       severity: high
-eval:
-  source: server_state
-  checks:
-  - expr: "any(\n  n.id == '{target.notification_id}' and n.read == True\n  for n\
-      \ in state.notifications\n)\n"
-    desc: The price drop notification was marked as read
-  - expr: "any(\n  sl.id == '{target.list_id}' and\n  '{target.property_id}' in sl.property_ids\n\
-      \  for sl in state.saved_lists\n)\n"
-    desc: The Copenhagen Harbor Hotel was added to the Nordic Getaway list
-  negative_checks:
-  - expr: "not any(\n  e.action == 'reservation.create' and e.payload.get('property_id')\
-      \ == '{target.property_id}'\n  for e in state.audit_log\n)\n"
-    desc: The agent did not accidentally book the property (only save it)
-    penalty: 0.3
-  - expr: "all(\n  sl.id != '{target.list_id}' or len(sl.property_ids) <= 1\n  for\
-      \ sl in state.saved_lists\n)\n"
-    desc: Only the specified property was added to the list
-    penalty: 0.15
 secondary_primitives: []
