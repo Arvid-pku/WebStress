@@ -150,6 +150,48 @@ seed:
     ms: Your CI/CD post
     mb: Loved your pipeline optimization post. Would you share the caching config?
     block_post_id: '{output.block_post_id}'
+canonical_diff:
+  constraints:
+  - desc: Notifications read
+    expr: state.unread_notification_count() == 0
+    severity: high
+  - desc: Messages read
+    expr: state.unread_message_count() == 0
+    severity: high
+  - desc: Inbox reply sent with the exact required subject and body
+    expr: 'any(m.to_user == ''target[''r_from'']'' and m.subject == ''Re: target[''r_sub'']''
+      and m.body == ''target[''r_body'']'' for m in state.sent_messages)'
+    severity: high
+  - desc: Spam message deleted
+    expr: not any(m.id == 'target['del_id']' for m in state.messages)
+    severity: high
+  - desc: Worldnews post upvoted
+    expr: state.get_post('target['wn_id']').vote_direction == 1
+    severity: high
+  - desc: Worldnews post saved
+    expr: '''target[''wn_id'']'' in state.saved_post_ids'
+    severity: high
+  - desc: Exact programming comment posted
+    expr: any(c.post_id == 'target['prog_id']' and c.body == 'target['c2']' and c.author_name
+      == state.owner_username for c in state.comments)
+    severity: high
+  - desc: Joined r/MachineLearning
+    expr: any(s.name == 'MachineLearning' and s.is_subscribed for s in state.subreddits)
+    severity: high
+  - desc: Exact MachineLearning post created
+    expr: any(p.subreddit_name == 'MachineLearning' and p.title == 'target['post_title']'
+      and p.body == 'target['post_body']' and p.author_name == state.owner_username
+      for p in state.posts)
+    severity: high
+  - desc: Theme dark
+    expr: state.settings.theme == 'dark'
+    severity: high
+  - desc: Feed sort set to new
+    expr: state.settings.default_feed_sort == 'new'
+    severity: high
+  - desc: Message emails disabled
+    expr: not state.settings.email_messages
+    severity: high
 eval:
   source: server_state
   checks:

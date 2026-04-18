@@ -74,6 +74,31 @@ seed:
       simulator in Python - would you be interested in testing it on real chemistry
       problems?
     initial_subscriptions: '{output.subscriptions}'
+canonical_diff:
+  constraints:
+  - desc: Search result saved
+    expr: '''target[''search_id'']'' in state.saved_post_ids'
+    severity: high
+  - desc: Comment posted
+    expr: any(c.post_id == 'target['comment_id']' and c.author_name == state.owner_username
+      for c in state.comments)
+    severity: high
+  - desc: Post created
+    expr: any(p.title == 'target['post_title']' and p.author_name == state.owner_username
+      for p in state.posts)
+    severity: high
+  - desc: Subscribed
+    expr: any(s.name == 'target['join_sub']' and s.is_subscribed for s in state.subreddits)
+    severity: high
+  - desc: Message sent
+    expr: any(m.to_user == 'target['msg_to']' for m in state.sent_messages)
+    severity: high
+  - desc: Theme dark
+    expr: state.settings.theme == 'dark'
+    severity: high
+  - desc: Notifications cleared
+    expr: state.unread_notification_count() == 0
+    severity: high
 eval:
   source: server_state
   checks:

@@ -72,6 +72,27 @@ seed:
     comment_id: '{output.comment_id}'
     comment_text: 500 hours is dedication. The Consort Radahn fight alone took me
       40 attempts.
+canonical_diff:
+  constraints:
+  - desc: EU post upvoted
+    expr: state.get_post('target['up_id']').vote_direction == 1
+    severity: high
+  - desc: AI startup post downvoted
+    expr: state.get_post('target['down_id']').vote_direction == -1
+    severity: high
+  - desc: Viking post saved
+    expr: '''target[''save_id'']'' in state.saved_post_ids'
+    severity: high
+  - desc: Elden Ring comment
+    expr: any(c.post_id == 'target['comment_id']' and "Consort Radahn" in c.body for
+      c in state.comments)
+    severity: high
+  - desc: Messages read
+    expr: state.unread_message_count() == 0
+    severity: high
+  - desc: Comment sort top
+    expr: state.settings.default_comment_sort == 'top'
+    severity: high
 eval:
   source: server_state
   checks:

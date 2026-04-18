@@ -79,6 +79,24 @@ seed:
     gm_id: '{output.gm_id}'
     join_sub: MachineLearning
     initial_subscriptions: '{output.subscriptions}'
+canonical_diff:
+  constraints:
+  - desc: Worldnews post upvoted
+    expr: state.get_post('target['wn_id']').vote_direction == 1
+    severity: high
+  - desc: Exact comment on PF post
+    expr: any(c.post_id == 'target['pf_id']' and c.body == 'target['pf_comment']'
+      and c.author_name == state.owner_username for c in state.comments)
+    severity: high
+  - desc: Gaming post saved
+    expr: '''target[''gm_id'']'' in state.saved_post_ids'
+    severity: high
+  - desc: Subscribed to r/ML
+    expr: any(s.name == 'MachineLearning' and s.is_subscribed for s in state.subreddits)
+    severity: high
+  - desc: Feed sort set to top
+    expr: state.settings.default_feed_sort == 'top'
+    severity: high
 eval:
   source: server_state
   checks:

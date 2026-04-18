@@ -99,6 +99,27 @@ seed:
     save_author: BinaryBard
     save_hint: Shopify
     save_id: '{output.save_id}'
+canonical_diff:
+  constraints:
+  - desc: Post upvoted
+    expr: state.get_post('target['post_id']').vote_direction == 1
+    severity: high
+  - desc: Top-level comment
+    expr: any(c.post_id == 'target['post_id']' and c.parent_id is None and "depends
+      on your team size" in c.body and c.author_name == state.owner_username for c
+      in state.comments)
+    severity: high
+  - desc: Reply to CompileError
+    expr: any(c.parent_id == 'target['reply1_id']' and "Conway's Law" in c.body and
+      c.author_name == state.owner_username for c in state.comments)
+    severity: high
+  - desc: Reply to DeepDiver
+    expr: any(c.parent_id == 'target['reply2_id']' and "ops burden" in c.body and
+      c.author_name == state.owner_username for c in state.comments)
+    severity: high
+  - desc: BinaryBard comment saved
+    expr: '''target[''save_id'']'' in state.saved_comment_ids'
+    severity: high
 eval:
   source: server_state
   checks:

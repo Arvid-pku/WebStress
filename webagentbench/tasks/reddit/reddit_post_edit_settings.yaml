@@ -37,6 +37,26 @@ seed:
     edited_body: We find that translation quality scales predictably with model size,
       dataset size, and compute budget. Full paper and code linked in comments.
     join_sub: Piracy
+canonical_diff:
+  constraints:
+  - desc: Post created in r/ML
+    expr: any(p.subreddit_name == 'MachineLearning' and p.title == 'target['post_title']'
+      and p.author_name == state.owner_username for p in state.posts)
+    severity: high
+  - desc: Post was edited with the exact required body
+    expr: any(p.subreddit_name == 'MachineLearning' and p.title == 'target['post_title']'
+      and p.author_name == state.owner_username and p.is_edited and p.body == 'target['edited_body']'
+      for p in state.posts)
+    severity: high
+  - desc: Theme dark
+    expr: state.settings.theme == 'dark'
+    severity: high
+  - desc: Comment sort new
+    expr: state.settings.default_comment_sort == 'new'
+    severity: high
+  - desc: Subscribed to r/Piracy
+    expr: any(s.name == 'Piracy' and s.is_subscribed for s in state.subreddits)
+    severity: high
 eval:
   source: server_state
   checks:

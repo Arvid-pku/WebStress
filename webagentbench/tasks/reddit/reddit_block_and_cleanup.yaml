@@ -56,6 +56,26 @@ seed:
     save_title: '{output.save_title}'
     save_id: '{output.save_id}'
     hide_id: '{output.hide_id}'
+canonical_diff:
+  constraints:
+  - desc: User blocked
+    expr: '''CryptoSkeptic'' in state.blocked_users'
+    severity: high
+  - desc: Their post hidden
+    expr: state.get_post('target['hide_id']').is_hidden
+    severity: high
+  - desc: Message deleted
+    expr: not any(m.id == 'target['delete_msg_id']' for m in state.messages)
+    severity: high
+  - desc: Followers disabled
+    expr: not state.settings.allow_followers
+    severity: high
+  - desc: Online status hidden
+    expr: not state.settings.show_online_status
+    severity: high
+  - desc: PF post saved
+    expr: '''target[''save_id'']'' in state.saved_post_ids'
+    severity: high
 eval:
   source: server_state
   checks:

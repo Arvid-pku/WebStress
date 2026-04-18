@@ -146,6 +146,17 @@ seed:
     ms: Your CI/CD post
     mb: Loved your pipeline optimization post. Would you share the caching config?
     block_post_id: '{output.block_post_id}'
+canonical_diff:
+  constraints:
+  - desc: Theme dark
+    expr: state.settings.theme == 'dark'
+    severity: high
+  - desc: Notifications read
+    expr: state.unread_notification_count() == 0
+    severity: high
+  - desc: Joined ML
+    expr: any(s.name == 'MachineLearning' and s.is_subscribed for s in state.subreddits)
+    severity: high
 eval:
   source: server_state
   checks:

@@ -101,6 +101,38 @@ seed:
     msg_body: Incredible post. Would you be willing to share the tracking spreadsheet
       template you used? I want to implement the same system at my company.
     initial_subscriptions: '{output.subscriptions}'
+canonical_diff:
+  constraints:
+  - desc: Comment posted
+    expr: any(c.post_id == 'target['comment_id']' and c.author_name == state.owner_username
+      for c in state.comments)
+    severity: high
+  - desc: Post created
+    expr: any(p.title == 'target['post_title']' and p.author_name == state.owner_username
+      for p in state.posts)
+    severity: high
+  - desc: Subscribed
+    expr: any(s.name == 'target['join_sub']' and s.is_subscribed for s in state.subreddits)
+    severity: high
+  - desc: Message sent
+    expr: any(m.to_user == 'target['msg_to']' for m in state.sent_messages)
+    severity: high
+  - desc: Post upvoted
+    expr: state.get_post('target['vote_id']').vote_direction == 1
+    severity: high
+  - desc: Post saved
+    expr: '''target[''save_id'']'' in state.saved_post_ids'
+    severity: high
+  - desc: Reply posted
+    expr: any(c.parent_id == 'target['reply_id']' and c.author_name == state.owner_username
+      for c in state.comments)
+    severity: high
+  - desc: Theme dark
+    expr: state.settings.theme == 'dark'
+    severity: high
+  - desc: Notifications cleared
+    expr: state.unread_notification_count() == 0
+    severity: high
 eval:
   source: server_state
   checks:

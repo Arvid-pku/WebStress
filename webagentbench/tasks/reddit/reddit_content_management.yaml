@@ -61,6 +61,29 @@ seed:
     create_title: Why I stopped using ORMs and went back to raw SQL
     create_body: After 5 years of fighting with ORMs, I found that well-structured
       raw SQL with a thin query builder is simpler and more performant.
+canonical_diff:
+  constraints:
+  - desc: Post hidden
+    expr: state.get_post('target['hide_id']').is_hidden
+    severity: high
+  - desc: Memes unsaved
+    expr: not any(p.subreddit_name == 'memes' and p.id in state.saved_post_ids for
+      p in state.posts)
+    severity: high
+  - desc: Science post saved
+    expr: '''target[''save_id'']'' in state.saved_post_ids'
+    severity: high
+  - desc: Programming post created
+    expr: "any(\n  p.subreddit_name == 'programming'\n  and p.title == 'target['create_title']'\n\
+      \  and p.body == 'target['create_body']'\n  and p.author_name == state.owner_username\n\
+      \  for p in state.posts\n)"
+    severity: high
+  - desc: Feed sort new
+    expr: state.settings.default_feed_sort == 'new'
+    severity: high
+  - desc: Compact view on
+    expr: state.settings.compact_view
+    severity: high
 eval:
   source: server_state
   checks:

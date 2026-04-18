@@ -65,6 +65,20 @@ seed:
     del_comment_id: '{output.del_comment_id}'
     del_hint: overhyped
     join_sub: Piracy
+canonical_diff:
+  constraints:
+  - desc: Post edited
+    expr: '''After 6 months'' in state.get_post(''target[''edit_id'']'').body'
+    severity: high
+  - desc: Comment deleted
+    expr: state.get_comment('target['del_comment_id']').is_removed
+    severity: high
+  - desc: Subscribed
+    expr: any(s.name == 'Piracy' and s.is_subscribed for s in state.subreddits)
+    severity: high
+  - desc: Comment sort new
+    expr: state.settings.default_comment_sort == 'new'
+    severity: high
 eval:
   source: server_state
   checks:

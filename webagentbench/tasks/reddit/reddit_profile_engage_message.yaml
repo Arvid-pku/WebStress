@@ -50,6 +50,28 @@ seed:
     msg_body: Would you be open to sharing the raw dataset? I would love to build
       on your analysis.
     join: MachineLearning
+canonical_diff:
+  constraints:
+  - desc: Post upvoted
+    expr: state.get_post('target['post_id']').vote_direction == 1
+    severity: high
+  - desc: Post saved
+    expr: '''target[''post_id'']'' in state.saved_post_ids'
+    severity: high
+  - desc: Comment posted
+    expr: any(c.post_id == 'target['post_id']' and c.body == 'target['comment']' for
+      c in state.comments)
+    severity: high
+  - desc: Message sent
+    expr: "any(\n  m.to_user == 'target['user']'\n  and m.subject == 'target['msg_sub']'\n\
+      \  and m.body == 'target['msg_body']'\n  for m in state.sent_messages\n)"
+    severity: high
+  - desc: Subscribed ML
+    expr: any(s.name == 'MachineLearning' and s.is_subscribed for s in state.subreddits)
+    severity: high
+  - desc: Theme dark
+    expr: state.settings.theme == 'dark'
+    severity: high
 eval:
   source: server_state
   checks:

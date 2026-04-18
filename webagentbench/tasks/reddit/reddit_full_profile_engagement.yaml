@@ -48,6 +48,22 @@ seed:
     msg_subject: Your Central Park bird photography
     msg_body: Stunning work! Would you consider licensing some images for a nature
       conservation newsletter I edit?
+canonical_diff:
+  constraints:
+  - desc: Post upvoted
+    expr: state.get_post('target['post_id']').vote_direction == 1
+    severity: high
+  - desc: Exact comment posted
+    expr: any(c.post_id == 'target['post_id']' and c.body == 'target['comment_text']'
+      and c.author_name == state.owner_username for c in state.comments)
+    severity: high
+  - desc: Post saved
+    expr: '''target[''post_id'']'' in state.saved_post_ids'
+    severity: high
+  - desc: Message sent with exact body
+    expr: any(m.to_user == 'target['target_user']' and m.subject == 'target['msg_subject']'
+      and m.body == 'target['msg_body']' for m in state.sent_messages)
+    severity: high
 eval:
   source: server_state
   checks:

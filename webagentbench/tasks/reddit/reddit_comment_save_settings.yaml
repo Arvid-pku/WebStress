@@ -70,6 +70,27 @@ seed:
     reply_target_id: '{output.reply_comment_id}'
     reply_text: DI containers solve the singleton use case more cleanly. The singleton
       pattern has well-documented issues with testing and concurrency.
+canonical_diff:
+  constraints:
+  - desc: Exact top-level comment
+    expr: any(c.post_id == 'target['post_id']' and c.body == "Design patterns are
+      tools. Like any tool, they can be misused. The problem is not the patterns themselves
+      but applying them where they are not needed." and c.parent_id is None and c.author_name
+      == state.owner_username for c in state.comments)
+    severity: high
+  - desc: Reply to singleton comment
+    expr: any(c.parent_id == 'target['reply_target_id']' and "DI containers" in c.body
+      and c.author_name == state.owner_username for c in state.comments)
+    severity: high
+  - desc: Post saved
+    expr: '''target[''post_id'']'' in state.saved_post_ids'
+    severity: high
+  - desc: Comment sort controversial
+    expr: state.settings.default_comment_sort == 'controversial'
+    severity: high
+  - desc: Auto-play disabled
+    expr: not state.settings.auto_play_media
+    severity: high
 eval:
   source: server_state
   checks:

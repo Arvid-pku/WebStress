@@ -155,6 +155,47 @@ seed:
     m_to: CompileError
     wn_comment: Renewables are finally delivering on their promise. This is the turning
       point.
+canonical_diff:
+  constraints:
+  - desc: All notifications read
+    expr: state.unread_notification_count() == 0
+    severity: high
+  - desc: All messages read
+    expr: state.unread_message_count() == 0
+    severity: high
+  - desc: Replied to u/{target.r_from}
+    expr: any(m.to_user == 'target['r_from']' and 'target['r_body']' in m.body for
+      m in state.sent_messages)
+    severity: high
+  - desc: Spam message deleted
+    expr: not any(m.id == 'target['del_id']' for m in state.messages)
+    severity: high
+  - desc: Worldnews post saved
+    expr: '''target[''wn_id'']'' in state.saved_post_ids'
+    severity: high
+  - desc: Commented on worldnews post
+    expr: any(c.post_id == 'target['wn_id']' and 'target['c1']' in c.body and c.author_name
+      == state.owner_username for c in state.comments)
+    severity: high
+  - desc: Programming post saved
+    expr: '''target[''prog_id'']'' in state.saved_post_ids'
+    severity: high
+  - desc: Subscribed to r/{target.join}
+    expr: any(s.name == 'target['join']' and s.is_subscribed for s in state.subreddits)
+    severity: high
+  - desc: Post created in r/{target.join}
+    expr: any(p.subreddit_name == 'target['join']' and 'target['pt']' in p.title and
+      p.author_name == state.owner_username for p in state.posts)
+    severity: high
+  - desc: Theme set to dark
+    expr: state.settings.theme == 'dark'
+    severity: high
+  - desc: Feed sort set to new
+    expr: state.settings.default_feed_sort == 'new'
+    severity: high
+  - desc: Email for messages disabled
+    expr: state.settings.email_messages == False
+    severity: high
 eval:
   source: server_state
   checks:

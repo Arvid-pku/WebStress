@@ -84,6 +84,26 @@ seed:
       ones.
     decoy_post_ids: '{output.decoy_post_ids}'
     initial_subscriptions: '{output.subscriptions}'
+canonical_diff:
+  constraints:
+  - desc: GPT-5 post saved
+    expr: '''target[''save_id'']'' in state.saved_post_ids'
+    severity: high
+  - desc: ML post upvoted
+    expr: state.get_post('target['comment_post_id']').vote_direction == 1
+    severity: high
+  - desc: Exact comment on ML post
+    expr: any(c.post_id == 'target['comment_post_id']' and c.body == 'target['comment_text']'
+      and c.author_name == state.owner_username for c in state.comments)
+    severity: high
+  - desc: Subscribed to r/Piracy
+    expr: any(s.name == 'Piracy' and s.is_subscribed for s in state.subreddits)
+    severity: high
+  - desc: Post created in r/Piracy with exact title and body
+    expr: any(p.subreddit_name == 'target['join_sub']' and p.title == 'target['new_title']'
+      and p.body == 'target['new_body']' and p.author_name == state.owner_username
+      for p in state.posts)
+    severity: high
 eval:
   source: server_state
   checks:

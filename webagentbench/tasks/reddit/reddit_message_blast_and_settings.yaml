@@ -27,6 +27,29 @@ seed:
     msg_body: Organizing a virtual meetup for ML practitioners next Friday at 7pm
       EST. Topics include fine-tuning techniques and deployment best practices. RSVP
       by replying to this message.
+canonical_diff:
+  constraints:
+  - desc: Msg to NeuralNexus
+    expr: any(m.to_user == "NeuralNexus" and m.subject == "ML meetup" for m in state.sent_messages)
+    severity: high
+  - desc: Msg to ByteRunner
+    expr: any(m.to_user == "ByteRunner" and m.subject == "ML meetup" for m in state.sent_messages)
+    severity: high
+  - desc: Msg to DataWizard42
+    expr: any(m.to_user == "DataWizard42" and m.subject == "ML meetup" for m in state.sent_messages)
+    severity: high
+  - desc: Notifications read
+    expr: state.unread_notification_count() == 0
+    severity: high
+  - desc: Theme dark
+    expr: state.settings.theme == 'dark'
+    severity: high
+  - desc: Active communities hidden
+    expr: not state.settings.show_active_communities
+    severity: high
+  - desc: Feed sort new
+    expr: state.settings.default_feed_sort == 'new'
+    severity: high
 eval:
   source: server_state
   checks:

@@ -150,6 +150,52 @@ seed:
     m_to: CompileError
     wn_comment: Renewables are finally delivering on their promise. This is the turning
       point.
+canonical_diff:
+  constraints:
+  - desc: Subscribed to r/{target.j1}
+    expr: any(s.name == 'target['j1']' and s.is_subscribed for s in state.subreddits)
+    severity: high
+  - desc: Subscribed to r/{target.j2}
+    expr: any(s.name == 'target['j2']' and s.is_subscribed for s in state.subreddits)
+    severity: high
+  - desc: Subscribed to r/{target.j3}
+    expr: any(s.name == 'target['j3']' and s.is_subscribed for s in state.subreddits)
+    severity: high
+  - desc: Post created in r/{target.j1} with correct title
+    expr: any(p.subreddit_name == 'target['j1']' and p.title == 'target['p1_title']'
+      and p.author_name == state.owner_username for p in state.posts)
+    severity: high
+  - desc: Programming post upvoted
+    expr: state.get_post('target['prog_id']').vote_direction == 1
+    severity: high
+  - desc: Commented on programming post
+    expr: any(c.post_id == 'target['prog_id']' and 'target['cc']' in c.body and c.author_name
+      == state.owner_username for c in state.comments)
+    severity: high
+  - desc: Message sent to u/NeuralNexus
+    expr: any(m.to_user == 'NeuralNexus' and m.subject == 'target['ms']' and m.body
+      == 'target['mb']' for m in state.sent_messages)
+    severity: high
+  - desc: Message sent to u/ByteRunner
+    expr: any(m.to_user == 'ByteRunner' and m.subject == 'target['ms']' and m.body
+      == 'target['mb']' for m in state.sent_messages)
+    severity: high
+  - desc: Message sent to u/DataWizard42
+    expr: any(m.to_user == 'DataWizard42' and m.subject == 'target['ms']' and m.body
+      == 'target['mb']' for m in state.sent_messages)
+    severity: high
+  - desc: All notifications read
+    expr: state.unread_notification_count() == 0
+    severity: high
+  - desc: Theme set to dark
+    expr: state.settings.theme == 'dark'
+    severity: high
+  - desc: Comment sort set to new
+    expr: state.settings.default_comment_sort == 'new'
+    severity: high
+  - desc: Show active communities disabled
+    expr: state.settings.show_active_communities == False
+    severity: high
 eval:
   source: server_state
   checks:

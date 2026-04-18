@@ -72,6 +72,24 @@ seed:
     comment_text: It is because each year becomes a smaller fraction of your total
       life experience. When you are 5, a year is 20% of your life. When you are 50,
       it is only 2%.
+canonical_diff:
+  constraints:
+  - desc: Mildlyinfuriating post hidden
+    expr: state.get_post('target['hide_id']').is_hidden
+    severity: high
+  - desc: DataIsBeautiful post saved
+    expr: '''target[''save_id'']'' in state.saved_post_ids'
+    severity: high
+  - desc: ELI5 post upvoted
+    expr: state.get_post('target['upvote_id']').vote_direction == 1
+    severity: high
+  - desc: Comment on ELI5 post
+    expr: any(c.post_id == 'target['upvote_id']' and "smaller fraction" in c.body
+      and c.author_name == state.owner_username for c in state.comments)
+    severity: high
+  - desc: Compact view enabled
+    expr: state.settings.compact_view
+    severity: high
 eval:
   source: server_state
   checks:

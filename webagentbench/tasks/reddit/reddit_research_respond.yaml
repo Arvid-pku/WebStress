@@ -66,6 +66,22 @@ seed:
     msg_subject: Question about quantum error correction
     msg_body: Fascinating paper! Is the 99.9% fidelity sustained or peak? And does
       it scale beyond 100 qubits?
+canonical_diff:
+  constraints:
+  - desc: Mars post saved
+    expr: '''target[''search_id'']'' in state.saved_post_ids'
+    severity: high
+  - desc: Comment on Mars post
+    expr: any(c.post_id == 'target['search_id']' and "most significant discovery"
+      in c.body and c.author_name == state.owner_username for c in state.comments)
+    severity: high
+  - desc: Message sent to PhotonWave
+    expr: any(m.to_user == "PhotonWave" and m.subject == "Question about quantum error
+      correction" for m in state.sent_messages)
+    severity: high
+  - desc: Feed sort changed
+    expr: state.settings.default_feed_sort == 'new'
+    severity: high
 eval:
   source: server_state
   checks:

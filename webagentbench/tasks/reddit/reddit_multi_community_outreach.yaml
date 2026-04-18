@@ -60,6 +60,28 @@ seed:
     msg_body: Just published a comprehensive guide on fine-tuning LLMs in r/MachineLearning.
       Would love your feedback.
     initial_subscriptions: '{output.subscriptions}'
+canonical_diff:
+  constraints:
+  - desc: Subscribed to ML
+    expr: any(s.name == 'MachineLearning' and s.is_subscribed for s in state.subreddits)
+    severity: high
+  - desc: Subscribed to Piracy
+    expr: any(s.name == 'Piracy' and s.is_subscribed for s in state.subreddits)
+    severity: high
+  - desc: ML post created
+    expr: any(p.subreddit_name == "MachineLearning" and "fine-tuning LLMs" in p.title
+      and p.author_name == state.owner_username for p in state.posts)
+    severity: high
+  - desc: AskReddit comment
+    expr: any(c.post_id == 'target['comment_post_id']' and "Physical keyboards" in
+      c.body and c.author_name == state.owner_username for c in state.comments)
+    severity: high
+  - desc: Message to NeuralNexus
+    expr: any(m.to_user == "NeuralNexus" and "fine-tuning" in m.body for m in state.sent_messages)
+    severity: high
+  - desc: Message to ByteRunner
+    expr: any(m.to_user == "ByteRunner" and "fine-tuning" in m.body for m in state.sent_messages)
+    severity: high
 eval:
   source: server_state
   checks:

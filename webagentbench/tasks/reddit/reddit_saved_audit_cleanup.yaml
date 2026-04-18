@@ -66,6 +66,30 @@ seed:
     msg_subject: Health and tech roundup
     msg_body: Found two great posts today - one on Intel 18A and one on walking and
       longevity. Check them out!
+canonical_diff:
+  constraints:
+  - desc: Memes posts unsaved
+    expr: not any(p.subreddit_name == 'memes' and p.id in state.saved_post_ids for
+      p in state.posts)
+    severity: high
+  - desc: Intel post saved
+    expr: '''target[''save1_id'']'' in state.saved_post_ids'
+    severity: high
+  - desc: Walking post saved
+    expr: '''target[''save2_id'']'' in state.saved_post_ids'
+    severity: high
+  - desc: Walking post upvoted
+    expr: state.get_post('target['save2_id']').vote_direction == 1
+    severity: high
+  - desc: Feed sort top
+    expr: state.settings.default_feed_sort == 'top'
+    severity: high
+  - desc: Comment sort new
+    expr: state.settings.default_comment_sort == 'new'
+    severity: high
+  - desc: Message sent
+    expr: any(m.to_user == "NeuralNexus" and "Intel 18A" in m.body for m in state.sent_messages)
+    severity: high
 eval:
   source: server_state
   checks:

@@ -58,6 +58,30 @@ seed:
     comment_text: Corvids in general are incredibly intelligent. New Caledonian crows
       even craft and use tools.
     leave_sub: memes
+canonical_diff:
+  constraints:
+  - desc: Notifications cleared
+    expr: state.unread_notification_count() == 0
+    severity: high
+  - desc: Messages read
+    expr: state.unread_message_count() == 0
+    severity: high
+  - desc: WHO post upvoted
+    expr: state.get_post('target['post1_id']').vote_direction == 1
+    severity: high
+  - desc: WHO post saved
+    expr: '''target[''post1_id'']'' in state.saved_post_ids'
+    severity: high
+  - desc: TIL comment
+    expr: any(c.post_id == 'target['post2_id']' and "New Caledonian crows" in c.body
+      for c in state.comments)
+    severity: high
+  - desc: Left r/memes
+    expr: any(s.name == 'memes' and not s.is_subscribed for s in state.subreddits)
+    severity: high
+  - desc: Theme dark
+    expr: state.settings.theme == 'dark'
+    severity: high
 eval:
   source: server_state
   checks:

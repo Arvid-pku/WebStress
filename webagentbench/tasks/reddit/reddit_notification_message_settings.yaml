@@ -53,6 +53,26 @@ seed:
     delete_from: '{output.delete_msg_from}'
     delete_subject: '{output.delete_msg_subject}'
     delete_msg_id: '{output.delete_msg_id}'
+canonical_diff:
+  constraints:
+  - desc: All notifications read
+    expr: state.unread_notification_count() == 0
+    severity: high
+  - desc: Exact reply sent
+    expr: any(m.to_user == 'target['reply_from']' and m.body == "Yes, fully compatible
+      with Python 3.12 and 3.13. Let me know if you hit any issues." for m in state.sent_messages)
+    severity: high
+  - desc: Spam deleted
+    expr: not any(m.id == 'target['delete_msg_id']' for m in state.messages)
+    severity: high
+  - desc: All email notifications disabled
+    expr: not state.settings.email_comment_reply and not state.settings.email_post_reply
+      and not state.settings.email_mentions and not state.settings.email_messages
+      and not state.settings.email_digest
+    severity: high
+  - desc: Theme dark
+    expr: state.settings.theme == 'dark'
+    severity: high
 eval:
   source: server_state
   checks:
