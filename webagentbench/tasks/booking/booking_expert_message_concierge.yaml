@@ -13,8 +13,8 @@ instruction_template: "Manage your inbox and update preferences accordingly:\n1.
   \ offer.\"\n   - Reply to \"{target.msg_hotel_3}\": subject \"Re: Spa Appointment\"\
   , body \"Confirmed. Please also book a couples massage for 5pm if available.\"\n\
   4. Mark all three original messages as read.\n5. Based on the room upgrade suggestion,\
-  \ update your travel preferences:\n   set preferred bed type to \"king\" and add\
-  \ \"spa\" to your accessibility needs.\n"
+  \ update your travel preferences:\n   set preferred bed type to \"king\" and enable\
+  \ accessibility needs.\n"
 difficulty: expert
 time_limit_seconds: 400
 expected_steps: 28
@@ -146,6 +146,12 @@ canonical_diff:
         )
       severity: high
   update:
+    - entity: Message
+      desc: Any property-origin message may be marked read while reviewing the inbox
+      where:
+        sender: {eq: property}
+      changes:
+        read: {any: true}
     - entity: Message
       desc: Mark first original message as read
       where:

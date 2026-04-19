@@ -138,6 +138,7 @@ seed:
     review_id: '{output.review_id}'
     review_name: '{output.review_name}'
     review_city: Chicago
+    review_res_id: '{output.review_res_id}'
 canonical_diff:
   constraints:
     - desc: Phone updated to new number
@@ -167,6 +168,13 @@ canonical_diff:
     - desc: Email was not changed
       expr: "state.owner_email == initial.owner_email"
       severity: medium
+  update:
+    - entity: Reservation
+      desc: Review submission flips rating_submitted on the Fairmont Chicago reservation
+      where:
+        id: {expr: "x == target['review_res_id']"}
+      changes:
+        rating_submitted: {any: true}
   create:
     - entity: PaymentMethod
       desc: Add new Mastercard ending in 2222
@@ -226,7 +234,7 @@ canonical_diff:
       filter: "a.last_four != '2222' or a.card_type != 'Mastercard'"
       preserve: ALL
     - collection: state.reservations
-      filter: "a.property_id != target['prop_id'] or a.check_in != '2026-10-20'"
+      filter: "(a.property_id != target['prop_id'] or a.check_in != '2026-10-20') and a.id != target['review_res_id']"
       preserve: ALL
     - collection: state.reviews
       filter: "a.property_id != target['review_id']"

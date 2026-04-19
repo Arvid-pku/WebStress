@@ -77,6 +77,8 @@ export default function Settings() {
         smoking: preferences.smoking,
         preferred_bed_type: preferences.preferred_bed_type,
         floor_preference: preferences.floor_preference,
+        preferred_room_type: preferences.preferred_room_type,
+        preferred_currency: preferences.preferred_currency,
         accessibility_needs: preferences.accessibility_needs,
         dietary_restrictions: preferences.dietary_restrictions,
       });
@@ -530,6 +532,44 @@ export default function Settings() {
               </select>
             </div>
 
+            {/* Preferred room type */}
+            <div className="bk-form-group" style={{ marginBottom: 0 }}>
+              <label htmlFor="pref-room-type">Preferred Room Type</label>
+              <select
+                id="pref-room-type"
+                className="bk-select"
+                value={preferences.preferred_room_type ?? ""}
+                onChange={(e) =>
+                  setPreferences({ ...preferences, preferred_room_type: e.target.value })
+                }
+              >
+                <option value="">No preference</option>
+                <option value="standard">Standard</option>
+                <option value="deluxe">Deluxe</option>
+                <option value="suite">Suite</option>
+                <option value="family">Family</option>
+              </select>
+            </div>
+
+            {/* Preferred currency */}
+            <div className="bk-form-group" style={{ marginBottom: 0 }}>
+              <label htmlFor="pref-currency">Preferred Currency</label>
+              <select
+                id="pref-currency"
+                className="bk-select"
+                value={preferences.preferred_currency ?? ""}
+                onChange={(e) =>
+                  setPreferences({ ...preferences, preferred_currency: e.target.value })
+                }
+              >
+                <option value="">No preference</option>
+                <option value="USD">USD</option>
+                <option value="EUR">EUR</option>
+                <option value="GBP">GBP</option>
+                <option value="JPY">JPY</option>
+              </select>
+            </div>
+
             {/* Accessibility needs */}
             <label
               style={{
@@ -561,18 +601,18 @@ export default function Settings() {
               </label>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                 {[
-                  "Vegetarian",
-                  "Vegan",
-                  "Gluten-free",
-                  "Halal",
-                  "Kosher",
-                  "Lactose-free",
-                  "Nut-free",
-                ].map((diet) => {
-                  const isSelected = (preferences.dietary_restrictions ?? []).includes(diet);
+                  { label: "Vegetarian", value: "vegetarian" },
+                  { label: "Vegan", value: "vegan" },
+                  { label: "Gluten-free", value: "gluten-free" },
+                  { label: "Halal", value: "halal" },
+                  { label: "Kosher", value: "kosher" },
+                  { label: "Lactose-free", value: "lactose-free" },
+                  { label: "Nut-free", value: "nut-free" },
+                ].map(({ label, value }) => {
+                  const isSelected = (preferences.dietary_restrictions ?? []).includes(value);
                   return (
                     <label
-                      key={diet}
+                      key={value}
                       style={{
                         display: "flex",
                         alignItems: "center",
@@ -587,10 +627,10 @@ export default function Settings() {
                       <input
                         type="checkbox"
                         checked={isSelected}
-                        onChange={() => handleDietaryChange(diet)}
+                        onChange={() => handleDietaryChange(value)}
                         style={{ width: 14, height: 14, accentColor: "var(--bk-blue-light)" }}
                       />
-                      {diet}
+                      {label}
                     </label>
                   );
                 })}

@@ -98,6 +98,13 @@ canonical_diff:
     - desc: Mastercard was not set as default payment method
       expr: "not any(pm.card_type == 'Mastercard' and pm.last_four == '7777' and pm.is_default for pm in state.payment_methods)"
       severity: medium
+  update:
+    - entity: PaymentMethod
+      desc: Previously-default card's is_default flips to false when new default is set
+      where:
+        is_default: {eq: false}
+      changes:
+        is_default: {any: true}
   create:
     - entity: PaymentMethod
       desc: Add the new Visa card ending in 9999 as default payment method

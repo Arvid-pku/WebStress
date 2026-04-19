@@ -115,6 +115,7 @@ seed:
     remove_pm_id: '{output.remove_pm_id}'
     remove_last_four: '5555'
     remove_holder: Alex Parker
+    prev_default_pm_id: 'pm_1'
 canonical_diff:
   constraints:
     - desc: Display name updated to Jordan A. Parker
@@ -161,6 +162,13 @@ canonical_diff:
       desc: Remove Mastercard 5555
       where:
         id: {expr: "x == target['remove_pm_id']"}
+  update:
+    - entity: PaymentMethod
+      desc: Previously-default card demoted when new Visa 3333 is set as default
+      where:
+        id: {expr: "x == target['prev_default_pm_id']"}
+      changes:
+        is_default: {eq: false}
   create:
     - entity: PaymentMethod
       desc: Add new Visa ending 3333 as default
@@ -216,7 +224,7 @@ canonical_diff:
     - collection: state.messages
       preserve: ALL
     - collection: state.payment_methods
-      filter: "a.id != target['remove_pm_id'] and a.last_four not in ('3333', '7777')"
+      filter: "a.id not in (target['remove_pm_id'], target['prev_default_pm_id']) and a.last_four not in ('3333', '7777')"
       preserve: ALL
     - collection: state.notifications
       preserve: ALL

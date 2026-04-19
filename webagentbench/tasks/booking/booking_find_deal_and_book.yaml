@@ -16,6 +16,7 @@ primary_primitives:
 start_path: /home
 seed:
   distractors: 8
+  skip_real_hotels: true
   actors: {}
   steps:
   - use: featured_property

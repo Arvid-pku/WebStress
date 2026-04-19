@@ -46,6 +46,13 @@ seed:
     property_name: '{output.property_name}'
     reservation_id: '{output.reservation_id}'
 canonical_diff:
+  update:
+    - entity: Reservation
+      desc: Review submission flips rating_submitted on the reviewed reservation
+      where:
+        id: {expr: "x == target['reservation_id']"}
+      changes:
+        rating_submitted: {any: true}
   create:
     - entity: Review
       desc: Write a review for the completed stay with the required score, title, and positive comment
@@ -71,6 +78,7 @@ canonical_diff:
       filter: "a.property_id != target['property_id']"
       preserve: ALL
     - collection: state.reservations
+      filter: "a.id != target['reservation_id']"
       preserve: ALL
     - collection: state.properties
       preserve: ALL

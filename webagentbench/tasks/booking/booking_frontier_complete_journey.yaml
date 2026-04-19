@@ -221,6 +221,7 @@ seed:
     modify_conf: '{output.modify_conf}'
     review_prop_id: '{output.review_prop_id}'
     review_prop_name: '{output.review_prop_name}'
+    review_res_id: '{output.review_res_id}'
 canonical_diff:
   constraints:
     - desc: Currency changed to EUR
@@ -239,6 +240,12 @@ canonical_diff:
         check_out: {eq: "2026-10-09"}
         guest_info:
           expr: "'extra pillows' in x.special_requests.lower()"
+    - entity: Reservation
+      desc: Review submission flips rating_submitted on the reviewed reservation
+      where:
+        id: {expr: "x == target['review_res_id']"}
+      changes:
+        rating_submitted: {any: true}
   create:
     - entity: SavedList
       desc: Create Barcelona Shortlist with two highest-rated hotels
@@ -313,7 +320,7 @@ canonical_diff:
   invariant:
     - collection: state.reservations
       filter: >-
-        a.id != target['modify_res_id'] and
+        a.id not in (target['modify_res_id'], target['review_res_id']) and
         a.property_id != target['winner_id']
       preserve: ALL
     - collection: state.properties

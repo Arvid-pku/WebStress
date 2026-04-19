@@ -53,7 +53,7 @@ const PROPERTY_TYPES = [
 const AMENITIES_LIST = [
   "Free WiFi",
   "Parking",
-  "Swimming Pool",
+  "Pool",
   "Spa",
   "Fitness Center",
   "Restaurant",

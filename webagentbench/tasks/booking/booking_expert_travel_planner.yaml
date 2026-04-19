@@ -215,7 +215,15 @@ seed:
     cheapest_name: '{output.tokyo_name}'
     review_prop_id: '{output.review_prop_id}'
     review_prop_name: '{output.review_prop_name}'
+    review_res_id: '{output.review_res_id}'
 canonical_diff:
+  update:
+    - entity: Reservation
+      desc: Review submission flips rating_submitted on the reviewed Paris reservation
+      where:
+        id: {expr: "x == target['review_res_id']"}
+      changes:
+        rating_submitted: {any: true}
   create:
     - entity: SavedList
       desc: Create World Tour list with all three hotels
@@ -280,7 +288,7 @@ canonical_diff:
       filter: "a.name != 'World Tour'"
       preserve: ALL
     - collection: state.reservations
-      filter: "a.property_id != target['cheapest_id']"
+      filter: "a.property_id != target['cheapest_id'] and a.id != target['review_res_id']"
       preserve: ALL
     - collection: state.reviews
       filter: "a.property_id != target['review_prop_id']"

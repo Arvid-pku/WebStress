@@ -207,6 +207,7 @@ seed:
     tokyo_name: '{output.tokyo_prop_name}'
     review_prop_id: '{output.review_prop_id}'
     review_prop_name: '{output.review_prop_name}'
+    review_res_id: '{output.review_res_id}'
 canonical_diff:
   constraints:
     - desc: Preferred currency updated to EUR
@@ -215,6 +216,13 @@ canonical_diff:
     - desc: Preferred bed type updated to king
       expr: "state.travel_preferences.preferred_bed_type == 'king'"
       severity: medium
+  update:
+    - entity: Reservation
+      desc: Review submission flips rating_submitted on the reviewed reservation
+      where:
+        id: {expr: "x == target['review_res_id']"}
+      changes:
+        rating_submitted: {any: true}
   create:
     - entity: SavedList
       desc: Create Grand Tour 2026 list with all three properties
@@ -328,7 +336,8 @@ canonical_diff:
   invariant:
     - collection: state.reservations
       filter: >-
-        a.property_id not in (target['nyc_prop_id'], target['paris_prop_id'], target['tokyo_prop_id'])
+        a.property_id not in (target['nyc_prop_id'], target['paris_prop_id'], target['tokyo_prop_id']) and
+        a.id != target['review_res_id']
       preserve: ALL
     - collection: state.properties
       preserve: ALL

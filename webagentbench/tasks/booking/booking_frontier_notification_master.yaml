@@ -212,6 +212,7 @@ seed:
     deal_notif_title: Flash Deal - Santorini from $290/night
     review_prop_id: '{output.review_prop_id}'
     review_prop_name: '{output.review_prop_name}'
+    review_res_id: '{output.review_res_id}'
     review_notif_title: Share your experience at Hotel & Spa Napa Valley
     confirm_notif_id: '{output.confirm_notif_id}'
     price_notif_id: '{output.price_notif_id}'
@@ -222,6 +223,13 @@ canonical_diff:
     - desc: SMS notifications enabled
       expr: "state.settings.sms_notifications == True"
       severity: medium
+  update:
+    - entity: Reservation
+      desc: Review submission flips rating_submitted on the reviewed reservation
+      where:
+        id: {expr: "x == target['review_res_id']"}
+      changes:
+        rating_submitted: {any: true}
   create:
     - entity: SavedList
       desc: Save price drop property to Price Drop Deals list
@@ -293,7 +301,7 @@ canonical_diff:
   invariant:
     - collection: state.reservations
       filter: >-
-        a.id != target['confirm_res_id'] and
+        a.id not in (target['confirm_res_id'], target['review_res_id']) and
         a.property_id != target['deal_prop_id']
       preserve: ALL
     - collection: state.properties

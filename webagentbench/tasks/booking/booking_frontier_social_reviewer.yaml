@@ -176,17 +176,38 @@ seed:
   targets:
     prop_id_1: '{output.prop_id_1}'
     prop_name_1: '{output.prop_name_1}'
+    res_id_1: '{output.res_id_1}'
     prop_id_2: '{output.prop_id_2}'
     prop_name_2: '{output.prop_name_2}'
+    res_id_2: '{output.res_id_2}'
     prop_id_3: '{output.prop_id_3}'
     prop_name_3: '{output.prop_name_3}'
+    res_id_3: '{output.res_id_3}'
     prop_id_4: '{output.prop_id_4}'
     prop_name_4: '{output.prop_name_4}'
+    res_id_4: '{output.res_id_4}'
 canonical_diff:
   constraints:
     - desc: Preferred room type updated to suite
       expr: "state.travel_preferences.preferred_room_type == 'suite'"
       severity: critical
+  update:
+    - entity: Reservation
+      desc: Review submission flips rating_submitted on the Tokyo reservation
+      where: {id: {expr: "x == target['res_id_1']"}}
+      changes: {rating_submitted: {any: true}}
+    - entity: Reservation
+      desc: Review submission flips rating_submitted on the Frankfurt reservation
+      where: {id: {expr: "x == target['res_id_2']"}}
+      changes: {rating_submitted: {any: true}}
+    - entity: Reservation
+      desc: Review submission flips rating_submitted on the Rome reservation
+      where: {id: {expr: "x == target['res_id_3']"}}
+      changes: {rating_submitted: {any: true}}
+    - entity: Reservation
+      desc: Review submission flips rating_submitted on the Lisbon reservation
+      where: {id: {expr: "x == target['res_id_4']"}}
+      changes: {rating_submitted: {any: true}}
   create:
     - entity: Review
       desc: Tokyo review score 9.5, outstanding in every way, no negative, leisure/family
@@ -280,6 +301,7 @@ canonical_diff:
       filter: "a.name != 'Top Stays'"
       preserve: ALL
     - collection: state.reservations
+      filter: "a.id not in (target['res_id_1'], target['res_id_2'], target['res_id_3'], target['res_id_4'])"
       preserve: ALL
     - collection: state.properties
       preserve: ALL

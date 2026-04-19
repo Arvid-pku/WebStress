@@ -1189,17 +1189,46 @@ async def clear_search_history(
     return {"ok": True, "cleared": count}
 
 
+class ApplyWalletRequest(SessionScopedRequest):
+    reservation_id: str | None = None
+    amount: float | None = None
+
+
 @router.post("/wallet/apply")
 async def apply_wallet_credit(
-    body: SessionScopedRequest,
+    body: ApplyWalletRequest,
     sm: SessionManager = Depends(get_session_manager),
 ):
-    """Apply wallet credit to the next booking (pre-deduct)."""
+    """Apply wallet credit to a reservation (deducts from wallet)."""
     state = _booking_state(sm, body.session_id)
+    available = state.wallet.balance
+    if available <= 0:
+        raise HTTPException(status_code=400, detail="Wallet balance is zero")
+    amount = body.amount if body.amount is not None else available
+    amount = min(round(amount, 2), available)
+    if amount <= 0:
+        raise HTTPException(status_code=400, detail="Invalid amount")
+    description = "Applied to reservation"
+    if body.reservation_id:
+        for r in state.reservations:
+            if r.id == body.reservation_id:
+                description = f"Applied to reservation at {r.property_name}"
+                break
+
+    def do_apply(s: BookingState) -> float:
+        s.use_wallet_credit(amount, description)
+        return s.wallet.balance
+
+    new_balance = _mutate(
+        sm, body.session_id, "wallet.apply",
+        {"reservation_id": body.reservation_id, "amount": amount},
+        do_apply,
+    )
     return {
-        "balance": state.wallet.balance,
+        "balance": new_balance,
         "currency": state.wallet.currency,
-        "message": "Wallet credit will be applied to your next booking",
+        "applied": amount,
+        "message": f"Applied ${amount:.2f} from wallet",
     }
 
 

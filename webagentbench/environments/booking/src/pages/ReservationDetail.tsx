@@ -89,6 +89,16 @@ export default function ReservationDetail() {
     setShowModifyModal(true);
   };
 
+  const handleApplyWallet = async () => {
+    if (!reservation) return;
+    try {
+      const result = await api.applyWallet({ reservation_id: reservation.id });
+      notify("Wallet Applied", result.message);
+    } catch {
+      notify("Failed", "Could not apply wallet credit.");
+    }
+  };
+
   const handleModify = async () => {
     if (!reservation) return;
     setModifying(true);
@@ -378,6 +388,12 @@ export default function ReservationDetail() {
               >
                 Contact Property
               </Link>
+              <button
+                className="bk-btn bk-btn--ghost bk-btn--block"
+                onClick={handleApplyWallet}
+              >
+                Apply Wallet Credit
+              </button>
             </div>
           </div>
         </div>

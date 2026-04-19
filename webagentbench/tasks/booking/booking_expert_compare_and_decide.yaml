@@ -191,7 +191,15 @@ seed:
     price_4: '450'
     completed_id: '{output.completed_prop_id}'
     completed_name: '{output.completed_prop_name}'
+    completed_res_id: '{output.completed_res_id}'
 canonical_diff:
+  update:
+    - entity: Reservation
+      desc: Review submission flips rating_submitted on the reviewed Savoy reservation
+      where:
+        id: {expr: "x == target['completed_res_id']"}
+      changes:
+        rating_submitted: {any: true}
   create:
     - entity: Reservation
       desc: Book Rosewood London Deluxe Room (spa+pool+restaurant, free cancel, under $400)
@@ -248,7 +256,7 @@ canonical_diff:
         property_response: {any: true}
   invariant:
     - collection: state.reservations
-      filter: "a.property_id != target['target_id'] or a.check_in != '2026-10-15'"
+      filter: "(a.property_id != target['target_id'] or a.check_in != '2026-10-15') and a.id != target['completed_res_id']"
       preserve: ALL
     - collection: state.saved_lists
       filter: "a.name != 'London Shortlist'"

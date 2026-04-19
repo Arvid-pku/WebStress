@@ -219,6 +219,7 @@ class BookingSeedRunner:
         base["id_counters"]["notif"] = len(base.get("notifications", []))
         base["id_counters"]["list"] = len(base.get("saved_lists", []))
         base["id_counters"]["conf"] = ctx._res_counter
+        base["id_counters"]["pm"] = len(base.get("payment_methods", []))
 
     # ------------------------------------------------------------------
     # Base skeleton

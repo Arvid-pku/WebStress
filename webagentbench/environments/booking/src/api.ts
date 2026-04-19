@@ -286,6 +286,13 @@ export function createBookingApi(request: RequestFn) {
       return request<Wallet>("wallet");
     },
 
+    applyWallet(params: { reservation_id?: string; amount?: number }) {
+      return request<{ balance: number; currency: string; applied: number; message: string }>(
+        "wallet/apply",
+        { method: "POST", body: params },
+      );
+    },
+
     getSearchHistory() {
       return request<{ history: SearchHistoryEntry[] }>("search-history");
     },

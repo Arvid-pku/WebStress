@@ -96,11 +96,19 @@ canonical_diff:
         created_at: {any: true}
         helpful_count: {any: true}
         property_response: {any: true}
+  update:
+    - entity: Reservation
+      desc: Reservation rating_submitted flag flips when the review is written (side-effect)
+      where:
+        id: {expr: "x == target['reservation_id']"}
+      changes:
+        rating_submitted: {any: true}
   invariant:
     - collection: state.reviews
       filter: "a.property_id != target['property_id']"
       preserve: ALL
     - collection: state.reservations
+      filter: "a.id != target['reservation_id']"
       preserve: ALL
     - collection: state.properties
       preserve: ALL

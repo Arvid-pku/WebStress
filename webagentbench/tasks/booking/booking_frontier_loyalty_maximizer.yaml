@@ -189,11 +189,19 @@ seed:
     tokyo_name: '{output.tokyo_name}'
     review_prop_id: '{output.review_prop_id}'
     review_name: '{output.review_prop_name}'
+    review_res_id: '{output.review_res_id}'
 canonical_diff:
   constraints:
     - desc: Preferred currency updated to GBP
       expr: "state.travel_preferences.preferred_currency == 'GBP'"
       severity: medium
+  update:
+    - entity: Reservation
+      desc: Review submission flips rating_submitted on the reviewed reservation
+      where:
+        id: {expr: "x == target['review_res_id']"}
+      changes:
+        rating_submitted: {any: true}
   create:
     - entity: Reservation
       desc: Book London Genius Club Genius Deluxe Room for 3 nights
@@ -320,7 +328,8 @@ canonical_diff:
   invariant:
     - collection: state.reservations
       filter: >-
-        a.property_id not in (target['london_id'], target['paris_id'], target['tokyo_id'])
+        a.property_id not in (target['london_id'], target['paris_id'], target['tokyo_id']) and
+        a.id != target['review_res_id']
       preserve: ALL
     - collection: state.properties
       preserve: ALL

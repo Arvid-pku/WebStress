@@ -236,6 +236,19 @@ canonical_diff:
         sender: {eq: guest}
         read: {any: true}
         created_at: {any: true}
+    - entity: Message
+      desc: Send booking confirmation message to Dubai hotel
+      properties:
+        property_id: {expr: "x == target['book_prop_id']"}
+        property_name: {any: true}
+        reservation_id: {any: true}
+        subject:
+          expr: "'booking' in x.lower() and 'confirm' in x.lower()"
+        body:
+          expr: "'booked' in x.lower() or 'looking forward' in x.lower()"
+        sender: {eq: guest}
+        read: {any: true}
+        created_at: {any: true}
     - entity: Reservation
       desc: Book Dubai Marina Luxury Hotel Deluxe Room for 4 nights
       properties:
@@ -307,11 +320,14 @@ canonical_diff:
     - name: Agent sent early check-in request to Dubai hotel
       ref: create[3]
       severity: medium
-    - name: Agent booked Dubai hotel Deluxe Room with correct dates
+    - name: Agent sent booking confirmation to Dubai hotel
       ref: create[4]
+      severity: low
+    - name: Agent booked Dubai hotel Deluxe Room with correct dates
+      ref: create[5]
       severity: critical
     - name: Agent created Messaged Hotels list with all four properties
-      ref: create[5]
+      ref: create[6]
       severity: high
     - name: Agent did not modify other reservations
       ref: invariant[0]

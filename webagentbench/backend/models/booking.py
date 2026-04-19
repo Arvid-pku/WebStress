@@ -743,6 +743,7 @@ class BookingState(BaseEnvState):
             subject=subject,
             body=body,
             sender="guest",
+            read=True,
             created_at=datetime.now(timezone.utc),
         )
         self.messages.append(msg)

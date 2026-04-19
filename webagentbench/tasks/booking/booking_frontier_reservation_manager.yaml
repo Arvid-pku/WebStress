@@ -216,8 +216,10 @@ seed:
     new_check_out: '2026-09-14'
     review1_prop_id: '{output.review1_prop_id}'
     review1_name: '{output.review1_prop_name}'
+    review1_res_id: '{output.review1_res_id}'
     review2_prop_id: '{output.review2_prop_id}'
     review2_name: '{output.review2_prop_name}'
+    review2_res_id: '{output.review2_res_id}'
 canonical_diff:
   update:
     - entity: Reservation
@@ -243,6 +245,18 @@ canonical_diff:
         status: {any: true}
         total_price: {any: true}
         taxes_and_fees: {any: true}
+    - entity: Reservation
+      desc: Review submission flips rating_submitted on review1 reservation
+      where:
+        id: {expr: "x == target['review1_res_id']"}
+      changes:
+        rating_submitted: {any: true}
+    - entity: Reservation
+      desc: Review submission flips rating_submitted on review2 reservation
+      where:
+        id: {expr: "x == target['review2_res_id']"}
+      changes:
+        rating_submitted: {any: true}
   create:
     - entity: Message
       desc: Send cancellation notice to first cancelled property
@@ -253,7 +267,7 @@ canonical_diff:
         subject: {expr: "'cancellation' in x.lower() or 'cancelled' in x.lower()"}
         body: {expr: "'cancel' in x.lower() or 'schedule' in x.lower()"}
         sender: {eq: guest}
-        read: {eq: false}
+        read: {any: true}
         created_at: {any: true}
     - entity: Message
       desc: Send cancellation inquiry to second cancelled property
@@ -264,7 +278,7 @@ canonical_diff:
         subject: {expr: "'cancellation' in x.lower() or 'inquiry' in x.lower()"}
         body: {expr: "'refund' in x.lower() or 'cancel' in x.lower()"}
         sender: {eq: guest}
-        read: {eq: false}
+        read: {any: true}
         created_at: {any: true}
     - entity: Message
       desc: Send date change confirmation to modified property
@@ -275,7 +289,7 @@ canonical_diff:
         subject: {expr: "'date' in x.lower() or 'change' in x.lower()"}
         body: {expr: "'date' in x.lower() or 'updated' in x.lower()"}
         sender: {eq: guest}
-        read: {eq: false}
+        read: {any: true}
         created_at: {any: true}
     - entity: SavedList
       desc: Create Cancelled - Revisit list with both cancelled properties
@@ -325,7 +339,7 @@ canonical_diff:
         property_response: {any: true}
   invariant:
     - collection: state.reservations
-      filter: "a.id not in (target['cancel1_res_id'], target['cancel2_res_id'], target['modify_res_id'])"
+      filter: "a.id not in (target['cancel1_res_id'], target['cancel2_res_id'], target['modify_res_id'], target['review1_res_id'], target['review2_res_id'])"
       preserve: ALL
     - collection: state.messages
       filter: "a.sender != 'guest'"

@@ -134,6 +134,7 @@ seed:
     review_prop_name: '{output.review_prop_name}'
     review_prop_id: '{output.review_prop_id}'
     review_res_id: '{output.review_res_id}'
+    prev_default_pm_id: 'pm_1'
 canonical_diff:
   constraints:
     - desc: Phone number updated to +1-415-555-0200
@@ -170,6 +171,18 @@ canonical_diff:
         check_out: {eq: "2026-07-25"}
         guest_info:
           expr: "'late checkout' in x.special_requests.lower()"
+    - entity: Reservation
+      desc: Review submission flips rating_submitted on the reviewed reservation
+      where:
+        id: {expr: "x == target['review_res_id']"}
+      changes:
+        rating_submitted: {any: true}
+    - entity: PaymentMethod
+      desc: Previously-default card demoted when new Visa 7777 is set as default
+      where:
+        id: {expr: "x == target['prev_default_pm_id']"}
+      changes:
+        is_default: {eq: false}
   create:
     - entity: PaymentMethod
       desc: Add new Visa 7777 as default
@@ -250,7 +263,7 @@ canonical_diff:
   invariant:
     - collection: state.reservations
       filter: >-
-        a.id not in (target['cancel_res_id'], target['modify_res_id']) and
+        a.id not in (target['cancel_res_id'], target['modify_res_id'], target['review_res_id']) and
         a.property_id != target['book_id']
       preserve: ALL
     - collection: state.properties
@@ -267,7 +280,7 @@ canonical_diff:
         a.property_id != target['book_id']
       preserve: ALL
     - collection: state.payment_methods
-      filter: "a.last_four != '7777'"
+      filter: "a.last_four != '7777' and a.id != target['prev_default_pm_id']"
       preserve: ALL
     - collection: state.notifications
       preserve: ALL

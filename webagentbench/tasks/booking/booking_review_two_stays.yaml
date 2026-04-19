@@ -128,11 +128,26 @@ seed:
   targets:
     prop_id_1: '{output.prop_id_1}'
     prop_name_1: '{output.prop_name_1}'
+    res_id_1: '{output.res_id_1}'
     prop_id_2: '{output.prop_id_2}'
     prop_name_2: '{output.prop_name_2}'
+    res_id_2: '{output.res_id_2}'
     prop_id_3: '{output.prop_id_3}'
     existing_review_id: '{output.existing_review_id}'
 canonical_diff:
+  update:
+    - entity: Reservation
+      desc: Review submission flips rating_submitted on the Negresco reservation
+      where:
+        id: {expr: "x == target['res_id_1']"}
+      changes:
+        rating_submitted: {any: true}
+    - entity: Reservation
+      desc: Review submission flips rating_submitted on the Berlin Mitte reservation
+      where:
+        id: {expr: "x == target['res_id_2']"}
+      changes:
+        rating_submitted: {any: true}
   create:
     - entity: Review
       desc: Write review for prop_name_1 with score 9.0, correct title, positive comment about outstanding service and beautiful rooms, leisure/couple
@@ -177,6 +192,7 @@ canonical_diff:
       filter: "a.property_id not in (target['prop_id_1'], target['prop_id_2'])"
       preserve: ALL
     - collection: state.reservations
+      filter: "a.id not in (target['res_id_1'], target['res_id_2'])"
       preserve: ALL
     - collection: state.properties
       preserve: ALL

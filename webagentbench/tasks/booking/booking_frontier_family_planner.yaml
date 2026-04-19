@@ -196,6 +196,7 @@ seed:
     rome_winner_name: '{output.rome_name_1}'
     review_prop_id: '{output.review_prop_id}'
     review_prop_name: '{output.review_prop_name}'
+    review_res_id: '{output.review_res_id}'
 canonical_diff:
   constraints:
     - desc: Preferred bed type set to twin
@@ -207,6 +208,13 @@ canonical_diff:
     - desc: Nut-free added to dietary restrictions
       expr: "'nut-free' in state.travel_preferences.dietary_restrictions"
       severity: medium
+  update:
+    - entity: Reservation
+      desc: Review submission flips rating_submitted on the reviewed reservation
+      where:
+        id: {expr: "x == target['review_res_id']"}
+      changes:
+        rating_submitted: {any: true}
   create:
     - entity: Reservation
       desc: Book Barcelona Family Resort Family Suite for 4 guests
@@ -306,7 +314,8 @@ canonical_diff:
   invariant:
     - collection: state.reservations
       filter: >-
-        a.property_id not in (target['bcn_winner_id'], target['rome_winner_id'])
+        a.property_id not in (target['bcn_winner_id'], target['rome_winner_id']) and
+        a.id != target['review_res_id']
       preserve: ALL
     - collection: state.properties
       preserve: ALL

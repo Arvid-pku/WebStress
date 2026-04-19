@@ -124,6 +124,7 @@ seed:
     property_name: '{output.book_prop_name}'
     review_prop_id: '{output.review_prop_id}'
     review_prop_name: '{output.review_prop_name}'
+    review_res_id: '{output.review_res_id}'
 canonical_diff:
   constraints:
     - desc: Preferred bed type updated to queen
@@ -186,6 +187,13 @@ canonical_diff:
         created_at: {any: true}
         helpful_count: {any: true}
         property_response: {any: true}
+  update:
+    - entity: Reservation
+      desc: Review submission flips rating_submitted on the reviewed reservation
+      where:
+        id: {expr: "x == target['review_res_id']"}
+      changes:
+        rating_submitted: {any: true}
   invariant:
     - collection: state.saved_lists
       filter: "a.name != 'Barcelona 2026'"

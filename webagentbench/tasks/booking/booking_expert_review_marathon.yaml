@@ -183,13 +183,35 @@ seed:
   targets:
     prop_id_1: '{output.prop_id_1}'
     prop_name_1: '{output.prop_name_1}'
+    res_id_1: '{output.res_id_1}'
     prop_id_2: '{output.prop_id_2}'
     prop_name_2: '{output.prop_name_2}'
+    res_id_2: '{output.res_id_2}'
     prop_id_3: '{output.prop_id_3}'
     prop_name_3: '{output.prop_name_3}'
+    res_id_3: '{output.res_id_3}'
     distractor_prop_id: '{output.distractor_prop_id}'
     existing_review_id: '{output.existing_review_id}'
 canonical_diff:
+  update:
+    - entity: Reservation
+      desc: Review submission flips rating_submitted on the Rome reservation
+      where:
+        id: {expr: "x == target['res_id_1']"}
+      changes:
+        rating_submitted: {any: true}
+    - entity: Reservation
+      desc: Review submission flips rating_submitted on the Berlin reservation
+      where:
+        id: {expr: "x == target['res_id_2']"}
+      changes:
+        rating_submitted: {any: true}
+    - entity: Reservation
+      desc: Review submission flips rating_submitted on the Barcelona reservation
+      where:
+        id: {expr: "x == target['res_id_3']"}
+      changes:
+        rating_submitted: {any: true}
   create:
     - entity: Review
       desc: Write Rome review - score 9.5, title Absolutely magnificent
@@ -259,6 +281,7 @@ canonical_diff:
         a.property_id not in (target['prop_id_1'], target['prop_id_2'], target['prop_id_3'])
       preserve: ALL
     - collection: state.reservations
+      filter: "a.id not in (target['res_id_1'], target['res_id_2'], target['res_id_3'])"
       preserve: ALL
     - collection: state.properties
       preserve: ALL

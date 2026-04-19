@@ -204,7 +204,15 @@ seed:
     cheapest_price: '110'
     review_id: '{output.mtn1_id}'
     review_name: '{output.mtn1_name}'
+    review_res_id: '{output.review_res_id}'
 canonical_diff:
+  update:
+    - entity: Reservation
+      desc: Review submission flips rating_submitted on the reviewed reservation
+      where:
+        id: {expr: "x == target['review_res_id']"}
+      changes:
+        rating_submitted: {any: true}
   create:
     - entity: SavedList
       desc: Create Beach Getaways list with both beach properties
@@ -265,7 +273,7 @@ canonical_diff:
         subject: {expr: "'upcoming' in x.lower() or 'reservation' in x.lower()"}
         body: {expr: "'airport' in x.lower()"}
         sender: {eq: guest}
-        read: {eq: false}
+        read: {any: true}
         created_at: {any: true}
     - entity: Review
       desc: Write review for completed mountain stay with score 8.5 and correct title/positive
@@ -291,7 +299,7 @@ canonical_diff:
       filter: "a.name not in ('Beach Getaways', 'City Breaks', 'Mountain Retreats')"
       preserve: ALL
     - collection: state.reservations
-      filter: "not (a.property_id == target['cheapest_id'] and a.check_in == '2026-10-15')"
+      filter: "not (a.property_id == target['cheapest_id'] and a.check_in == '2026-10-15') and a.id != target['review_res_id']"
       preserve: ALL
     - collection: state.messages
       filter: "not (a.sender == 'guest' and a.property_id == target['cheapest_id'])"
