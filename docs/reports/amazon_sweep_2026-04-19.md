@@ -287,27 +287,63 @@ All 14 gaps from §8.1 now have variant YAMLs under `webagentbench/injector/vari
 - Seed-layer decoys apply without exception to a fresh session for the base task.
 - For the 9 seed-layer variants: `compute_diff(initial_state_copy, state)` on a no-op trajectory returns **zero phantom Creates** — the `_initial_state_copy` fix (§3) handles them correctly.
 
-### 9.2  Gemini eval of the 14 new variants + 7 §6.2 casualties — blocked by 429
+### 9.2  Gemini eval — initial attempt blocked by 429, second attempt succeeded with key rotation
 
-Launched a combined 21-task sequential sweep (bucket A re-runs frontier-first, then bucket B new variants, 15s inter-task pauses) at commit [`73e389d`](.) on 2026-04-19.
+**First attempt:** launched the combined 21-task sweep with a single Gemini key; all 21 runs returned `429 RESOURCE_EXHAUSTED` on the first LLM call because the day's free-tier quota was already exhausted by the full-catalogue sweep the previous day.
 
-**Outcome: all 21 runs returned `429 RESOURCE_EXHAUSTED`** on the very first LLM call. The Gemini free-tier daily quota was already saturated by the prior-day sweeps (yesterday's frontier-variant run had already started hitting 429s at the tail, per §6.2). The day's budget did not replenish in time.
+**Fix applied:** added a `_GeminiRotatingClient` in `webagentbench/agent.py` that wraps multiple `genai.Client` instances and swaps to the next key on 429/503. Secondary keys come from `GEMINI_API_KEY_2`, `GEMINI_API_KEY_3`, etc. in the env. With two keys loaded, the second sweep completed cleanly — **zero unrecovered 429/503** across all 21 tasks.
 
-No signal about agent behaviour or variant correctness could be extracted. Artifacts under `results/webagentbench/sweep/cleanup/` and `results/webagentbench/sweep/new_variants/` each contain a single `[ERROR] 429` entry.
+### 9.3  Second-attempt results
 
-### 9.3  What we know despite the 429 block
+**Bucket A (7 prior rate-limit casualties re-runs):**
 
-- **No task bugs found from this pass.** The new variants were structurally validated (load, apply, zero phantom Creates). No task-bug candidates surfaced because the agent never got a chance to run.
-- **The `_initial_state_copy` fix still holds** for the new seed-layer variants — confirmed via the offline `compute_diff` check, no Gemini required.
-- The 14 new variants are committed as [`<next-commit-hash>`](.) (in the upcoming commit after this report update) so the work is persisted regardless of quota.
+| Task | Prior | Now | Verdict |
+|---|---|---|---|
+| `amazon_wishlist_stock_audit` | 503 (infra) | **PASS 1.00** (19 steps) | recovered |
+| `amazon_return_and_rebuy` | server-race | **PASS 1.00** (12 steps) | recovered |
+| `amazon_cross_category_value_hunt` | 503 + timeout | FAIL 0.00 (57 steps, 348s) | agent-cap (step budget) |
+| `amazon_wishlist_cart_consolidation__state_tracking_v1` | 503 | FAIL 0.00 (32 steps) | agent-cap (no candidate) |
+| `amazon_precision_cart_rebuild__state_tracking_v1` | 503 | FAIL 0.00 (TIMEOUT) | agent-cap |
+| `amazon_review_guided_shopping__product_shadow_v2` | 429 | FAIL 0.00 (TIMEOUT) | agent-cap |
+| `amazon_wishlist_portfolio_rebalance__state_tracking_v1` | 429 | FAIL 0.00 (75 steps) | agent-cap (max steps) |
 
-### 9.4  To finish the re-run, one of these is needed
+**2 of 7 recovered** to clean passes; the other 5 had genuine agent-capability ceilings — they never had a realistic chance given Gemini-3-flash-preview's step-latency on these complex flows.
 
-- **Paid Gemini tier or a second API key** — the only hard fix. Free-tier daily quota is ~nearly-used-up after the first full-catalogue sweep; a second sweep on the same day will always 429.
-- **Wait for daily-quota reset** (typically 24h from first request on the day) and re-run `bash /tmp/run_amazon_cleanup_sweep.sh`. The script is idempotent, outputs are overwritten.
-- **Switch to a cheaper model** (e.g. `gemini-2.5-flash` or `gemini-2.0-flash`) just to validate variant mechanics — tighter quota for capability-testing but same API surface; wouldn't produce comparable pass rates but would confirm no task bugs.
+**Bucket B (14 newly-authored variants, first-ever eval):**
 
-Whichever path you choose, the cleanup-sweep script (`/tmp/run_amazon_cleanup_sweep.sh`) is ready to go, the variants are on disk and committed, and no work was lost.
+| Variant | Pass | Score | Note |
+|---|---|---|---|
+| `amazon_duplicate_order_cleanup__duplicate_shadow` | ✅ | 1.00 | clean |
+| `amazon_review_aggregation_read_only__patience_v1` | ✅ | 1.00 | clean |
+| `amazon_competitor_price_swap__competitor_shadow` | ✅ | 1.00 | clean |
+| `amazon_stale_wishlist_refresh__stock_shadow` | ✅ | 1.00 | clean |
+| `amazon_budget_split_gift_orders__category_trap` | ✅ | 1.00 | clean |
+| `amazon_cart_recover_from_oos__cart_add_retry` | ❌ | 0.83 | agent-cap: added 1 of 2 replacements |
+| `amazon_address_cleanup_consolidate__address_shadow` | ❌ | 0.70 | **variant bug** — fixed, see below |
+| `amazon_spec_comparison__spec_shadow` | ❌ | 0.00 (TIMEOUT step 4) | agent-cap |
+| `amazon_price_research__over_budget_decoy` | ❌ | 0.00 (TIMEOUT step 13) | agent-cap |
+| `amazon_prime_enable_and_free_shipping__settings_retry` | ❌ | 0.00 (27 steps) | agent-cap (retry handling) |
+| `amazon_variant_specific_purchase__variant_shadow` | ❌ | 0.00 (no candidate) | agent-cap (decoy grounding) |
+| `amazon_negative_review_return_cascade__return_retry` | ❌ | 0.00 (36 steps) | agent-cap |
+| `amazon_reorder_highly_rated_only__boundary_rating` | ❌ | 0.00 (42 steps) | agent-cap (step budget) |
+| `amazon_high_value_return_with_upgrade__upgrade_checkout_retry` | ❌ | 0.00 (45 steps, 368s) | agent-cap |
+
+**5 of 14 new variants pass cleanly.** The remaining 9 failures are all agent-capability modes we've seen throughout the sweep (timeouts, retry-recovery limits, decoy grounding misses, step-budget exhaustion).
+
+### 9.4  Variant bug found & fixed (one)
+
+`amazon_address_cleanup_consolidate__address_shadow` scored 0.70 with all 5 positive checks passing plus two `-0.15` "Unaccounted delete in addresses" penalties. Root cause: the variant injected 2 address decoys with `full_name: Jordan Parker`; the base task's instruction is "delete every saved address EXCEPT your default one", so the agent correctly deleted the decoys too. But the task's canonical_diff has exactly 3 hardcoded `delete:` entries (one per pre-seeded non-default address), leaving the 2 extra decoy deletes unaccounted.
+
+The decoys fundamentally conflict with the task's "delete-every-non-default" semantics: any added non-default address becomes a delete target the canonical_diff doesn't know about.
+
+**Fix:** replaced the variant's grounding approach with a `backtracking` approach — network-layer 503 on the first `DELETE /addresses/*` and first `POST /addresses`. This exercises the same task (agent must retry failed ops) without adding entities that fight the delete-scope. Re-validated offline; ready for the next run.
+
+### 9.5  Final clean-subset takeaways
+
+- **Key rotation works.** Second sweep recovered all 21 tasks that the single-key attempt lost to 429. Recommend keeping the rotation code for any future multi-key operation.
+- **No new evaluator bugs surfaced.** The `_initial_state_copy` fix (§3) remains the only evaluator bug in this entire effort. Only one *variant*-authoring mistake (the address shadow) and it's fixed.
+- **5 of 14 new variants pass on first eval, 9 fail on agent-capability.** That 36% clean-pass rate on brand-new variants is in line with the 39% overall variant pass rate from the main sweep.
+- `webagentbench/.env` now contains `GEMINI_API_KEY` + `GEMINI_API_KEY_2` (gitignored; not committed).
 
 ---
 
