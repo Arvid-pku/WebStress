@@ -19,6 +19,7 @@ export default defineConfig({
       "/manifest": "http://127.0.0.1:8080",
       "/static": "http://127.0.0.1:8080",
       "/launch": "http://127.0.0.1:8080",
+      "/control": "http://127.0.0.1:8080",
     },
   },
 });
