@@ -1,6 +1,8 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
+const backendUrl = `http://127.0.0.1:${process.env.VITE_BACKEND_PORT || 8080}`;
+
 export default defineConfig({
   plugins: [react()],
   base: "/env/booking/",
@@ -15,11 +17,11 @@ export default defineConfig({
     port: Number(process.env.VITE_SERVER_PORT) || 8084,
     host: "127.0.0.1",
     proxy: {
-      "/api": "http://127.0.0.1:8080",
-      "/manifest": "http://127.0.0.1:8080",
-      "/static": "http://127.0.0.1:8080",
-      "/launch": "http://127.0.0.1:8080",
-      "/control": "http://127.0.0.1:8080",
+      "/api": backendUrl,
+      "/manifest": backendUrl,
+      "/static": backendUrl,
+      "/launch": backendUrl,
+      "/control": backendUrl,
     },
   },
 });
