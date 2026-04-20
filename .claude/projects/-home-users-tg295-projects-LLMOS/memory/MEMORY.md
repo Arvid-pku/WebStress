@@ -1,1 +1,0 @@
-- [Frontier tasks progress](frontier_progress.md) — per-task scores, fixes, and quirks while UI-verifying the 14 frontier booking tasks
