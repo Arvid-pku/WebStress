@@ -216,6 +216,7 @@ export function App() {
         <Route path="search" element={<SearchPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="labels" element={<LabelsPage />} />
+        <Route path="contacts" element={<Navigate to="/labels" replace />} />
       </Route>
     </Routes>
   );

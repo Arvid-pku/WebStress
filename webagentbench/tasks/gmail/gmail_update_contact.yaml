@@ -2,7 +2,8 @@ task_id: gmail_update_contact
 env_id: gmail
 title: Update a Contact Note
 instruction_template: Find the contact "Alice Chen" and update her note to "Team lead
-  — Project Atlas".
+  — Project Atlas". Note: contacts are accessible via the Labels & contacts page (click
+  the Labels link in the sidebar).
 difficulty: easy
 time_limit_seconds: 120
 expected_steps: 8
