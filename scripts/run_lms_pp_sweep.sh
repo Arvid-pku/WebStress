@@ -18,6 +18,8 @@
 # ─────────────────────────────────────────────────────────────────────
 set -euo pipefail
 cd "$(dirname "$0")/.."
+# shellcheck source=scripts/_sweep_common.sh
+source "$(dirname "$0")/_sweep_common.sh"
 
 # ── Config ───────────────────────────────────────────────────────────
 MODEL="${MODEL:-gpt-5}"
@@ -39,19 +41,7 @@ PROGRESS="$RUNDIR/progress.log"
 SCOREBOARD="$RUNDIR/scoreboard.txt"
 
 # ── Pre-flight ───────────────────────────────────────────────────────
-if [[ -f .env ]]; then
-    set -a; source .env; set +a
-fi
-
-if [[ -z "${OPENAI_API_KEY:-}" ]]; then
-    echo "ERROR: OPENAI_API_KEY not set."
-    echo "  Add it to .env or export it:  export OPENAI_API_KEY=sk-..."
-    exit 1
-fi
-
-if [[ -d .venv ]]; then
-    source .venv/bin/activate
-fi
+sweep_preflight
 
 mkdir -p "$RUNDIR"
 
@@ -90,31 +80,9 @@ trap "kill $CAFF_PID 2>/dev/null" EXIT
 echo "caffeinate PID: $CAFF_PID" | tee -a "$PROGRESS"
 
 # ── Start server if not running ──────────────────────────────────────
-# Use nc -z instead of lsof: lsof hangs on some macOS configurations when
-# walking the kernel socket table; nc -z is a simple connect probe.
-SERVER_PID=""
-if ! nc -z 127.0.0.1 "$PORT" 2>/dev/null; then
-    echo "Starting server on port $PORT..." | tee -a "$PROGRESS"
-    python -m uvicorn webagentbench.app:app \
-        --host 0.0.0.0 --port "$PORT" \
-        --log-level warning &
-    SERVER_PID=$!
+sweep_start_server "$PORT" "$PROGRESS"
+if [[ -n "$SERVER_PID" ]]; then
     trap "kill $CAFF_PID $SERVER_PID 2>/dev/null" EXIT
-    # Poll up to 30s for server to become reachable (uvicorn startup can
-    # take 5-10s on this box; fixed sleep was racy).
-    for i in $(seq 1 30); do
-        if nc -z 127.0.0.1 "$PORT" 2>/dev/null; then
-            break
-        fi
-        sleep 1
-    done
-    if ! nc -z 127.0.0.1 "$PORT" 2>/dev/null; then
-        echo "ERROR: Server failed to start within 30s" | tee -a "$PROGRESS"
-        exit 1
-    fi
-    echo "Server started (PID $SERVER_PID) after ${i}s" | tee -a "$PROGRESS"
-else
-    echo "Server already running on port $PORT" | tee -a "$PROGRESS"
 fi
 
 # ── Smoke test ───────────────────────────────────────────────────────
