@@ -895,10 +895,14 @@ def _match_single_block(
             # Find maximum matching.
             matching = _max_bipartite_matching(edges, n_left, len(candidates))
             saturated = len(matching) == n_left
-            # Excess = strictly more candidates than slots. Independent of
-            # whether the match saturates; the "did not schedule too many"
-            # claim is about over-creation, not under.
-            bijection_excess[i] = len(candidates) > n_left
+            # Excess = strictly more *matching-eligible* candidates than slots.
+            # Filter to candidates that could satisfy at least one slot — not
+            # the whole pool. When two bijections share an entity type (e.g.
+            # two Appointment creates for screenings vs. immunizations), the
+            # full pool includes the OTHER bijection's intended candidates,
+            # which would falsely inflate excess here.
+            eligible_indices = {cj for eset in edges.values() for cj in eset}
+            bijection_excess[i] = len(eligible_indices) > n_left
 
             base_desc = entry.desc or f"Create {n_left} required {entry.entity}(s)"
             # Record matched candidates regardless of saturation so the
@@ -1377,11 +1381,17 @@ def _match_single_block(
     # Filtered invariants cover the entries whose filter evaluates truthy.
     # Indexed by collection so we only evaluate filters that could apply.
     filtered_invariants_by_col: dict[str, list[str]] = {}
+    # Comprehensive-filter collections: author opted in to "the filter is the
+    # complete opinion on this collection — entries outside it can change
+    # without being listed as positive updates" (e.g. server-side cascades).
+    comprehensive_cols: set[str] = set()
     for inv in block.invariant:
         if not inv.filter:
             continue
         coll = inv.collection.removeprefix("state.")
         filtered_invariants_by_col.setdefault(coll, []).append(inv.filter)
+        if getattr(inv, "comprehensive", False):
+            comprehensive_cols.add(coll)
 
     for entry in agent_diff:
         if constraint_only:
@@ -1393,6 +1403,9 @@ def _match_single_block(
         filters_for_col = filtered_invariants_by_col.get(entry.entity, [])
         if any(_filter_matches(f, entry) for f in filters_for_col):
             continue  # filtered invariant step already handled this entry
+        if entry.entity in comprehensive_cols:
+            continue  # author marked the filter(s) as comprehensive → outside
+                      # entries are explicitly allowed to change
         # Also surface collateral failures as a visible negative_check so
         # users don't see score=1.0 but passed=False with no explanation.
         # Without a visible entry the discrepancy between the positive-
