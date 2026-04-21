@@ -619,9 +619,45 @@ async def run_episode(
                         if node is None:
                             last_error = f"Element index {idx} not found"
                             continue
-                        from browser_use.browser.events import SelectDropdownOptionEvent
+                        from browser_use.browser.events import (
+                            GetDropdownOptionsEvent,
+                            SelectDropdownOptionEvent,
+                        )
+
+                        # Agents frequently pass truncated labels ("Dr. X - ...") that
+                        # are copied from the rendered DOM, which elides long option
+                        # text for display. SelectDropdownOptionEvent requires exact
+                        # match, so we resolve the agent's truncated text to the full
+                        # option by prefix-matching against the dropdown's real options.
+                        option_for_select = option
+                        stripped = option.rstrip()
+                        if stripped.endswith("..."):
+                            prefix = stripped[:-3].rstrip()
+                            try:
+                                opts_event = browser.event_bus.dispatch(
+                                    GetDropdownOptionsEvent(node=node))
+                                await opts_event
+                                opts_result = await opts_event.event_result(
+                                    raise_if_any=True, raise_if_none=False)
+                                real_options = []
+                                if isinstance(opts_result, dict):
+                                    real_options = opts_result.get("options") or []
+                                matches = [
+                                    o for o in real_options
+                                    if isinstance(o, dict)
+                                    and isinstance(o.get("text"), str)
+                                    and o["text"].startswith(prefix)
+                                ]
+                                if len(matches) == 1:
+                                    option_for_select = matches[0]["text"]
+                                elif len(matches) > 1:
+                                    option_for_select = min(
+                                        matches, key=lambda o: len(o["text"]))["text"]
+                            except Exception:
+                                pass
+
                         event = browser.event_bus.dispatch(
-                            SelectDropdownOptionEvent(node=node, text=option))
+                            SelectDropdownOptionEvent(node=node, text=option_for_select))
                         await event
                         try:
                             await event.event_result(raise_if_any=True, raise_if_none=False)
