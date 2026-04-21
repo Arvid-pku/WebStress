@@ -365,13 +365,6 @@ def _collections_of(state: Any) -> dict[str, list[dict]]:
             if not (isinstance(inner, type) and issubclass(inner, BaseModel)):
                 # list[str] / list[int] / etc. — not an entity collection.
                 continue
-            # Collections of system-generated entities (e.g. rebooking_suggestions
-            # auto-created by the server on cancel) should not feed the diff at
-            # all — their existence is a side-effect the agent doesn't author.
-            # Tasks that want to reason about these use constraint expressions
-            # against `state.<collection>` directly.
-            if getattr(inner, "DIFF_SYSTEM_COLLECTION", False):
-                continue
             val = getattr(state, name)
             if not isinstance(val, list):
                 continue
@@ -488,6 +481,10 @@ class EvalReport:
     #   {desc, entity, slots:[{label, matched_candidate_index|None}],
     #    candidates:[{label, id, is_excess}], edges:[[slot_i, cand_i], ...]}
     bijection_graphs: list[dict] = field(default_factory=list)
+    constraints_total: int = 0
+    constraints_passed: int = 0
+    critical_constraints_total: int = 0
+    critical_constraints_passed: int = 0
 
 
 # Severity-to-penalty mapping used by invariant / constraint reporting.
@@ -628,6 +625,22 @@ class _DotObj:
     def __iter__(self):
         return iter(self._data)
 
+    def __len__(self) -> int:
+        return len(self._data)
+
+    def __bool__(self) -> bool:
+        return bool(self._data)
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, _DotObj):
+            return self._data == other._data
+        if isinstance(other, dict):
+            return self._data == other
+        return NotImplemented
+
+    def __hash__(self) -> int:  # type: ignore[override]
+        return id(self)
+
     def get(self, key: str, default: Any = None) -> Any:
         return self._data.get(key, default)
 
@@ -681,7 +694,10 @@ def _eval_target_expr(
         "target": targets,
         "initial": initial,
         "state": final,
+        "now": lambda: datetime.now(timezone.utc),
     }
+    # Restricted eval on author-controlled YAML with safe-builtins only
+    # (same trust boundary as the predicate evaluators).
     return eval(expr_source, globs, {})  # noqa: S307
 
 
@@ -739,17 +755,47 @@ def match_diff(
     the highest-scoring report is returned.
     """
     if canonical.oneof:
-        best: EvalReport | None = None
+        reports: list[EvalReport] = []
         for alt in canonical.oneof:
-            report = _match_single_block(
+            reports.append(_match_single_block(
                 agent_diff, alt, targets, initial, final, session_start,
-            )
-            if best is None or report.score > best.score:
-                best = report
-        assert best is not None
-        return best
+            ))
+
+        # In oneof blocks, critical constraints are commonly used as branch
+        # guards (for example "if the grade is achievable" vs "if not"). A
+        # branch with a failed critical guard should not be selected merely
+        # because the agent performed that branch's action and earned positive
+        # update credit. Prefer guarded/applicable alternatives when any exist.
+        applicable = [
+            report for report in reports
+            if report.critical_constraints_total == 0
+            or report.critical_constraints_passed == report.critical_constraints_total
+        ]
+        pool = applicable or reports
+        return max(pool, key=_oneof_report_key)
     return _match_single_block(
         agent_diff, canonical, targets, initial, final, session_start,
+    )
+
+
+def _oneof_report_key(report: EvalReport) -> tuple[float, int, float, float, int, int]:
+    constraint_ratio = (
+        report.constraints_passed / report.constraints_total
+        if report.constraints_total else 1.0
+    )
+    critical_ratio = (
+        report.critical_constraints_passed / report.critical_constraints_total
+        if report.critical_constraints_total else 1.0
+    )
+    failed_checks = sum(1 for check in report.checks if not check.get("passed"))
+    failed_negative = sum(1 for check in report.negative_checks if not check.get("passed"))
+    return (
+        report.score,
+        int(report.passed),
+        critical_ratio,
+        constraint_ratio,
+        -len(report.failures),
+        -(failed_checks + failed_negative),
     )
 
 
@@ -1095,7 +1141,7 @@ def _match_single_block(
         if entry.bijection is not None:
             # Bijection delete: one-to-one match between target slots and Delete diffs.
             try:
-                left = _eval_target_expr(entry.bijection.over, targets, initial=initial, final=final)
+                left = _eval_target_expr(entry.bijection.over, targets)
             except Exception as exc:
                 checks.append({
                     "desc": base_desc,
@@ -1203,6 +1249,20 @@ def _match_single_block(
                     details={"entry_index": i},
                 ))
 
+    # Restricted-eval helper for invariant filter expressions. Reused by
+    # the invariant step and by the unaccounted sweep so the "does this
+    # filter match this entry?" predicate has one canonical implementation.
+    # Source strings come from the author-controlled YAML (safe-builtins
+    # only) — same trust boundary as the other predicate evaluators above.
+    def _filter_matches(filter_expr: str, entry: DiffEntry) -> bool:
+        entity_dict = _entity_dict_for_invariant(entry)
+        filter_globs = {"__builtins__": _SAFE_BUILTINS}
+        filter_locals = {"a": _DotObj(entity_dict), "target": targets}
+        try:
+            return bool(eval(filter_expr, filter_globs, filter_locals))  # noqa: S307
+        except Exception:
+            return False
+
     # 2. Invariant enforcement. Invariants are PENALTY-ONLY — they do not
     # contribute to total_weight / passed_weight. Doing nothing must not
     # earn positive score just because nothing got mutated; only the
@@ -1215,20 +1275,8 @@ def _match_single_block(
                 continue
             if (entry.entity, entry.entity_id) in matched_ids:
                 continue
-            if inv.filter:
-                filter_globs = {
-                    "__builtins__": _SAFE_BUILTINS,
-                    "initial": initial,
-                    "state": final,
-                }
-                entity_dict = _entity_dict_for_invariant(entry)
-                filter_locals = {"a": _DotObj(entity_dict), "target": targets}
-                try:
-                    # Restricted eval — author-controlled source, safe-builtins only.
-                    if not eval(inv.filter, filter_globs, filter_locals):  # noqa: S307
-                        continue
-                except Exception:
-                    continue
+            if inv.filter and not _filter_matches(inv.filter, entry):
+                continue
             violated = True
             break
 
@@ -1252,6 +1300,8 @@ def _match_single_block(
     # compute score_raw = n_passed / n_total.
     constraints_total = 0
     constraints_passed = 0
+    critical_constraints_total = 0
+    critical_constraints_passed = 0
     for i, c in enumerate(block.constraints):
         # Merge scope vars into GLOBALS (not locals) so list/gen
         # comprehensions and lambdas can see `state`, `initial`, `target`.
@@ -1270,28 +1320,40 @@ def _match_single_block(
             ok = bool(eval(c.expr, globs, {}))  # noqa: S307
         except Exception:
             ok = False
+        severity = c.severity
         negative_checks.append({
             "desc": c.desc,
             "passed": ok,
-            "penalty": _SEVERITY_PENALTY.get(c.severity, _SEVERITY_PENALTY["medium"]),
+            "penalty": _SEVERITY_PENALTY.get(severity, _SEVERITY_PENALTY["medium"]),
         })
         constraints_total += 1
+        if severity == "critical":
+            critical_constraints_total += 1
         if ok:
             constraints_passed += 1
+            if severity == "critical":
+                critical_constraints_passed += 1
         if not ok:
             failures.append(Failure(
                 kind="constraint",
                 description=c.desc,
-                details={"entry_index": i, "severity": c.severity},
+                details={"entry_index": i, "severity": severity},
             ))
 
     # 3. Unaccounted sweep.
-    # Any agent_diff entry that (a) was not matched to a positive target and
-    # (b) is not fully covered by an invariant is collateral. A FILTERED
-    # invariant only protects entries that match its filter — entries in the
-    # same collection but outside the filter still need to be accounted for
-    # here (e.g. newly-created appointments when the invariant guards only
-    # existing upcoming appointments).
+    # Any agent_diff entry that (a) was not matched to a positive target,
+    # (b) is not fully covered by an UNFILTERED invariant, and
+    # (c) does not match any FILTERED invariant's filter is collateral.
+    #
+    # Filtered-invariant coverage rationale: a filtered invariant already
+    # fires exactly one "Preserve state.X" penalty when any entity inside
+    # its filter is modified. Firing a second "Unaccounted update in X"
+    # penalty for the same entity double-charges the agent for one
+    # offense. Common trigger: server-side cascade side-effects on a
+    # protected entity (e.g. completing module_4 auto-unlocks module_5;
+    # the filter already covers module_5, and the agent has no way to
+    # prevent the cascade). See audit_reports/w05.md for the real-world
+    # case that surfaced this.
     #
     # Skip the sweep entirely for constraint-only blocks (no positive
     # entries). Such blocks express success purely via constraint
@@ -1312,12 +1374,15 @@ def _match_single_block(
         for inv in block.invariant
         if not inv.filter
     }
-    # Filtered invariants: (collection, filter_expr) pairs for partial coverage.
-    invariant_filtered = [
-        (inv.collection.removeprefix("state."), inv.filter)
-        for inv in block.invariant
-        if inv.filter
-    ]
+    # Filtered invariants cover the entries whose filter evaluates truthy.
+    # Indexed by collection so we only evaluate filters that could apply.
+    filtered_invariants_by_col: dict[str, list[str]] = {}
+    for inv in block.invariant:
+        if not inv.filter:
+            continue
+        coll = inv.collection.removeprefix("state.")
+        filtered_invariants_by_col.setdefault(coll, []).append(inv.filter)
+
     for entry in agent_diff:
         if constraint_only:
             break  # constraint-only blocks skip the sweep entirely
@@ -1325,27 +1390,9 @@ def _match_single_block(
             continue
         if entry.entity in invariant_cols_full:
             continue  # whole collection invariant already handled this entry
-        # Skip entries covered by a filtered invariant (filter=True means the
-        # entity is "protected"; the invariant check above already handles it).
-        covered_by_filtered = False
-        for inv_col, inv_filter in invariant_filtered:
-            if entry.entity != inv_col:
-                continue
-            filter_globs = {
-                "__builtins__": _SAFE_BUILTINS,
-                "initial": initial,
-                "state": final,
-            }
-            entity_dict = _entity_dict_for_invariant(entry)
-            filter_locals = {"a": _DotObj(entity_dict), "target": targets}
-            try:
-                if eval(inv_filter, filter_globs, filter_locals):  # noqa: S307
-                    covered_by_filtered = True
-                    break
-            except Exception:
-                pass
-        if covered_by_filtered:
-            continue
+        filters_for_col = filtered_invariants_by_col.get(entry.entity, [])
+        if any(_filter_matches(f, entry) for f in filters_for_col):
+            continue  # filtered invariant step already handled this entry
         # Also surface collateral failures as a visible negative_check so
         # users don't see score=1.0 but passed=False with no explanation.
         # Without a visible entry the discrepancy between the positive-
@@ -1462,4 +1509,8 @@ def _match_single_block(
         negative_checks=negative_checks,
         failures=failures,
         bijection_graphs=bijection_graphs,
+        constraints_total=constraints_total,
+        constraints_passed=constraints_passed,
+        critical_constraints_total=critical_constraints_total,
+        critical_constraints_passed=critical_constraints_passed,
     )
