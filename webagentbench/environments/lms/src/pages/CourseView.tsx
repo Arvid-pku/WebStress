@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { preserveQueryParams, Tabs } from "@webagentbench/shared";
 
@@ -22,6 +22,23 @@ const TABS = [
   { label: "Syllabus", value: "syllabus" },
 ];
 
+function tabFromPath(pathname: string): string | null {
+  const normalized = pathname.split("?")[0];
+  const segments = normalized.split("/").filter((segment) => segment.length > 0);
+  if (segments[0] !== "courses") return null;
+
+  const last = segments[segments.length - 1] ?? "";
+  if (["modules", "assignments", "discussions", "grades", "syllabus"].includes(last)) {
+    return last;
+  }
+
+  const penultimate = segments[segments.length - 2];
+  if (penultimate && ["modules", "assignments", "discussions"].includes(penultimate)) {
+    return penultimate;
+  }
+  return null;
+}
+
 export function CourseViewPage() {
   const { id } = useParams<{ id: string }>();
   const courseId = id!;
@@ -42,6 +59,13 @@ export function CourseViewPage() {
   const [enrollmentStatus, setEnrollmentStatus] = useState<"enrolled" | "waitlisted" | "dropped" | "completed" | null>(null);
   const [dropConfirm, setDropConfirm] = useState(false);
   const [dropping, setDropping] = useState(false);
+  const inferredTab = useMemo(() => tabFromPath(location.pathname), [location.pathname]);
+
+  useEffect(() => {
+    if (inferredTab) {
+      setActiveTab(inferredTab);
+    }
+  }, [inferredTab]);
 
   useEffect(() => {
     let cancelled = false;
@@ -144,7 +168,7 @@ export function CourseViewPage() {
 
       <div style={{ marginTop: "1rem" }}>
         {activeTab === "modules" && (
-          <ModulesTab modules={modules} courseId={courseId} api={api} onModulesChange={setModules} notify={notify} />
+          <ModulesTab modules={modules} assignments={assignments} courseId={courseId} api={api} onModulesChange={setModules} notify={notify} />
         )}
         {activeTab === "assignments" && (
           <AssignmentsTab assignments={assignments} courseId={courseId} />
@@ -167,25 +191,32 @@ export function CourseViewPage() {
 
 function ModulesTab({
   modules,
+  assignments,
   courseId,
   api,
   onModulesChange,
   notify,
 }: {
   modules: Module[];
+  assignments: Assignment[];
   courseId: string;
   api: LmsApi;
   onModulesChange: (mods: Module[]) => void;
   notify: (title: string, body: string) => void;
 }) {
   const [completing, setCompleting] = useState<Record<string, boolean>>({});
+  const location = useLocation();
+  const assignmentById = useMemo(
+    () => new Map(assignments.map((assignment) => [assignment.id, assignment])),
+    [assignments],
+  );
 
   const handleCompleteItem = async (moduleId: string, itemIndex: number) => {
     const key = `${moduleId}:${itemIndex}`;
     setCompleting((prev) => ({ ...prev, [key]: true }));
     try {
       const updated = await api.completeModuleItem(moduleId, itemIndex);
-      onModulesChange(modules.map((m) => m.id === updated.id ? updated : m));
+      onModulesChange(updated.modules ?? modules.map((m) => m.id === updated.module.id ? updated.module : m));
     } catch {
       notify("Error", "Unable to complete item");
     } finally {
@@ -197,7 +228,7 @@ function ModulesTab({
     setCompleting((prev) => ({ ...prev, [moduleId]: true }));
     try {
       const updated = await api.completeModule(moduleId);
-      onModulesChange(modules.map((m) => m.id === updated.id ? updated : m));
+      onModulesChange(updated.modules ?? modules.map((m) => m.id === updated.module.id ? updated.module : m));
       notify("Module Complete", "Module marked as complete");
     } catch {
       notify("Error", "Unable to complete module");
@@ -266,6 +297,7 @@ function ModulesTab({
                   <ul style={{ marginTop: "0.5rem", paddingLeft: "1.25rem" }}>
                     {mod.content_items.map((item, idx) => {
                       const key = `${mod.id}:${idx}`;
+                      const linkedAssignment = item.linked_assignment_id ? assignmentById.get(item.linked_assignment_id) : null;
                       return (
                         <li
                           key={idx}
@@ -279,6 +311,15 @@ function ModulesTab({
                           <span style={{ color: "#999", fontSize: "0.8rem" }}>
                             ({item.type})
                           </span>
+                          {linkedAssignment && (
+                            <Link
+                              to={preserveQueryParams(`/courses/${courseId}/assignments/${linkedAssignment.id}`, location.search)}
+                              className="lms-link"
+                              aria-label={`Linked assignment ${linkedAssignment.title}`}
+                            >
+                              Linked assignment: {linkedAssignment.title}
+                            </Link>
+                          )}
                           {!isLocked && !item.completed && (
                             <button
                               type="button"
