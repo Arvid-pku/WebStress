@@ -28,6 +28,7 @@ export function SettingsPage() {
         prime_member: settings.prime_member,
         one_click_enabled: settings.one_click_enabled,
         email_notifications: settings.email_notifications,
+        two_factor_enabled: settings.two_factor_enabled,
         language: settings.language,
       });
       setSettings((current) => (current ? { ...current, ...updated } : updated));
@@ -101,6 +102,26 @@ export function SettingsPage() {
               />
               Enable 1-Click ordering
             </label>
+          </div>
+        </div>
+      </div>
+
+      <div className="settings-card">
+        <h2>Login &amp; Security</h2>
+        <div className="settings-form">
+          <div className="settings-form__row settings-form__row--checkbox">
+            <label>
+              <input
+                type="checkbox"
+                checked={settings.two_factor_enabled}
+                onChange={(e) => setSettings({ ...settings, two_factor_enabled: e.target.checked })}
+                aria-label="Two-factor authentication"
+              />
+              Two-factor authentication (2FA)
+            </label>
+            <p className="settings-form__hint">
+              Require a one-time code at sign-in in addition to your password.
+            </p>
           </div>
         </div>
       </div>
