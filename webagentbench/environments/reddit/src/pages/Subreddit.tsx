@@ -89,7 +89,9 @@ export function SubredditPage() {
         </div>
         <div className="subreddit-header__actions">
           <button
+            type="button"
             className="subreddit-page__create-btn"
+            aria-label={`Create a new post in r/${subredditName}`}
             onClick={() => navigate(preserveQueryParams(`/submit?subreddit=${subredditName}`, location.search))}
           >
             + Create Post

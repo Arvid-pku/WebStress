@@ -49,6 +49,28 @@ export function SearchPage() {
     } catch { notify("Failed to vote"); }
   };
 
+  const handleSave = async (postId: string) => {
+    const target = results.find((r) => "score" in r && r.id === postId) as Post | undefined;
+    if (!target) return;
+    try {
+      const { post } = target.is_saved
+        ? await api.unsavePost(postId)
+        : await api.savePost(postId);
+      setResults((prev) => prev.map((r) => ("score" in r && r.id === postId ? post : r)));
+    } catch { notify("Failed to save"); }
+  };
+
+  const handleHide = async (postId: string) => {
+    const target = results.find((r) => "score" in r && r.id === postId) as Post | undefined;
+    if (!target) return;
+    try {
+      const { post } = target.is_hidden
+        ? await api.unhidePost(postId)
+        : await api.hidePost(postId);
+      setResults((prev) => prev.map((r) => ("score" in r && r.id === postId ? post : r)));
+    } catch { notify("Failed to hide"); }
+  };
+
   const visiblePostResults =
     type === "posts" ? (results as Post[]).filter((post) => isPostVisible(post, settings)) : [];
   const hasHiddenPostResults = type === "posts" && visiblePostResults.length < results.length;
@@ -111,6 +133,8 @@ export function SearchPage() {
               key={post.id}
               post={post}
               onVote={handleVote}
+              onSave={handleSave}
+              onHide={handleHide}
               compact={settings?.compact_view ?? false}
               blurNsfw={shouldBlurNsfw(post, settings)}
             />

@@ -64,25 +64,25 @@ export function SettingsPage() {
         </div>
         <div className="settings-field settings-field--toggle">
           <label>
-            <input type="checkbox" checked={settings.compact_view} onChange={(e) => handleUpdate({ compact_view: e.target.checked })} />
+            <input type="checkbox" aria-label="Compact view" checked={settings.compact_view} onChange={(e) => handleUpdate({ compact_view: e.target.checked })} />
             Compact view
           </label>
         </div>
         <div className="settings-field settings-field--toggle">
           <label>
-            <input type="checkbox" checked={settings.open_links_in_new_tab} onChange={(e) => handleUpdate({ open_links_in_new_tab: e.target.checked })} />
+            <input type="checkbox" aria-label="Open links in new tab" checked={settings.open_links_in_new_tab} onChange={(e) => handleUpdate({ open_links_in_new_tab: e.target.checked })} />
             Open links in new tab
           </label>
         </div>
         <div className="settings-field settings-field--toggle">
           <label>
-            <input type="checkbox" checked={settings.auto_play_media} onChange={(e) => handleUpdate({ auto_play_media: e.target.checked })} />
+            <input type="checkbox" aria-label="Auto-play media" checked={settings.auto_play_media} onChange={(e) => handleUpdate({ auto_play_media: e.target.checked })} />
             Auto-play media
           </label>
         </div>
         <div className="settings-field settings-field--toggle">
           <label>
-            <input type="checkbox" checked={settings.reduce_animations} onChange={(e) => handleUpdate({ reduce_animations: e.target.checked })} />
+            <input type="checkbox" aria-label="Reduce animations" checked={settings.reduce_animations} onChange={(e) => handleUpdate({ reduce_animations: e.target.checked })} />
             Reduce animations
           </label>
         </div>
@@ -92,13 +92,13 @@ export function SettingsPage() {
         <h2 className="settings-section__title">Content</h2>
         <div className="settings-field settings-field--toggle">
           <label>
-            <input type="checkbox" checked={settings.show_nsfw} onChange={(e) => handleUpdate({ show_nsfw: e.target.checked })} />
+            <input type="checkbox" aria-label="Show NSFW content" checked={settings.show_nsfw} onChange={(e) => handleUpdate({ show_nsfw: e.target.checked })} />
             Show NSFW content
           </label>
         </div>
         <div className="settings-field settings-field--toggle">
           <label>
-            <input type="checkbox" checked={settings.blur_nsfw} onChange={(e) => handleUpdate({ blur_nsfw: e.target.checked })} />
+            <input type="checkbox" aria-label="Blur NSFW images" checked={settings.blur_nsfw} onChange={(e) => handleUpdate({ blur_nsfw: e.target.checked })} />
             Blur NSFW images
           </label>
         </div>
@@ -131,31 +131,31 @@ export function SettingsPage() {
         <h2 className="settings-section__title">Notifications</h2>
         <div className="settings-field settings-field--toggle">
           <label>
-            <input type="checkbox" checked={settings.email_comment_reply} onChange={(e) => handleUpdate({ email_comment_reply: e.target.checked })} />
+            <input type="checkbox" aria-label="Email on comment replies" checked={settings.email_comment_reply} onChange={(e) => handleUpdate({ email_comment_reply: e.target.checked })} />
             Email on comment replies
           </label>
         </div>
         <div className="settings-field settings-field--toggle">
           <label>
-            <input type="checkbox" checked={settings.email_post_reply} onChange={(e) => handleUpdate({ email_post_reply: e.target.checked })} />
+            <input type="checkbox" aria-label="Email on post replies" checked={settings.email_post_reply} onChange={(e) => handleUpdate({ email_post_reply: e.target.checked })} />
             Email on post replies
           </label>
         </div>
         <div className="settings-field settings-field--toggle">
           <label>
-            <input type="checkbox" checked={settings.email_mentions} onChange={(e) => handleUpdate({ email_mentions: e.target.checked })} />
+            <input type="checkbox" aria-label="Email on mentions" checked={settings.email_mentions} onChange={(e) => handleUpdate({ email_mentions: e.target.checked })} />
             Email on mentions
           </label>
         </div>
         <div className="settings-field settings-field--toggle">
           <label>
-            <input type="checkbox" checked={settings.email_messages} onChange={(e) => handleUpdate({ email_messages: e.target.checked })} />
+            <input type="checkbox" aria-label="Email on private messages" checked={settings.email_messages} onChange={(e) => handleUpdate({ email_messages: e.target.checked })} />
             Email on private messages
           </label>
         </div>
         <div className="settings-field settings-field--toggle">
           <label>
-            <input type="checkbox" checked={settings.email_digest} onChange={(e) => handleUpdate({ email_digest: e.target.checked })} />
+            <input type="checkbox" aria-label="Email digest" checked={settings.email_digest} onChange={(e) => handleUpdate({ email_digest: e.target.checked })} />
             Email digest
           </label>
         </div>
@@ -165,19 +165,19 @@ export function SettingsPage() {
         <h2 className="settings-section__title">Privacy</h2>
         <div className="settings-field settings-field--toggle">
           <label>
-            <input type="checkbox" checked={settings.show_online_status} onChange={(e) => handleUpdate({ show_online_status: e.target.checked })} />
+            <input type="checkbox" aria-label="Show online status" checked={settings.show_online_status} onChange={(e) => handleUpdate({ show_online_status: e.target.checked })} />
             Show online status
           </label>
         </div>
         <div className="settings-field settings-field--toggle">
           <label>
-            <input type="checkbox" checked={settings.allow_followers} onChange={(e) => handleUpdate({ allow_followers: e.target.checked })} />
+            <input type="checkbox" aria-label="Allow followers" checked={settings.allow_followers} onChange={(e) => handleUpdate({ allow_followers: e.target.checked })} />
             Allow followers
           </label>
         </div>
         <div className="settings-field settings-field--toggle">
           <label>
-            <input type="checkbox" checked={settings.show_active_communities} onChange={(e) => handleUpdate({ show_active_communities: e.target.checked })} />
+            <input type="checkbox" aria-label="Show active communities" checked={settings.show_active_communities} onChange={(e) => handleUpdate({ show_active_communities: e.target.checked })} />
             Show active communities in profile
           </label>
         </div>

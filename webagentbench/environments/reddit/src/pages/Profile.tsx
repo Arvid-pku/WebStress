@@ -47,6 +47,28 @@ export function ProfilePage() {
     } catch { notify("Failed to vote"); }
   };
 
+  const handleSave = async (postId: string) => {
+    const target = posts.find((p) => p.id === postId);
+    if (!target) return;
+    try {
+      const { post } = target.is_saved
+        ? await api.unsavePost(postId)
+        : await api.savePost(postId);
+      setPosts((prev) => prev.map((p) => (p.id === postId ? post : p)));
+    } catch { notify("Failed to save"); }
+  };
+
+  const handleHide = async (postId: string) => {
+    const target = posts.find((p) => p.id === postId);
+    if (!target) return;
+    try {
+      const { post } = target.is_hidden
+        ? await api.unhidePost(postId)
+        : await api.hidePost(postId);
+      setPosts((prev) => prev.map((p) => (p.id === postId ? post : p)));
+    } catch { notify("Failed to hide"); }
+  };
+
   const handleToggleBlock = async () => {
     if (!user || blockBusy) return;
     setBlockBusy(true);
@@ -152,6 +174,8 @@ export function ProfilePage() {
                 key={post.id}
                 post={post}
                 onVote={handleVote}
+                onSave={handleSave}
+                onHide={handleHide}
                 compact={settings?.compact_view ?? false}
                 blurNsfw={shouldBlurNsfw(post, settings)}
               />

@@ -193,6 +193,16 @@ class RedditSeedContext:
             is_submitter=is_submitter,
         )
         self.base["comments"].append(c)
+        # Keep the parent post's comment_count in sync so the feed card and
+        # detail view agree with state.comments. Without this, target_post +
+        # target_comment combos show "0 comments" even though the detail
+        # page renders the thread correctly.
+        parent_post = next(
+            (p for p in self.base.get("posts", []) if p.id == post_id),
+            None,
+        )
+        if parent_post is not None:
+            parent_post.comment_count = getattr(parent_post, "comment_count", 0) + 1
         return c
 
     def message(
