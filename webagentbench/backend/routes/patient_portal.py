@@ -63,6 +63,7 @@ class CreateAppointmentRequest(SessionScopedRequest):
     slot_datetime: str
     type: str
     reason: str = ""
+    notes: str | None = None
     linked_referral_id: str | None = None
 
 
@@ -615,6 +616,7 @@ def create_appointment(
         type=body.type or matching_slot.type,
         status="scheduled",
         reason=body.reason,
+        notes=body.notes or "",
         linked_referral_id=body.linked_referral_id,
         booked_at=utc_now(),
         location="Main Campus" if (body.type or matching_slot.type) == "in-person" else "Telehealth",

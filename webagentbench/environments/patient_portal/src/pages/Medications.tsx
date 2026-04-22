@@ -185,7 +185,7 @@ export function MedicationsPage() {
                         <option value="">Select a pharmacy...</option>
                         {pharmacies.map((pharmacy) => (
                           <option key={pharmacy.id} value={pharmacy.id}>
-                            {`${pharmacy.name} (${pharmacy.id})${pharmacy.is_mail_order ? " - Mail Order" : ""}${pharmacy.cost_per_90day_supply ? ` - 90 day $${pharmacy.cost_per_90day_supply}` : ""}`}
+                            {`${pharmacy.name}${pharmacy.is_mail_order ? " [Mail]" : ""}`}
                           </option>
                         ))}
                       </select>

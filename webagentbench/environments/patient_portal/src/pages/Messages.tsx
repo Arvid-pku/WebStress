@@ -101,13 +101,6 @@ export function MessagesPage() {
   }
   const threads = Array.from(threadMap.values());
 
-  // Group providers by department for compose
-  const providersByDept: Record<string, typeof providers> = {};
-  for (const p of providers) {
-    if (!providersByDept[p.department]) providersByDept[p.department] = [];
-    providersByDept[p.department].push(p);
-  }
-
   return (
     <div aria-label="Messages Page">
       <h2>Messages</h2>
@@ -226,13 +219,12 @@ export function MessagesPage() {
                 aria-label="Select provider"
               >
                 <option value="">Select a provider...</option>
-                {Object.entries(providersByDept).map(([dept, provs]) => (
-                  <optgroup key={dept} label={dept}>
-                    {provs.map((p) => (
-                      <option key={p.id} value={p.id}>{p.name} ({p.specialty})</option>
-                    ))}
-                  </optgroup>
-                ))}
+                {providers
+                  .slice()
+                  .sort((a, b) => a.department.localeCompare(b.department) || a.name.localeCompare(b.name))
+                  .map((p) => (
+                    <option key={p.id} value={p.id}>{p.name} - {p.specialty} ({p.department})</option>
+                  ))}
               </select>
             </div>
 

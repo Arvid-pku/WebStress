@@ -84,7 +84,7 @@ export function AssignmentPage() {
     assignment.submission_status === "resubmit_requested" ||
     assignment.submission_status === "graded" ||
     assignment.submission_status === "late"
-  ) && assignment.attempt_count < assignment.max_attempts;
+  ) && assignment.attempt_count <= assignment.max_attempts;
 
   return (
     <div aria-label={`Assignment ${assignment.title}`}>

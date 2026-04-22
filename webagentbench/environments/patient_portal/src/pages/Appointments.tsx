@@ -16,6 +16,7 @@ export function AppointmentsPage() {
   const [selectedSlot, setSelectedSlot] = useState("");
   const [appointmentType, setAppointmentType] = useState("in-person");
   const [reason, setReason] = useState("");
+  const [notes, setNotes] = useState("");
   const [linkedReferralId, setLinkedReferralId] = useState("");
   const [referrals, setReferrals] = useState<Referral[]>([]);
 
@@ -84,6 +85,7 @@ export function AppointmentsPage() {
         slot_datetime: selectedSlot,
         type: appointmentType,
         reason,
+        notes: notes || undefined,
         linked_referral_id: linkedReferralId || undefined,
       });
       notify("Appointment scheduled");
@@ -91,6 +93,7 @@ export function AppointmentsPage() {
       setSelectedProviderId("");
       setSelectedSlot("");
       setReason("");
+      setNotes("");
       setLinkedReferralId("");
       void loadAppointments();
     } catch (err) {
@@ -313,13 +316,13 @@ export function AppointmentsPage() {
                 aria-label="Select provider"
               >
                 <option value="">Select a provider...</option>
-                {Object.entries(groupBySpecialty(schedulableProviders)).map(([specialty, provs]) => (
-                  <optgroup key={specialty} label={specialty}>
-                    {provs.map((p) => (
-                      <option key={p.id} value={p.id}>{p.name} - {p.department}{p.accepting_new ? " (Accepting new patients)" : ""}</option>
-                    ))}
-                  </optgroup>
-                ))}
+                {schedulableProviders
+                  .sort((a, b) => a.specialty.localeCompare(b.specialty) || a.name.localeCompare(b.name))
+                  .map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} - {p.specialty} - {p.department}{p.accepting_new ? " (Accepting new patients)" : ""}
+                    </option>
+                  ))}
               </select>
             </div>
 
@@ -368,6 +371,18 @@ export function AppointmentsPage() {
             </div>
 
             <div className="pp-form-field">
+              <label htmlFor="apt-notes">Notes (optional)</label>
+              <input
+                id="apt-notes"
+                type="text"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                aria-label="Appointment notes"
+                placeholder="Additional notes"
+              />
+            </div>
+
+            <div className="pp-form-field">
               <label htmlFor="apt-referral">Linked Referral (optional)</label>
               <select
                 id="apt-referral"
@@ -400,11 +415,3 @@ export function AppointmentsPage() {
   );
 }
 
-function groupBySpecialty(providers: Provider[]): Record<string, Provider[]> {
-  const groups: Record<string, Provider[]> = {};
-  for (const p of providers) {
-    if (!groups[p.specialty]) groups[p.specialty] = [];
-    groups[p.specialty].push(p);
-  }
-  return groups;
-}

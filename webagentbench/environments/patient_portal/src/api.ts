@@ -58,7 +58,7 @@ export function createPatientPortalApi(request: RequestFn) {
     getAvailableSlots: (providerId: string) =>
       request<{ items: SlotInfo[] }>("appointments/available-slots", { query: { provider_id: providerId } }).then((r) => r.items),
 
-    createAppointment: (body: { provider_id: string; slot_datetime: string; type: string; reason?: string; linked_referral_id?: string }) =>
+    createAppointment: (body: { provider_id: string; slot_datetime: string; type: string; reason?: string; notes?: string; linked_referral_id?: string }) =>
       request<Appointment>("appointments/create", { method: "POST", body }),
 
     cancelAppointment: (aptId: string) =>
