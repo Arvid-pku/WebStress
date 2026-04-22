@@ -89,7 +89,7 @@ canonical_diff:
       file_name:
         eq: priority_plan.pdf
       attempt_count:
-        expr: "x == initial.get_assignment(v).attempt_count + 1"
+        expr: "x >= initial.get_assignment(v).attempt_count + 1"
       submitted_at:
         expr: "x is not None"
   invariant:

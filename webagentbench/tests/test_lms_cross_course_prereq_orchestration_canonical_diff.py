@@ -116,7 +116,17 @@ def test_extra_module_completion_fails():
     _, _, targets, initial, state = _setup_session()
 
     _apply_correct_trajectory(state, targets)
-    _complete_module(state, targets["first_locked_module_id_2"])
+    # Pick a module that is NOT in the exclusion set for any course.
+    excluded = {
+        targets["next_available_module_id_1"], targets["first_locked_module_id_1"],
+        targets["next_available_module_id_2"], targets["first_locked_module_id_2"],
+        targets["next_available_module_id_3"], targets["first_locked_module_id_3"],
+    }
+    extra = next(
+        m.id for m in state.modules
+        if m.id not in excluded and m.status == "locked"
+    )
+    _complete_module(state, extra)
 
     report = _run(initial, state, targets)
     assert report.passed is False, (

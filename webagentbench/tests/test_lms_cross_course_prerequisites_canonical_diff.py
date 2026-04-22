@@ -96,7 +96,16 @@ def test_extra_module_completion_fails():
 
     _complete_module(state, targets["next_available_module_id_1"])
     _complete_module(state, targets["next_available_module_id_2"])
-    _complete_module(state, targets["first_locked_module_id_1"])
+    # Pick a module that is NOT in the exclusion set for either course.
+    excluded = {
+        targets["next_available_module_id_1"], targets["first_locked_module_id_1"],
+        targets["next_available_module_id_2"], targets["first_locked_module_id_2"],
+    }
+    extra = next(
+        m.id for m in state.modules
+        if m.id not in excluded and m.status == "locked"
+    )
+    _complete_module(state, extra)
 
     report = _run(targets, initial, state)
     assert report.passed is False, (

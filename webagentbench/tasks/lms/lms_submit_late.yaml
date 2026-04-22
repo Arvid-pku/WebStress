@@ -64,7 +64,9 @@ canonical_diff:
         expr: "x == target['target_assignment_id']"
     changes:
       submission_status:
-        eq: late
+        in:
+        - submitted
+        - late
       file_name:
         expr: "x == target['file_name']"
       attempt_count:

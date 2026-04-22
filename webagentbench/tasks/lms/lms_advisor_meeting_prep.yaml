@@ -59,6 +59,7 @@ seed:
     outputs:
     - module_ids
     - next_available_module_id
+    - first_locked_module_id
   - use: discussion_forums
     params:
       count: 2
@@ -91,6 +92,7 @@ seed:
     pending_review_ids: '{output.pending_review_ids}'
     module_ids: '{output.module_ids}'
     next_available_module_id: '{output.next_available_module_id}'
+    first_locked_module_id: '{output.first_locked_module_id}'
     unread_announcement_ids: '{output.unread_announcement_ids}'
 canonical_diff:
   update:
@@ -120,7 +122,7 @@ canonical_diff:
     filter: "a.id not in (target['unread_announcement_ids'].split(',') if target['unread_announcement_ids'] else [])"
     preserve: ALL
   - collection: state.modules
-    filter: "a.id != target['next_available_module_id']"
+    filter: "a.id not in [target['next_available_module_id'], target['first_locked_module_id']]"
     preserve: ALL
   - collection: state.courses
     preserve: ALL

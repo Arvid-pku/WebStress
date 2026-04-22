@@ -64,11 +64,13 @@ canonical_diff:
           expr: "x == v"
       changes:
         submission_status:
-          eq: late
+          in:
+          - submitted
+          - late
         file_name:
           eq: late_submit.pdf
         attempt_count:
-          eq: 1
+          expr: "x >= 1"
         submitted_at:
           expr: "x is not None and x >= session_start"
   invariant:

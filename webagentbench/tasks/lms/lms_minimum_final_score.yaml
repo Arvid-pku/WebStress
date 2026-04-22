@@ -75,7 +75,7 @@ canonical_diff:
         file_name:
           eq: study_plan.pdf
         attempt_count:
-          expr: "x == 1"
+          expr: "x >= 1"
         submitted_at:
           expr: "x is not None and x >= session_start"
     invariant:

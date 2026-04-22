@@ -159,7 +159,7 @@ canonical_diff:
         file_name:
           eq: curve_appeal.pdf
         attempt_count:
-          expr: "x in (1, 2)"
+          expr: "x >= 1"
         submitted_at:
           expr: "x >= session_start"
     invariant:

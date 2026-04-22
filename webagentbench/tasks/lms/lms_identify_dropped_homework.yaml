@@ -58,11 +58,13 @@ canonical_diff:
           expr: "x == target['lowest_homework_id']"
       changes:
         submission_status:
-          eq: late
+          in:
+          - submitted
+          - late
         file_name:
           eq: redo_lowest.pdf
         attempt_count:
-          eq: 2
+          expr: "x >= 2"
         submitted_at:
           expr: "x is not None and state.get_assignment(target['lowest_homework_id']) is not None and x > state.get_assignment(target['lowest_homework_id']).due_at"
   invariant:

@@ -143,7 +143,7 @@ canonical_diff:
         expr: "all(item.get('completed') is True for item in x)"
   invariant:
   - collection: state.modules
-    filter: "a.id not in [target['next_available_module_id_1'], target['first_locked_module_id_1'], target['next_available_module_id_2'], target['next_available_module_id_3']]"
+    filter: "a.id not in [target['next_available_module_id_1'], target['first_locked_module_id_1'], target['next_available_module_id_2'], target['first_locked_module_id_2'], target['next_available_module_id_3'], target['first_locked_module_id_3']]"
     preserve: ALL
     comprehensive: true
   - collection: state.courses

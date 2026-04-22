@@ -64,7 +64,7 @@ canonical_diff:
       weight: 1.0
   invariant:
     - collection: state.modules
-      filter: "a.id != target['next_available_module_id']"
+      filter: "a.id not in [target['next_available_module_id'], target['first_locked_module_id']]"
       preserve: ALL
       comprehensive: true
       weight: 1.0

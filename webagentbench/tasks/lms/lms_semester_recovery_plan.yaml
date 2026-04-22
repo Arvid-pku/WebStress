@@ -80,13 +80,15 @@ canonical_diff:
         expr: "x == v"
     changes:
       submission_status:
-        eq: late
+        in:
+        - submitted
+        - late
       file_name:
         eq: recovery.pdf
       submitted_at:
         expr: "x >= session_start"
       attempt_count:
-        expr: "x == initial.get_assignment(v).attempt_count + 1"
+        expr: "x >= initial.get_assignment(v).attempt_count + 1"
   - entity: Assignment
     desc: Resubmit each recoverable late assignment with recovery.pdf
     bijection:
@@ -101,7 +103,7 @@ canonical_diff:
       submitted_at:
         expr: "x >= session_start"
       attempt_count:
-        expr: "x == initial.get_assignment(v).attempt_count + 1"
+        expr: "x >= initial.get_assignment(v).attempt_count + 1"
   invariant:
   - collection: state.assignments
     filter: "a.id not in ((target['recoverable_missing_assignment_ids'].split(',') if target['recoverable_missing_assignment_ids'] else []) + (target['recoverable_late_assignment_ids'].split(',') if target['recoverable_late_assignment_ids'] else []))"

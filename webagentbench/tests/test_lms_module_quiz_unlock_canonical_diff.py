@@ -80,11 +80,17 @@ def test_extra_module_completion_fails():
     sm, sid, targets, initial, state = _setup_session()
 
     _complete_module(state, targets["next_available_module_id"])
-    _complete_module(state, targets["first_locked_module_id"])
+    # Pick a module that is NOT in the exclusion set (not the target, not first_locked).
+    excluded = {targets["next_available_module_id"], targets["first_locked_module_id"]}
+    extra = next(
+        m.id for m in state.modules
+        if m.course_id == targets["target_course_id"] and m.id not in excluded and m.status == "locked"
+    )
+    _complete_module(state, extra)
 
     report = _run("lms_module_quiz_unlock", targets, initial, state)
     assert report.passed is False, (
-        "completing a second module should violate the module invariant"
+        "completing an extra module should violate the module invariant"
     )
 
 

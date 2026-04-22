@@ -90,7 +90,11 @@ def evaluate(
     else:
         agent_diff = []
 
-    session_start = get_field(task, "session_start", None) or getattr(server_state, "session_start", None)
+    session_start = (
+        get_field(task, "session_start", None)
+        or (targets.get("session_start") if targets else None)
+        or getattr(server_state, "session_start", None)
+    )
     if isinstance(session_start, str):
         from datetime import datetime
         try:

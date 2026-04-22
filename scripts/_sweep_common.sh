@@ -18,19 +18,26 @@ sweep_preflight() {
     fi
 }
 
-# Start uvicorn on $1=port if nothing is listening, log to $2=progress_file.
-# On success, sets SERVER_PID (empty if server was already running).
+# Kill any existing server on $1=port, then start a fresh uvicorn instance.
+# Always restarts to avoid stale sessions from prior runs that accumulate
+# in memory and cause OOM/404 failures under parallel load.
+# On success, sets SERVER_PID.
 # Usage:  sweep_start_server "$PORT" "$PROGRESS"
 sweep_start_server() {
     local port="$1"
     local progress="$2"
     SERVER_PID=""
-    # nc -z probe: lsof hangs on some macOS socket-table configurations.
+
+    # lsof hangs on some macOS socket-table configurations — use pkill instead
     if nc -z 127.0.0.1 "$port" 2>/dev/null; then
-        echo "Server already running on port $port" | tee -a "$progress"
-        return 0
+        echo "Killing existing server on port $port..." | tee -a "$progress"
+        pkill -f "uvicorn.*webagentbench" 2>/dev/null || true
+        sleep 2
+        pkill -9 -f "uvicorn.*webagentbench" 2>/dev/null || true
+        sleep 1
     fi
-    echo "Starting server on port $port..." | tee -a "$progress"
+
+    echo "Starting fresh server on port $port..." | tee -a "$progress"
     python -m uvicorn webagentbench.app:app \
         --host 0.0.0.0 --port "$port" --log-level warning &
     SERVER_PID=$!

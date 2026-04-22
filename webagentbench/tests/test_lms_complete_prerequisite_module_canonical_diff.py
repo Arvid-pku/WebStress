@@ -98,7 +98,14 @@ def test_extra_module_completion_fails():
     sm, sid, targets, initial, state = _setup_session()
 
     _complete_module(state, targets["next_available_module_id"])
-    _complete_module(state, targets["first_locked_module_id"])
+    # Pick a module that is NOT in the exclusion set (not the target, not first_locked).
+    # The last module in the course is a second locked module that should still be guarded.
+    excluded = {targets["next_available_module_id"], targets["first_locked_module_id"]}
+    extra = next(
+        m.id for m in state.modules
+        if m.course_id == targets["target_course_id"] and m.id not in excluded and m.status == "locked"
+    )
+    _complete_module(state, extra)
 
     task = get_task("lms_complete_prerequisite_module")
     agent_diff = compute_diff(initial, state)
@@ -110,3 +117,28 @@ def test_extra_module_completion_fails():
         final=state,
     )
     assert report.passed is False, "completing an extra module should violate the module invariant"
+
+
+def test_auto_unlocked_module_does_not_trigger_invariant():
+    """Completing the target module auto-unlocks the first_locked module (status
+    changes from 'locked' to 'available'). This side-effect should NOT trigger
+    the 'did not modify other modules' invariant."""
+    sm, sid, targets, initial, state = _setup_session()
+
+    _complete_module(state, targets["next_available_module_id"])
+    # Simulate the server-side auto-unlock cascade
+    locked = state.get_module(targets["first_locked_module_id"])
+    if locked is not None:
+        locked.status = "available"
+
+    task = get_task("lms_complete_prerequisite_module")
+    agent_diff = compute_diff(initial, state)
+    report = match_diff(
+        agent_diff,
+        task.canonical_diff,
+        targets=dict(targets),
+        initial=initial,
+        final=state,
+    )
+    assert report.passed is True, f"auto-unlock should not penalize: {report.failures}"
+    assert report.score == 1.0, f"expected 1.0, got {report.score}"

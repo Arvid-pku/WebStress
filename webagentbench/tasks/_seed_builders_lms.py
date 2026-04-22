@@ -538,6 +538,11 @@ def _pick_assignment_title(
     return tmpl.replace("{n}", str(n)).replace("{topic}", topic)
 
 
+def _cap_to_recoverable(offset_days: int, max_late_days: int) -> int:
+    """Return a negative offset (days past due) capped within the late-submission window."""
+    return -max(1, min(abs(offset_days), max(1, max_late_days - 1)))
+
+
 @_register("assignment_battery")
 def _build_assignment_battery(ctx: LMSSeedContext, params: dict[str, Any]) -> dict[str, Any]:
     """Generate assignments across courses with varying statuses.
@@ -635,24 +640,23 @@ def _build_assignment_battery(ctx: LMSSeedContext, params: dict[str, Any]) -> di
             _course_max_late = course_data.get("syllabus", {}).get("late_policy", {}).get("max_late_days", 7)
             _second_missing_slot = per_course - 3 if missing_count >= 2 else -1
             if missing_budget > 0 and n == per_course and not is_past_due:
-                # Cap to within recoverable window (1..max_late_days-1 days past due)
-                _capped = max(1, min(abs(due_offset_days), max(1, _course_max_late - 1)))
-                due_offset_days = -_capped
+                due_offset_days = _cap_to_recoverable(due_offset_days, _course_max_late)
                 due_at = ctx.now + timedelta(days=due_offset_days)
                 is_past_due = True
             elif missing_budget > 0 and n == per_course and is_past_due and abs(due_offset_days) > _course_max_late:
-                # Already past-due but beyond max_late: cap to recoverable window
-                _capped = max(1, _course_max_late - 1)
-                due_offset_days = -_capped
+                due_offset_days = _cap_to_recoverable(due_offset_days, _course_max_late)
                 due_at = ctx.now + timedelta(days=due_offset_days)
             elif missing_budget > 0 and n == _second_missing_slot and not is_past_due:
                 due_offset_days = -abs(due_offset_days) if due_offset_days != 0 else -7
                 due_at = ctx.now + timedelta(days=due_offset_days)
                 is_past_due = True
             elif late_budget > 0 and n == per_course - 1 and not is_past_due:
-                due_offset_days = -abs(due_offset_days) if due_offset_days != 0 else -7
+                due_offset_days = _cap_to_recoverable(due_offset_days, _course_max_late)
                 due_at = ctx.now + timedelta(days=due_offset_days)
                 is_past_due = True
+            elif late_budget > 0 and n == per_course - 1 and is_past_due and abs(due_offset_days) > _course_max_late:
+                due_offset_days = _cap_to_recoverable(due_offset_days, _course_max_late)
+                due_at = ctx.now + timedelta(days=due_offset_days)
 
             if missing_budget > 0 and is_past_due and n == per_course:
                 status = "not_submitted"
@@ -1122,11 +1126,20 @@ def _build_assignment_battery(ctx: LMSSeedContext, params: dict[str, Any]) -> di
     if not next_deadline_assignment_id:
         next_deadline_assignment_id = fallback_deadline_id
 
-    # ── allows_late_submit: whether target course allows > 3 late days ──
+    # ── allows_late_submit: whether the overdue assignment's course allows > 3 late days ──
+    # Use the overdue assignment's course (not the randomly-selected target assignment's
+    # course) since allows_late_submit gates the oneof branch for overdue submissions.
+    overdue_course_id = ""
+    if overdue_assignment_id:
+        for a in all_assignments:
+            if a["id"] == overdue_assignment_id:
+                overdue_course_id = a["course_id"]
+                break
     allows_late_submit = "false"
-    if target_course_id:
+    check_cid = overdue_course_id or target_course_id
+    if check_cid:
         for c in courses:
-            if c["id"] == target_course_id:
+            if c["id"] == check_cid:
                 max_late = c["syllabus"]["late_policy"]["max_late_days"]
                 allows_late_submit = "true" if max_late > 3 else "false"
                 break

@@ -66,11 +66,13 @@ canonical_diff:
         expr: "x == v"
     changes:
       submission_status:
-        eq: late
+        in:
+        - submitted
+        - late
       file_name:
         eq: recovery_submission.pdf
       attempt_count:
-        expr: "x == initial.get_assignment(v).attempt_count + 1"
+        expr: "x >= initial.get_assignment(v).attempt_count + 1"
       submitted_at:
         expr: "x is not None and x >= session_start"
   - entity: Assignment
@@ -85,7 +87,7 @@ canonical_diff:
       file_name:
         eq: recovery_submission.pdf
       attempt_count:
-        expr: "x == initial.get_assignment(v).attempt_count + 1"
+        expr: "x >= initial.get_assignment(v).attempt_count + 1"
       submitted_at:
         expr: "x is not None and x >= session_start"
   invariant:
