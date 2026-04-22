@@ -267,13 +267,23 @@ class RedditSeedRunner:
         # 3. Add generic distractors
         self._add_generic_distractors(ctx, count=seed_cfg.distractors)
 
-        # 3b. Guarantee every authored entity has a user profile so that
+        # 3b. Resolve task targets first so username-valued targets
+        # (message recipients like target.msg_to / target.new_to that never
+        # appear as a post/comment/message author) feed into profile sync.
+        targets = self._resolve_targets(seed_cfg.targets, ctx)
+
+        # 3c. Guarantee every authored entity has a user profile so that
         # /u/<author> renders instead of 404ing. Tasks sometimes seed posts,
         # comments, or messages for named characters (e.g. CryptoSkeptic)
         # that were never added to the baseline user_profiles sample, which
         # leaves the block-user flow and profile navigation broken for any
-        # task that asks the agent to act on that user.
-        self._sync_user_profiles(ctx)
+        # task that asks the agent to act on that user. Also scan resolved
+        # targets for message-recipient / user-reference fields.
+        self._sync_user_profiles(
+            ctx,
+            targets=targets,
+            instruction=getattr(task, "instruction_template", None),
+        )
 
         # 4. Sort posts by time
         base["posts"] = sorted(
@@ -282,9 +292,6 @@ class RedditSeedRunner:
 
         # 5. Sync counters back
         base["id_counters"] = dict(ctx.counters)
-
-        # 6. Resolve target templates
-        targets = self._resolve_targets(seed_cfg.targets, ctx)
 
         return base, targets
 
@@ -378,13 +385,22 @@ class RedditSeedRunner:
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _sync_user_profiles(ctx: RedditSeedContext) -> None:
+    def _sync_user_profiles(
+        ctx: RedditSeedContext,
+        targets: dict[str, Any] | None = None,
+        instruction: str | None = None,
+    ) -> None:
         """Ensure every authored entity has a matching UserProfile.
 
         Collects authors from posts/comments, senders/recipients from
         messages, and notification from_user fields; any name missing from
         ``user_profiles`` (and not the owner) gets a minimal auto-generated
         profile so ``/u/<name>`` renders and the Block-User button shows up.
+        When resolved ``targets`` are provided, also pulls usernames from
+        target keys that identify message recipients or user references
+        (e.g. ``msg_to``, ``new_to``, ``reply_from``, ``block_user``,
+        ``target_user``) so an agent that navigates to the recipient's
+        profile before messaging still finds the user.
         """
         base = ctx.base
         owner = str(base.get("owner_username", "")).lower()
@@ -412,6 +428,34 @@ class RedditSeedRunner:
             collect(getattr(m, "to_user", None))
         for n in base.get("notifications", []):
             collect(getattr(n, "from_user", None))
+
+        # Target keys whose *values* identify a Reddit user the agent is
+        # told to act on. Messaging tasks pass recipient usernames through
+        # these fields; a fallback below catches any ``*_user`` / ``*_to``
+        # key name too.
+        if targets:
+            user_slots = {
+                "msg_to", "new_to", "m_to", "mt",
+                "reply_from", "reply_to", "reply_author",
+                "block_user", "target_user",
+                "save_author", "comment_author",
+                "from_user", "to_user",
+            }
+            for key, val in targets.items():
+                if not isinstance(val, str):
+                    continue
+                if key in user_slots or key.endswith("_user") or key.endswith("_to"):
+                    collect(val)
+
+        # Last-resort fallback: scan the instruction template for literal
+        # ``u/<name>`` references. Some tasks (e.g. reddit_compose_message)
+        # hard-code the recipient username in the instruction and keep
+        # ``targets`` empty, which would otherwise leave no signal for the
+        # recipient to appear as a navigable profile.
+        if instruction:
+            import re as _re
+            for raw in _re.findall(r"u/([A-Za-z][A-Za-z0-9_]+)", instruction):
+                collect(raw)
 
         next_idx = len(base.get("user_profiles", [])) + 1
         interests = ["technology", "science", "gaming", "photography", "music"]
