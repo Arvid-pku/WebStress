@@ -67,6 +67,128 @@ _DEFAULT_TIMEOUT = 600
 
 
 # =============================================================================
+# Bedrock Converse: toolChoice forcing (for third-party models)
+# =============================================================================
+#
+# browser-use's stock ChatAWSBedrock never sets Converse's `toolChoice`, so
+# models like Kimi / Qwen sometimes return plain-text reasoning instead of a
+# structured tool_use block once context grows — causing "Expected structured
+# output but no tool use found". This subclass injects toolChoice={'any': {}}
+# into the Converse body. If the model provider refuses that field (some
+# vendors accept only `auto`), we fall back to the unforced path so we never
+# regress below upstream behavior.
+
+
+def _make_bedrock_forced_class():
+    """Lazy import so users without boto3 don't pay the import cost."""
+    from dataclasses import dataclass
+    from browser_use.llm.aws import ChatAWSBedrock
+    from browser_use.llm.aws.serializer import AWSBedrockMessageSerializer
+    from browser_use.llm.exceptions import ModelProviderError, ModelRateLimitError
+    from browser_use.llm.views import ChatInvokeCompletion
+
+    @dataclass
+    class ChatAWSBedrockForced(ChatAWSBedrock):
+        """ChatAWSBedrock + Converse `toolChoice: {any: {}}` when output_format given.
+
+        The `toolChoice` field tells Bedrock's Converse API the model MUST call
+        one of the provided tools (vs. just "may call them"). This plugs the
+        hole that lets Kimi/Qwen return plain text at long context.
+        """
+
+        async def ainvoke(self, messages, output_format=None, **kwargs):
+            # Non-structured path is unchanged — no tools, no toolChoice needed.
+            if output_format is None:
+                return await super().ainvoke(messages, output_format=None, **kwargs)
+
+            try:
+                from botocore.exceptions import ClientError
+            except ImportError as e:
+                raise ImportError("boto3/botocore required for Bedrock") from e
+
+            bedrock_messages, system_message = AWSBedrockMessageSerializer.serialize_messages(messages)
+            tools = self._format_tools_for_request(output_format)
+
+            def _build_body(force_tool: bool) -> dict:
+                body: dict[str, Any] = {}
+                if system_message:
+                    body["system"] = system_message
+                inf = self._get_inference_config()
+                if inf:
+                    body["inferenceConfig"] = inf
+                tool_config: dict[str, Any] = {"tools": tools}
+                if force_tool:
+                    tool_config["toolChoice"] = {"any": {}}
+                body["toolConfig"] = tool_config
+                if self.request_params:
+                    body.update(self.request_params)
+                return {k: v for k, v in body.items() if v is not None}
+
+            client = self._get_client()
+
+            # First attempt: forced. Fall back to unforced on ValidationException
+            # caused by toolChoice rejection (vendor doesn't support it).
+            for force_tool in (True, False):
+                body = _build_body(force_tool=force_tool)
+                try:
+                    response = client.converse(modelId=self.model, messages=bedrock_messages, **body)
+                    break
+                except ClientError as e:
+                    err = e.response.get("Error", {})
+                    code = err.get("Code", "")
+                    msg = err.get("Message", str(e))
+                    if code in ("ThrottlingException", "TooManyRequestsException"):
+                        raise ModelRateLimitError(message=msg, model=self.name) from e
+                    is_toolchoice_reject = (
+                        code == "ValidationException"
+                        and ("toolChoice" in msg or "tool_choice" in msg or "toolConfig" in msg)
+                    )
+                    if force_tool and is_toolchoice_reject:
+                        logger.warning(
+                            "Bedrock model %r rejected toolChoice=any; retrying without force. (%s)",
+                            self.model, msg,
+                        )
+                        continue
+                    raise ModelProviderError(message=msg, model=self.name) from e
+            else:
+                raise ModelProviderError(message="converse failed after fallback", model=self.name)
+
+            usage = self._get_usage(response)
+            message = response.get("output", {}).get("message", {})
+            content = message.get("content", [])
+
+            for item in content:
+                if "toolUse" in item:
+                    tool_input = item["toolUse"].get("input", {})
+                    try:
+                        return ChatInvokeCompletion(
+                            completion=output_format.model_validate(tool_input),
+                            usage=usage,
+                        )
+                    except Exception as e:
+                        if isinstance(tool_input, str):
+                            try:
+                                data = json.loads(tool_input)
+                                return ChatInvokeCompletion(
+                                    completion=output_format.model_validate(data),
+                                    usage=usage,
+                                )
+                            except json.JSONDecodeError:
+                                pass
+                        raise ModelProviderError(
+                            message=f"Failed to validate structured output: {e}",
+                            model=self.name,
+                        ) from e
+
+            raise ModelProviderError(
+                message="Expected structured output but no tool use found in response",
+                model=self.name,
+            )
+
+    return ChatAWSBedrockForced
+
+
+# =============================================================================
 # Backend communication
 # =============================================================================
 
@@ -144,8 +266,10 @@ def _build_llm(
         if provider == "anthropic_bedrock":
             from browser_use.llm.aws import ChatAnthropicBedrock
             return ChatAnthropicBedrock(model=model, aws_region=region, session=sess, **common)
-        from browser_use.llm.aws import ChatAWSBedrock
-        return ChatAWSBedrock(model=model, aws_region=region, session=sess, **common)
+        # Use the forced-toolChoice subclass so Kimi/Qwen can't silently
+        # return plain text instead of a structured tool_use block.
+        ChatAWSBedrockForced = _make_bedrock_forced_class()
+        return ChatAWSBedrockForced(model=model, aws_region=region, session=sess, **common)
 
     if provider == "anthropic":
         from browser_use.llm.anthropic.chat import ChatAnthropic

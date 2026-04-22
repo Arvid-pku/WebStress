@@ -69,6 +69,11 @@ python -m webagentbench.agent_eval --model gpt-5.4 --provider openai --tasks gma
 ./scripts/run_gmail_sweep.sh
 ```
 
+For the stock `browser-use` harness (used for paper-grade comparability
+across models) and the full batch/parallel/slurm recipes, see the
+[Running the Stock Browser-Use Harness](webagentbench/README.md#running-the-stock-browser-use-harness)
+section of `webagentbench/README.md`.
+
 Generate or refresh trajectory visualizations:
 
 ```bash
