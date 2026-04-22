@@ -183,6 +183,7 @@ async def run_episode(
     *,
     model: str,
     provider: str = "gemini",
+    variant_filename: str | None = None,
     server_host: str = "127.0.0.1",
     backend_port: int = 8080,
     frontend_port: int = 8084,
@@ -208,12 +209,17 @@ async def run_episode(
     env_id = task_def.env_id
 
     # 1. Create a fresh session via the backend API. The response gives us
-    #    the session id + rendered instruction + start path.
+    #    the session id + rendered instruction + start path. Optionally apply
+    #    a degradation variant by passing its filename (backend resolves it
+    #    against webagentbench/injector/variants/).
     backend = f"http://{server_host}:{backend_port}"
+    session_payload: dict[str, Any] = {"task_id": task_id}
+    if variant_filename:
+        session_payload["variant_filename"] = variant_filename
     created = _http_json(
         f"{backend}/api/env/{env_id}/session",
         method="POST",
-        payload={"task_id": task_id},
+        payload=session_payload,
     )
     session_id = created["session_id"]
     instruction = created["instruction"]
