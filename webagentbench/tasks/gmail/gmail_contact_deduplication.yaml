@@ -1,7 +1,8 @@
 task_id: gmail_contact_deduplication
 env_id: gmail
 title: Deduplicate contacts by verifying current email via thread evidence
-instruction_template: You have two contacts for "Priya Narayanan" — one with the email
+instruction_template: >-
+  You have two contacts for "Priya Narayanan" — one with the email
   priya.narayanan@acmecorp.com and one with priya.n@acmelabs.io. Find the email thread
   from Priya that states which address she currently uses. Delete the contact entry
   with the outdated address. On the surviving contact, set the note to "Verified active
