@@ -168,10 +168,13 @@ export function OrdersPage() {
                     ))}
                   </div>
 
-                  <div className="order-card__actions">
+                  <div className="order-card__actions" data-order-id={order.id}>
                     <Link
                       to={preserveQueryParams(`/order-confirmation/${order.id}`, location.search)}
                       className="amazon-btn amazon-btn--wishlist"
+                      data-action="track-order"
+                      data-order-id={order.id}
+                      aria-label={`Track order ${order.id}`}
                     >
                       Track Order
                     </Link>
@@ -185,6 +188,9 @@ export function OrdersPage() {
                       <button
                         className="amazon-btn amazon-btn--add-to-cart"
                         onClick={() => navigate(preserveQueryParams(`/returns/new/${order.id}`, location.search))}
+                        data-action="return-item"
+                        data-order-id={order.id}
+                        aria-label={`Return item from order ${order.id}`}
                       >
                         Return Item
                       </button>
@@ -195,6 +201,9 @@ export function OrdersPage() {
                         className="amazon-btn amazon-btn--cancel"
                         onClick={() => handleCancelOrder(order.id)}
                         disabled={cancellingId === order.id}
+                        data-action="cancel-order"
+                        data-order-id={order.id}
+                        aria-label={`Cancel order ${order.id}`}
                       >
                         {cancellingId === order.id ? "Cancelling..." : "Cancel Order"}
                       </button>
