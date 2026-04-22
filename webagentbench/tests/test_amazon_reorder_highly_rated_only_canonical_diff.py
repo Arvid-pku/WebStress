@@ -17,11 +17,8 @@ def _setup_session(seed: int = 42):
     return sm, sid, dict(targets), initial, state
 
 
-def _owner_high_rated_ids(state) -> set[str]:
-    return {
-        r.product_id for r in state.reviews
-        if r.author_name == state.owner_name and r.rating >= 4
-    }
+def _owner_high_rated_ids(targets) -> set[str]:
+    return set(targets["high_rated_product_ids"])
 
 
 def _reorder(state, product_ids):
@@ -38,7 +35,7 @@ def _reorder(state, product_ids):
 def test_correct_trajectory_passes():
     _, _, targets, initial, state = _setup_session()
 
-    high_ids = _owner_high_rated_ids(state)
+    high_ids = _owner_high_rated_ids(targets)
     assert len(high_ids) >= 2, f"expected at least 2 high-rated owner reviews, got {high_ids}"
 
     _reorder(state, sorted(high_ids))
@@ -71,7 +68,7 @@ def test_do_nothing_fails():
 def test_reorder_includes_low_rated_fails():
     _, _, targets, initial, state = _setup_session()
 
-    high_ids = _owner_high_rated_ids(state)
+    high_ids = _owner_high_rated_ids(targets)
     # Include a 3-star product — should fail because set mismatch
     low_rated = next(
         r.product_id for r in state.reviews
@@ -93,7 +90,7 @@ def test_reorder_includes_low_rated_fails():
 def test_reorder_missing_one_highrated_fails():
     _, _, targets, initial, state = _setup_session()
 
-    high_ids = sorted(_owner_high_rated_ids(state))
+    high_ids = sorted(_owner_high_rated_ids(targets))
     # Skip the first one
     product_ids = high_ids[1:]
     assert product_ids, "need at least one product left"
@@ -112,7 +109,7 @@ def test_reorder_missing_one_highrated_fails():
 def test_reorder_quantity_two_fails():
     _, _, targets, initial, state = _setup_session()
 
-    high_ids = sorted(_owner_high_rated_ids(state))
+    high_ids = sorted(_owner_high_rated_ids(targets))
     # Add each product with quantity=2 — the predicate requires quantity==1
     addr_id = state.settings.default_address_id
     pay_id = state.settings.default_payment_id
@@ -133,7 +130,7 @@ def test_reorder_quantity_two_fails():
 def test_reorder_with_non_default_address_fails():
     _, _, targets, initial, state = _setup_session()
 
-    high_ids = sorted(_owner_high_rated_ids(state))
+    high_ids = sorted(_owner_high_rated_ids(targets))
     non_default_addr = next(a for a in state.addresses if not a.is_default)
     pay_id = state.settings.default_payment_id
     for pid in high_ids:

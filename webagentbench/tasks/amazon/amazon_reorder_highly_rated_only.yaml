@@ -62,7 +62,7 @@ canonical_diff:
     properties:
       items:
         expr: >-
-          (lambda hi: len(x) == len(hi) and set(it['product_id'] for it in x) == hi and all(it['quantity'] == 1 for it in x))({r.product_id for r in initial.reviews if r.author_name == initial.owner_name and r.rating >= 4})
+          (lambda hi: len(x) == len(hi) and set(it['product_id'] for it in x) == hi and all(it['quantity'] == 1 for it in x))(set(target['high_rated_product_ids']))
       shipping_address_id:
         expr: "state.settings.default_address_id == x"
       payment_method_id:
@@ -79,7 +79,7 @@ canonical_diff:
   invariant:
   - collection: state.orders
     filter: >-
-      not (set(it.get('product_id') for it in (a.items or [])) == {r.product_id for r in initial.reviews if r.author_name == initial.owner_name and r.rating >= 4})
+      not (set(it.get('product_id') for it in (a.items or [])) == set(target['high_rated_product_ids']))
     preserve: ALL
   - collection: state.products
     preserve: ALL
