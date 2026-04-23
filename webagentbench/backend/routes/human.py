@@ -333,6 +333,60 @@ def _trace_dir(
     )
 
 
+def _mark_existing_attempts_abandoned(annotator: str, aid: str) -> list[str]:
+    """Stamp any on-disk cold/ + warm/ trace files for this assignment with
+    abandoned=True so analysts can filter them out without losing the data.
+
+    Files are NOT deleted. The next save to the same path overwrites the
+    metadata cleanly (the new save dict has no `abandoned` key), so a fresh
+    attempt automatically clears the marker.
+    """
+    assignment = _find_assignment(aid)
+    base_dir = (
+        _TRACES_ROOT
+        / annotator.strip()
+        / assignment["role"]
+        / assignment["env"]
+        / assignment["base"]
+        / assignment["cond"]
+    )
+    if not base_dir.exists():
+        return []
+
+    now_iso = datetime.now(timezone.utc).isoformat()
+    marked: list[str] = []
+    for attempt in ("cold", "warm"):
+        meta_path = base_dir / attempt / "metadata.json"
+        if not meta_path.exists():
+            continue
+        try:
+            with open(meta_path) as f:
+                meta = json.load(f)
+        except (json.JSONDecodeError, OSError):
+            continue
+        if meta.get("abandoned"):
+            continue
+        meta["abandoned"] = True
+        meta["abandoned_at"] = now_iso
+        with open(meta_path, "w") as f:
+            json.dump(meta, f, indent=2, default=str)
+
+        trace_path = base_dir / attempt / "trace.json"
+        if trace_path.exists():
+            try:
+                with open(trace_path) as f:
+                    trace = json.load(f)
+                if isinstance(trace.get("metadata"), dict):
+                    trace["metadata"]["abandoned"] = True
+                    trace["metadata"]["abandoned_at"] = now_iso
+                    with open(trace_path, "w") as f:
+                        json.dump(trace, f, indent=2, default=str)
+            except (json.JSONDecodeError, OSError):
+                pass
+        marked.append(attempt)
+    return marked
+
+
 class AttemptSaveRequest(BaseModel):
     annotator: str
     aid: str
@@ -475,11 +529,14 @@ def attempt_reset(body: AttemptResetRequest) -> dict[str, Any]:
     User-visible rule: cold+warm+form is atomic per assignment. If an annotator
     abandons mid-flow and comes back, clicking Start re-runs the whole
     sequence, not just the missing piece. This endpoint wipes cold_done /
-    warm_done / form_done so progress counters stay honest.
+    warm_done / form_done so progress counters stay honest, and stamps any
+    on-disk trace files for this assignment with abandoned=True so analysts
+    can filter them out without losing the recording.
     """
     _find_assignment(body.aid)  # validates aid exists and raises 404 if not
+    abandoned = _mark_existing_attempts_abandoned(body.annotator.strip(), body.aid)
     slot = _update_assignment_status(body.annotator, body.aid, reset=True)
-    return {"ok": True, "slot": slot}
+    return {"ok": True, "slot": slot, "abandoned_attempts": abandoned}
 
 
 class PostTaskForm(BaseModel):

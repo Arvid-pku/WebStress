@@ -113,6 +113,17 @@ This is by design: warm is meant to measure how much faster you get after *just-
 
 The dashboard itself is resumable indefinitely — come back tomorrow and your completed cards are preserved. Just don't leave an assignment half-done.
 
+### What Abandon does to your trace files
+
+When you click **Abandon** (or re-Start a previously-completed assignment), the backend:
+
+1. Wipes the `cold_done` / `warm_done` flags in `progress.json` so the dashboard treats the assignment as not-started.
+2. Stamps any existing `cold/metadata.json` + `warm/metadata.json` with `"abandoned": true` and `"abandoned_at": "<timestamp>"`. **Files are kept on disk** — abandoned attempts are still useful as data, and analysts filter them out by the flag.
+
+So after an Abandon you'll see leftover folders under `webagentbench/human/traces/<YourName>/...` in `git status`. That's expected. Commit them along with the rest — don't manually delete.
+
+If you redo the same assignment later and Evaluate cleanly, the new save overwrites the metadata file (without the `abandoned` key), so the marker is gone automatically.
+
 ### Recording etiquette
 
 - **No DevTools inspection.** Don't open F12 to read task state or variant YAMLs.
@@ -152,6 +163,7 @@ Expected PR size:
 | Evaluate returned error after 15s | Env tab isn't posting the trace back (possibly refreshed by hand) | Click Abandon, start over. |
 | Browser didn't auto-open | Headless env / xdg-open missing | Copy the URL printed by the launcher manually. |
 | Suspected task bug | Ambiguous instruction, evaluator bug, broken intervention | Abandon the attempt. On a future attempt of the same task (or a different clean/intervention pair on the same base task), tick "suspected bug" in the post-task form and add a note. Ping Tianchen with the `aid`. |
+| `git status` shows leftover trace files after I abandoned | Expected — Abandon stamps `"abandoned": true` into metadata but keeps the files for analysis. | Commit them as-is. See [§3 "What Abandon does to your trace files"](#what-abandon-does-to-your-trace-files). |
 
 ---
 

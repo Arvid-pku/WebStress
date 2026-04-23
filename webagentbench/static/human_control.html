@@ -386,6 +386,9 @@ async function startWarm() {
     u.searchParams.set("attempt", "warm");
     history.replaceState(null, "", u);
     state.phase = "countdown";
+    render();
+    runCountdown();
+    return;
   } catch (err) {
     state.error = `Could not start warm attempt: ${err.message}`;
     state.phase = "error";

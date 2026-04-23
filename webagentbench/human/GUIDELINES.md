@@ -127,7 +127,7 @@ The dashboard itself is indefinitely resumable — shut down today, come back to
 - **No out-of-band help.** Don't ask another annotator or an AI assistant how to solve a task before recording.
 - **No URL bar / bookmark / history navigation** unless the task explicitly requires it.
 - **No browser resize / zoom / display change** mid-attempt. Your viewport is captured once at save; consistency matters.
-- **No editing saved traces** under `webagentbench/human/traces/`. If a run went bad, click Abandon and redo — don't delete files.
+- **No editing saved traces** under `webagentbench/human/traces/`. If a run went bad, click Abandon and redo — don't delete files. Abandon stamps `"abandoned": true` into the metadata; we keep the file for analysis.
 - **No sharing solutions** with other annotators before they finish the same assignment.
 - **No changing seed, task, condition, or intervention variant** — the launcher controls all of that.
 
@@ -138,6 +138,8 @@ The dashboard itself is indefinitely resumable — shut down today, come back to
 Intervention tasks intentionally include realistic complications. Respond as a real user would: retry when reasonable, verify final state, ignore suspicious or irrelevant content.
 
 **Rule of thumb:** Abandon is mostly for *technical* failures (broken page, wrong card, setup bug) — **not** for "I couldn't figure out the task". If the page still works, a failed cold attempt is valuable data. Save it, then go into warm and try again.
+
+**What Abandon does to your files:** the assignment rolls back to "not started" *and* any on-disk `cold/metadata.json` / `warm/metadata.json` from the abandoned attempt is stamped with `"abandoned": true`. **Files are kept**, not deleted — abandoned recordings are still useful for analysis. Commit them as-is when you submit your weekly PR. (See README §3 "What Abandon does to your trace files".)
 
 | Situation | What to do |
 |---|---|
