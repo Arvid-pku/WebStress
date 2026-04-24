@@ -253,16 +253,30 @@ def _strip_numeric_bounds(schema: "Any") -> "Any":
 
 
 def _make_openrouter_stripped_class():
-    """ChatOpenRouter subclass that strips numeric bounds from the schema it
-    sends, but leaves every other OpenRouter behavior unchanged.
+    """ChatOpenRouter subclass with two surgical patches active during ainvoke.
 
-    Implementation: temporarily wrap SchemaOptimizer.create_optimized_json_schema
-    for the duration of a single ainvoke() so we don't fight browser-use's
-    own request-building code. Thread-safe for one client at a time; our
-    runs use independent client instances per concurrent task, so no shared
-    state.
+    1. Numeric-bounds strip on the outbound JSON schema (see
+       `_strip_numeric_bounds` above) — Anthropic-family OAI-compat upstreams
+       reject `minimum`/`maximum` on integer/number fields.
+
+    2. Tolerant JSON parse on the inbound response — GPT-5 reasoning models
+       on OR sometimes emit two concatenated AgentOutput JSONs in a single
+       `message.content` (first turn + predicted next turn), making
+       Pydantic fail with `Invalid JSON: trailing characters`. We wrap
+       `BaseModel.model_validate_json` so if the raw decoder hits trailing
+       content, we keep only the first valid JSON object and retry via
+       `model_validate`. Pydantic still enforces the full AgentOutput
+       schema on that object.
+
+    Implementation: temporarily monkey-patch `SchemaOptimizer` and
+    `BaseModel.model_validate_json` for the duration of a single ainvoke()
+    so we don't fight browser-use's own request/parse code. Restored in a
+    finally block. Thread-safe for one client at a time; our runs use
+    independent client instances per concurrent task, so no shared state.
     """
+    import json as _json
     from dataclasses import dataclass
+    from pydantic import BaseModel as _PydBaseModel
     from browser_use.llm.openrouter.chat import ChatOpenRouter
     from browser_use.llm import schema as _schema_mod
 
@@ -271,16 +285,32 @@ def _make_openrouter_stripped_class():
         async def ainvoke(self, messages, output_format=None, **kwargs):
             if output_format is None:
                 return await super().ainvoke(messages, output_format=None, **kwargs)
-            orig = _schema_mod.SchemaOptimizer.create_optimized_json_schema
 
-            def _wrapped(model, **opts):
-                return _strip_numeric_bounds(orig(model, **opts))
+            orig_schema = _schema_mod.SchemaOptimizer.create_optimized_json_schema
 
-            _schema_mod.SchemaOptimizer.create_optimized_json_schema = staticmethod(_wrapped)
+            def _wrapped_schema(model, **opts):
+                return _strip_numeric_bounds(orig_schema(model, **opts))
+
+            orig_mvj = _PydBaseModel.model_validate_json
+
+            def _tolerant_mvj(cls, j, *a, **kw):
+                content = j if isinstance(j, str) else j.decode() if hasattr(j, "decode") else str(j)
+                try:
+                    return orig_mvj.__func__(cls, content, *a, **kw)
+                except Exception:
+                    try:
+                        obj, end = _json.JSONDecoder().raw_decode(content.lstrip())
+                    except _json.JSONDecodeError:
+                        raise
+                    return cls.model_validate(obj)
+
+            _schema_mod.SchemaOptimizer.create_optimized_json_schema = staticmethod(_wrapped_schema)
+            _PydBaseModel.model_validate_json = classmethod(_tolerant_mvj)
             try:
                 return await super().ainvoke(messages, output_format=output_format, **kwargs)
             finally:
-                _schema_mod.SchemaOptimizer.create_optimized_json_schema = orig
+                _schema_mod.SchemaOptimizer.create_optimized_json_schema = orig_schema
+                _PydBaseModel.model_validate_json = orig_mvj
 
     return ChatOpenRouterStripped
 

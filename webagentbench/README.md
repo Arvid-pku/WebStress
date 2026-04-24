@@ -412,6 +412,20 @@ JSON). Defaults are on.
   Claude via OR, cap the action set at ≤ 11 actions (`_BANNED_ACTIONS` plus
   `screenshot, find_text, find_elements`).
 
+- **GPT-5 reasoning models on OpenRouter emit double JSON** — symptom:
+  `Invalid JSON: trailing characters at line 3 column 1` on `openai/gpt-5.4`
+  (the full reasoning model, not `-mini` or `gpt-4o`). The raw
+  `message.content` is two back-to-back valid AgentOutput JSONs separated
+  by `\n\n` — GPT-5 agentic mode occasionally predicts the next turn
+  eagerly in the same response. OR's strict `json_schema` mode validates
+  *each* JSON's shape but doesn't enforce "exactly one JSON object", so
+  it slips through. The harness recovers by tolerant-parsing via
+  `json.JSONDecoder().raw_decode()` inside the `ChatOpenRouterStripped`
+  wrapper — only the first valid JSON is used; Pydantic still enforces
+  the full AgentOutput schema on it. `openai/gpt-5.4-mini`,
+  `openai/gpt-4o`, and `openai/gpt-4o-mini` via OR are clean and don't
+  exercise the fallback.
+
 ### Known model quirks
 
 - **Claude (Sonnet / Opus) on Bedrock** — clean. Daily TPD quota is per-model;
