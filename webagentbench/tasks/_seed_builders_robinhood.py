@@ -680,6 +680,10 @@ def build_portfolio_diverse(ctx: RobinhoodSeedContext, params: dict[str, Any]) -
     mixed_quantities = params.get("mixed_quantities", False)
     total_value_target = params.get("total_value_target")
     gain_forced_symbols = set(params.get("gain_forced_symbols", []))
+    # today_loser_count: number of positions whose underlying stock should be forced
+    # to be down >5% intraday (day_change_pct in [-10, -6]). Used by tasks that
+    # filter on "down today" rather than lifetime total return.
+    today_loser_count = params.get("today_loser_count")
 
     stocks = list(ctx.base.get("stocks", []))
     if sectors:
@@ -709,6 +713,20 @@ def build_portfolio_diverse(ctx: RobinhoodSeedContext, params: dict[str, Any]) -
     else:
         eligible = [i for i in range(len(picked)) if picked[i].symbol not in gain_forced_symbols]
         loss_indexes = set(eligible[:min(int(loser_count), len(eligible))]) if include_losers else set()
+
+    # Force a subset of underlying stocks to be down >5% today so positions on
+    # them satisfy "down more than 5% today" filters at the agent layer.
+    today_loser_indexes: set[int] = set()
+    if today_loser_count is not None:
+        eligible_today = [i for i in range(len(picked)) if picked[i].symbol not in gain_forced_symbols]
+        today_loser_indexes = set(eligible_today[:min(int(today_loser_count), len(eligible_today))])
+        for idx in today_loser_indexes:
+            stock = picked[idx]
+            forced_pct = Decimal(str(round(ctx.rng.uniform(-10.0, -6.0), 2)))
+            new_prev_close = Decimal(str(round(float(stock.price) / (1 + float(forced_pct) / 100.0), 2)))
+            stock.previous_close = new_prev_close
+            stock.day_change = stock.price - new_prev_close
+            stock.day_change_pct = forced_pct
 
     position_ids: list[str] = []
     created_positions: list[Position] = []
@@ -806,6 +824,9 @@ def build_portfolio_diverse(ctx: RobinhoodSeedContext, params: dict[str, Any]) -
     ctx.base["portfolio_value"] = ctx.base.get("portfolio_value", Decimal("0")) + total_value
     loss_symbols = sorted(position.symbol for position in created_positions if position.total_return < 0)
     gain_symbols = sorted(position.symbol for position in created_positions if position.total_return >= 0)
+    today_loss_symbols = sorted(
+        position.symbol for position in created_positions if position.day_change_pct < Decimal("-5")
+    )
     largest_position_symbol = max(created_positions, key=lambda position: position.current_price * position.quantity).symbol if created_positions else None
     tech_candidates = [
         position for position in created_positions
@@ -830,6 +851,7 @@ def build_portfolio_diverse(ctx: RobinhoodSeedContext, params: dict[str, Any]) -
     return {
         "position_ids": position_ids,
         "loss_symbols": loss_symbols,
+        "today_loss_symbols": today_loss_symbols,
         "gain_symbols": gain_symbols,
         "best_symbol": best_symbol,
         "worst_symbol": worst_symbol,
