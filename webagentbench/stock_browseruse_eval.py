@@ -324,6 +324,28 @@ def _make_openrouter_stripped_class():
                     "strict": True,
                     "schema": schema,
                 }
+                # Skip OpenRouter's Amazon Bedrock OAI-compat upstream. Bedrock's
+                # strict request validator rejects the standard `json_schema.name`
+                # field as `output_config.format: Extra inputs are not permitted`
+                # (account-dependent — some users always land on Bedrock for
+                # Opus / Qwen). Dropping `name` would route around the rejection
+                # but silently disables OR's strict-mode enforcement: the LLM
+                # can then emit hallucinated action names that fail the
+                # client-side Pydantic Union validation. Excluding Bedrock from
+                # the upstream pool is the only fix that preserves strict mode.
+                # Anthropic native / Azure / Google / OpenAI / Alibaba / Fireworks
+                # all accept the full `name` + `strict` payload cleanly.
+                # Merge our preference into any user-supplied
+                # `self.extra_body["extra_body"]` rather than overwriting.
+                extra_kwargs: dict[str, Any] = dict(self.extra_body or {})
+                user_eb = extra_kwargs.pop("extra_body", None) or {}
+                user_prov = dict(user_eb.get("provider") or {})
+                ignore = list(user_prov.get("ignore") or [])
+                if "Amazon Bedrock" not in ignore:
+                    ignore.append("Amazon Bedrock")
+                user_prov["ignore"] = ignore
+                extra_kwargs["extra_body"] = {**user_eb, "provider": user_prov}
+
                 response = await self.get_client().chat.completions.create(
                     model=self.model,
                     messages=openrouter_messages,
@@ -335,7 +357,7 @@ def _make_openrouter_stripped_class():
                         type="json_schema",
                     ),
                     extra_headers=extra_headers,
-                    **(self.extra_body or {}),
+                    **extra_kwargs,
                 )
                 content = response.choices[0].message.content
                 if content is None:
