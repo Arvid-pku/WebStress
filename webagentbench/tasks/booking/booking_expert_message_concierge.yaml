@@ -147,12 +147,6 @@ canonical_diff:
       severity: high
   update:
     - entity: Message
-      desc: Any property-origin message may be marked read while reviewing the inbox
-      where:
-        sender: {eq: property}
-      changes:
-        read: {any: true}
-    - entity: Message
       desc: Mark first original message as read
       where:
         id: {expr: "x == target['msg_id_1']"}
@@ -170,6 +164,12 @@ canonical_diff:
         id: {expr: "x == target['msg_id_3']"}
       changes:
         read: {eq: true}
+    - entity: Message
+      desc: Any property-origin message may be marked read while reviewing the inbox
+      where:
+        sender: {eq: property}
+      changes:
+        read: {any: true}
   create:
     - entity: Message
       desc: Reply to hotel_1 about 3pm arrival
