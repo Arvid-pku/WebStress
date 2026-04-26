@@ -509,13 +509,14 @@ def _match_entry(
         ctx.matched.add((found.entity, found.entity_id))
     else:
         ctx.failures.append(Failure(failure_kind, desc, {"entry_index": idx}))
-        # Singleton near-miss: the agent produced an entry on the right
-        # entity+collection but its property predicates failed. Mark the
-        # most-likely candidate (first available) as a near-miss so the
-        # unaccounted collateral sweep doesn't pile a second penalty on top
-        # of the missing-positive failure already recorded above.
-        if candidates:
-            cand = candidates[0]
+        # Singleton near-miss: the agent produced one or more entries on the
+        # right entity+collection but their property predicates all failed.
+        # Mark every such candidate as a near-miss so the unaccounted
+        # collateral sweep doesn't pile per-entry penalties on top of the
+        # missing-positive failure already recorded above. (Without this,
+        # tasks like gmail_escalation_chain that expect 3 distinct sends
+        # would charge -0.15 for every failed candidate beyond the first.)
+        for cand in candidates:
             ctx.near_misses.add((cand.entity, cand.entity_id))
     ctx.checks.append({
         "desc": desc, "passed": found is not None,
