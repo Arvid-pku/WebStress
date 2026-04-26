@@ -1918,7 +1918,17 @@ def build_notifications(ctx: RobinhoodSeedContext, params: dict[str, Any]) -> di
     if "notifications" not in ctx.base:
         ctx.base["notifications"] = []
 
-    symbols = ctx.pick_symbols(count)
+    # When notifications are exclusively order_fill, mirror the symbols of
+    # actually-filled orders so the agent can cross-reference notifications
+    # against order history (otherwise random universe symbols look like fills
+    # for stocks the user never traded).
+    filled_symbols = [
+        o.symbol for o in ctx.base.get("orders", []) if getattr(o, "status", None) == "filled"
+    ]
+    if filled_symbols and set(types) == {"order_fill"}:
+        symbols = [filled_symbols[i % len(filled_symbols)] for i in range(count)]
+    else:
+        symbols = ctx.pick_symbols(count)
     if include_corporate_actions and "corporate_action" not in types:
         types = list(types) + ["corporate_action"]
     notif_ids: list[str] = []
