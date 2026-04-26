@@ -248,6 +248,24 @@ def _make_bedrock_forced_class():
 # =============================================================================
 
 
+# OpenRouter upstream providers that we exclude from the routing pool when
+# calling structured-output endpoints. Each entry has been shown to break a
+# request that other providers accept cleanly:
+#   - Amazon Bedrock: rejects `json_schema.name` as `Extra inputs are not
+#     permitted` (see _make_openrouter_stripped_class for the full story).
+#   - Novita: returns `model features structured outputs not support` for
+#     models that other providers (Alibaba, DeepInfra, Fireworks, etc.)
+#     happily handle — Novita just hasn't implemented strict response_format.
+# Add new providers here as we observe similar failures. Going through this
+# list is preferable to OR's `provider.require_parameters=true` flag, which
+# fails closed (404 "no endpoints found") when no provider in OR's pool is
+# a perfect parameter match — leaving e.g. qwen-thinking with no route.
+_OPENROUTER_IGNORE_PROVIDERS: list[str] = [
+    "Amazon Bedrock",
+    "Novita",
+]
+
+
 def _strip_numeric_bounds(schema: "Any") -> "Any":
     """Recursively drop min/max constraints from integer/number-typed nodes."""
     if isinstance(schema, dict):
@@ -324,25 +342,20 @@ def _make_openrouter_stripped_class():
                     "strict": True,
                     "schema": schema,
                 }
-                # Skip OpenRouter's Amazon Bedrock OAI-compat upstream. Bedrock's
-                # strict request validator rejects the standard `json_schema.name`
-                # field as `output_config.format: Extra inputs are not permitted`
-                # (account-dependent — some users always land on Bedrock for
-                # Opus / Qwen). Dropping `name` would route around the rejection
-                # but silently disables OR's strict-mode enforcement: the LLM
-                # can then emit hallucinated action names that fail the
-                # client-side Pydantic Union validation. Excluding Bedrock from
-                # the upstream pool is the only fix that preserves strict mode.
-                # Anthropic native / Azure / Google / OpenAI / Alibaba / Fireworks
-                # all accept the full `name` + `strict` payload cleanly.
-                # Merge our preference into any user-supplied
-                # `self.extra_body["extra_body"]` rather than overwriting.
+                # Tell OR to skip upstream providers that we know will reject
+                # or mis-handle browser-use's structured-output payload. See
+                # `_OPENROUTER_IGNORE_PROVIDERS` for the rationale per entry.
+                # We merge into any user-supplied
+                # `self.extra_body["extra_body"]["provider"]["ignore"]` rather
+                # than overwriting, so callers can still pin their own
+                # provider preferences.
                 extra_kwargs: dict[str, Any] = dict(self.extra_body or {})
                 user_eb = extra_kwargs.pop("extra_body", None) or {}
                 user_prov = dict(user_eb.get("provider") or {})
                 ignore = list(user_prov.get("ignore") or [])
-                if "Amazon Bedrock" not in ignore:
-                    ignore.append("Amazon Bedrock")
+                for p in _OPENROUTER_IGNORE_PROVIDERS:
+                    if p not in ignore:
+                        ignore.append(p)
                 user_prov["ignore"] = ignore
                 extra_kwargs["extra_body"] = {**user_eb, "provider": user_prov}
 

@@ -380,21 +380,33 @@ JSON). Defaults are on.
   our 6-way parallel smokes. Override by exporting either env var to a
   smaller value if you want to fail faster.
 
-- **OpenRouter routes through Amazon Bedrock OAI-compat** — symptom:
-  `400 Provider returned error: "output_config.format: Extra inputs are
-  not permitted"` with `provider_name: Amazon Bedrock`. Bedrock's
-  OAI-compat strict validator rejects the standard
-  `json_schema.name` field that browser-use sends. The same model on
-  Anthropic native / Azure / Alibaba / OpenAI / Google all accept it
-  cleanly — but OR's routing is account-dependent, and some accounts
-  default to Bedrock for Opus 4.7 / Qwen3-VL etc. Dropping `name`
-  silently disables OR's strict-mode enforcement (the LLM then emits
-  hallucinated action names that fail the Pydantic Union check
-  client-side), so the harness instead **excludes Amazon Bedrock from
-  the OR upstream pool** via `extra_body={"provider":{"ignore":
-  ["Amazon Bedrock"]}}` inside `_make_openrouter_stripped_class`. Users
-  who want Bedrock should set `--provider bedrock` directly (native
-  Converse API, no OAI-compat layer).
+- **OpenRouter upstreams that mishandle structured-output payloads** —
+  some OR upstream providers reject browser-use's standard
+  `response_format={"type":"json_schema","strict":true}` request. Two
+  observed so far:
+  - **Amazon Bedrock** (OAI-compat endpoint) — rejects
+    `json_schema.name` as `output_config.format: Extra inputs are not
+    permitted`. Other Anthropic-family endpoints (Anthropic native,
+    Azure, Anthropic OAI-compat proxy) all accept `name` cleanly. Drop-
+    ping `name` would route around it but silently disables OR's strict-
+    mode enforcement; the LLM then emits hallucinated action names that
+    fail the client-side Pydantic Union check.
+  - **Novita** — returns `model features structured outputs not support`
+    for models that other providers (Alibaba / DeepInfra / Fireworks
+    etc.) handle fine; Novita just hasn't implemented strict
+    `response_format`.
+
+  The harness excludes both from the OR upstream pool via
+  `extra_body={"provider":{"ignore":[...]}}` inside
+  `_make_openrouter_stripped_class`. The list is the module-level
+  `_OPENROUTER_IGNORE_PROVIDERS` constant — add to it as new
+  upstream incompatibilities surface. We deliberately don't use OR's
+  `provider.require_parameters=true` flag instead: it fails closed
+  (404 "no endpoints found") for any model where OR has no perfect
+  parameter match in its pool, leaving e.g. `qwen3-vl-235b-a22b-thinking`
+  with no route at all. Users who want Bedrock as the actual model
+  host should pass `--provider bedrock` directly (native Converse API,
+  no OAI-compat layer).
 
 - **Claude via OpenRouter hits `compiled grammar is too large`** — symptom:
   `400 Provider returned error: "The compiled grammar is too large, which
