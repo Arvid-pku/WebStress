@@ -248,22 +248,77 @@ def _make_bedrock_forced_class():
 # =============================================================================
 
 
-# OpenRouter upstream providers that we exclude from the routing pool when
-# calling structured-output endpoints. Each entry has been shown to break a
-# request that other providers accept cleanly:
+# Default OpenRouter upstream-provider ignore list. Each entry has been shown
+# to break a request that other providers accept cleanly via OR's gateway:
 #   - Amazon Bedrock: rejects `json_schema.name` as `Extra inputs are not
-#     permitted` (see _make_openrouter_stripped_class for the full story).
+#     permitted` (see `_make_openrouter_stripped_class` for the full story).
 #   - Novita: returns `model features structured outputs not support` for
-#     models that other providers (Alibaba, DeepInfra, Fireworks, etc.)
-#     happily handle — Novita just hasn't implemented strict response_format.
-# Add new providers here as we observe similar failures. Going through this
-# list is preferable to OR's `provider.require_parameters=true` flag, which
-# fails closed (404 "no endpoints found") when no provider in OR's pool is
-# a perfect parameter match — leaving e.g. qwen-thinking with no route.
-_OPENROUTER_IGNORE_PROVIDERS: list[str] = [
+#     models other providers (Alibaba, DeepInfra, Fireworks, etc.) handle —
+#     Novita just hasn't implemented strict `response_format=json_schema`.
+# This is the default applied when `WEBAGENTBENCH_OPENROUTER_IGNORE` env var
+# is unset. Users can override via env (see `_openrouter_provider_pref`).
+# Direct providers (`--provider bedrock` etc.) are unaffected — Bedrock's
+# native Converse API has no such issue, only its OAI-compat endpoint does.
+_OPENROUTER_DEFAULT_IGNORE: list[str] = [
     "Amazon Bedrock",
     "Novita",
 ]
+
+
+def _openrouter_provider_pref() -> dict[str, Any]:
+    """Build the OpenRouter `provider` routing object from env vars.
+
+    Default (no env vars set):
+        {"ignore": ["Amazon Bedrock", "Novita"]}
+
+    Env vars (all optional):
+        WEBAGENTBENCH_OPENROUTER_IGNORE              csv, replaces default
+        WEBAGENTBENCH_OPENROUTER_ONLY                csv, optional allowlist
+        WEBAGENTBENCH_OPENROUTER_ORDER               csv, optional ordering
+        WEBAGENTBENCH_OPENROUTER_ALLOW_FALLBACKS     bool, default true (omitted)
+        WEBAGENTBENCH_OPENROUTER_REQUIRE_PARAMETERS  bool, default false (omitted)
+
+    Empty / unset env vars are omitted from the result so OpenRouter never
+    sees `provider.only=[]` etc. (which would be invalid). `IGNORE` is the
+    one exception: setting it to empty string explicitly clears the default
+    (allows all upstreams).
+    """
+    def _csv(name: str) -> list[str] | None:
+        v = os.environ.get(name)
+        if v is None:
+            return None
+        return [s.strip() for s in v.split(",") if s.strip()]
+
+    def _bool(name: str) -> bool | None:
+        v = os.environ.get(name)
+        if v is None:
+            return None
+        return v.strip().lower() in ("1", "true", "yes", "y", "on")
+
+    pref: dict[str, Any] = {}
+
+    ignore = _csv("WEBAGENTBENCH_OPENROUTER_IGNORE")
+    if ignore is None:
+        ignore = list(_OPENROUTER_DEFAULT_IGNORE)
+    if ignore:
+        pref["ignore"] = ignore
+
+    only = _csv("WEBAGENTBENCH_OPENROUTER_ONLY")
+    if only:
+        pref["only"] = only
+
+    order = _csv("WEBAGENTBENCH_OPENROUTER_ORDER")
+    if order:
+        pref["order"] = order
+
+    allow_fb = _bool("WEBAGENTBENCH_OPENROUTER_ALLOW_FALLBACKS")
+    if allow_fb is not None:
+        pref["allow_fallbacks"] = allow_fb
+
+    if _bool("WEBAGENTBENCH_OPENROUTER_REQUIRE_PARAMETERS"):
+        pref["require_parameters"] = True
+
+    return pref
 
 
 def _strip_numeric_bounds(schema: "Any") -> "Any":
@@ -342,23 +397,13 @@ def _make_openrouter_stripped_class():
                     "strict": True,
                     "schema": schema,
                 }
-                # Tell OR to skip upstream providers that we know will reject
-                # or mis-handle browser-use's structured-output payload. See
-                # `_OPENROUTER_IGNORE_PROVIDERS` for the rationale per entry.
-                # We merge into any user-supplied
-                # `self.extra_body["extra_body"]["provider"]["ignore"]` rather
-                # than overwriting, so callers can still pin their own
-                # provider preferences.
-                extra_kwargs: dict[str, Any] = dict(self.extra_body or {})
-                user_eb = extra_kwargs.pop("extra_body", None) or {}
-                user_prov = dict(user_eb.get("provider") or {})
-                ignore = list(user_prov.get("ignore") or [])
-                for p in _OPENROUTER_IGNORE_PROVIDERS:
-                    if p not in ignore:
-                        ignore.append(p)
-                user_prov["ignore"] = ignore
-                extra_kwargs["extra_body"] = {**user_eb, "provider": user_prov}
-
+                # `self.extra_body` is set by `_build_llm` to the env-derived
+                # OpenRouter provider routing pref (defaults: ignore Amazon
+                # Bedrock + Novita, see `_openrouter_provider_pref`). It's
+                # double-wrapped (`{"extra_body": {"provider": {...}}}`) so
+                # that the parent class's `**self.extra_body` kwarg-unpack
+                # lands the inner dict on the OpenAI SDK's `extra_body=`
+                # request-body parameter.
                 response = await self.get_client().chat.completions.create(
                     model=self.model,
                     messages=openrouter_messages,
@@ -370,7 +415,7 @@ def _make_openrouter_stripped_class():
                         type="json_schema",
                     ),
                     extra_headers=extra_headers,
-                    **extra_kwargs,
+                    **(self.extra_body or {}),
                 )
                 content = response.choices[0].message.content
                 if content is None:
@@ -395,8 +440,20 @@ def _make_openrouter_stripped_class():
             except APIConnectionError as e:
                 raise ModelProviderError(message=str(e), model=self.name) from e
             except APIStatusError as e:
+                # Surface OR's `metadata.provider_name` so failure logs make
+                # it obvious which upstream actually rejected the request.
+                upstream = None
+                try:
+                    body = e.body if isinstance(e.body, dict) else {}
+                    md = (body.get("error") or {}).get("metadata") or {}
+                    upstream = md.get("provider_name")
+                except Exception:
+                    pass
+                msg = e.message
+                if upstream:
+                    msg = f"[upstream={upstream}] {msg}"
                 raise ModelProviderError(
-                    message=e.message, status_code=e.status_code, model=self.name
+                    message=msg, status_code=e.status_code, model=self.name
                 ) from e
             except ModelProviderError:
                 raise
@@ -500,7 +557,21 @@ def _build_llm(
         key = os.environ.get("OPENROUTER_API_KEY", "")
         if not key:
             raise ValueError("OPENROUTER_API_KEY not set")
-        return _make_openrouter_stripped_class()(model=model, api_key=key, **common)
+        # Compute the OR provider routing pref (env vars + defaults). Pass
+        # it via the wrapper's `extra_body` field, which browser-use's
+        # parent class kwarg-unpacks into chat.completions.create() — the
+        # double-wrap (`{"extra_body": {...}}`) lands our payload in the
+        # OpenAI SDK's `extra_body=` request-body parameter.
+        pref = _openrouter_provider_pref()
+        logger.info(
+            "openrouter routing for %s: %s",
+            model,
+            pref or "(no provider routing — all upstreams allowed)",
+        )
+        or_extra_body = {"extra_body": {"provider": pref}} if pref else None
+        return _make_openrouter_stripped_class()(
+            model=model, api_key=key, extra_body=or_extra_body, **common,
+        )
 
     if provider == "vllm":
         from browser_use.llm.openai.chat import ChatOpenAI as BUChatOpenAI

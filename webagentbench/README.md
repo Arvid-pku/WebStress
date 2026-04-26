@@ -380,33 +380,44 @@ JSON). Defaults are on.
   our 6-way parallel smokes. Override by exporting either env var to a
   smaller value if you want to fail faster.
 
-- **OpenRouter upstreams that mishandle structured-output payloads** —
-  some OR upstream providers reject browser-use's standard
-  `response_format={"type":"json_schema","strict":true}` request. Two
-  observed so far:
-  - **Amazon Bedrock** (OAI-compat endpoint) — rejects
-    `json_schema.name` as `output_config.format: Extra inputs are not
-    permitted`. Other Anthropic-family endpoints (Anthropic native,
-    Azure, Anthropic OAI-compat proxy) all accept `name` cleanly. Drop-
-    ping `name` would route around it but silently disables OR's strict-
-    mode enforcement; the LLM then emits hallucinated action names that
-    fail the client-side Pydantic Union check.
+- **OpenRouter is a gateway over multiple upstreams; some are bad for
+  structured outputs** — OR forwards each request to one of several
+  upstream providers (Anthropic native, Azure, Bedrock OAI-compat,
+  Alibaba, DeepInfra, Novita, Fireworks, etc.) depending on price /
+  latency / account routing. Their support for the strict
+  `response_format=json_schema` payload that browser-use sends is **not
+  uniform**. Two confirmed bad upstreams:
+  - **Amazon Bedrock** (OAI-compat endpoint) — rejects `json_schema.name`
+    as `output_config.format: Extra inputs are not permitted`. Dropping
+    `name` would silently disable OR's strict-mode enforcement, so the
+    harness routes around Bedrock instead.
   - **Novita** — returns `model features structured outputs not support`
-    for models that other providers (Alibaba / DeepInfra / Fireworks
-    etc.) handle fine; Novita just hasn't implemented strict
+    for models other providers (Alibaba / DeepInfra / Fireworks)
+    handle fine; Novita just hasn't implemented strict
     `response_format`.
 
-  The harness excludes both from the OR upstream pool via
-  `extra_body={"provider":{"ignore":[...]}}` inside
-  `_make_openrouter_stripped_class`. The list is the module-level
-  `_OPENROUTER_IGNORE_PROVIDERS` constant — add to it as new
-  upstream incompatibilities surface. We deliberately don't use OR's
-  `provider.require_parameters=true` flag instead: it fails closed
-  (404 "no endpoints found") for any model where OR has no perfect
-  parameter match in its pool, leaving e.g. `qwen3-vl-235b-a22b-thinking`
-  with no route at all. Users who want Bedrock as the actual model
-  host should pass `--provider bedrock` directly (native Converse API,
-  no OAI-compat layer).
+  By default the harness sets
+  `extra_body={"provider":{"ignore":["Amazon Bedrock","Novita"]}}` on
+  every OpenRouter request. **This only affects `--provider openrouter`
+  — direct `--provider bedrock` / `--provider anthropic` / etc. are
+  untouched** (Bedrock's native Converse API has no such issue, only its
+  OAI-compat endpoint does). 400-level errors from OR also have the
+  upstream name surfaced into the exception (`[upstream=Novita] ...`)
+  so failures are easy to diagnose.
+
+  Override the routing via env vars (all optional):
+
+  | Env var | Type | Default | Purpose |
+  |---|---|---|---|
+  | `WEBAGENTBENCH_OPENROUTER_IGNORE` | csv | `Amazon Bedrock,Novita` | Replace the ignore list. Empty string allows all upstreams. |
+  | `WEBAGENTBENCH_OPENROUTER_ONLY` | csv | _(unset)_ | Force-restrict to these upstreams. |
+  | `WEBAGENTBENCH_OPENROUTER_ORDER` | csv | _(unset)_ | Preferred upstream ordering. |
+  | `WEBAGENTBENCH_OPENROUTER_ALLOW_FALLBACKS` | bool | true | Allow OR to fall back if preferred upstream is unavailable. |
+  | `WEBAGENTBENCH_OPENROUTER_REQUIRE_PARAMETERS` | bool | false | Strict-match upstream parameters. **Off by default** — turning it on can return `404 No endpoints found` for models like `qwen3-vl-235b-a22b-thinking` whose OR pool has no perfect parameter match. |
+
+  Users who want Bedrock as the actual model host should pass
+  `--provider bedrock` directly (native Converse API, no OAI-compat
+  layer).
 
 - **Claude via OpenRouter hits `compiled grammar is too large`** — symptom:
   `400 Provider returned error: "The compiled grammar is too large, which
