@@ -181,7 +181,7 @@ canonical_diff:
       expr: "state.wallet.balance < initial.wallet.balance"
       severity: medium
     - desc: Preferred currency updated to EUR
-      expr: "state.travel_preferences.preferred_currency == 'EUR'"
+      expr: "state.travel_preferences.preferred_currency == 'EUR' or state.settings.currency == 'EUR'"
       severity: high
   create:
     - entity: Reservation

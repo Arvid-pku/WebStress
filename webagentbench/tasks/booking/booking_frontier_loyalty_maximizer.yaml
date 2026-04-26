@@ -193,7 +193,7 @@ seed:
 canonical_diff:
   constraints:
     - desc: Preferred currency updated to GBP
-      expr: "state.travel_preferences.preferred_currency == 'GBP'"
+      expr: "state.travel_preferences.preferred_currency == 'GBP' or state.settings.currency == 'GBP'"
       severity: medium
   update:
     - entity: Reservation

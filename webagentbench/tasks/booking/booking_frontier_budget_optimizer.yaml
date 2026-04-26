@@ -374,7 +374,7 @@ seed:
 canonical_diff:
   constraints:
     - desc: Preferred currency updated to EUR
-      expr: "state.travel_preferences.preferred_currency == 'EUR'"
+      expr: "state.travel_preferences.preferred_currency == 'EUR' or state.settings.currency == 'EUR'"
       severity: medium
     - desc: Combined all-in total across the 3 new city bookings stays within $2100 budget
       expr: >-

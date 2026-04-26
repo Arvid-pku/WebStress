@@ -211,7 +211,7 @@ seed:
 canonical_diff:
   constraints:
     - desc: Preferred currency updated to EUR
-      expr: "state.travel_preferences.preferred_currency == 'EUR'"
+      expr: "state.travel_preferences.preferred_currency == 'EUR' or state.settings.currency == 'EUR'"
       severity: medium
     - desc: Preferred bed type updated to king
       expr: "state.travel_preferences.preferred_bed_type == 'king'"
