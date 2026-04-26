@@ -1978,8 +1978,15 @@ def build_earnings_calendar(ctx: RobinhoodSeedContext, params: dict[str, Any]) -
     days_ahead : int       -- how far ahead to schedule (default 30)
     """
     include_symbols = params.get("include_symbols", None)
-    symbols = params.get("symbols", None) or include_symbols or ctx.pick_symbols(5)
+    from_portfolio = params.get("from_portfolio", False)
     days_ahead = params.get("days_ahead", 30)
+    if from_portfolio and not params.get("symbols"):
+        # Restrict earnings to symbols the user actually holds so portfolio
+        # earnings filters resolve to a non-empty set.
+        portfolio_symbols = sorted({p.symbol for p in ctx.base.get("positions", [])})
+        symbols = portfolio_symbols if portfolio_symbols else ctx.pick_symbols(5)
+    else:
+        symbols = params.get("symbols", None) or include_symbols or ctx.pick_symbols(5)
 
     if "earnings_events" not in ctx.base:
         ctx.base["earnings_events"] = []
