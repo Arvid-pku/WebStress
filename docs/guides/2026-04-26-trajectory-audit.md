@@ -234,3 +234,27 @@ The `did not mutate unrelated posts` cluster (4 instances) is real but small. `P
 6. **GM-2/GM-3** (thread-star bookkeeping + missing markRead) — frontend + eval
 7. **EVAL-3** (trajectory list saved empty) — 32 runs lose replay
 8. **BOOK-2/4/5**, **GM-4/5/6**, **LMS-3/4/5/6/7/8**, **AMZ-1** — task-by-task
+
+## Implementation status (2026-04-26)
+
+**Landed (commit 97fab0c7 + a361a446):**
+- EVAL-1 — matcher.py merges full final entity into Update filter scope
+- BOOK-1 — 4 cancel-task YAMLs whitelist `state.rebooking_suggestions`
+- BOOK-2 — `booking_frontier_notification_master.yaml` whitelists the four read-flipped notification IDs
+- LMS-1 — `lms_check_quiz_retake.yaml` filters target to `submission_status: submitted`
+- LMS-5 — `_seed_builders_lms.py` `priority_order_ids` now uses 7-day horizon
+- EVAL-3 — `stock_browseruse_eval.py` emits placeholder steps when `model_output is None`
+
+**Reverted pending test-fixture coordination:**
+- LMS-2 (feedback null-out + announcement scoped to course) — broke 25
+  existing canonical-diff tests for `lms_dropped_grade_impact` and
+  `lms_grading_discrepancy` which embed the global-latest-announcement
+  assumption. Needs paired updates to those tests and their seeds.
+
+**Documented but not yet implemented (see patterns above):**
+- GM-1, GM-2, GM-3, GM-4, GM-5 (Gmail invariant + frontend changes — 14+ tasks)
+- BOOK-3, BOOK-4, BOOK-5
+- LMS-3, LMS-4, LMS-6, LMS-7, LMS-8
+- AMZ-1 (cart-clear-on-checkout)
+- All PP and RH patterns (10 from agent's audit)
+- EVAL-2 (constraint vs negative-check display polish)
