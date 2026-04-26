@@ -202,13 +202,18 @@ _EOB_DENIAL_REASONS: list[str] = [
 # ---------------------------------------------------------------------------
 
 _VACCINES: list[dict[str, Any]] = [
-    {"name": "Influenza (Flu)", "series": False, "annual": True},
-    {"name": "COVID-19 Booster", "series": False, "annual": True},
-    {"name": "Tdap (Tetanus)", "series": False, "annual": False, "interval_years": 10},
-    {"name": "Shingles (Shingrix)", "series": True, "doses": 2, "interval_months": 2},
-    {"name": "Hepatitis B", "series": True, "doses": 3, "interval_months": 1},
-    {"name": "Pneumococcal (PCV20)", "series": False, "annual": False, "min_age": 65},
-    {"name": "HPV", "series": True, "doses": 3, "interval_months": 2, "max_age": 45},
+    # `short_name` is used by canonical_diff predicates that try to match the
+    # vaccine name in an appointment reason. The full `name` includes a
+    # parenthetical (e.g. "Tdap (Tetanus)") which agents rarely repeat
+    # verbatim — the short form is the bare form an agent is likely to type
+    # ("Tdap", "Flu"), and is what task evaluators should match against.
+    {"name": "Influenza (Flu)", "short_name": "Influenza", "series": False, "annual": True},
+    {"name": "COVID-19 Booster", "short_name": "COVID-19", "series": False, "annual": True},
+    {"name": "Tdap (Tetanus)", "short_name": "Tdap", "series": False, "annual": False, "interval_years": 10},
+    {"name": "Shingles (Shingrix)", "short_name": "Shingles", "series": True, "doses": 2, "interval_months": 2},
+    {"name": "Hepatitis B", "short_name": "Hepatitis B", "series": True, "doses": 3, "interval_months": 1},
+    {"name": "Pneumococcal (PCV20)", "short_name": "Pneumococcal", "series": False, "annual": False, "min_age": 65},
+    {"name": "HPV", "short_name": "HPV", "series": True, "doses": 3, "interval_months": 2, "max_age": 45},
 ]
 
 # ---------------------------------------------------------------------------
@@ -2239,6 +2244,11 @@ def build_immunization_record(ctx: PatientPortalSeedContext, params: dict[str, A
     due_imm_ids: list[str] = []
     incomplete_series_imm_id: str | None = None
     due_vaccine_names: list[str] = []
+    # Parallel list of bare vaccine forms (no parenthetical), for predicates
+    # that check whether an appointment reason "contains the vaccine".
+    # The agent rarely types "Tdap (Tetanus)" verbatim — they'll write
+    # "Tdap" or "Tetanus booster", and the predicate must accept either.
+    due_vaccine_short_names: list[str] = []
     # When series_incomplete is True, these describe the remaining doses the
     # agent must schedule: one slot per dose (e.g. doses 2 and 3 of a 3-dose
     # series ⇒ two slot labels). series_admin_provider_id is the provider
@@ -2318,6 +2328,7 @@ def build_immunization_record(ctx: PatientPortalSeedContext, params: dict[str, A
         ctx.base["immunizations"].append(imm_dict)
         due_imm_ids.append(imm_id)
         due_vaccine_names.append(vax["name"])
+        due_vaccine_short_names.append(vax.get("short_name", vax["name"]))
 
     # Incomplete series
     if series_incomplete:
@@ -2347,6 +2358,7 @@ def build_immunization_record(ctx: PatientPortalSeedContext, params: dict[str, A
         incomplete_series_imm_id = imm_id
         if series_vax["name"] not in due_vaccine_names:
             due_vaccine_names.append(series_vax["name"])
+            due_vaccine_short_names.append(series_vax.get("short_name", series_vax["name"]))
         # Record series-level metadata for canonical_diff authoring. The
         # patient has received exactly one dose (this record) — so
         # remaining_doses = total_doses - 1. Emit one slot label per
@@ -2415,6 +2427,7 @@ def build_immunization_record(ctx: PatientPortalSeedContext, params: dict[str, A
         "due_imm_ids": due_imm_ids,
         "incomplete_series_imm_id": incomplete_series_imm_id,
         "due_vaccine_names": due_vaccine_names,
+        "due_vaccine_short_names": due_vaccine_short_names,
         "admin_providers": admin_providers,
         "window_start": _window_start.isoformat(),
         "window_end": _window_end.isoformat(),

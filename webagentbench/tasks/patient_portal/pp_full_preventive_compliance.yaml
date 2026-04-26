@@ -69,6 +69,7 @@ seed:
     outputs:
     - due_imm_ids
     - due_vaccine_names
+    - due_vaccine_short_names
     - incomplete_series_imm_id
   - use: appointment_history
     params:
@@ -83,6 +84,7 @@ seed:
     expiring_with_refills_rx_ids: '{output.expiring_with_refills_rx_ids}'
     expiring_zero_refill_rx_ids: '{output.expiring_zero_refill_rx_ids}'
     due_vaccine_names: '{output.due_vaccine_names}'
+    due_vaccine_short_names: '{output.due_vaccine_short_names}'
     active_rx_ids: '{output.active_rx_ids}'
     upcoming_ids: '{output.upcoming_ids}'
     applicable_screening_names: '{output.applicable_screening_names}'
@@ -145,11 +147,14 @@ canonical_diff:
     - entity: Appointment
       desc: >-
         Schedule one appointment per due/overdue immunization; reason must
-        contain the corresponding vaccine's name. Independent bijection so
+        contain the corresponding vaccine's short_name (the bare form, e.g.
+        "Tdap" rather than "Tdap (Tetanus)"). Independent bijection so
         partial success on immunizations credits partial score (split from
-        the former union bijection).
+        the former union bijection). PP-2: bijection now iterates the
+        short-name list to avoid requiring agents to repeat the
+        parenthetical literally.
       bijection:
-        over: "list(target['due_vaccine_names'])"
+        over: "list(target['due_vaccine_short_names'])"
         variable: v
       properties:
         status: {eq: "scheduled"}

@@ -46,10 +46,12 @@ seed:
       due_count: 1
     outputs:
     - due_vaccine_names
+    - due_vaccine_short_names
   targets:
     pcp_id: '{output.pcp_id}'
     upcoming_ids: '{output.upcoming_ids}'
     due_vaccine_names: '{output.due_vaccine_names}'
+    due_vaccine_short_names: '{output.due_vaccine_short_names}'
 canonical_diff:
   create:
     - entity: Appointment
@@ -58,7 +60,11 @@ canonical_diff:
       properties:
         status: {eq: scheduled}
         reason:
-          expr: "any(v.lower() in (x or '').lower() for v in target['due_vaccine_names'])"
+          # Match the bare short_name (e.g. "Tdap") rather than the full
+          # parenthetical form (e.g. "Tdap (Tetanus)"). Agents rarely type
+          # the full parenthetical when scheduling. See PP-2 in the
+          # 2026-04-26 trajectory audit.
+          expr: "any(v.lower() in (x or '').lower() for v in target['due_vaccine_short_names'])"
   invariant:
     - collection: state.appointments
       filter: "a.id in target['upcoming_ids']"
