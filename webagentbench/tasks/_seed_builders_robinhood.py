@@ -680,6 +680,10 @@ def build_portfolio_diverse(ctx: RobinhoodSeedContext, params: dict[str, Any]) -
     mixed_quantities = params.get("mixed_quantities", False)
     total_value_target = params.get("total_value_target")
     gain_forced_symbols = set(params.get("gain_forced_symbols", []))
+    # today_loser_count: number of positions whose underlying stock should be forced
+    # to be down >5% intraday (day_change_pct in [-10, -6]). Used by tasks that
+    # filter on "down today" rather than lifetime total return.
+    today_loser_count = params.get("today_loser_count")
 
     stocks = list(ctx.base.get("stocks", []))
     if sectors:
@@ -709,6 +713,20 @@ def build_portfolio_diverse(ctx: RobinhoodSeedContext, params: dict[str, Any]) -
     else:
         eligible = [i for i in range(len(picked)) if picked[i].symbol not in gain_forced_symbols]
         loss_indexes = set(eligible[:min(int(loser_count), len(eligible))]) if include_losers else set()
+
+    # Force a subset of underlying stocks to be down >5% today so positions on
+    # them satisfy "down more than 5% today" filters at the agent layer.
+    today_loser_indexes: set[int] = set()
+    if today_loser_count is not None:
+        eligible_today = [i for i in range(len(picked)) if picked[i].symbol not in gain_forced_symbols]
+        today_loser_indexes = set(eligible_today[:min(int(today_loser_count), len(eligible_today))])
+        for idx in today_loser_indexes:
+            stock = picked[idx]
+            forced_pct = Decimal(str(round(ctx.rng.uniform(-10.0, -6.0), 2)))
+            new_prev_close = Decimal(str(round(float(stock.price) / (1 + float(forced_pct) / 100.0), 2)))
+            stock.previous_close = new_prev_close
+            stock.day_change = stock.price - new_prev_close
+            stock.day_change_pct = forced_pct
 
     position_ids: list[str] = []
     created_positions: list[Position] = []
@@ -806,6 +824,9 @@ def build_portfolio_diverse(ctx: RobinhoodSeedContext, params: dict[str, Any]) -
     ctx.base["portfolio_value"] = ctx.base.get("portfolio_value", Decimal("0")) + total_value
     loss_symbols = sorted(position.symbol for position in created_positions if position.total_return < 0)
     gain_symbols = sorted(position.symbol for position in created_positions if position.total_return >= 0)
+    today_loss_symbols = sorted(
+        position.symbol for position in created_positions if position.day_change_pct < Decimal("-5")
+    )
     largest_position_symbol = max(created_positions, key=lambda position: position.current_price * position.quantity).symbol if created_positions else None
     tech_candidates = [
         position for position in created_positions
@@ -830,6 +851,7 @@ def build_portfolio_diverse(ctx: RobinhoodSeedContext, params: dict[str, Any]) -
     return {
         "position_ids": position_ids,
         "loss_symbols": loss_symbols,
+        "today_loss_symbols": today_loss_symbols,
         "gain_symbols": gain_symbols,
         "best_symbol": best_symbol,
         "worst_symbol": worst_symbol,
@@ -1896,7 +1918,17 @@ def build_notifications(ctx: RobinhoodSeedContext, params: dict[str, Any]) -> di
     if "notifications" not in ctx.base:
         ctx.base["notifications"] = []
 
-    symbols = ctx.pick_symbols(count)
+    # When notifications are exclusively order_fill, mirror the symbols of
+    # actually-filled orders so the agent can cross-reference notifications
+    # against order history (otherwise random universe symbols look like fills
+    # for stocks the user never traded).
+    filled_symbols = [
+        o.symbol for o in ctx.base.get("orders", []) if getattr(o, "status", None) == "filled"
+    ]
+    if filled_symbols and set(types) == {"order_fill"}:
+        symbols = [filled_symbols[i % len(filled_symbols)] for i in range(count)]
+    else:
+        symbols = ctx.pick_symbols(count)
     if include_corporate_actions and "corporate_action" not in types:
         types = list(types) + ["corporate_action"]
     notif_ids: list[str] = []
@@ -1946,8 +1978,15 @@ def build_earnings_calendar(ctx: RobinhoodSeedContext, params: dict[str, Any]) -
     days_ahead : int       -- how far ahead to schedule (default 30)
     """
     include_symbols = params.get("include_symbols", None)
-    symbols = params.get("symbols", None) or include_symbols or ctx.pick_symbols(5)
+    from_portfolio = params.get("from_portfolio", False)
     days_ahead = params.get("days_ahead", 30)
+    if from_portfolio and not params.get("symbols"):
+        # Restrict earnings to symbols the user actually holds so portfolio
+        # earnings filters resolve to a non-empty set.
+        portfolio_symbols = sorted({p.symbol for p in ctx.base.get("positions", [])})
+        symbols = portfolio_symbols if portfolio_symbols else ctx.pick_symbols(5)
+    else:
+        symbols = params.get("symbols", None) or include_symbols or ctx.pick_symbols(5)
 
     if "earnings_events" not in ctx.base:
         ctx.base["earnings_events"] = []

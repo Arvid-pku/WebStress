@@ -32,8 +32,9 @@ seed:
       position_count: 8
       include_losers: true
       loser_count: 2
+      today_loser_count: 2
     outputs:
-    - loss_symbols
+    - today_loss_symbols
     - worst_symbol
   - use: price_alerts
     params:
@@ -49,7 +50,7 @@ seed:
       unread_ratio: 0.6
     outputs: []
   targets:
-    loss_symbols: '{output.loss_symbols}'
+    loss_symbols: '{output.today_loss_symbols}'
     worst_symbol: '{output.worst_symbol}'
     initial_alert_ids: '{output.alert_ids}'
 canonical_diff:

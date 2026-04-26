@@ -30,6 +30,7 @@ seed:
   - use: earnings_calendar
     params:
       days_ahead: 7
+      from_portfolio: true
     outputs: []
   targets: {}
 canonical_diff:
