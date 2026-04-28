@@ -55,16 +55,74 @@ seed:
           - 171.0
         noise_pct: 0.2
 canonical_diff:
-  constraints:
-  - desc: AAPL limit buy order at ≤$180 for 10 shares
-    expr: "any(o.symbol == 'AAPL' and o.side == 'buy' and o.order_type == 'limit' and o.limit_price is not None and o.limit_price <= Decimal('180') and o.quantity == 10 and not o.id.startswith('ord_decoy_') for o in state.orders)"
-    severity: critical
-  - desc: AMZN limit buy order at ≤$175 for 10 shares
-    expr: "any(o.symbol == 'AMZN' and o.side == 'buy' and o.order_type == 'limit' and o.limit_price is not None and o.limit_price <= Decimal('175') and o.quantity == 10 and not o.id.startswith('ord_decoy_') for o in state.orders)"
-    severity: critical
-  - desc: GOOGL limit buy order at ≤$165 for 10 shares
-    expr: "any(o.symbol == 'GOOGL' and o.side == 'buy' and o.order_type == 'limit' and o.limit_price is not None and o.limit_price <= Decimal('165') and o.quantity == 10 and not o.id.startswith('ord_decoy_') for o in state.orders)"
-    severity: critical
+  create:
+  - entity: orders
+    desc: Limit buy order for 10 shares of AAPL at ≤$180
+    properties:
+      symbol: {eq: AAPL}
+      side: {eq: buy}
+      order_type: {eq: limit}
+      quantity: {eq: 10}
+      limit_price: {expr: "x is not None and x <= Decimal('180')"}
+      status: {any: true}
+      filled_quantity: {any: true}
+      filled_price: {any: true}
+      stop_price: {any: true}
+      trail_amount: {any: true}
+      trail_pct: {any: true}
+      time_in_force: {any: true}
+      extended_hours: {any: true}
+  - entity: orders
+    desc: Limit buy order for 10 shares of AMZN at ≤$175
+    properties:
+      symbol: {eq: AMZN}
+      side: {eq: buy}
+      order_type: {eq: limit}
+      quantity: {eq: 10}
+      limit_price: {expr: "x is not None and x <= Decimal('175')"}
+      status: {any: true}
+      filled_quantity: {any: true}
+      filled_price: {any: true}
+      stop_price: {any: true}
+      trail_amount: {any: true}
+      trail_pct: {any: true}
+      time_in_force: {any: true}
+      extended_hours: {any: true}
+  - entity: orders
+    desc: Limit buy order for 10 shares of GOOGL at ≤$165
+    properties:
+      symbol: {eq: GOOGL}
+      side: {eq: buy}
+      order_type: {eq: limit}
+      quantity: {eq: 10}
+      limit_price: {expr: "x is not None and x <= Decimal('165')"}
+      status: {any: true}
+      filled_quantity: {any: true}
+      filled_price: {any: true}
+      stop_price: {any: true}
+      trail_amount: {any: true}
+      trail_pct: {any: true}
+      time_in_force: {any: true}
+      extended_hours: {any: true}
+  invariant:
+  - collection: state.positions
+    preserve: ALL
+  - collection: state.watchlists
+    preserve: ALL
+  - collection: state.price_alerts
+    preserve: ALL
+  - collection: state.transfers
+    preserve: ALL
+  - collection: state.options_positions
+    preserve: ALL
+  - collection: state.options_orders
+    preserve: ALL
+  - collection: state.recurring_investments
+    preserve: ALL
+  - collection: state.linked_banks
+    preserve: ALL
+  - collection: state.tax_documents
+    preserve: ALL
 secondary_primitives: []
 primitive_thesis: Measures planning, patience, state_tracking, verification, grounding
   by requiring exact completion of the requested Robinhood workflow while ignoring
