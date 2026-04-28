@@ -57,15 +57,15 @@ seed:
 canonical_diff:
   create:
   - entity: orders
-    desc: Limit buy order for 10 shares of AAPL at ≤$180
+    desc: AAPL limit buy of 10 shares at ≤$180, filled (price drops below limit)
     properties:
       symbol: {eq: AAPL}
       side: {eq: buy}
       order_type: {eq: limit}
       quantity: {eq: 10}
       limit_price: {expr: "x is not None and x <= Decimal('180')"}
-      status: {any: true}
-      filled_quantity: {any: true}
+      status: {eq: filled}
+      filled_quantity: {eq: 10}
       filled_price: {any: true}
       stop_price: {any: true}
       trail_amount: {any: true}
@@ -73,15 +73,15 @@ canonical_diff:
       time_in_force: {any: true}
       extended_hours: {any: true}
   - entity: orders
-    desc: Limit buy order for 10 shares of AMZN at ≤$175
+    desc: AMZN limit buy of 10 shares at ≤$175, filled (price drops below limit)
     properties:
       symbol: {eq: AMZN}
       side: {eq: buy}
       order_type: {eq: limit}
       quantity: {eq: 10}
       limit_price: {expr: "x is not None and x <= Decimal('175')"}
-      status: {any: true}
-      filled_quantity: {any: true}
+      status: {eq: filled}
+      filled_quantity: {eq: 10}
       filled_price: {any: true}
       stop_price: {any: true}
       trail_amount: {any: true}
@@ -89,14 +89,14 @@ canonical_diff:
       time_in_force: {any: true}
       extended_hours: {any: true}
   - entity: orders
-    desc: Limit buy order for 10 shares of GOOGL at ≤$165
+    desc: GOOGL limit buy of 10 shares at ≤$165, stays pending (price never crosses)
     properties:
       symbol: {eq: GOOGL}
       side: {eq: buy}
       order_type: {eq: limit}
       quantity: {eq: 10}
       limit_price: {expr: "x is not None and x <= Decimal('165')"}
-      status: {any: true}
+      status: {eq: pending}
       filled_quantity: {any: true}
       filled_price: {any: true}
       stop_price: {any: true}
@@ -104,8 +104,73 @@ canonical_diff:
       trail_pct: {any: true}
       time_in_force: {any: true}
       extended_hours: {any: true}
+  - entity: positions
+    desc: AAPL position created with 10 shares from the AAPL fill
+    properties:
+      symbol: {eq: AAPL}
+      quantity: {eq: 10}
+      avg_cost_basis: {any: true}
+      current_price: {any: true}
+      day_change_pct: {any: true}
+      total_return: {any: true}
+      total_return_pct: {any: true}
+      asset_type: {any: true}
+      name: {any: true}
+      lots: {any: true}
+  - entity: positions
+    desc: AMZN position created with 10 shares from the AMZN fill
+    properties:
+      symbol: {eq: AMZN}
+      quantity: {eq: 10}
+      avg_cost_basis: {any: true}
+      current_price: {any: true}
+      day_change_pct: {any: true}
+      total_return: {any: true}
+      total_return_pct: {any: true}
+      asset_type: {any: true}
+      name: {any: true}
+      lots: {any: true}
+  - entity: transactions
+    desc: Buy transaction recorded by the AAPL fill
+    properties:
+      type: {eq: buy}
+      symbol: {eq: AAPL}
+      quantity: {eq: 10}
+      amount: {any: true}
+      description: {any: true}
+      timestamp: {any: true}
+  - entity: transactions
+    desc: Buy transaction recorded by the AMZN fill
+    properties:
+      type: {eq: buy}
+      symbol: {eq: AMZN}
+      quantity: {eq: 10}
+      amount: {any: true}
+      description: {any: true}
+      timestamp: {any: true}
+  - entity: notifications
+    desc: Order-fill notification emitted by the AAPL buy
+    properties:
+      type: {eq: order_fill}
+      title: {expr: "'AAPL' in str(x)"}
+      message: {any: true}
+      timestamp: {any: true}
+  - entity: notifications
+    desc: Order-fill notification emitted by the AMZN buy
+    properties:
+      type: {eq: order_fill}
+      title: {expr: "'AMZN' in str(x)"}
+      message: {any: true}
+      timestamp: {any: true}
   invariant:
   - collection: state.positions
+    filter: "a.symbol not in ('AAPL', 'AMZN')"
+    preserve: ALL
+  - collection: state.transactions
+    filter: "a.symbol is not None and a.symbol not in ('AAPL', 'AMZN')"
+    preserve: ALL
+  - collection: state.notifications
+    filter: "a.type != 'order_fill'"
     preserve: ALL
   - collection: state.watchlists
     preserve: ALL
