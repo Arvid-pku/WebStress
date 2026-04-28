@@ -1029,7 +1029,7 @@ function executeAction(trajStep) {{
     const targets = trajStep.targets || {{}};
     const actionName = action.action || 'wait';
 
-    if (actionName === 'finish' || actionName === 'wait') return actionName;
+    if (actionName === 'finish' || actionName === 'wait' || actionName === 'noop') return actionName;
 
     if (actionName === 'scroll') {{
         const dir = action.direction || 'down';

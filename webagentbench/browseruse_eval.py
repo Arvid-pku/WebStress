@@ -302,7 +302,11 @@ def build_trajectory_step(
     """Build one trajectory step matching the demo-site replay format."""
     converted_actions = [action_to_trajectory_format(action) for action in actions]
     if not converted_actions:
-        converted_actions = [{"action": "unknown"}]
+        # Distinguish "the agent produced no tool call this turn" (noop) from
+        # "the agent produced an action shape we couldn't map" (unknown). The
+        # latter is the real coverage signal; conflating them inflates the
+        # unknown rate in trajectory-quality reports.
+        converted_actions = [{"action": "noop"}]
 
     def _target_for(action: dict) -> dict:
         idx = _get_action_index(action)
