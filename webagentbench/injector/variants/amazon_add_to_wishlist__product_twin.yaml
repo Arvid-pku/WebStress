@@ -1,7 +1,7 @@
 variant_id: amazon_add_to_wishlist__product_twin
 base_task_id: amazon_add_to_wishlist
 target_primitive: grounding
-description: "Three near-duplicate SKUs share the target's brand, price, rating, and thumbnail; sort-by-price/rating fails to disambiguate. The first two cart-add calls silently no-op so the agent must verify the cart actually changed."
+description: "Three near-duplicate SKUs share the target's brand, price, rating, and thumbnail; sort-by-price/rating fails to disambiguate. The first two wishlist-add calls silently no-op so the agent must verify the wishlist actually changed."
 injections:
 - layer: seed
   params:
@@ -40,16 +40,10 @@ injections:
 - layer: network
   params:
     action: silent_fail
-    url_pattern: '**/api/env/amazon/cart/add'
+    url_pattern: '**/api/env/amazon/wishlist/add'
     methods: [POST]
     fail_count: 2
     response_body:
-      cart_item:
-        id: cart_fake_retry
-        product_id: prod_fake_retry
-        product_name: Pending cart add
-        quantity: 1
-        unit_price: 0.0
-        variant_selections: {}
-        added_at: '2026-04-26T08:00:00+00:00'
+      ok: true
+      product_id: '{request.product_id}'
     behavior: { mode: once }

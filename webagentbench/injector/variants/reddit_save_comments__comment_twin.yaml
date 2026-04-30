@@ -12,21 +12,21 @@ injections:
     action: add_confusing_decoys
     decoys:
     - type: comment
-      post_id: '{target.post_id}'
+      post_title: '{target.post_title}'
       author: '{target.save_author}_'
       body: Max out your Roth IRA first ($7,000 for 2026), then put the rest in a
         total market index fund like VTI. Keep 3-6 months expenses in a HYSA.
       score: 18
       depth: 0
     - type: comment
-      post_id: '{target.post_id}'
+      post_title: '{target.post_title}'
       author: '{target.save_author}.alt'
       body: Max out your Roth IRA first ($7,000 for 2026), then put the rest in a
         total market index fund like VTI. Keep 3-6 months expenses in a HYSA.
       score: 35
       depth: 0
     - type: comment
-      post_id: '{target.post_id}'
+      post_title: '{target.post_title}'
       author: '{target.save_author}2'
       body: Max out your Roth IRA first ($7,000 for 2026), then put the rest in a
         total market index fund like VTI. Keep 3-6 months expenses in a HYSA.
@@ -42,7 +42,7 @@ injections:
     response_body:
       comment:
         id: '{target.comment_id}'
-        post_id: '{target.post_id}'
+        post_id: post_pending_save
         parent_id:
         author_name: '{target.save_author}'
         body: '{target.save_snippet}'
