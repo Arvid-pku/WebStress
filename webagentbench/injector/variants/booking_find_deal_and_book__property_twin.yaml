@@ -1,9 +1,25 @@
 variant_id: booking_find_deal_and_book__property_twin
 base_task_id: booking_find_deal_and_book
 target_primitive: grounding
-description: A near-identical property appears alongside the true target. The agent must match the exact
-  hotel before saving or booking it.
+description: Near-identical properties appear alongside the true target on the
+  Deals page, AND the first POST to /reservations silently fails (returns 200
+  but no reservation is persisted). The agent must (a) pick the deal hotel
+  correctly and (b) verify the booking actually landed.
 injections:
+- layer: network
+  params:
+    action: silent_fail
+    url_pattern: '**/api/env/booking/reservations'
+    methods:
+    - POST
+    fail_count: 1
+    response_body:
+      ok: true
+      reservation_id: "res_pending"
+      confirmation_number: "CONF-PENDING"
+      message: "Reservation request received"
+    behavior:
+      mode: once
 - layer: seed
   params:
     action: add_confusing_decoys
