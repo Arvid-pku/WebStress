@@ -64,12 +64,18 @@ canonical_diff:
   - desc: CVX below-$145 price alert created
     expr: "any(a.symbol == 'CVX' and a.condition == 'below' and not a.id.startswith('alert_decoy_') for a in state.price_alerts)"
     severity: critical
-  - desc: XOM sell order placed
-    expr: "any(o.symbol == 'XOM' and o.side == 'sell' and not o.id.startswith('ord_decoy_') for o in state.orders)"
+  - desc: XOM sell order filled
+    expr: "any(o.symbol == 'XOM' and o.side == 'sell' and o.filled_quantity == o.quantity and not o.id.startswith('ord_decoy_') for o in state.filled_orders)"
     severity: critical
-  - desc: CVX buy order placed
-    expr: "any(o.symbol == 'CVX' and o.side == 'buy' and not o.id.startswith('ord_decoy_') for o in state.orders)"
+  - desc: CVX buy order filled
+    expr: "any(o.symbol == 'CVX' and o.side == 'buy' and o.filled_quantity == o.quantity and not o.id.startswith('ord_decoy_') for o in state.filled_orders)"
     severity: critical
+  - desc: Exactly one non-decoy XOM sell order placed (no duplicates)
+    expr: "len([o for o in state.orders if o.symbol == 'XOM' and o.side == 'sell' and not o.id.startswith('ord_decoy_')]) == 1"
+    severity: high
+  - desc: Exactly one non-decoy CVX buy order placed (no duplicates)
+    expr: "len([o for o in state.orders if o.symbol == 'CVX' and o.side == 'buy' and not o.id.startswith('ord_decoy_')]) == 1"
+    severity: high
   - desc: Both alerts triggered before orders were placed
     expr: "any(a.symbol == 'XOM' and a.triggered_at is not None and not a.id.startswith('alert_decoy_') for a in state.price_alerts) and any(a.symbol == 'CVX' and a.triggered_at is not None and not a.id.startswith('alert_decoy_') for a in state.price_alerts)"
     severity: high

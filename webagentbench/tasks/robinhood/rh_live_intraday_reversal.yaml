@@ -43,9 +43,12 @@ seed:
         noise_pct: 0.3
 canonical_diff:
   constraints:
-  - desc: Market buy of 5 NVDA shares placed at the reversal
-    expr: "any(o.symbol == 'NVDA' and o.side == 'buy' and o.order_type == 'market' and o.quantity == 5 and not o.id.startswith('ord_decoy_') for o in state.orders)"
+  - desc: Market buy of 5 NVDA shares filled at the reversal
+    expr: "any(o.symbol == 'NVDA' and o.side == 'buy' and o.order_type == 'market' and o.quantity == 5 and o.filled_quantity == o.quantity and not o.id.startswith('ord_decoy_') for o in state.filled_orders)"
     severity: critical
+  - desc: Exactly one non-decoy NVDA buy order placed (no duplicates)
+    expr: "len([o for o in state.orders if o.symbol == 'NVDA' and o.side == 'buy' and not o.id.startswith('ord_decoy_')]) == 1"
+    severity: high
 secondary_primitives: []
 primitive_thesis: Measures patience, state_tracking, grounding, verification by requiring
   exact completion of the requested Robinhood workflow while ignoring distractor account

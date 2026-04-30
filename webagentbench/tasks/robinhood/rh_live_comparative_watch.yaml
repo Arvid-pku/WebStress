@@ -58,12 +58,18 @@ seed:
         noise_pct: 0.2
 canonical_diff:
   constraints:
-  - desc: MSFT sell order placed (sell the underperformer)
-    expr: "any(o.symbol == 'MSFT' and o.side == 'sell' and o.quantity == 5 and not o.id.startswith('ord_decoy_') for o in state.orders)"
+  - desc: MSFT sell order filled for 5 shares (sell the underperformer)
+    expr: "any(o.symbol == 'MSFT' and o.side == 'sell' and o.quantity == 5 and o.filled_quantity == o.quantity and not o.id.startswith('ord_decoy_') for o in state.filled_orders)"
     severity: critical
-  - desc: AAPL buy order placed (rotate into outperformer)
-    expr: "any(o.symbol == 'AAPL' and o.side == 'buy' and not o.id.startswith('ord_decoy_') for o in state.orders)"
+  - desc: AAPL buy order filled (rotate into outperformer)
+    expr: "any(o.symbol == 'AAPL' and o.side == 'buy' and o.filled_quantity == o.quantity and not o.id.startswith('ord_decoy_') for o in state.filled_orders)"
     severity: critical
+  - desc: Exactly one non-decoy MSFT sell order placed (no duplicates)
+    expr: "len([o for o in state.orders if o.symbol == 'MSFT' and o.side == 'sell' and not o.id.startswith('ord_decoy_')]) == 1"
+    severity: high
+  - desc: Exactly one non-decoy AAPL buy order placed (no duplicates)
+    expr: "len([o for o in state.orders if o.symbol == 'AAPL' and o.side == 'buy' and not o.id.startswith('ord_decoy_')]) == 1"
+    severity: high
 secondary_primitives: []
 primitive_thesis: Measures patience, state_tracking, grounding, planning, verification
   by requiring exact completion of the requested Robinhood workflow while ignoring

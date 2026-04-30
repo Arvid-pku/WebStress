@@ -41,9 +41,12 @@ canonical_diff:
   - desc: AAPL below-$182 price alert created
     expr: "any(a.symbol == 'AAPL' and a.condition == 'below' and a.target_price <= Decimal('182') and not a.id.startswith('alert_decoy_') for a in state.price_alerts)"
     severity: critical
-  - desc: Market buy of 5 AAPL shares placed
-    expr: "any(o.symbol == 'AAPL' and o.side == 'buy' and o.order_type == 'market' and o.quantity == 5 and not o.id.startswith('ord_decoy_') for o in state.orders)"
+  - desc: Market buy of 5 AAPL shares filled
+    expr: "any(o.symbol == 'AAPL' and o.side == 'buy' and o.order_type == 'market' and o.quantity == 5 and o.filled_quantity == o.quantity and not o.id.startswith('ord_decoy_') for o in state.filled_orders)"
     severity: critical
+  - desc: Exactly one non-decoy AAPL buy order placed (no duplicates)
+    expr: "len([o for o in state.orders if o.symbol == 'AAPL' and o.side == 'buy' and not o.id.startswith('ord_decoy_')]) == 1"
+    severity: high
 secondary_primitives: []
 primitive_thesis: Measures planning, patience, grounding by requiring exact completion
   of the requested Robinhood workflow while ignoring distractor account state.

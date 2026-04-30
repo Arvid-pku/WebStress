@@ -46,9 +46,12 @@ canonical_diff:
   - desc: NVDA above-$900 price alert created
     expr: "any(a.symbol == 'NVDA' and a.condition == 'above' and a.target_price >= Decimal('895') and a.target_price <= Decimal('905') and not a.id.startswith('alert_decoy_') for a in state.price_alerts)"
     severity: critical
-  - desc: 5 NVDA shares bought after alert triggered
-    expr: "any(o.symbol == 'NVDA' and o.side == 'buy' and o.quantity == 5 and not o.id.startswith('ord_decoy_') for o in state.orders)"
+  - desc: 5 NVDA shares filled after alert triggered
+    expr: "any(o.symbol == 'NVDA' and o.side == 'buy' and o.quantity == 5 and o.filled_quantity == o.quantity and not o.id.startswith('ord_decoy_') for o in state.filled_orders)"
     severity: critical
+  - desc: Exactly one non-decoy NVDA buy order placed (no duplicates)
+    expr: "len([o for o in state.orders if o.symbol == 'NVDA' and o.side == 'buy' and not o.id.startswith('ord_decoy_')]) == 1"
+    severity: high
 secondary_primitives: []
 primitive_thesis: Measures planning, patience, state_tracking, grounding, verification
   by requiring exact completion of the requested Robinhood workflow while ignoring

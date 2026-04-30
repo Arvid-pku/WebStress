@@ -41,9 +41,12 @@ seed:
         noise_pct: 0.2
 canonical_diff:
   constraints:
-  - desc: Market buy of 5 TSLA shares placed at the spread reversal
-    expr: "any(o.symbol == 'TSLA' and o.side == 'buy' and o.order_type == 'market' and o.quantity == 5 and not o.id.startswith('ord_decoy_') for o in state.orders)"
+  - desc: Market buy of 5 TSLA shares filled at the spread reversal
+    expr: "any(o.symbol == 'TSLA' and o.side == 'buy' and o.order_type == 'market' and o.quantity == 5 and o.filled_quantity == o.quantity and not o.id.startswith('ord_decoy_') for o in state.filled_orders)"
     severity: critical
+  - desc: Exactly one non-decoy TSLA buy order placed (no duplicates)
+    expr: "len([o for o in state.orders if o.symbol == 'TSLA' and o.side == 'buy' and not o.id.startswith('ord_decoy_')]) == 1"
+    severity: high
 secondary_primitives: []
 primitive_thesis: Measures patience, grounding, state_tracking by requiring exact
   completion of the requested Robinhood workflow while ignoring distractor account

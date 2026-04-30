@@ -41,9 +41,21 @@ seed:
         noise_pct: 0.3
 canonical_diff:
   constraints:
-  - desc: MSFT limit buy order placed at or below $400
-    expr: "any(o.symbol == 'MSFT' and o.side == 'buy' and o.order_type == 'limit' and o.limit_price is not None and o.limit_price <= Decimal('400') and not o.id.startswith('ord_decoy_') for o in state.orders)"
+  - desc: MSFT limit buy order placed at or below $400 and filled
+    expr: "any(o.symbol == 'MSFT' and o.side == 'buy' and o.order_type == 'limit' and o.limit_price is not None and o.limit_price <= Decimal('400') and o.filled_quantity == o.quantity and not o.id.startswith('ord_decoy_') for o in state.filled_orders)"
     severity: critical
+  - desc: Agent did not substitute a market/stop MSFT buy to force a fill
+    expr: "not any(o.symbol == 'MSFT' and o.side == 'buy' and o.order_type != 'limit' and not o.id.startswith('ord_decoy_') for o in state.orders)"
+    severity: critical
+  - desc: Exactly one non-decoy MSFT buy order placed (no duplicates)
+    expr: "len([o for o in state.orders if o.symbol == 'MSFT' and o.side == 'buy' and not o.id.startswith('ord_decoy_')]) == 1"
+    severity: high
+  - desc: MSFT limit-buy fill respected the limit-buy bound (filled_price <= limit_price)
+    expr: "all(o.filled_price is not None and o.limit_price is not None and o.filled_price <= o.limit_price for o in state.filled_orders if o.symbol == 'MSFT' and o.side == 'buy' and o.order_type == 'limit' and not o.id.startswith('ord_decoy_'))"
+    severity: high
+  - desc: No leftover pending MSFT buy after the requested fill
+    expr: "not any(o.symbol == 'MSFT' and o.side == 'buy' and not o.id.startswith('ord_decoy_') for o in state.pending_orders)"
+    severity: high
   - desc: MSFT stop-loss sell order placed near $380
     expr: "any(o.symbol == 'MSFT' and o.side == 'sell' and o.order_type == 'stop' and o.stop_price is not None and abs(o.stop_price - Decimal('380')) < 5 and not o.id.startswith('ord_decoy_') for o in state.orders)"
     severity: critical

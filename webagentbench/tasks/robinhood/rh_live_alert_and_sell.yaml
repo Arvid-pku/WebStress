@@ -47,9 +47,12 @@ canonical_diff:
   - desc: TSLA above-$270 price alert created
     expr: "any(a.symbol == 'TSLA' and a.condition == 'above' and a.target_price >= Decimal('270') and not a.id.startswith('alert_decoy_') for a in state.price_alerts)"
     severity: critical
-  - desc: Sell order for full TSLA position placed after alert
-    expr: "any(o.symbol == 'TSLA' and o.side == 'sell' and not o.id.startswith('ord_decoy_') for o in state.orders)"
+  - desc: Sell order for full TSLA position filled after alert
+    expr: "any(o.symbol == 'TSLA' and o.side == 'sell' and o.quantity == Decimal('10') and o.filled_quantity == o.quantity and not o.id.startswith('ord_decoy_') for o in state.filled_orders)"
     severity: critical
+  - desc: Exactly one non-decoy TSLA sell order placed (no duplicates)
+    expr: "len([o for o in state.orders if o.symbol == 'TSLA' and o.side == 'sell' and not o.id.startswith('ord_decoy_')]) == 1"
+    severity: high
 secondary_primitives: []
 primitive_thesis: Measures planning, patience, grounding by requiring exact completion
   of the requested Robinhood workflow while ignoring distractor account state.

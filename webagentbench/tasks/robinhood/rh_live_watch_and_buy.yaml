@@ -38,9 +38,15 @@ seed:
         noise_pct: 0.3
 canonical_diff:
   constraints:
-  - desc: Market buy of 10 AAPL shares placed after dip below $182
-    expr: "any(o.symbol == 'AAPL' and o.side == 'buy' and o.order_type == 'market' and o.quantity == 10 and not o.id.startswith('ord_decoy_') for o in state.orders)"
+  - desc: Market buy of 10 AAPL shares filled after dip below $182
+    expr: "any(o.symbol == 'AAPL' and o.side == 'buy' and o.order_type == 'market' and o.quantity == 10 and o.filled_quantity == o.quantity and not o.id.startswith('ord_decoy_') for o in state.filled_orders)"
     severity: critical
+  - desc: Agent did not use a limit/stop AAPL buy (instruction forbids limit orders)
+    expr: "not any(o.symbol == 'AAPL' and o.side == 'buy' and o.order_type != 'market' and not o.id.startswith('ord_decoy_') for o in state.orders)"
+    severity: critical
+  - desc: Exactly one non-decoy AAPL buy order placed (no duplicates)
+    expr: "len([o for o in state.orders if o.symbol == 'AAPL' and o.side == 'buy' and not o.id.startswith('ord_decoy_')]) == 1"
+    severity: high
 secondary_primitives: []
 primitive_thesis: Measures patience, grounding, state_tracking by requiring exact
   completion of the requested Robinhood workflow while ignoring distractor account

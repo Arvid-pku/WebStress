@@ -51,9 +51,12 @@ canonical_diff:
   - desc: META below-$480 price alert created
     expr: "any(a.symbol == 'META' and a.condition == 'below' and a.target_price == Decimal('480') and not a.id.startswith('alert_decoy_') for a in state.price_alerts)"
     severity: critical
-  - desc: META sell order placed (bearish response when below-$480 alert triggers)
-    expr: "any(o.symbol == 'META' and o.side == 'sell' and not o.id.startswith('ord_decoy_') for o in state.orders)"
+  - desc: META sell order filled (bearish response when below-$480 alert triggers)
+    expr: "any(o.symbol == 'META' and o.side == 'sell' and o.filled_quantity == o.quantity and not o.id.startswith('ord_decoy_') for o in state.filled_orders)"
     severity: critical
+  - desc: Exactly one non-decoy META sell order placed (no duplicates)
+    expr: "len([o for o in state.orders if o.symbol == 'META' and o.side == 'sell' and not o.id.startswith('ord_decoy_')]) == 1"
+    severity: high
 secondary_primitives: []
 primitive_thesis: Measures planning, patience, state_tracking, grounding by requiring
   exact completion of the requested Robinhood workflow while ignoring distractor account

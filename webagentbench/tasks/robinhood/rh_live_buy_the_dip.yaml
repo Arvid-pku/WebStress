@@ -38,12 +38,21 @@ seed:
         noise_pct: 0.3
 canonical_diff:
   constraints:
-  - desc: AAPL GTC limit buy order at approximately 5% below current price
-    expr: "any(o.symbol == 'AAPL' and o.side == 'buy' and o.order_type == 'limit' and o.time_in_force == 'gtc' and o.limit_price is not None and o.limit_price <= initial.get_stock('AAPL').price * Decimal('0.96') and not o.id.startswith('ord_decoy_') for o in state.orders)"
+  - desc: AAPL GTC limit buy order at approximately 5% below current price filled for 10 shares
+    expr: "any(o.symbol == 'AAPL' and o.side == 'buy' and o.order_type == 'limit' and o.time_in_force == 'gtc' and o.limit_price is not None and o.limit_price <= initial.get_stock('AAPL').price * Decimal('0.96') and o.quantity == 10 and o.filled_quantity == o.quantity and not o.id.startswith('ord_decoy_') for o in state.filled_orders)"
     severity: critical
-  - desc: Buy 10 AAPL shares
-    expr: "any(o.symbol == 'AAPL' and o.side == 'buy' and o.quantity == 10 and not o.id.startswith('ord_decoy_') for o in state.orders)"
+  - desc: Agent did not substitute a market/stop AAPL buy to force a fill
+    expr: "not any(o.symbol == 'AAPL' and o.side == 'buy' and o.order_type != 'limit' and not o.id.startswith('ord_decoy_') for o in state.orders)"
     severity: critical
+  - desc: Exactly one non-decoy AAPL buy order placed (no duplicates)
+    expr: "len([o for o in state.orders if o.symbol == 'AAPL' and o.side == 'buy' and not o.id.startswith('ord_decoy_')]) == 1"
+    severity: high
+  - desc: Limit fill respected the limit-buy bound (filled_price <= limit_price)
+    expr: "all(o.filled_price is not None and o.limit_price is not None and o.filled_price <= o.limit_price for o in state.filled_orders if o.symbol == 'AAPL' and o.side == 'buy' and o.order_type == 'limit' and not o.id.startswith('ord_decoy_'))"
+    severity: high
+  - desc: No leftover pending AAPL buy after the requested fill
+    expr: "not any(o.symbol == 'AAPL' and o.side == 'buy' and not o.id.startswith('ord_decoy_') for o in state.pending_orders)"
+    severity: high
 secondary_primitives: []
 primitive_thesis: Measures planning, patience, verification by requiring exact completion
   of the requested Robinhood workflow while ignoring distractor account state.
