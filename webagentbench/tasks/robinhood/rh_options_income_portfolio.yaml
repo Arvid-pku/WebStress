@@ -25,10 +25,26 @@ seed:
       - TSLA
       - META
     outputs: []
-  - use: portfolio_diverse
+  - use: portfolio_basic
     params:
-      position_count: 6
-      mixed_quantities: true
+      stocks:
+      - AAPL
+      - MSFT
+      - GOOGL
+      - AMZN
+      - TSLA
+      quantities:
+      - '120'
+      - '100'
+      - '150'
+      - '45'
+      - '30'
+      cost_bases:
+      - '165.00'
+      - '380.00'
+      - '155.00'
+      - '170.00'
+      - '210.00'
     outputs: []
   - use: options_chain
     params:

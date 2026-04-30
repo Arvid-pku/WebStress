@@ -497,6 +497,307 @@ JSON). Defaults are on.
 - **Kimi K2 Thinking (`moonshot.kimi-k2-thinking`)** — text-only on Bedrock
   (`inputModalities: [TEXT]`), incompatible with `use_vision=True`.
 
+## Running the Pixel Harness (vision-only ablation)
+
+In addition to the stock browser-use harness (text + vision) and the
+BrowserGym text harness (`agent_eval.py`), there is a third entry point that
+drives tasks **with screenshots only** — no DOM, no AXTree, no HTML. Useful
+for benchmarking VLMs in the same regime as ComponentBench / InterfaceGym
+`--mode pixel` runs.
+
+Files:
+
+* [`pixel_agent.py`](pixel_agent.py) — vision-only `PixelLLMAgent`. Reads
+  `obs["screenshot"]`, outputs BrowserGym `coord` actions like
+  `mouse_click(640, 360)` / `keyboard_type('hello')`. Supports four
+  providers via OpenAI-compatible chat (Gemini-native, OpenRouter,
+  Anthropic-direct) plus AWS Bedrock via the boto3 Converse API (so
+  `us.anthropic.claude-sonnet-4-6` works — Bedrock's OAI-compat endpoint
+  doesn't currently serve that model).
+* [`pixel_eval.py`](pixel_eval.py) — single-task runner with the same async
+  signature as `stock_browseruse_eval.run_episode`.
+* [`scripts/pixel_run_picks.py`](../scripts/pixel_run_picks.py) — picks-file
+  runner; same JSON format as `scripts/run_picks.py`.
+* [`scripts/pixel_aggregate.py`](../scripts/pixel_aggregate.py) — merges
+  shard outputs from a slurm-array sweep into one `summary.json`.
+
+### Zero-to-first-PASS smoke (copy-paste, mirrors the browser-use quickstart)
+
+Two terminals in the repo root. Assumes `webagentbench/.env` is filled,
+frontends are built, and `.venv` is set up — see the [Prerequisites][prereq]
+section above (the same steps apply to both harnesses).
+
+[prereq]: #prerequisites-one-time-setup
+
+```bash
+# Terminal 1 — backend (same as browser-use mode)
+source .venv/bin/activate
+set -a; source webagentbench/.env; set +a
+export WEBAGENTBENCH_AUTO_BUILD_FRONTENDS=0
+python -m uvicorn webagentbench.app:app --host 127.0.0.1 --port 8080
+# Wait for: "Uvicorn running on http://127.0.0.1:8080"
+```
+
+```bash
+# Terminal 2 — single pixel-mode task (~90s, costs ~$0.05 on Gemini Flash)
+source .venv/bin/activate
+set -a; source webagentbench/.env; set +a
+python -m webagentbench.pixel_eval \
+    --task booking_clear_search_history \
+    --model gemini-3-flash-preview --provider gemini \
+    --backend-port 8080 \
+    --max-steps 25 --timeout 600 \
+    --output-dir webagentbench/results/pixel-smoke
+# Expect a JSON dump with score=1.0 / success=True.
+# Per-step screenshots: webagentbench/results/pixel-smoke/screenshots/stepNN.png
+```
+
+### Pre-flight: validate credentials in <10s before launching anything
+
+The agent runs a 1-token probe at init (`PixelLLMAgent.__init__`) to confirm
+the API key + model are valid **before** the BrowserGym backend boots. A bad
+key fails fast with a clear `RuntimeError` rather than wasting 30-60s of
+cluster time and partial API charges per pick. To dry-run all four providers
+locally before submitting any sbatch:
+
+```bash
+source .venv/bin/activate
+set -a; source webagentbench/.env; set +a
+
+python -c "
+from webagentbench.pixel_agent import PixelLLMAgent
+for model, prov in [
+    ('gemini-3-flash-preview', 'gemini'),
+    ('anthropic/claude-opus-4.6', 'openrouter'),
+    ('qwen/qwen3-vl-235b-a22b-instruct', 'openrouter'),
+    ('us.anthropic.claude-sonnet-4-6', 'bedrock'),
+]:
+    PixelLLMAgent(model=model, provider=prov)
+    print(f'OK {prov:11s} {model}')
+"
+# Skip the probe (e.g. air-gapped CI) with WAB_PIXEL_SKIP_PROBE=1.
+```
+
+### Single-task smoke
+
+```bash
+source .venv/bin/activate
+set -a; source webagentbench/.env; set +a
+
+python -m webagentbench.pixel_eval \
+    --task booking_save_property \
+    --variant booking_save_property__property_twin.yaml \
+    --model gemini-3-flash-preview \
+    --provider gemini \
+    --backend-port 8080 \
+    --max-steps 40 --timeout 600 \
+    --output-dir webagentbench/results/pixel-smoke
+```
+
+### Running a sweep — sequential (any machine, no slurm needed)
+
+The simplest scaling pattern: one backend, one runner process, picks are
+processed one at a time. Wall time = `sum(pick_time)` (~5-10 min/pick at
+`max_steps=40`), so 10 picks = roughly an hour. Suitable for smoke tests
+and small sweeps on any laptop / dev box.
+
+```bash
+# Build a picks JSON. Same shape as scripts/run_picks.py — see the
+# browser-use section for `gen_picks.py`, or hand-write a list:
+cat > picks.json <<'EOF'
+[
+  {"task_id":"booking_save_property","cond":"clean"},
+  {"task_id":"booking_save_property","variant_filename":"booking_save_property__property_twin.yaml","cond":"intervention"},
+  {"task_id":"booking_clear_search_history","cond":"clean"}
+]
+EOF
+
+# Terminal 1 — backend on any free port
+python -m uvicorn webagentbench.app:app --host 127.0.0.1 --port 8080
+
+# Terminal 2 — sequential runner
+python scripts/pixel_run_picks.py \
+    --picks picks.json \
+    --model gemini-3-flash-preview --provider gemini \
+    --backend-port 8080 \
+    --max-steps 40 --timeout 600 \
+    --output-dir webagentbench/results/pixel-sweep
+```
+
+Per-task trajectories (with `screenshots/stepNN.png`) are written
+**atomically as each pick finishes** — interrupting the runner mid-sweep
+still leaves every completed pick fully inspectable.
+
+### Running a sweep — parallel without slurm (multi-process)
+
+`--concurrency > 1` is hard-capped: Playwright's sync API can't share a
+BrowserEnv across threads, and the runner errors out fast if you try.
+**Real parallelism comes from running multiple PROCESSES, each handling a
+shard of the picks.** A single backend can serve them all (FastAPI is
+multi-tenant; each session gets its own UUID). Pattern:
+
+```bash
+# Terminal 1 — single backend, any free port
+python -m uvicorn webagentbench.app:app --host 127.0.0.1 --port 8080
+
+# Terminal 2 — fan out N runner processes
+N=4   # how many parallel processes; tune to your CPU/RAM
+mkdir -p webagentbench/results/pixel-sweep
+for i in $(seq 0 $((N-1))); do
+    python scripts/pixel_run_picks.py \
+        --picks picks.json \
+        --model gemini-3-flash-preview --provider gemini \
+        --backend-port 8080 \
+        --max-steps 40 --timeout 600 \
+        --shard-of $N --shard-id $i \
+        --output-dir webagentbench/results/pixel-sweep &
+done
+wait
+
+# Aggregate the N shard outputs into one summary
+python scripts/pixel_aggregate.py webagentbench/results/pixel-sweep
+```
+
+Each shard writes to `<output-dir>/shard_NN/`; `pixel_aggregate.py`
+symlinks them into one unified `tasks/` tree plus merged `summary.json`.
+
+**Resource budgeting:**
+
+* ~400 MB RAM + ~1 CPU core per runner process (Playwright + browser).
+* Backend uses ~200 MB regardless of how many runners hit it.
+* 4 parallel runners on a 16 GB / 8-core box is comfortable; 8 is the
+  practical ceiling before the backend becomes the bottleneck.
+
+**Port collisions:** if you want to test two different sweeps in parallel
+(e.g. two providers), give each its own backend port (`--port 8081`,
+`--port 8082`, etc.) and pass the matching `--backend-port` to that
+runner. The default `8080` only works if a single backend is running.
+
+### Running a sweep in parallel via slurm array jobs
+
+**The picks runner is built around slurm array jobs.** Playwright's sync API
+can't share threads, so in-process `--concurrency` is hard-capped at 1; the
+only way to scale is to fan out across processes. The runner accepts
+`--shard-of N --shard-id i` and writes to `<output-dir>/shard_NN/`. Pair
+this with `#SBATCH --array=0-(N-1)` and you get **one slurm task per pick**,
+each with its own backend process. Wall time becomes ~`max(pick_time)`
+instead of `sum(pick_time)`. `scripts/pixel_aggregate.py` then symlinks the
+shard subdirs into one merged sweep dir.
+
+`SLURM_ARRAY_TASK_ID` is auto-detected — the runner overrides any
+`--shard-id` flag with the env var when running under slurm.
+
+**Step 1.** Build a picks file. Same JSON shape as `scripts/run_picks.py`
+(see *Batch run via `run_picks.py`* under the browser-use section above).
+Either generate one with `scripts/gen_picks.py` or hand-write a list, e.g.:
+
+```json
+[
+  {"task_id":"booking_save_property","cond":"clean"},
+  {"task_id":"booking_save_property","variant_filename":"booking_save_property__property_twin.yaml","cond":"intervention"},
+  {"task_id":"booking_clear_search_history","cond":"clean"}
+]
+```
+
+**Step 2.** Drop this template under `scripts/slurm/` (gitignored). Set
+`#SBATCH --array=0-(N-1)` to the number of picks you have, edit
+`--partition`, the model/provider, and the picks-file path:
+
+```bash
+#!/usr/bin/env bash
+#SBATCH --job-name=pixel-sweep
+#SBATCH --partition=compsci
+#SBATCH --nodes=1 --cpus-per-task=4 --mem=10G --time=01:30:00
+#SBATCH --output=/usr/xtmp/%u/wab-logs/pixel-%A_%a.out
+#SBATCH --error=/usr/xtmp/%u/wab-logs/pixel-%A_%a.err
+#SBATCH --array=0-2          # ← N-1 where N = picks in your JSON
+
+set -euo pipefail
+cd "${WAB_ROOT:-/home/users/$USER/projects/LLMOS}"
+source .venv/bin/activate
+set -a; source webagentbench/.env; set +a
+
+# Each array task gets a unique backend port (SLURM_JOB_ID is per-task)
+BACKEND_PORT=$(( 9400 + (SLURM_JOB_ID % 600) ))
+export WEBAGENTBENCH_AUTO_BUILD_FRONTENDS=0
+export WEBAGENTBENCH_CONTROLLER_SECRET="pixel-${SLURM_JOB_ID}"
+
+python -m uvicorn webagentbench.app:app \
+    --host 127.0.0.1 --port "$BACKEND_PORT" --log-level warning \
+    > /usr/xtmp/$USER/wab-logs/backend-${SLURM_JOB_ID}.log 2>&1 &
+BPID=$!
+trap "kill $BPID 2>/dev/null || true" EXIT INT TERM
+for i in $(seq 1 120); do
+    curl -sf "http://127.0.0.1:${BACKEND_PORT}/health" >/dev/null 2>&1 && break
+    sleep 1
+done
+
+OUT_DIR=/usr/xtmp/$USER/wab-runs/pixel-${SLURM_ARRAY_JOB_ID}
+export PYTHONUNBUFFERED=1
+python -u scripts/pixel_run_picks.py \
+    --picks /path/to/your_picks.json \
+    --model gemini-3-flash-preview --provider gemini \
+    --backend-port "$BACKEND_PORT" --frontend-port "$BACKEND_PORT" \
+    --max-steps 40 --timeout 600 \
+    --shard-of "$SLURM_ARRAY_TASK_COUNT" \
+    --shard-id "$SLURM_ARRAY_TASK_ID" \
+    --output-dir "$OUT_DIR"
+```
+
+**Step 3.** Submit, then aggregate when all shards finish:
+
+```bash
+sbatch scripts/slurm/your_pixel_sweep.sbatch
+# When all array tasks have completed:
+python scripts/pixel_aggregate.py /usr/xtmp/$USER/wab-runs/pixel-<arrayjobid>
+# Writes merged summary.json + run_manifest.json + symlinked tasks/ tree.
+```
+
+To run multiple providers in parallel, copy the template and change
+`--model` / `--provider` / `--picks` for each. Each sbatch fans out into
+its own array independently; total wall time is still bounded by the
+slowest single pick.
+
+### Cost & failure-mode guardrails
+
+Pixel mode tasks are coord-action VLM calls; cost scales linearly with
+`max_steps × n_tasks`. Approximate per-task cost at `max_steps=40` (one image
+per step, ~1500 input tokens, ~80 output tokens):
+
+| Provider / model | $ per task (40 steps) | Notes |
+|---|---|---|
+| Gemini 3 Flash native (`gemini`) | ~$0.05 | Cheapest; thinking tokens hidden in `thought_signature` |
+| Qwen3-VL-235B via OpenRouter | ~$0.10 | Outputs visible `<think>` reasoning |
+| Bedrock Claude Sonnet 4.6 (`bedrock`) | ~$0.50 | Converse API; bearer-token auth |
+| OpenRouter Claude Opus 4.6 | ~$2.00 | Most expensive; richest reasoning |
+
+Built-in safeguards (each saves ≥$1 / picks file when something is wrong):
+
+* **Credential probe** — agent init makes 1 chat call (~$0.0001) to fail
+  fast on bad API keys / model names.
+* **Loop detection** — if the same exact action is emitted ≥5 times in a row
+  (`WAB_PIXEL_LOOP_THRESHOLD`), `PixelLLMAgent.act()` swaps in
+  `send_msg_to_user('infeasible: stuck in 5-action loop')` so BrowserGym
+  terminates the episode early instead of burning the full `max_steps`
+  budget. Typical save: 25-35 wasted steps per stuck pick.
+* **Per-step timeout** — 120s in `agent_eval.run_episode`; kills runaway API
+  retries.
+* **Wall-clock timeout** — `--timeout 600` (10 min) per pick by default.
+* **Per-step screenshots** — `<task_dir>/screenshots/stepNN.png` saved
+  before each agent action so you can replay/debug any failure post-hoc
+  without re-running. Same naming as the stock browser-use harness.
+
+### Bedrock model availability gotcha
+
+`us.anthropic.claude-sonnet-4-6` works through Bedrock's **Converse API**
+(boto3, what `pixel_agent.py` uses for `provider=bedrock`) but **NOT**
+through Bedrock's OpenAI-compat endpoint at
+`bedrock-runtime.<region>.amazonaws.com/openai/v1/chat/completions` —
+that path returns `404 model_not_found` for cross-region inference profiles
+as of this writing. Auth uses the long-term API key
+(`AWS_BEDROCK_API_KEY` in `.env`) which `pixel_agent.py` mirrors into
+`AWS_BEARER_TOKEN_BEDROCK` (the env var boto3 reads).
+
 ## Results And Artifacts
 
 Sample review artifacts checked into this repo live under [results/webagentbench/](results/webagentbench/). For the current local artifact layout and naming, see [results/webagentbench/README.md](results/webagentbench/README.md).

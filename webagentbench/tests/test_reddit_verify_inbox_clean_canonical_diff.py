@@ -13,7 +13,9 @@ def _setup(seed: int = 42):
 
 def test_correct_trajectory_passes():
     _, _, targets, initial, state = _setup()
-    # Correct behavior: do nothing since all seed messages are known-contacts.
+    # Correct behavior: delete the 2 spam messages while preserving the 3 legitimate ones.
+    for spam_id in targets["spam_ids"]:
+        state.delete_message(spam_id)
     task = get_task("reddit_verify_inbox_clean")
     report = match_diff(compute_diff(initial, state), task.canonical_diff,
                         targets=targets, initial=initial, final=state)

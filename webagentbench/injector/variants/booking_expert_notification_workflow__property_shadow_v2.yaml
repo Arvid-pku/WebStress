@@ -1,9 +1,21 @@
 variant_id: booking_expert_notification_workflow__property_shadow_v2
 base_task_id: booking_expert_notification_workflow
 target_primitive: grounding
-description: Search results include a same-city sibling property with a nearly identical name and overlapping
-  amenities. The agent must still book or compare the exact target hotel.
+description: Vienna search results include 3 typo siblings of "Hotel Sacher Wien"
+  AND server-layer latency on /notifications + /properties/search slows every
+  read by 5s, stressing patience while the agent disambiguates the real Sacher
+  from look-alikes. The combo stresses both Grounding (decoys) and Patience (latency).
 injections:
+- layer: server
+  params:
+    action: slow_responses
+    endpoints:
+    - path_pattern: "notifications$"
+      method: GET
+      delay_ms: 5000
+    - path_pattern: "properties/search$"
+      method: POST
+      delay_ms: 3000
 - layer: seed
   params:
     action: add_confusing_decoys

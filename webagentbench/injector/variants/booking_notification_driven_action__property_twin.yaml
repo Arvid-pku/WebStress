@@ -1,9 +1,21 @@
 variant_id: booking_notification_driven_action__property_twin
 base_task_id: booking_notification_driven_action
 target_primitive: grounding
-description: A near-identical property appears alongside the true target. The agent must match the exact
-  hotel before saving or booking it.
+description: Near-identical Copenhagen properties appear alongside the target,
+  AND server-layer slow_responses adds 3s to /notifications and /properties/search,
+  forcing the agent to wait through latency between notification-read and
+  property-search while disambiguating typos.
 injections:
+- layer: server
+  params:
+    action: slow_responses
+    endpoints:
+    - path_pattern: "notifications$"
+      method: GET
+      delay_ms: 3000
+    - path_pattern: "properties/search$"
+      method: POST
+      delay_ms: 3000
 - layer: seed
   params:
     action: add_confusing_decoys

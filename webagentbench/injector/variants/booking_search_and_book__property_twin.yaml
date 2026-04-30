@@ -1,9 +1,25 @@
 variant_id: booking_search_and_book__property_twin
 base_task_id: booking_search_and_book
 target_primitive: grounding
-description: A near-identical property appears alongside the true target. The agent must match the exact
-  hotel before saving or booking it.
+description: Near-identical Le Marais properties appear alongside the target,
+  AND the first POST to /reservations silently fails (returns 200 with a
+  fake confirmation number but persists nothing). Agent must verify the
+  booking actually landed in addition to picking the right hotel.
 injections:
+- layer: network
+  params:
+    action: silent_fail
+    url_pattern: '**/api/env/booking/reservations'
+    methods:
+    - POST
+    fail_count: 1
+    response_body:
+      ok: true
+      reservation_id: "res_pending"
+      confirmation_number: "CONF-PENDING"
+      message: "Reservation request received"
+    behavior:
+      mode: once
 - layer: seed
   params:
     action: add_confusing_decoys

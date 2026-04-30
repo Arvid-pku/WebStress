@@ -187,6 +187,39 @@ def _trajectory_status(
 _STEP_TIMEOUT_SECONDS = 120
 
 
+def _save_step_screenshot(
+    screenshot: Any, screenshots_dir: Path, step_number: int
+) -> str | None:
+    """Persist a pre-action screenshot to ``step_NN.png``.
+
+    Accepts numpy arrays (from BrowserGym), bytes, or PIL Images.
+    Returns the relative filename ("step_03.png") for inclusion in trajectory,
+    or None on failure.
+    """
+    if screenshot is None:
+        return None
+    # Match stock_browseruse_eval naming: `step01.png`, `step02.png`, ...
+    # so downstream replay/visualize tools work the same on both harnesses.
+    fname = f"step{step_number:02d}.png"
+    out = screenshots_dir / fname
+    try:
+        if hasattr(screenshot, "save"):  # PIL.Image
+            screenshot.save(out)
+        else:
+            import io
+            from PIL import Image
+            if isinstance(screenshot, (bytes, bytearray)):
+                img = Image.open(io.BytesIO(bytes(screenshot)))
+            else:
+                # numpy array (H, W, 3) uint8
+                img = Image.fromarray(screenshot)
+            img.save(out)
+    except Exception as exc:
+        logger.warning("Failed to save screenshot for step %d: %s", step_number, exc)
+        return None
+    return f"screenshots/{fname}"
+
+
 def run_episode(
     env,
     agent,
@@ -195,6 +228,7 @@ def run_episode(
     max_steps: int = 50,
     timeout_seconds: int = 300,
     verbose: bool = True,
+    screenshots_dir: Path | None = None,
 ) -> dict:
     """Run one agent episode on a BrowserGym environment.
 
@@ -203,9 +237,15 @@ def run_episode(
         agent: An LLMAgent instance.
         max_steps: Max steps before truncation.
         timeout_seconds: Wall-clock timeout.
+        screenshots_dir: If set, save pre-action screenshot per step as
+            ``step_NN.png`` (only applies when obs has a ``screenshot`` field —
+            pixel-mode runs).
     """
     start_time = time.time()
     trajectory: list[dict] = []
+    if screenshots_dir is not None:
+        screenshots_dir = Path(screenshots_dir)
+        screenshots_dir.mkdir(parents=True, exist_ok=True)
 
     if episode_seed is None:
         obs, info = env.reset()
@@ -231,6 +271,12 @@ def run_episode(
             break
 
         pre_action_obs = obs
+        screenshot_path: str | None = None
+        if screenshots_dir is not None and isinstance(pre_action_obs, dict):
+            screenshot_path = _save_step_screenshot(
+                pre_action_obs.get("screenshot"), screenshots_dir, step + 1
+            )
+
         with concurrent.futures.ThreadPoolExecutor(max_workers=1) as _pool:
             _fut = _pool.submit(agent.act, obs)
             try:
@@ -250,11 +296,12 @@ def run_episode(
 
         # Extract thought from agent's reasoning (gpt-5.x reasoning_content or text before action)
         thought = getattr(agent, "_last_thought", "") or ""
+        raw_response = getattr(agent, "_last_raw_response", "") or ""
 
         # Extract ARIA targets from the pre-action observation
         targets = _extract_targets(parsed_action, pre_action_obs)
 
-        trajectory.append({
+        entry: dict[str, Any] = {
             "step": step + 1,
             "thought": thought,
             "action": parsed_action,
@@ -264,7 +311,12 @@ def run_episode(
             "reward": reward,
             "elapsed_seconds": round(time.time() - start_time, 1),
             "last_action_error": last_action_error,
-        })
+        }
+        if raw_response:
+            entry["raw_response"] = raw_response
+        if screenshot_path:
+            entry["screenshot"] = screenshot_path
+        trajectory.append(entry)
 
         if terminated:
             completed = True
@@ -281,6 +333,28 @@ def run_episode(
             if verbose:
                 print(f"    Truncated at step {step + 1}")
             break
+
+    # Force a final state-based evaluation, regardless of how the loop ended
+    # (terminated / truncated / max_steps / timeout). WAB evaluators are
+    # state-based — the agent's send_msg_to_user('done') is only a BrowserGym
+    # signaling convention, not a precondition for scoring. Without this,
+    # pixel-mode agents (which often skip the done declaration) silently
+    # score 0 even when they completed the task correctly.
+    forced_eval: dict[str, Any] = {}
+    try:
+        task = getattr(env, "task", None) or getattr(getattr(env, "unwrapped", None), "task", None)
+        page = getattr(env, "page", None) or getattr(getattr(env, "unwrapped", None), "page", None)
+        if task is not None and page is not None and hasattr(task, "force_evaluate"):
+            forced_eval = task.force_evaluate(page) or {}
+    except Exception as exc:
+        logger.warning("force_evaluate at end-of-episode failed: %s", exc)
+
+    if forced_eval and float(forced_eval.get("score", 0.0)) > float(evaluation.get("score", 0.0)):
+        # Prefer the forced eval — the in-loop evaluation only ran if the
+        # agent declared done, so the state-based score is the canonical truth.
+        evaluation = forced_eval
+        if verbose:
+            print(f"    [force_evaluate] score={evaluation.get('score', 0.0)} success={evaluation.get('success', False)}")
 
     return {
         "task_id": task_id,

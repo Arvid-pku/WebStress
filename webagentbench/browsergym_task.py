@@ -290,6 +290,43 @@ class WebAgentBenchTask(AbstractBrowserTask):
 
         return 0.0, True, "", {}
 
+    def force_evaluate(self, page: playwright.sync_api.Page) -> dict:
+        """Run the server-side evaluator on the current state, regardless of
+        whether the agent has called ``send_msg_to_user``.
+
+        WAB evaluators are state-based — agent's "done" declaration is only a
+        BrowserGym signaling convention, not a precondition for scoring. After
+        an episode ends (max_steps / timeout / termination), the harness should
+        call this to capture the actual outcome. Otherwise pixel/coord agents
+        that complete the task without declaring done will silently score 0.
+
+        Idempotent against ``validate()`` — if validate already evaluated this
+        session, the cached call is returned (the evaluator endpoint itself is
+        also idempotent / pure-read against server state).
+        """
+        if not (self._session_id and self._env_id):
+            return {}
+        try:
+            try:
+                benchmark_state = page.evaluate("() => window.__benchmarkState || {}")
+            except Exception:
+                benchmark_state = {}
+            result = _http_json(
+                f"{self._bench_url}/api/env/{self._env_id}/evaluate",
+                method="POST",
+                payload={
+                    "session_id": self._session_id,
+                    "task_id": self.task_id,
+                    "benchmark_state": benchmark_state,
+                },
+                headers=controller_headers(),
+            )
+            self._evaluated = True
+            return result
+        except Exception as e:
+            logger.warning("force_evaluate failed: %s", e)
+            return {"score": 0.0, "success": False, "reasoning": f"force_evaluate error: {e}"}
+
     def teardown(self) -> None:
         """Destroy session and stop server if we started it."""
         if self._session_id and self._env_id:
