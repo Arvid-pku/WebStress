@@ -9,7 +9,7 @@ injections:
     action: add_confusing_decoys
     decoys:
     - type: property
-      name: '{target.target_prop_name} Suites'
+      name: Le Petit Belloy Saint-Germain Suites
       city: Paris
       country: France
       price: 322.4

@@ -9,7 +9,7 @@ injections:
     action: add_confusing_decoys
     decoys:
     - type: property
-      name: '{target.bcn_winner_name} Suites'
+      name: Barcelona Family Resort Suites
       city: Barcelona
       country: Spain
       price: 260.0

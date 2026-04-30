@@ -9,7 +9,7 @@ injections:
     action: add_confusing_decoys
     decoys:
     - type: property
-      name: '{target.property_name} Suites'
+      name: The Kensington Grand Suites
       city: London
       country: United Kingdom
       price: 254.8

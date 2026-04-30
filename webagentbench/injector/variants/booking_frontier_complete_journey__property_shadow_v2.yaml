@@ -9,7 +9,7 @@ injections:
     action: add_confusing_decoys
     decoys:
     - type: property
-      name: '{target.winner_name} Suites'
+      name: Casa Batllo Plaza Barcelona
       city: Barcelona
       country: Spain
       price: 239.2

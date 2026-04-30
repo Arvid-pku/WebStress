@@ -8,13 +8,29 @@ injections:
   params:
     action: add_confusing_decoys
     decoys:
+    # Three near-typo siblings of target "Rosewood London". Each uses a
+    # different character-level variation so an agent that "skims" the
+    # name fails on at least one. rs above target (9.3) to lure rating
+    # sorts; all prices > $400 so the task's "<$400 with free
+    # cancellation" filter still uniquely selects the real Rosewood London.
     - type: property
-      name: The Savoy London Suites
+      name: Rosewood Londom            # n→m
       city: London
       country: United Kingdom
-      price: 520.0
-      review_score: 9.0
-      amenities:
-      - Free WiFi
-      - Restaurant
-      - Air conditioning
+      price: 540.0
+      review_score: 9.5
+      amenities: [Free WiFi, Spa, Pool, Restaurant, Bar, Fitness center]
+    - type: property
+      name: Rosewod London             # drop one o
+      city: London
+      country: United Kingdom
+      price: 560.0
+      review_score: 9.4
+      amenities: [Free WiFi, Spa, Pool, Restaurant, Bar]
+    - type: property
+      name: The Rosewood London        # spurious "The"
+      city: London
+      country: United Kingdom
+      price: 570.0
+      review_score: 9.6
+      amenities: [Free WiFi, Spa, Pool, Restaurant, Bar, Fitness center]

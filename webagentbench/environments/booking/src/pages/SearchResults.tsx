@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Link, useSearchParams, useLocation } from "react-router-dom";
 import { preserveQueryParams } from "@webagentbench/shared";
 import { useBookingLayout } from "../context";
@@ -117,6 +117,22 @@ export default function SearchResults() {
     const timer = setTimeout(() => setDebouncedName(nameFilter), 350);
     return () => clearTimeout(timer);
   }, [nameFilter]);
+  // Reset to page 1 when the debounced name filter actually changes — otherwise
+  // typing a name on page>1 can yield "No properties found" even when total>0.
+  // Skip first render so navigating directly to ?page=2 with no name filter is preserved.
+  const prevDebouncedNameRef = useRef(debouncedName);
+  useEffect(() => {
+    if (prevDebouncedNameRef.current === debouncedName) return;
+    prevDebouncedNameRef.current = debouncedName;
+    if (Number(searchParams.get("page") || "1") !== 1) {
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        next.set("page", "1");
+        return next;
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedName]);
 
   /* --- fetch data --- */
   const fetchResults = useCallback(

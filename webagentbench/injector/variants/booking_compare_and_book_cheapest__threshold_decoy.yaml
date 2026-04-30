@@ -8,23 +8,50 @@ injections:
   params:
     action: add_confusing_decoys
     decoys:
+    # Four near-typos of target "Shibuya Crossing Inn" (rs=8.2/$145 — the
+    # cheapest qualifier under the rs ≥ 8.0 threshold). All decoys are
+    # cheaper than target, so a pure price-sort goes to them; but all
+    # fall below rs ≥ 8.0 so the threshold check should still send the
+    # agent back to the real Shibuya Crossing Inn.
+    # Bug fix: original decoys were placed in Paris but the task searches
+    # Tokyo, so they were never visible. Re-cited to Tokyo.
     - type: property
-      name: Target Property Budget Annex
-      city: Paris
-      country: France
+      name: Shibuya Crosing Inn          # drop one s
+      city: Tokyo
+      country: Japan
       property_type: Hotel
       star_rating: 3
       review_score: 7.9
       review_count: 1200
-      price: 205.0
+      price: 135.0
       description: Cheaper option that misses the minimum review-score threshold.
     - type: property
-      name: Target Property Saver Rooms
-      city: Paris
-      country: France
+      name: Shibuya Crossng Inn          # drop i
+      city: Tokyo
+      country: Japan
       property_type: Hotel
       star_rating: 3
       review_score: 7.6
       review_count: 940
-      price: 188.0
+      price: 120.0
       description: Very cheap property that should still be excluded by the rating filter.
+    - type: property
+      name: Shibuya Krossing Inn         # C → K
+      city: Tokyo
+      country: Japan
+      property_type: Hotel
+      star_rating: 3
+      review_score: 7.5
+      review_count: 800
+      price: 115.0
+      description: Phonetic look-alike — different leading consonant.
+    - type: property
+      name: Shibuyaa Crossing Inn        # double a
+      city: Tokyo
+      country: Japan
+      property_type: Hotel
+      star_rating: 3
+      review_score: 7.7
+      review_count: 1050
+      price: 130.0
+      description: Doubled-vowel typo at the city-name prefix.

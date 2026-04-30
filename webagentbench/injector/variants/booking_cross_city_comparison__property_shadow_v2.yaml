@@ -8,13 +8,28 @@ injections:
   params:
     action: add_confusing_decoys
     decoys:
+    # Three near-typo siblings of "Le Bristol Paris". rs > Hotel Arts
+    # Barcelona's 9.4 to make rating-sorted Paris results look like the
+    # winner. Task names "Le Bristol Paris" explicitly, so a careful
+    # name-match still picks the real one.
     - type: property
-      name: Le Bristol Paris Suites
+      name: Le Bristol Pariss            # extra s
       city: Paris
       country: France
-      price: 707.2
-      review_score: 9.0
-      amenities:
-      - Free WiFi
-      - Restaurant
-      - Air conditioning
+      price: 720.0
+      review_score: 9.5
+      amenities: [Free WiFi, Restaurant, Air conditioning]
+    - type: property
+      name: Le Bristol Pariis            # extra i
+      city: Paris
+      country: France
+      price: 710.0
+      review_score: 9.4
+      amenities: [Free WiFi, Restaurant, Air conditioning]
+    - type: property
+      name: Le Bristoll Paris            # extra l
+      city: Paris
+      country: France
+      price: 730.0
+      review_score: 9.6
+      amenities: [Free WiFi, Restaurant, Air conditioning]

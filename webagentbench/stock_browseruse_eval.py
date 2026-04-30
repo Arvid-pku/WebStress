@@ -654,136 +654,170 @@ def _history_to_trajectory(
 
     trajectory: list[dict] = []
     for i, item in enumerate(history.history):
-        mo = getattr(item, "model_output", None)
-        state = getattr(item, "state", None)
+        # Defensive per-step build: if any single step raises (e.g. a
+        # browser-use schema variant our property accessors don't handle),
+        # log + emit a minimal error placeholder rather than aborting the
+        # whole trajectory. Without this, two intervention runs in the
+        # sonnet_4_6_full_openrouter3 sweep ended up with steps=38 but
+        # trajectory=[] because step ~36 raised and the partial 35-step
+        # work was discarded by the outer try/except in the caller.
+        try:
+            mo = getattr(item, "model_output", None)
+            state = getattr(item, "state", None)
 
-        # When model_output is None (e.g. an LLM parse failure or a step
-        # dropped by browser-use), we still emit a placeholder so that
-        # trajectory.json stays aligned with screenshots/ — otherwise
-        # downstream replay/visualize sees a gap (32 of 1038 trajectories
-        # in the sonnet_4_6_full_openrouter3 sweep had this misalignment).
-        if mo is None:
-            status = "model_output_missing"
+            # When model_output is None (e.g. an LLM parse failure or a step
+            # dropped by browser-use), we still emit a placeholder so that
+            # trajectory.json stays aligned with screenshots/ — otherwise
+            # downstream replay/visualize sees a gap (32 of 1038 trajectories
+            # in the sonnet_4_6_full_openrouter3 sweep had this misalignment).
+            if mo is None:
+                status = "model_output_missing"
+                for r in getattr(item, "result", None) or []:
+                    if getattr(r, "error", None):
+                        status = f"ERROR: {r.error}"
+                        break
+                placeholder_meta = getattr(item, "metadata", None)
+                placeholder_elapsed = 0.0
+                if placeholder_meta is not None:
+                    placeholder_elapsed = float(
+                        getattr(placeholder_meta, "duration_seconds", None)
+                        or getattr(placeholder_meta, "elapsed", None)
+                        or 0.0
+                    )
+                placeholder_step = build_trajectory_step(
+                    step_num=i + 1,
+                    thinking="",
+                    memory="",
+                    actions=[],
+                    dom_elements={},
+                    url=getattr(state, "url", "") or "",
+                    status=status,
+                    elapsed=round(placeholder_elapsed, 1),
+                )
+                if include_screenshots and i < len(screenshots) and screenshots[i] and screenshots_dir is not None:
+                    b64 = screenshots[i]
+                    if b64.startswith("data:"):
+                        b64 = b64.split(",", 1)[1]
+                    png_path = Path(screenshots_dir) / f"step{i + 1:02d}.png"
+                    try:
+                        png_path.write_bytes(base64.b64decode(b64))
+                        placeholder_step["screenshot"] = f"screenshots/{png_path.name}"
+                    except Exception as exc:
+                        logger.warning("failed to write %s: %s", png_path, exc)
+                trajectory.append(placeholder_step)
+                continue
+
+            thinking = (getattr(mo, "thinking", None) or "") or (
+                getattr(mo, "evaluation_previous_goal", None) or ""
+            )
+            memory = getattr(mo, "memory", None) or ""
+
+            actions_raw = getattr(mo, "action", None) or []
+            actions = []
+            for a in actions_raw:
+                try:
+                    actions.append(a.model_dump(exclude_unset=True, exclude_none=True))
+                except Exception:
+                    # ActionModel variants sometimes fail exclude_unset; fall back.
+                    actions.append(a.model_dump(exclude_none=True))
+
+            # interacted_element is list-parallel-to-actions. Map it to a
+            # {index: elem_info} dict keyed by the action's own target index so
+            # build_trajectory_step's target lookup works.
+            dom_elements: dict[int, dict] = {}
+            interacted = getattr(state, "interacted_element", None) or []
+            for act_idx, elem in enumerate(interacted):
+                if elem is None:
+                    continue
+                action_target_idx = None
+                if act_idx < len(actions):
+                    for key in (
+                        "click", "input_text", "select_option",
+                        "scroll_down", "scroll_up", "scroll_left", "scroll_right",
+                    ):
+                        if key in actions[act_idx]:
+                            action_target_idx = actions[act_idx][key].get("index")
+                            break
+                if action_target_idx is None:
+                    continue
+                dom_elements[action_target_idx] = {
+                    "tag_name": getattr(elem, "node_name", "") or "",
+                    "attributes": getattr(elem, "attributes", None) or {},
+                    "text": getattr(elem, "node_value", "") or "",
+                }
+
+            url = getattr(state, "url", "") or ""
+
+            # Status: "success" unless any ActionResult in this step carried an error.
+            status = "success"
             for r in getattr(item, "result", None) or []:
                 if getattr(r, "error", None):
                     status = f"ERROR: {r.error}"
                     break
-            placeholder_meta = getattr(item, "metadata", None)
-            placeholder_elapsed = 0.0
-            if placeholder_meta is not None:
-                placeholder_elapsed = float(
-                    getattr(placeholder_meta, "duration_seconds", None)
-                    or getattr(placeholder_meta, "elapsed", None)
+
+            metadata = getattr(item, "metadata", None)
+            elapsed = 0.0
+            if metadata is not None:
+                elapsed = float(
+                    getattr(metadata, "duration_seconds", None)
+                    or getattr(metadata, "elapsed", None)
                     or 0.0
                 )
-            placeholder_step = build_trajectory_step(
+
+            step = build_trajectory_step(
                 step_num=i + 1,
-                thinking="",
-                memory="",
-                actions=[],
-                dom_elements={},
-                url=getattr(state, "url", "") or "",
+                thinking=thinking,
+                memory=memory,
+                actions=actions,
+                dom_elements=dom_elements,
+                url=url,
                 status=status,
-                elapsed=round(placeholder_elapsed, 1),
+                elapsed=round(elapsed, 1),
             )
-            if include_screenshots and i < len(screenshots) and screenshots[i] and screenshots_dir is not None:
+            if include_screenshots and i < len(screenshots) and screenshots[i]:
                 b64 = screenshots[i]
+                # Strip any incoming data: prefix to recover bare base64 bytes.
                 if b64.startswith("data:"):
                     b64 = b64.split(",", 1)[1]
-                png_path = Path(screenshots_dir) / f"step{i + 1:02d}.png"
-                try:
-                    png_path.write_bytes(base64.b64decode(b64))
-                    placeholder_step["screenshot"] = f"screenshots/{png_path.name}"
-                except Exception as exc:
-                    logger.warning("failed to write %s: %s", png_path, exc)
-            trajectory.append(placeholder_step)
-            continue
-
-        thinking = (getattr(mo, "thinking", None) or "") or (
-            getattr(mo, "evaluation_previous_goal", None) or ""
-        )
-        memory = getattr(mo, "memory", None) or ""
-
-        actions_raw = getattr(mo, "action", None) or []
-        actions = []
-        for a in actions_raw:
-            try:
-                actions.append(a.model_dump(exclude_unset=True, exclude_none=True))
-            except Exception:
-                # ActionModel variants sometimes fail exclude_unset; fall back.
-                actions.append(a.model_dump(exclude_none=True))
-
-        # interacted_element is list-parallel-to-actions. Map it to a
-        # {index: elem_info} dict keyed by the action's own target index so
-        # build_trajectory_step's target lookup works.
-        dom_elements: dict[int, dict] = {}
-        interacted = getattr(state, "interacted_element", None) or []
-        for act_idx, elem in enumerate(interacted):
-            if elem is None:
-                continue
-            action_target_idx = None
-            if act_idx < len(actions):
-                for key in (
-                    "click", "input_text", "select_option",
-                    "scroll_down", "scroll_up", "scroll_left", "scroll_right",
-                ):
-                    if key in actions[act_idx]:
-                        action_target_idx = actions[act_idx][key].get("index")
-                        break
-            if action_target_idx is None:
-                continue
-            dom_elements[action_target_idx] = {
-                "tag_name": getattr(elem, "node_name", "") or "",
-                "attributes": getattr(elem, "attributes", None) or {},
-                "text": getattr(elem, "node_value", "") or "",
-            }
-
-        url = getattr(state, "url", "") or ""
-
-        # Status: "success" unless any ActionResult in this step carried an error.
-        status = "success"
-        for r in getattr(item, "result", None) or []:
-            if getattr(r, "error", None):
-                status = f"ERROR: {r.error}"
-                break
-
-        metadata = getattr(item, "metadata", None)
-        elapsed = 0.0
-        if metadata is not None:
-            elapsed = float(
-                getattr(metadata, "duration_seconds", None)
-                or getattr(metadata, "elapsed", None)
-                or 0.0
-            )
-
-        step = build_trajectory_step(
-            step_num=i + 1,
-            thinking=thinking,
-            memory=memory,
-            actions=actions,
-            dom_elements=dom_elements,
-            url=url,
-            status=status,
-            elapsed=round(elapsed, 1),
-        )
-        if include_screenshots and i < len(screenshots) and screenshots[i]:
-            b64 = screenshots[i]
-            # Strip any incoming data: prefix to recover bare base64 bytes.
-            if b64.startswith("data:"):
-                b64 = b64.split(",", 1)[1]
-            if screenshots_dir is not None:
-                # Externalize: write PNG file, reference by relative path.
-                png_path = Path(screenshots_dir) / f"step{i + 1:02d}.png"
-                try:
-                    png_path.write_bytes(base64.b64decode(b64))
-                    step["screenshot"] = f"screenshots/{png_path.name}"
-                except Exception as exc:
-                    logger.warning("failed to write %s: %s", png_path, exc)
+                if screenshots_dir is not None:
+                    # Externalize: write PNG file, reference by relative path.
+                    png_path = Path(screenshots_dir) / f"step{i + 1:02d}.png"
+                    try:
+                        png_path.write_bytes(base64.b64decode(b64))
+                        step["screenshot"] = f"screenshots/{png_path.name}"
+                    except Exception as exc:
+                        logger.warning("failed to write %s: %s", png_path, exc)
+                        step["screenshot"] = f"data:image/png;base64,{b64}"
+                else:
+                    # No dir provided → fallback inline (legacy / programmatic use).
                     step["screenshot"] = f"data:image/png;base64,{b64}"
-            else:
-                # No dir provided → fallback inline (legacy / programmatic use).
-                step["screenshot"] = f"data:image/png;base64,{b64}"
-        trajectory.append(step)
+            trajectory.append(step)
+        except Exception as exc:
+            logger.warning(
+                "trajectory step %d build failed: %s: %s",
+                i + 1, type(exc).__name__, exc,
+            )
+            try:
+                err_step = build_trajectory_step(
+                    step_num=i + 1,
+                    thinking="",
+                    memory="",
+                    actions=[],
+                    dom_elements={},
+                    url="",
+                    status=f"ERROR: trajectory build failed: {type(exc).__name__}: {exc}",
+                    elapsed=0.0,
+                )
+            except Exception:
+                err_step = {
+                    "step": i + 1,
+                    "thought": "",
+                    "action": [],
+                    "targets": {},
+                    "status": f"ERROR: {type(exc).__name__}: {exc}",
+                    "elapsed_seconds": 0.0,
+                }
+            trajectory.append(err_step)
 
     return trajectory
 

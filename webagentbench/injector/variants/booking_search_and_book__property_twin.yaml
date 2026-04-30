@@ -8,23 +8,47 @@ injections:
   params:
     action: add_confusing_decoys
     decoys:
+    # Four near-typo siblings of "Le Marais Grand Hotel". rs > target's
+    # 8.9 to lure rating sorts. Only the real one has a "Deluxe King
+    # Room", so an agent that picks a decoy can't complete the booking
+    # step (decoys carry only the default base-template room).
     - type: property
-      name: Le Marais Grand Hotel Residence
+      name: Le Marais Grande Hotel       # Grand → Grande (extra e)
+      city: Paris
+      country: France
+      property_type: Hotel
+      star_rating: 5
+      review_score: 9.1
+      review_count: 860
+      price: 290.0
+      description: Nearly identical property name with slightly different review profile.
+    - type: property
+      name: Le Maraix Grand Hotel        # Marais → Maraix
       city: Paris
       country: France
       property_type: Hotel
       star_rating: 4
-      review_score: 8.5
-      review_count: 860
-      price: 267.9
-      description: Nearly identical property name with slightly different review profile.
+      review_score: 9.0
+      review_count: 640
+      price: 288.0
+      description: Similar branding can distract from the exact property match.
     - type: property
-      name: Le Marais Grand Hotel Collection
+      name: Le Marais Grandd Hotel       # Grand → Grandd (double d)
       city: Paris
       country: France
       property_type: Hotel
-      star_rating: 3
-      review_score: 8.2
-      review_count: 640
-      price: 302.1
-      description: Similar branding can distract from the exact property match.
+      star_rating: 5
+      review_score: 9.2
+      review_count: 720
+      price: 292.0
+      description: Doubled consonant on the descriptor word.
+    - type: property
+      name: Le Marrais Grand Hotel       # Marais → Marrais (double r)
+      city: Paris
+      country: France
+      property_type: Hotel
+      star_rating: 5
+      review_score: 9.3
+      review_count: 540
+      price: 287.0
+      description: Doubled consonant in the neighborhood name.

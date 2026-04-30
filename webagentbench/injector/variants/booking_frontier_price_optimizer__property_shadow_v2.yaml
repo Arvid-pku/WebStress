@@ -9,7 +9,7 @@ injections:
     action: add_confusing_decoys
     decoys:
     - type: property
-      name: '{target.winner_name} Suites'
+      name: Bloomsbury Garden Hotel Suites
       city: London
       country: United Kingdom
       price: 832.0
