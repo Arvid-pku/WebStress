@@ -2,16 +2,17 @@ variant_id: amazon_wishlist_to_cart__cart_add_retry
 base_task_id: amazon_wishlist_to_cart
 target_primitive: backtracking
 description: >
-  Three-layer entity-identity verification trap (Recipe A): cart starts
-  pre-poisoned with 2 cart_items whose product_names match the wishlist
-  targets ("Bluetooth Earbuds Pro", "Portable Charger 20000mAh") but
-  whose product_ids point to decoy SKUs (GenericAccessories brand,
-  cheaper price). The first two /cart/add POSTs silent-fail with a
-  templated body that echoes the agent's request. The first /checkout
-  POST misleading-successes with a fake order body. canonical_diff
-  requires the order to contain target['product_id'] AND
-  target['product_id_2'] — any path that doesn't (i) clean the cart of
-  decoys AND (ii) verify the order persisted via /orders will fail.
+  Two-layer entity-identity verification trap (no cart pre-pollution):
+  (a) 2 decoy SKUs in the catalog share the wishlist item names
+  ("Bluetooth Earbuds Pro", "Portable Charger 20000mAh") but are
+  distinct products (GenericAccessories brand, cheaper price). The
+  decoys appear in search and listing alongside the real wishlist
+  items — agent must verify product_id, not just name.
+  (b) The first /cart/add POST silent-fails with a templated body that
+  echoes the agent's request. (c) The first /checkout POST
+  misleading-successes with an empty-items order body. canonical_diff
+  requires `target['product_id']` and `target['product_id_2']`
+  specifically — picking decoys (or trusting toast/order) fails.
 injections:
 - layer: seed
   params:
@@ -33,19 +34,13 @@ injections:
       price: 14.99
       rating: 3.9
       review_count: 142
-    - type: cart_item
-      product_name: Bluetooth Earbuds Pro
-      quantity: 1
-    - type: cart_item
-      product_name: Portable Charger 20000mAh
-      quantity: 1
 - layer: network
   params:
     action: silent_fail
     url_pattern: '**/api/env/amazon/cart/add'
     methods:
     - POST
-    fail_count: 2
+    fail_count: 1
     response_body:
       cart_item:
         id: 'cart_pending_{request.product_id}'

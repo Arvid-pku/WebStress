@@ -2,32 +2,24 @@ variant_id: amazon_bulk_cart_build__cart_add_retry
 base_task_id: amazon_bulk_cart_build
 target_primitive: backtracking
 description: >
-  Three-layer entity-identity verification trap (lessons from
-  weilicao's RH "Lever C" + TianchenGuan's booking round-3):
-  (a) cart starts pre-poisoned with 4 cart_items whose product_names
-      match the task's target products but whose product_ids point to
-      decoy SKUs (same name, distinct catalog entry, lower price) — so
-      a verify-by-name pass succeeds while the canonical product_id
-      check fails.
-  (b) the first two /cart/add POSTs silent-fail with a templated body
-      that echoes the agent's own request product_id/quantity (defeats
-      the trust-the-cart-add-response verify path).
-  (c) the first /checkout POST misleading-successes with a fake order
-      body so even a clean recovery is undone unless the agent verifies
-      the order persisted via /orders.
-  canonical_diff requires `len(items) == 4 AND specific product_ids`,
-  so any path that doesn't (i) clean the poisoned cart AND (ii) verify
-  the order landed will fail. Recovery exists (clear cart, re-add 4,
-  re-checkout) but requires explicit entity-id verification, not just
-  label matching.
+  Two-layer entity-identity verification trap: (a) 4 decoy SKUs in the
+  catalog share the target product names but are distinct products
+  (GenericAccessories brand, lower price); the agent's search returns
+  decoys at the top, so a verify-by-name pass picks the wrong SKU.
+  (b) The first /cart/add POST silent-fails with a templated body that
+  echoes the agent's own request (defeats trust-the-response-body
+  verify). (c) The first /checkout POST misleading-successes with an
+  empty-items order body so the agent must verify the order persisted
+  via /orders before declaring done. canonical_diff requires the order
+  to contain target['pid_1..4'] specifically, so picking decoys fails.
+  Recovery: pick the correct brand on each search (4 verifies), retry
+  the first add (1 extra), and re-checkout (1 extra) — 6 extra actions,
+  borderline but achievable in the 30-step budget.
 injections:
 - layer: seed
   params:
     action: add_confusing_decoys
     decoys:
-    # Step 1: inject 4 decoy PRODUCTS with the same names as the targets.
-    # Because state.products gets these inserted at index 0, the cart_item
-    # name-lookup below picks the decoy first.
     - type: product
       name: '{target.product_1}'
       brand: GenericAccessories
@@ -60,28 +52,13 @@ injections:
       price: 24.99
       rating: 3.9
       review_count: 78
-    # Step 2: pre-populate cart with 4 items at the EXPECTED quantities,
-    # but referencing the decoy products (auto-resolved via the name
-    # lookup, which now matches the decoy at state.products[0..3]).
-    - type: cart_item
-      product_name: '{target.product_1}'
-      quantity: 2
-    - type: cart_item
-      product_name: '{target.product_2}'
-      quantity: 1
-    - type: cart_item
-      product_name: '{target.product_3}'
-      quantity: 3
-    - type: cart_item
-      product_name: '{target.product_4}'
-      quantity: 1
 - layer: network
   params:
     action: silent_fail
     url_pattern: '**/api/env/amazon/cart/add'
     methods:
     - POST
-    fail_count: 2
+    fail_count: 1
     response_body:
       cart_item:
         id: 'cart_pending_{request.product_id}'
