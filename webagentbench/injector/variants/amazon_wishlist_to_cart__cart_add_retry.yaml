@@ -2,11 +2,43 @@ variant_id: amazon_wishlist_to_cart__cart_add_retry
 base_task_id: amazon_wishlist_to_cart
 target_primitive: backtracking
 description: >
-  The first two cart-add POSTs return a fake 200 with a realistic cart_item body
-  but never persist on the backend. The agent must verify the cart contents by
-  re-reading state (not by trusting reflexive retries on error toasts) before
-  declaring done.
+  Three-layer entity-identity verification trap (Recipe A): cart starts
+  pre-poisoned with 2 cart_items whose product_names match the wishlist
+  targets ("Bluetooth Earbuds Pro", "Portable Charger 20000mAh") but
+  whose product_ids point to decoy SKUs (GenericAccessories brand,
+  cheaper price). The first two /cart/add POSTs silent-fail with a
+  templated body that echoes the agent's request. The first /checkout
+  POST misleading-successes with a fake order body. canonical_diff
+  requires the order to contain target['product_id'] AND
+  target['product_id_2'] — any path that doesn't (i) clean the cart of
+  decoys AND (ii) verify the order persisted via /orders will fail.
 injections:
+- layer: seed
+  params:
+    action: add_confusing_decoys
+    decoys:
+    - type: product
+      name: Bluetooth Earbuds Pro
+      brand: GenericAccessories
+      seller: ResellerHub
+      category: Electronics
+      price: 24.99
+      rating: 4.0
+      review_count: 88
+    - type: product
+      name: Portable Charger 20000mAh
+      brand: GenericAccessories
+      seller: ResellerHub
+      category: Electronics
+      price: 14.99
+      rating: 3.9
+      review_count: 142
+    - type: cart_item
+      product_name: Bluetooth Earbuds Pro
+      quantity: 1
+    - type: cart_item
+      product_name: Portable Charger 20000mAh
+      quantity: 1
 - layer: network
   params:
     action: silent_fail
@@ -16,12 +48,34 @@ injections:
     fail_count: 2
     response_body:
       cart_item:
-        id: cart_fake_retry
-        product_id: prod_fake_retry
-        product_name: Pending cart add
-        quantity: 1
+        id: 'cart_pending_{request.product_id}'
+        product_id: '{request.product_id}'
+        product_name: 'Pending: {request.product_id}'
+        quantity: '{request.quantity}'
         unit_price: 0.0
         variant_selections: {}
         added_at: '2026-04-26T08:00:00+00:00'
     behavior:
       mode: once
+- layer: network
+  params:
+    action: misleading_success
+    url_pattern: '**/api/env/amazon/checkout'
+    methods:
+    - POST
+    fail_count: 1
+    success_body:
+      order:
+        id: order_pending_fake
+        items: []
+        shipping_address_id: ''
+        payment_method_id: ''
+        subtotal: 0.0
+        shipping_cost: 0.0
+        tax: 0.0
+        discount: 0.0
+        total: 0.0
+        status: confirmed
+        placed_at: '2026-04-26T08:00:00+00:00'
+        estimated_delivery: 'Arriving in 3 days'
+        promo_code:
