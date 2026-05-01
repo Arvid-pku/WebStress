@@ -255,10 +255,23 @@ def apply_server_injection(state: Any, params: dict[str, Any]) -> None:
             ]
             rng = random.Random(params.get("seed", 42))
             template = state.emails[0]
+            # Track existing IDs so we don't collide with prior injectors that
+            # also use Random(42) (e.g. seed-layer increase_distractors).
+            existing_email_ids = {e.id for e in state.emails}
+            existing_thread_ids = {e.thread_id for e in state.emails}
+
+            def _unique_id(prefix: str, taken: set[str]) -> str:
+                # Reject collisions; loop bounded by the 90,000 keyspace.
+                while True:
+                    candidate = f"{prefix}_{rng.randint(10000, 99999)}"
+                    if candidate not in taken:
+                        taken.add(candidate)
+                        return candidate
+
             for i in range(count):
                 distractor = template.model_copy(deep=True)
-                distractor.id = f"email_{rng.randint(10000, 99999)}"
-                distractor.thread_id = f"thread_{rng.randint(10000, 99999)}"
+                distractor.id = _unique_id("email", existing_email_ids)
+                distractor.thread_id = _unique_id("thread", existing_thread_ids)
                 entry = _REALISTIC_EMAILS[i % len(_REALISTIC_EMAILS)]
                 distractor.subject = f"{subject_prefix}{entry['subject']}"
                 name, addr = _REALISTIC_NAMES[i % len(_REALISTIC_NAMES)]

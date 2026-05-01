@@ -772,7 +772,10 @@ class TestReviewGaps:
             dom_elements={}, url="http://localhost/env/gmail/inbox",
             status="", elapsed=1.0,
         )
-        assert step["action"] == {"action": "unknown"}
+        # An empty actions list means "agent produced no tool call this turn"
+        # — distinct from "couldn't map an action shape" (unknown). See commit
+        # 35912d10 ("emit noop instead of unknown for empty-action steps").
+        assert step["action"] == {"action": "noop"}
         assert step["targets"] == {}
 
     # Gap 4: dict-style dom_elements

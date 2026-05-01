@@ -200,10 +200,14 @@ class TestStandardCanaries:
         s = _session(client, "gmail_reply_simple")
         sid = s["session_id"]
         target_id = s["resolved_targets"]["target_email_id"]
+        # Derive reply-to from the seeded state — the canonical_diff expects
+        # `to == [from_addr of original email]` and the seed uses a random
+        # domain, so the address can't be hardcoded.
+        target_email = _gmail_state(sid).get_email(target_id)
         _send(
             client,
             sid,
-            to=["bob.martinez@company.test"],
+            to=[target_email.from_addr],
             subject="Re: Meeting Tomorrow at 2pm",
             body="I'll be there. Thanks!",
             in_reply_to=target_id,
@@ -271,11 +275,27 @@ class TestRetryVariants:
         sid = s["session_id"]
         target = s["resolved_targets"]["target_email_id"]
 
+        # Variant uses silent_fail with fail_count=2: the first two POSTs
+        # return a fake 200 body without persisting. The third POST actually
+        # stars the email. Verification semantics: an agent must read the
+        # email back and notice is_starred didn't flip, then retry.
         r1 = _star(client, sid, target)
-        assert r1.status_code == 503
+        assert r1.status_code == 200, "silent_fail returns 200 with fake body"
+        assert _gmail_state(sid).get_email(target).is_starred is False, (
+            "first call should be silently failed — state must not change"
+        )
 
         r2 = _star(client, sid, target)
         assert r2.status_code == 200
+        assert _gmail_state(sid).get_email(target).is_starred is False, (
+            "second call still within fail_count=2 — state still unchanged"
+        )
+
+        r3 = _star(client, sid, target)
+        assert r3.status_code == 200
+        assert _gmail_state(sid).get_email(target).is_starred is True, (
+            "third call exceeds fail_count — real persistence kicks in"
+        )
 
         ev = _eval(client, sid, "gmail_star_email")
         assert ev["success"] is True
@@ -290,11 +310,13 @@ class TestRetryVariants:
         target = s["resolved_targets"]["target_email_id"]
         target_email = _gmail_state(sid).get_email(target)
         reply_body = _instruction_quotes("gmail_reply_simple")[-1]
+        # See test_reply_simple — derive address from seeded state, not hardcoded.
+        reply_to = target_email.from_addr
 
         r1 = _send(
             client,
             sid,
-            to=["bob.martinez@company.test"],
+            to=[reply_to],
             subject="Re: Meeting Tomorrow at 2pm",
             body="I'll be there. Thanks!",
             in_reply_to=target,
@@ -307,7 +329,7 @@ class TestRetryVariants:
         r2 = _send(
             client,
             sid,
-            to=["bob.martinez@company.test"],
+            to=[reply_to],
             subject="Re: Meeting Tomorrow at 2pm",
             body="I'll be there. Thanks!",
             in_reply_to=target,
@@ -500,14 +522,18 @@ class TestDecoyAndExplorationVariants:
         inbox = _emails(client, sid).json()["items"]
         assert all(item["id"] != target for item in inbox[:25])
 
+        # Variant uses stale_data with stale_count=3: calls 1-3 return empty,
+        # call 4 returns the real result set.
         r1 = _search(client, sid, q)
         r2 = _search(client, sid, q)
         r3 = _search(client, sid, q)
+        r4 = _search(client, sid, q)
 
         assert r1.status_code == 200 and r1.json()["total"] == 0
         assert r2.status_code == 200 and r2.json()["total"] == 0
-        assert r3.status_code == 200
-        assert any(item["id"] == target for item in r3.json()["items"])
+        assert r3.status_code == 200 and r3.json()["total"] == 0
+        assert r4.status_code == 200
+        assert any(item["id"] == target for item in r4.json()["items"])
 
 
 class TestStressGrounding:
@@ -586,17 +612,20 @@ class TestStressPlanning:
                      variant_filename="gmail_search_and_star__planning.yaml")
         sid = s["session_id"]
 
-        # First search: stale_data returns empty
+        # Variant uses stale_data with stale_count=2: calls 1 and 2 return
+        # empty, call 3 returns the real result set.
         r1 = _search(client, sid, "Q4 Budget Summary")
         assert r1.status_code == 200
-        data = r1.json()
-        assert data["total"] == 0, f"First search should return 0 (stale), got {data['total']}"
+        assert r1.json()["total"] == 0, "first search should be stale (empty)"
 
-        # Second search: real results
         r2 = _search(client, sid, "Q4 Budget Summary")
         assert r2.status_code == 200
-        data2 = r2.json()
-        assert data2["total"] >= 1, f"Second search should return results, got {data2['total']}"
+        assert r2.json()["total"] == 0, "second search still within stale_count=2"
+
+        r3 = _search(client, sid, "Q4 Budget Summary")
+        assert r3.status_code == 200
+        data3 = r3.json()
+        assert data3["total"] >= 1, f"third search should return results, got {data3['total']}"
 
     def test_still_solvable_after_retry(self, client):
         s = _session(client, "gmail_search_and_star",
@@ -604,13 +633,19 @@ class TestStressPlanning:
         sid = s["session_id"]
         target = s["resolved_targets"]["target_email_id"]
 
+        # stale_count=2 → first two searches are empty, third returns the
+        # real items. The third search is what unblocks the agent.
         r1 = _search(client, sid, "Q4 Budget Summary")
         assert r1.status_code == 200
         assert r1.json()["total"] == 0
 
         r2 = _search(client, sid, "Q4 Budget Summary")
         assert r2.status_code == 200
-        assert any(item["id"] == target for item in r2.json()["items"])
+        assert r2.json()["total"] == 0
+
+        r3 = _search(client, sid, "Q4 Budget Summary")
+        assert r3.status_code == 200
+        assert any(item["id"] == target for item in r3.json()["items"])
 
         _star(client, sid, target)
         ev = _eval(client, sid, "gmail_search_and_star")
