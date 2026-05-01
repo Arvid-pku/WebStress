@@ -9,7 +9,7 @@ from starlette.testclient import TestClient
 
 from webagentbench.app import app
 from webagentbench.backend.routes.reddit import list_variants
-from webagentbench.evaluator_diff import compute_diff
+from webagentbench.eval_core import compute_diff
 from webagentbench.injector.middleware import clear_all_degradations
 from webagentbench.tasks._registry import env_tasks, get_task
 

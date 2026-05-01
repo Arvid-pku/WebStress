@@ -5,7 +5,7 @@ No-mutation test: score < 1.0 (penalty-only), NOT 0.0.
 """
 
 from webagentbench.backend.state import SessionManager
-from webagentbench.evaluator_diff import compute_diff, match_diff
+from webagentbench.eval_core import compute_diff, match_diff
 from webagentbench.tasks._registry import get_task
 
 TASK_ID = 'booking_profile_update_suite'

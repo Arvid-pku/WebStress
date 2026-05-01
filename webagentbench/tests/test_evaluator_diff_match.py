@@ -1,6 +1,6 @@
 """Unit tests for match_diff — non-bijection cases only (Task 4)."""
 
-from webagentbench.evaluator_diff import match_diff, Create, Update
+from webagentbench.eval_core import match_diff, Create, Update
 from webagentbench.tasks.canonical_diff import CanonicalDiff
 
 

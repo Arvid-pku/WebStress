@@ -6,7 +6,7 @@ res_2 while leaving res_1 and res_3 untouched.
 """
 
 from webagentbench.backend.state import SessionManager
-from webagentbench.evaluator_diff import compute_diff, match_diff
+from webagentbench.eval_core import compute_diff, match_diff
 from webagentbench.tasks._registry import get_task
 
 TASK_ID = 'booking_verify_no_overlap'

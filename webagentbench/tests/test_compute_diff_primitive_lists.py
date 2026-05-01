@@ -13,7 +13,7 @@ changes to them. Tasks that need to assert on them use ``constraints:``.
 from __future__ import annotations
 
 from webagentbench.backend.state import SessionManager
-from webagentbench.evaluator_diff import compute_diff
+from webagentbench.eval_core import compute_diff
 
 
 def test_compute_diff_survives_wishlist_mutation():

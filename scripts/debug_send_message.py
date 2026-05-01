@@ -48,7 +48,7 @@ print(f"  sender={msg.sender!r}")
 print(f"  read={msg.read}")
 
 # Run evaluator
-from webagentbench.evaluator_diff import compute_diff, match_diff
+from webagentbench.eval_core import compute_diff, match_diff
 task = get_task(TASK_ID)
 
 agent_diff = compute_diff(initial_snap, state)

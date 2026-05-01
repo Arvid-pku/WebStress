@@ -2,7 +2,7 @@
 
 from webagentbench.backend.models.gmail import Contact, FilterRule
 from webagentbench.backend.state import SessionManager
-from webagentbench.evaluator_diff import compute_diff, match_diff
+from webagentbench.eval_core import compute_diff, match_diff
 from webagentbench.tasks._registry import get_task
 
 

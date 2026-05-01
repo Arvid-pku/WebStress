@@ -6,7 +6,7 @@ from webagentbench.backend.models.booking import (
     CancellationPolicy, PaymentMethod, Reservation, ReservationGuest, Review, SavedList
 )
 from webagentbench.backend.state import SessionManager
-from webagentbench.evaluator_diff import compute_diff, match_diff
+from webagentbench.eval_core import compute_diff, match_diff
 from webagentbench.tasks._registry import get_task
 
 TASK_ID = 'booking_frontier_payment_and_booking'

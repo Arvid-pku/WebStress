@@ -83,8 +83,8 @@ def _substitute_variable(value: Any, var_name: str, var_value: Any, targets: dic
 
     Author expressions may reference either the loop variable alone
     (``"v"``) or a target-table lookup (``"target['admin_providers'][v]"``).
-    We delegate to ``evaluator_diff._eval_target_expr`` for the latter so
-    the restricted-eval trust model stays in one place.
+    We share the ``eval_core.safe_eval`` allowlist for the latter so the
+    restricted-eval trust model stays in one place.
     """
     if not isinstance(value, str):
         return value
@@ -93,7 +93,7 @@ def _substitute_variable(value: Any, var_name: str, var_value: Any, targets: dic
     # Target-reference expression — reuse the matcher's helper so we share
     # the safe-globals allowlist (avoids duplicating restricted eval logic).
     try:
-        from webagentbench.evaluator_diff import _eval_target_expr, _SAFE_BUILTINS  # noqa: PLC0415
+        from webagentbench.eval_core.safe_eval import SAFE_BUILTINS as _SAFE_BUILTINS  # noqa: PLC0415
         # _eval_target_expr only binds `target`; we need v bound too.
         # Inline the same pattern with the extra binding.
         return eval(  # noqa: S307 — mirrors evaluator_diff trust model (author-controlled)
@@ -161,7 +161,7 @@ def apply_canonical_diff(
     support lands in a Phase 1 follow-up.
     """
     from webagentbench.tasks._registry import get_task
-    from webagentbench.evaluator_diff import _eval_target_expr
+    from webagentbench.eval_core.safe_eval import safe_eval
 
     task = get_task(task_id)
     cd = getattr(task, "canonical_diff", None)
@@ -182,7 +182,7 @@ def apply_canonical_diff(
 
         if entry.bijection is not None:
             try:
-                left = _eval_target_expr(entry.bijection.over, targets)
+                left = safe_eval(entry.bijection.over, {"target": targets, "initial": None, "state": None})
             except Exception:
                 continue
 

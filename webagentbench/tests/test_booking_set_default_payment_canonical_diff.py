@@ -5,7 +5,7 @@ The correct card is Amex ending in 1234.
 """
 
 from webagentbench.backend.state import SessionManager
-from webagentbench.evaluator_diff import compute_diff, match_diff
+from webagentbench.eval_core import compute_diff, match_diff
 from webagentbench.tasks._registry import get_task
 
 TASK_ID = 'booking_set_default_payment'

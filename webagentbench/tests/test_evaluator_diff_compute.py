@@ -2,7 +2,7 @@
 
 from pydantic import BaseModel, Field
 
-from webagentbench.evaluator_diff import Create, Delete, Update, compute_diff
+from webagentbench.eval_core import Create, Delete, Update, compute_diff
 
 
 def test_create_detected():

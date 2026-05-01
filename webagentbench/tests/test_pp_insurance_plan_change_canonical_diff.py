@@ -19,7 +19,7 @@ Trajectories covered:
 
 from webagentbench.backend.models.patient_portal import InsurancePlan
 from webagentbench.backend.state import SessionManager
-from webagentbench.evaluator_diff import compute_diff, match_diff
+from webagentbench.eval_core import compute_diff, match_diff
 from webagentbench.tasks._registry import get_task
 
 

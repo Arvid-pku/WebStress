@@ -17,7 +17,7 @@ import pytest
 
 from webagentbench.backend.routes.amazon import SessionCreateRequest, create_session
 from webagentbench.backend.state import SessionManager
-from webagentbench.evaluator_diff import compute_diff
+from webagentbench.eval_core import compute_diff
 from webagentbench.injector.middleware import clear_all_degradations
 
 

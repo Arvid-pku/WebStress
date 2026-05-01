@@ -21,8 +21,8 @@ from typing import Any
 import pytest
 
 from webagentbench.backend.state import SessionManager
-from webagentbench.evaluator_diff import (
-    EvalReport,
+from webagentbench.eval_core import (
+    MatchReport,
     Update,
     compute_diff,
     match_diff,
@@ -56,7 +56,7 @@ def _setup(task_id: str):
     return sm, sid, dict(targets), initial, state, task
 
 
-def _match_do_nothing(task_id: str) -> EvalReport:
+def _match_do_nothing(task_id: str) -> MatchReport:
     _, _, targets, initial, state, task = _setup(task_id)
     agent_diff = compute_diff(initial, state)  # empty — nothing changed
     return match_diff(
@@ -317,7 +317,7 @@ def test_invariant_filter_exception_does_not_silently_skip() -> None:
     })
 
     # Inject a fake mutation so we can observe whether the invariant fires.
-    from webagentbench.evaluator_diff import Update
+    from webagentbench.eval_core import Update
     fake_diff = [Update(
         entity="appointments",
         entity_id="appt_does_not_exist",
@@ -477,7 +477,7 @@ def test_session_start_none_with_predicate_using_it() -> None:
     })
 
     # No session_start argument.
-    from webagentbench.evaluator_diff import Update
+    from webagentbench.eval_core import Update
     fake = [Update(
         entity="appointments",
         entity_id="appt_1",
@@ -499,7 +499,7 @@ def test_matcher_does_not_mutate_agent_diff() -> None:
     across trajectory storage, visualization, downstream telemetry).
     """
     initial, final, targets = _task_with_real_initial()
-    from webagentbench.evaluator_diff import Create
+    from webagentbench.eval_core import Create
     diff = [Create(entity="appointments", entity_id="x", fields={"id": "x"})]
 
     block = CanonicalDiff.model_validate({
@@ -529,7 +529,7 @@ def test_expr_predicate_swallows_author_typos() -> None:
     is the silent-reject footgun. If this test starts failing, someone
     made expr errors surface — good direction.
     """
-    from webagentbench.evaluator_diff import Update
+    from webagentbench.eval_core import Update
     initial, final, targets = _task_with_real_initial()
 
     block = CanonicalDiff.model_validate({
@@ -571,7 +571,7 @@ def test_contains_predicate_list_element_semantics() -> None:
     For single-element: ``{contains: 1}`` on ``[1, 2, 3]`` works correctly.
     The trap is specifically the list-argument form.
     """
-    from webagentbench.evaluator_diff import Update
+    from webagentbench.eval_core import Update
     initial, final, targets = _task_with_real_initial()
 
     block = CanonicalDiff.model_validate({
@@ -609,7 +609,7 @@ def test_length_predicate_does_not_crash_on_none_value() -> None:
     This test fails loudly if a TypeError escapes. If the matcher is already
     graceful, it passes.
     """
-    from webagentbench.evaluator_diff import Update
+    from webagentbench.eval_core import Update
     initial, final, targets = _task_with_real_initial()
 
     block = CanonicalDiff.model_validate({
@@ -648,7 +648,7 @@ def test_named_invariant_with_update_ref_applies_label() -> None:
     tasks rely on this for labeling (e.g. lms_end_of_semester_verification
     uses ``ref: update[0]`` and ``ref: update[1]``).
     """
-    from webagentbench.evaluator_diff import Update
+    from webagentbench.eval_core import Update
     initial, final, targets = _task_with_real_initial()
 
     block = CanonicalDiff.model_validate({
@@ -689,7 +689,7 @@ def test_named_invariant_severity_override_applied_to_invariant() -> None:
 
     critical → 0.3 per _SEVERITY_PENALTY table. medium → 0.15.
     """
-    from webagentbench.evaluator_diff import Update
+    from webagentbench.eval_core import Update
     initial, final, targets = _task_with_real_initial()
 
     block = CanonicalDiff.model_validate({
@@ -732,7 +732,7 @@ def test_matches_semantic_does_not_crash_on_plain_strings() -> None:
     If the backend fails to load, matches_semantic should return False
     (conservative) rather than propagate the error.
     """
-    from webagentbench.evaluator_diff import Update
+    from webagentbench.eval_core import Update
     initial, final, targets = _task_with_real_initial()
 
     block = CanonicalDiff.model_validate({
@@ -763,7 +763,7 @@ def test_bijection_excess_tracked_when_empty_target() -> None:
     ref=create[0] named_invariant → the named invariant FAILS (over-creation
     detected).
     """
-    from webagentbench.evaluator_diff import Create
+    from webagentbench.eval_core import Create
     initial, final, targets = _task_with_real_initial()
 
     block = CanonicalDiff.model_validate({
@@ -825,7 +825,7 @@ def test_non_bijection_update_matches_at_most_one_candidate() -> None:
     but authors should know: if you want "all matching", use a bijection
     over the target set.
     """
-    from webagentbench.evaluator_diff import Update
+    from webagentbench.eval_core import Update
     initial, final, targets = _task_with_real_initial()
 
     # `where` reads the BEFORE value of the field (so renames like
@@ -875,7 +875,7 @@ def test_update_with_empty_changes_dict_matches_any_mutation() -> None:
     schema already forbids forgetting the `where:` key (Pydantic default
     is not allowed there) but tolerates empty `changes:`.
     """
-    from webagentbench.evaluator_diff import Update
+    from webagentbench.eval_core import Update
     initial, final, targets = _task_with_real_initial()
 
     block = CanonicalDiff.model_validate({
@@ -946,7 +946,7 @@ def test_compute_diff_detects_duplicate_ids_cleanly() -> None:
     Document the current behavior — quiet collapse — as a known corner
     case. A stricter version would raise on duplicate ids.
     """
-    from webagentbench.evaluator_diff import compute_diff
+    from webagentbench.eval_core import compute_diff
 
     # Dict-of-lists fast path is allowed by _collections_of (line 326).
     initial = {"widgets": [{"id": "w1", "val": 1}]}
@@ -975,7 +975,7 @@ def test_compute_diff_decimal_round_trip() -> None:
     """
     from decimal import Decimal
 
-    from webagentbench.evaluator_diff import compute_diff
+    from webagentbench.eval_core import compute_diff
 
     initial = {"widgets": [{"id": "w1", "gpa": Decimal("3.45")}]}
     final = {"widgets": [{"id": "w1", "gpa": Decimal("3.45")}]}
@@ -1006,7 +1006,7 @@ def test_diff_ignore_fields_makes_field_invisible_to_invariants() -> None:
 
     from pydantic import BaseModel
 
-    from webagentbench.evaluator_diff import compute_diff
+    from webagentbench.eval_core import compute_diff
 
     class Thing(BaseModel):
         id: str
@@ -1030,7 +1030,7 @@ def test_multiple_update_entries_do_not_double_claim() -> None:
     claim the same agent-diff candidate twice. ``matched_ids`` exclusion
     in the inner loop (evaluator_diff.py:925) should prevent this.
     """
-    from webagentbench.evaluator_diff import Update
+    from webagentbench.eval_core import Update
     initial, final, targets = _task_with_real_initial()
 
     block = CanonicalDiff.model_validate({
@@ -1094,7 +1094,7 @@ def test_filtered_invariant_covers_entries_in_unaccounted_sweep() -> None:
     ("Unaccounted update in modules (id=module_5)"). The right behavior is
     one charge — the filter already covers it.
     """
-    from webagentbench.evaluator_diff import Update
+    from webagentbench.eval_core import Update
     initial, final, targets = _task_with_real_initial()
     targets["target_slots"] = ["m2", "m3", "m4"]  # the 3 modules the agent should complete
 
@@ -1164,7 +1164,7 @@ def test_singleton_create_near_miss_not_double_penalised() -> None:
     the right-collection-but-failed-predicates candidate as a near-miss, so
     only the missing-positive failure remains.
     """
-    from webagentbench.evaluator_diff import Create
+    from webagentbench.eval_core import Create
     initial, final, targets = _task_with_real_initial()
 
     block = CanonicalDiff.model_validate({
@@ -1211,7 +1211,7 @@ def test_near_miss_create_does_not_trip_same_collection_invariant() -> None:
     positive create failure is enough signal; the same entry should not be
     reported again as protected-state damage.
     """
-    from webagentbench.evaluator_diff import Create
+    from webagentbench.eval_core import Create
 
     initial, final, targets = _task_with_real_initial()
     block = CanonicalDiff.model_validate({

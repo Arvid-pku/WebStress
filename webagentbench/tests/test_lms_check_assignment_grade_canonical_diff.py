@@ -6,7 +6,7 @@ import random
 from webagentbench.backend.models.lms import LMSState
 from webagentbench.backend.seeder import FakeDataGenerator
 from webagentbench.backend.seeders.lms import LMSSeedRunner
-from webagentbench.evaluator_diff import compute_diff, match_diff
+from webagentbench.eval_core import compute_diff, match_diff
 from webagentbench.tasks._schema import TaskDefinition
 
 

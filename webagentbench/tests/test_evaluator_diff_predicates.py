@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import pytest
 
-from webagentbench.evaluator_diff import PredicateScope, eval_predicate
+from webagentbench.eval_core import PredicateScope, eval_predicate
 
 
 def _scope(x, **kw):
