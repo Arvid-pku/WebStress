@@ -119,23 +119,4 @@ canonical_diff:
     - name: "Agent did not modify referrals"
       ref: invariant[6]
       severity: high
-eval:
-  source: server_state
-  checks:
-  - expr: "any(a.type == 'telehealth'\n    and a.status == 'scheduled'\n    and a.id\
-      \ not in {target.upcoming_ids}\n    for a in state.appointments)"
-    desc: A new telehealth appointment was scheduled
-  - expr: "any(a.status == 'scheduled'\n    and a.id not in {target.upcoming_ids}\n\
-      \    and state.get_provider(a.provider_id) is not None\n    and state.get_provider(a.provider_id).specialty\
-      \ == 'cardiology'\n    for a in state.appointments)"
-    desc: The new appointment is with a cardiologist
-  - expr: "len([a for a in state.appointments\n     if a.status == 'scheduled'\n \
-      \    and a.type == 'telehealth'\n     and a.id not in {target.upcoming_ids}])\
-      \ >= 1"
-    desc: At least one new telehealth appointment exists
-  negative_checks:
-  - expr: "not any(a.type == 'in-person'\n        and a.status == 'scheduled'\n  \
-      \      and a.id not in {target.upcoming_ids}\n        for a in state.appointments)"
-    desc: Agent did not schedule an in-person appointment instead of telehealth
-    penalty: 0.2
 secondary_primitives: []

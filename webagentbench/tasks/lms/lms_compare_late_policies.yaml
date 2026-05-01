@@ -129,20 +129,4 @@ canonical_diff:
   - name: Agent did not send messages
     ref: invariant[10]
     severity: medium
-eval:
-  source: server_state
-  checks:
-  - expr: state.get_assignment('{target.missing_assignment_id}') is not None and state.get_assignment('{target.missing_assignment_id}').submission_status
-      in ('submitted', 'late') and state.get_assignment('{target.missing_assignment_id}').file_name
-      == 'late_recovery.pdf'
-    desc: Missing assignment in the most lenient course was submitted with late_recovery.pdf
-  negative_checks:
-  - expr: "not any(\n  a.submission_status in ('submitted', 'late')\n  and a.file_name\
-      \ == 'late_recovery.pdf'\n  and a.course_id != '{target.most_lenient_course_id}'\n\
-      \  for a in state.assignments\n)"
-    desc: No late_recovery.pdf submitted in a course with a stricter policy
-    penalty: 0.5
-  - expr: all(e.status != 'dropped' for e in state.enrollments)
-    desc: No courses were dropped during comparison
-    penalty: 0.3
 secondary_primitives: []

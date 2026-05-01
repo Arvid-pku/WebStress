@@ -57,12 +57,3 @@ canonical_diff:
     preserve: ALL
   - collection: state.settings
     preserve: ALL
-eval:
-  source: server_state
-  checks:
-  - expr: state.unread_notification_count() == 0
-    desc: All notifications are read
-  negative_checks:
-  - expr: state.settings.email_comment_reply == True
-    desc: Notification email settings not changed
-    penalty: 0.15

@@ -193,32 +193,4 @@ canonical_diff:
   - name: Agent did not modify calendar events
     ref: invariant[9]
     severity: low
-eval:
-  source: server_state
-  checks:
-  - expr: all(a.is_read for a in state.announcements)
-    desc: All announcements marked as read
-  - expr: sum(1 for m in state.modules if m.status == 'completed') >= 3
-    desc: At least 3 modules completed (2 initial + 1 new)
-  - expr: "any(m.status == 'completed'\n    and all(ci.completed for ci in m.content_items)\n\
-      \    for m in state.modules)"
-    desc: At least one module fully completed with all content items
-  - expr: "all(e.status == 'enrolled'\n    for e in state.enrollments)"
-    desc: All enrollments remain active (none dropped)
-  - expr: len(state.sent_messages) >= 1
-    desc: Agent sent a briefing message
-  - expr: "any('{target.advisor_name}' in m.get('to', '')\n    for m in state.sent_messages)"
-    desc: Message addressed to advisor
-  negative_checks:
-  - expr: all(e.status != 'dropped' for e in state.enrollments)
-    desc: No courses were dropped during prep
-    penalty: 0.3
-  - expr: len(state.sent_messages) <= 4
-    desc: Agent did not send excessive messages
-    penalty: 0.15
-  - expr: "not any(a.submission_status in ('submitted', 'late')\n        and a.file_name\
-      \ is not None\n        and 'meeting' in (a.file_name or '').lower()\n      \
-      \  for a in state.assignments)"
-    desc: Agent did not submit assignment files for meeting prep
-    penalty: 0.1
 secondary_primitives: []

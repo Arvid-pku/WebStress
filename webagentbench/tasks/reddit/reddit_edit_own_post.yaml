@@ -61,15 +61,4 @@ canonical_diff:
   - name: Agent did not modify any other posts
     ref: invariant[0]
     severity: high
-eval:
-  source: server_state
-  checks:
-  - expr: 'state.get_post(''{target.post_id}'').body == ''UPDATE: After 8 months of full-time Linux use, I can confirm the productivity gains are real. I wrote a detailed follow-up on my blog.'''
-    desc: Post body updated to exact required text
-  - expr: state.get_post('{target.post_id}').is_edited
-    desc: Post marked as edited
-  negative_checks:
-  - expr: not state.get_post('{target.post_id}').is_removed
-    desc: Post was not deleted
-    penalty: 0.5
 secondary_primitives: []

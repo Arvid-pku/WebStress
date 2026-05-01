@@ -221,29 +221,4 @@ canonical_diff:
     - name: Agent did not send messages
       ref: invariant[10]
       severity: medium
-eval:
-  source: server_state
-  checks:
-  - expr: "(('{target.drop_impact_above_3}' == 'true'\n and state.get_assignment('{target.lowest_hw_id}')\
-      \ is not None\n and state.get_assignment('{target.lowest_hw_id}').submission_status\
-      \ in ('submitted', 'late')\n and state.get_assignment('{target.lowest_hw_id}').file_name\
-      \ == 'improvement.pdf')\nor ('{target.drop_impact_above_3}' == 'false'\n   \
-      \ and state.get_announcement('{target.latest_announcement_id}') is not None\n\
-      \    and state.get_announcement('{target.latest_announcement_id}').is_read ==\
-      \ True))"
-    desc: Resubmit lowest homework with improvement.pdf if drop impact > 3 points,
-      or mark latest announcement as read if impact <= 3 points
-  negative_checks:
-  - expr: '''{target.drop_impact_above_3}'' != ''true'' or state.get_announcement(''{target.latest_announcement_id}'')
-      is None or state.get_announcement(''{target.latest_announcement_id}'').is_read
-      != True'
-    desc: Did not mark announcement as read when drop impact > 3 (wrong branch)
-    penalty: 0.3
-  - expr: '''{target.drop_impact_above_3}'' != ''false'' or state.get_assignment(''{target.lowest_hw_id}'')
-      is None or state.get_assignment(''{target.lowest_hw_id}'').file_name != ''improvement.pdf'''
-    desc: Did not resubmit when drop impact <= 3 (wrong branch)
-    penalty: 0.3
-  - expr: all(e.status != 'dropped' for e in state.enrollments)
-    desc: No courses were dropped
-    penalty: 0.3
 secondary_primitives: []

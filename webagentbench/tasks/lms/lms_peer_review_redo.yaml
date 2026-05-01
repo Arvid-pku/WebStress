@@ -140,30 +140,4 @@ canonical_diff:
     - name: Agent did not send messages
       ref: invariant[10]
       severity: medium
-eval:
-  source: server_state
-  checks:
-  - expr: "any(pr.status == 'submitted'\n    and pr.reviewer_student_id == state.student.id\n\
-      \    and len(pr.rubric_scores) >= 3\n    for pr in state.peer_reviews)"
-    desc: At least one review is submitted with all 3 rubric scores
-  - expr: "any(pr.status == 'submitted'\n    and pr.reviewer_student_id == state.student.id\n\
-      \    and len(pr.comments) >= 50\n    for pr in state.peer_reviews)"
-    desc: Submitted review has comments of at least 50 characters
-  - expr: "any(pr.status == 'submitted'\n    and pr.reviewer_student_id == state.student.id\n\
-      \    and 'clarity' in pr.rubric_scores\n    for pr in state.peer_reviews)"
-    desc: Clarity criterion was scored
-  - expr: "any(pr.status == 'submitted'\n    and pr.reviewer_student_id == state.student.id\n\
-      \    and 'depth' in pr.rubric_scores\n    for pr in state.peer_reviews)"
-    desc: Depth criterion was scored
-  - expr: "any(pr.status == 'submitted'\n    and pr.reviewer_student_id == state.student.id\n\
-      \    and 'originality' in pr.rubric_scores\n    for pr in state.peer_reviews)"
-    desc: Originality criterion was scored
-  negative_checks:
-  - expr: "all(pr.status != 'submitted' or len(pr.rubric_scores) >= 3\n    for pr\
-      \ in state.peer_reviews\n    if pr.reviewer_student_id == state.student.id)"
-    desc: No reviews were submitted with incomplete rubric scores
-    penalty: 0.25
-  - expr: all(e.status != 'dropped' for e in state.enrollments)
-    desc: No courses were dropped
-    penalty: 0.3
 secondary_primitives: []

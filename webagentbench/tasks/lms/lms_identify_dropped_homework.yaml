@@ -133,26 +133,4 @@ canonical_diff:
       ref: invariant[10]
       severity: medium
 
-eval:
-  source: server_state
-  checks:
-  - expr: state.get_assignment('{target.lowest_homework_id}') is not None and state.get_assignment('{target.lowest_homework_id}').submission_status
-      in ('submitted', 'late') and state.get_assignment('{target.lowest_homework_id}').file_name
-      == 'redo_lowest.pdf'
-    desc: Lowest homework assignment was resubmitted with redo_lowest.pdf
-  - expr: state.get_assignment('{target.lowest_homework_id}') is not None and state.get_assignment('{target.lowest_homework_id}').attempt_count
-      >= 2
-    desc: Attempt count incremented (resubmission)
-  - expr: len(state.dropped_grades_for_category('{target.target_course_id}', 'homework'))
-      >= 1
-    desc: At least one homework grade is eligible for dropping (seed validation)
-  negative_checks:
-  - expr: "not any(\n  a.submission_status in ('submitted', 'late')\n  and a.file_name\
-      \ == 'redo_lowest.pdf'\n  and a.id != '{target.lowest_homework_id}'\n  for a\
-      \ in state.assignments\n)"
-    desc: No other assignment was resubmitted with redo_lowest.pdf (wrong assignment)
-    penalty: 0.5
-  - expr: all(e.status != 'dropped' for e in state.enrollments)
-    desc: No courses were dropped
-    penalty: 0.3
 secondary_primitives: []

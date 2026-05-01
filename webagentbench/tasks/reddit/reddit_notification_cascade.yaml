@@ -292,49 +292,6 @@ canonical_diff:
   - expr: sorted(state.blocked_users) == sorted(initial.blocked_users)
     desc: Blocked users preserved when blocking is not requested
     severity: high
-eval:
-  source: server_state
-  checks:
-  - expr: state.unread_notification_count() == 0
-    desc: All notifications read
-  - expr: state.unread_message_count() == 0
-    desc: All messages read
-  - expr: any(m.to_user == '{target.r_from}' and '{target.r_body}' in m.body for m in state.sent_messages)
-    desc: Replied to u/{target.r_from}
-  - expr: not any(m.id == '{target.del_id}' for m in state.messages)
-    desc: Spam message deleted
-  - expr: '''{target.wn_id}'' in state.saved_post_ids'
-    desc: Worldnews post saved
-  - expr: any(c.post_id == '{target.wn_id}' and '{target.c1}' in c.body and c.author_name == state.owner_username for c in state.comments)
-    desc: Commented on worldnews post
-  - expr: '''{target.prog_id}'' in state.saved_post_ids'
-    desc: Programming post saved
-  - expr: any(s.name == '{target.join}' and s.is_subscribed for s in state.subreddits)
-    desc: Subscribed to r/{target.join}
-  - expr: any(p.subreddit_name == '{target.join}' and '{target.pt}' in p.title and p.author_name == state.owner_username for p in state.posts)
-    desc: Post created in r/{target.join}
-  - expr: state.settings.theme == 'dark'
-    desc: Theme set to dark
-  - expr: state.settings.default_feed_sort == 'new'
-    desc: Feed sort set to new
-  - expr: state.settings.email_messages == False
-    desc: Email for messages disabled
-  negative_checks:
-  - expr: all(sid in state.subscriptions for sid in {target.initial_subscriptions})
-    desc: No existing subscriptions removed (instruction says do not unsubscribe)
-    penalty: 0.2
-  - expr: (len(state.sent_messages) - state._initial_snapshot.get('sent_message_count', 0)) <= 2
-    desc: No excessive messages sent
-    penalty: 0.15
-  - expr: sum(1 for p in state.posts if p.author_name == state.owner_username and p.id not in state._initial_snapshot.get('posts', {})) <= 2
-    desc: No excessive posts created
-    penalty: 0.15
-  - expr: not any(e.action.startswith('reddit.user.block') or e.action.startswith('reddit.user.unblock') for e in state.audit_log)
-    desc: No off-task user blocks were changed
-    penalty: 0.1
-  - expr: not any(e.action in {'reddit.post.hide', 'reddit.post.unhide'} for e in state.audit_log)
-    desc: No off-task posts were hidden or unhidden
-    penalty: 0.1
 env_id: reddit
 start_path: /feed
 secondary_primitives: []

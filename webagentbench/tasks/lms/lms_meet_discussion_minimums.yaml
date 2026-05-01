@@ -158,20 +158,4 @@ canonical_diff:
     - name: Agent did not send messages
       ref: invariant[10]
       severity: medium
-eval:
-  source: server_state
-  checks:
-  - expr: state.meets_discussion_requirements('{target.target_discussion_id}')
-    desc: Student meets the discussion minimum requirements
-  - expr: state.get_discussion('{target.target_discussion_id}') is not None and state.student_post_count('{target.target_discussion_id}')
-      >= state.get_discussion('{target.target_discussion_id}').min_posts
-    desc: Student meets the minimum post count
-  - expr: state.get_discussion('{target.target_discussion_id}') is not None and state.student_reply_count('{target.target_discussion_id}')
-      >= state.get_discussion('{target.target_discussion_id}').min_replies
-    desc: Student meets the minimum reply count
-  negative_checks:
-  - expr: "not any(p.author_id == state.student.id\n        and p.discussion_id !=\
-      \ '{target.target_discussion_id}'\n        for p in state.discussion_posts)"
-    desc: Student did not post in non-target discussions
-    penalty: 0.2
 secondary_primitives: []

@@ -101,29 +101,3 @@ canonical_diff:
   - name: Agent posted the comment on the gaming post
     ref: create[1]
     severity: high
-eval:
-  source: server_state
-  checks:
-  - expr: 'any(p.subreddit_name == ''Python'' and p.title == "Built a Reddit API wrapper in pure Python - feedback welcome" and p.author_name == state.owner_username for p in state.posts)
-
-      '
-    desc: New post created in r/Python with correct title
-  - expr: 'any(p.subreddit_name == ''Python'' and p.body == "I just published v1.0 of my Reddit API wrapper. It handles rate limiting, pagination, and OAuth2 out of the box. Looking for feedback from the community." and p.author_name == state.owner_username for p in state.posts)
-
-      '
-    desc: New post has exact required body
-  - expr: 'any(c.post_id == ''{target.comment_target_post_id}'' and c.body == "Completely agree. I miss the days when you paid once and got the full game." and c.author_name == state.owner_username for c in state.comments)
-
-      '
-    desc: Exact comment posted on target gaming post
-  negative_checks:
-  - expr: 'not any(c.post_id in {target.decoy_post_ids} and c.author_name == state.owner_username for c in state.comments)
-
-      '
-    desc: No comments on decoy posts
-    penalty: 0.25
-  - expr: 'not any(p.author_name == state.owner_username and p.subreddit_name not in (''Python'', ''technology'', ''personalfinance'') for p in state.posts)
-
-      '
-    desc: No owner posts created in unexpected subreddits
-    penalty: 0.2

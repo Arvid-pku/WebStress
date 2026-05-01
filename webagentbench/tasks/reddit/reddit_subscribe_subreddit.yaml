@@ -84,18 +84,3 @@ canonical_diff:
   - expr: sorted(state.subscriptions) == sorted([s.id for s in state.subreddits if s.is_subscribed])
     desc: Subscription primitive list matches subreddit subscription flags
     severity: high
-eval:
-  source: server_state
-  checks:
-  - expr: >
-      any(s.name == 'Piracy' and s.is_subscribed for s in state.subreddits)
-    desc: User is subscribed to r/Piracy
-  negative_checks:
-  - expr: >
-      len(state.subscriptions) >= len({target.initial_subscriptions})
-    desc: No existing subscriptions were removed
-    penalty: 0.3
-  - expr: >
-      all(sid in state.subscriptions for sid in {target.initial_subscriptions})
-    desc: Every initially subscribed subreddit is still subscribed
-    penalty: 0.3

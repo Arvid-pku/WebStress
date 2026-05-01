@@ -217,27 +217,4 @@ canonical_diff:
     - name: Agent did not send messages
       ref: invariant[10]
       severity: medium
-eval:
-  source: server_state
-  checks:
-  - expr: "(('{target.min_score_achievable}' == 'true'\n and state.get_assignment('{target.final_exam_assignment_id}')\
-      \ is not None\n and state.get_assignment('{target.final_exam_assignment_id}').submission_status\
-      \ in ('submitted', 'late')\n and state.get_assignment('{target.final_exam_assignment_id}').file_name\
-      \ == 'study_plan.pdf')\nor ('{target.min_score_achievable}' == 'false'\n   \
-      \ and state.get_enrollment_for_course('{target.target_course_id}') is not None\n\
-      \    and state.get_enrollment_for_course('{target.target_course_id}').status\
-      \ == 'dropped'))"
-    desc: Submit study_plan.pdf for final exam if B is achievable, or drop the course
-      if required score exceeds 100
-  negative_checks:
-  - expr: '''{target.min_score_achievable}'' != ''true'' or state.get_enrollment_for_course(''{target.target_course_id}'')
-      is None or state.get_enrollment_for_course(''{target.target_course_id}'').status
-      != ''dropped'''
-    desc: Did not drop course when B is achievable (wrong branch)
-    penalty: 0.5
-  - expr: '''{target.min_score_achievable}'' != ''false'' or state.get_assignment(''{target.final_exam_assignment_id}'')
-      is None or state.get_assignment(''{target.final_exam_assignment_id}'').file_name
-      != ''study_plan.pdf'''
-    desc: Did not submit study plan when B is impossible (wrong branch)
-    penalty: 0.3
 secondary_primitives: []

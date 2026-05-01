@@ -69,15 +69,4 @@ canonical_diff:
   - expr: sorted(state.saved_post_ids) == sorted([p.id for p in state.posts if p.is_saved])
     desc: Saved-post primitive list matches saved post flags
     severity: high
-eval:
-  source: server_state
-  checks:
-  - expr: state.get_post('{target.post_id}').vote_direction == 1
-    desc: Post upvoted
-  - expr: state.get_post('{target.post_id}').is_saved
-    desc: Post saved
-  negative_checks:
-  - expr: sum(1 for p in state.posts if p.vote_direction != 0 and p.id != '{target.post_id}') == 0
-    desc: No other posts voted on
-    penalty: 0.2
 secondary_primitives: []

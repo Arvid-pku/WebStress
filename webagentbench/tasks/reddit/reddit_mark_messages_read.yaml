@@ -45,16 +45,4 @@ canonical_diff:
     preserve: ALL
   - collection: state.settings
     preserve: ALL
-eval:
-  source: server_state
-  checks:
-  - expr: state.unread_message_count() == 0
-    desc: All messages are read
-  negative_checks:
-  - expr: len(state.messages) >= 5
-    desc: No messages were deleted
-    penalty: 0.3
-  - expr: sum(1 for m in state.sent_messages if m.from_user == state.owner_username) <= 2
-    desc: No new replies sent
-    penalty: 0.2
 secondary_primitives: []

@@ -227,27 +227,4 @@ canonical_diff:
     - name: Agent did not send messages
       ref: invariant[10]
       severity: medium
-eval:
-  source: server_state
-  checks:
-  - expr: "(('{target.can_add_course}' == 'true'\n and all(a.is_read == True for a\
-      \ in state.announcements))\nor ('{target.can_add_course}' == 'false'\n    and\
-      \ state.get_enrollment_for_course('{target.lowest_performing_course_id}') is\
-      \ not None\n    and state.get_enrollment_for_course('{target.lowest_performing_course_id}').status\
-      \ == 'dropped'))"
-    desc: Mark all announcements read if GPA stays above 3.0, or drop lowest course
-      if GPA would drop below 3.0
-  negative_checks:
-  - expr: '''{target.can_add_course}'' != ''true'' or all(e.status != ''dropped''
-      for e in state.enrollments)'
-    desc: Did not drop a course when GPA would stay above 3.0 (wrong branch)
-    penalty: 0.5
-  - expr: '''{target.can_add_course}'' != ''false'' or all(a.id not in [x.strip() for x in ''{target.unread_announcement_ids}''.split('','') if x.strip()] or not a.is_read for a in state.announcements)'
-    desc: Did not mark unread announcements when GPA would drop below 3.0 (wrong
-      branch)
-    penalty: 0.3
-  - expr: '''{target.can_add_course}'' != ''false'' or sum(1 for e in state.enrollments
-      if e.status == ''dropped'') <= 1'
-    desc: Only one course was dropped (not multiple)
-    penalty: 0.3
 secondary_primitives: []

@@ -153,29 +153,4 @@ canonical_diff:
   - name: Agent updated insurance plan to the new values
     ref: update[2]
     severity: critical
-eval:
-  source: server_state
-  checks:
-  - expr: state.patient.insurance_plan.plan_name == 'Aetna PPO Silver' and state.patient.insurance_plan.member_id
-      == 'AET-5529103' and state.patient.insurance_plan.group_number == 'GRP-88914'
-    desc: Insurance plan details were updated to the exact new values
-  - expr: "any(\n  p.id == '{target.mail_order_pharmacy_id}'\n  and p.is_default\n\
-      \  for p in state.pharmacies\n)"
-    desc: The mail-order pharmacy was set as the default pharmacy
-  - expr: "all(rx.status == 'active'\n    for rx in state.prescriptions\n    if rx.id\
-      \ in {target.active_rx_ids})"
-    desc: All active prescriptions remain active
-  negative_checks:
-  - expr: "not any(rx.status == 'discontinued'\n        for rx in state.prescriptions\n\
-      \        if rx.id in {target.active_rx_ids})"
-    desc: No medications were discontinued during plan change
-    penalty: 0.3
-  - expr: "all(\n  state.get_appointment(aid) is not None\n  and state.get_appointment(aid).status\
-      \ != 'cancelled'\n  for aid in {target.upcoming_ids}\n)"
-    desc: Existing appointments were not cancelled
-    penalty: 0.2
-  - expr: "len([\n  m for m in state.messages\n  if m.from_type == 'patient'\n  and\
-      \ m.id not in state._initial_snapshot.get('messages', {})\n]) == 0"
-    desc: Agent did not send any patient messages
-    penalty: 0.15
 secondary_primitives: []

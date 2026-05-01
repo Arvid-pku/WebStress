@@ -133,30 +133,4 @@ canonical_diff:
   - name: Agent did not send messages
     ref: invariant[9]
     severity: medium
-eval:
-  source: server_state
-  checks:
-  - expr: "len([a for a in state.assignments\n     if a.file_name == 'sprint_submission.pdf'\n\
-      \     and a.submission_status in ('submitted', 'late')]) >= 3"
-    desc: At least 3 assignments submitted with sprint filename
-  - expr: "any(a.file_name == 'sprint_submission.pdf'\n    and a.submission_status\
-      \ in ('submitted', 'late')\n    and a.id in [mid.strip() for mid in '{target.missing_assignment_ids}'.split(',')]\n\
-      \    for a in state.assignments)"
-    desc: At least one sprint submission was for an identified missing assignment
-  - expr: "all(e.status == 'enrolled'\n    for e in state.enrollments)"
-    desc: All enrollments remain active
-  - expr: "len(set(a.course_id for a in state.assignments\n        if a.file_name\
-      \ == 'sprint_submission.pdf'\n        and a.submission_status in ('submitted',\
-      \ 'late'))) >= 2"
-    desc: Sprint submissions span at least 2 different courses
-  - expr: sum(1 for e in state.enrollments if e.status == 'enrolled') >= 4
-    desc: All 4 course enrollments remain active (seed integrity)
-  negative_checks:
-  - expr: all(e.status != 'dropped' for e in state.enrollments)
-    desc: No courses were dropped
-    penalty: 0.3
-  - expr: "len([a for a in state.assignments\n     if a.file_name == 'sprint_submission.pdf'])\
-      \ <= 5"
-    desc: Agent did not submit excessively beyond top 3
-    penalty: 0.15
 secondary_primitives: []

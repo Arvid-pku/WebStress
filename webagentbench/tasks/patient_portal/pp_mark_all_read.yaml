@@ -98,14 +98,4 @@ canonical_diff:
     - name: "Agent did not touch referrals"
       ref: invariant[6]
       severity: high
-eval:
-  source: server_state
-  checks:
-  - expr: len(state.unread_messages()) == 0
-    desc: All messages are marked as read
-  negative_checks:
-  - expr: "not any(m.from_type == 'patient'\n        and m.id not in state._initial_snapshot.get('messages',\
-      \ {})\n        for m in state.messages)"
-    desc: No new messages were sent when none required
-    penalty: 0.15
 secondary_primitives: []

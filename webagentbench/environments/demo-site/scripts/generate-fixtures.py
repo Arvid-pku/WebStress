@@ -56,7 +56,6 @@ def generate_fixture(task, session_manager: SessionManager) -> dict:
         "seed": seed,
         "start_path": task.start_path or "/inbox",
         "instruction": instruction,
-        "eval_check_descriptions": [check.desc for check in task.eval.checks],
         "resolved_targets": resolved_targets,
         "state": state_dict,
     }

@@ -226,30 +226,4 @@ canonical_diff:
         - name: Agent did not send messages
           ref: invariant[10]
           severity: medium
-eval:
-  source: server_state
-  checks:
-  - expr: "(('{target.has_discrepancy}' == 'true'\n and state.get_assignment('{target.most_impactful_graded_id}')\
-      \ is not None\n and state.get_assignment('{target.most_impactful_graded_id}').submission_status\
-      \ in ('submitted', 'late')\n and state.get_assignment('{target.most_impactful_graded_id}').file_name\
-      \ == 'grade_verification.pdf')\nor ('{target.has_discrepancy}' == 'false'\n\
-      \    and state.get_announcement('{target.latest_announcement_id}') is not None\n\
-      \    and state.get_announcement('{target.latest_announcement_id}').is_read ==\
-      \ True))"
-    desc: Resubmit most impactful assignment with grade_verification.pdf if discrepancy
-      exists, or mark latest announcement read if no discrepancy
-  negative_checks:
-  - expr: '''{target.has_discrepancy}'' != ''true'' or state.get_announcement(''{target.latest_announcement_id}'')
-      is None or state.get_announcement(''{target.latest_announcement_id}'').is_read
-      != True'
-    desc: Did not mark announcement read when discrepancy exists (wrong branch)
-    penalty: 0.3
-  - expr: '''{target.has_discrepancy}'' != ''false'' or state.get_assignment(''{target.most_impactful_graded_id}'')
-      is None or state.get_assignment(''{target.most_impactful_graded_id}'').file_name
-      != ''grade_verification.pdf'''
-    desc: Did not resubmit when no discrepancy exists (wrong branch)
-    penalty: 0.3
-  - expr: all(e.status != 'dropped' for e in state.enrollments)
-    desc: No courses were dropped during investigation
-    penalty: 0.3
 secondary_primitives: []

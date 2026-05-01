@@ -40,19 +40,4 @@ canonical_diff:
       initial.settings.show_active_communities and state.settings.country == initial.settings.country and state.settings.language == initial.settings.language and state.settings.auto_play_media == initial.settings.auto_play_media and state.settings.reduce_animations == initial.settings.reduce_animations
     desc: Unmentioned settings preserved
     severity: high
-eval:
-  source: server_state
-  checks:
-  - expr: state.settings.theme == 'dark'
-    desc: Theme changed to dark
-  negative_checks:
-  - expr: state.settings.default_feed_sort == 'hot'
-    desc: Feed sort unchanged
-    penalty: 0.15
-  - expr: state.settings.compact_view == False
-    desc: Compact view unchanged
-    penalty: 0.15
-  - expr: state.settings.show_online_status == True
-    desc: Privacy settings unchanged
-    penalty: 0.15
 secondary_primitives: []

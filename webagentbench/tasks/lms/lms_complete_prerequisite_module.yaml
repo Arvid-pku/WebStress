@@ -132,20 +132,4 @@ canonical_diff:
   - name: Agent did not send messages
     ref: invariant[10]
     severity: medium
-eval:
-  source: server_state
-  checks:
-  - expr: state.get_module('{target.next_available_module_id}') is not None and state.get_module('{target.next_available_module_id}').status
-      == 'completed'
-    desc: Target module is marked completed
-  - expr: "all(item.completed\n    for item in state.get_module('{target.next_available_module_id}').content_items)"
-    desc: All content items in the module are completed
-  - expr: state.get_module('{target.first_locked_module_id}') is not None and state.is_module_unlocked('{target.first_locked_module_id}')
-    desc: The next module in the chain is now unlocked
-  negative_checks:
-  - expr: "not any(m.status == 'completed'\n        and m.id not in ['{target.next_available_module_id}']\n\
-      \        and m.position > 0\n        for m in state.modules\n        if m.course_id\
-      \ == '{target.target_course_id}'\n        and m.id != '{target.next_available_module_id}')"
-    desc: No other locked modules were force-completed
-    penalty: 0.25
 secondary_primitives: []

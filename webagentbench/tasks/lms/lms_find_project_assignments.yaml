@@ -153,26 +153,4 @@ canonical_diff:
   - name: Agent did not send messages
     ref: invariant[10]
     severity: medium
-eval:
-  source: server_state
-  checks:
-  - expr: "all(\n    state.get_assignment(aid) is not None\n    and state.get_assignment(aid).submission_status\
-      \ in ('submitted', 'late')\n    and state.get_assignment(aid).file_name == 'project_submission.pdf'\n\
-      \    for aid in '{target.unsubmitted_project_ids}'.split(',')\n    if aid.strip()\n\
-      )"
-    desc: All unsubmitted project assignments were submitted with correct file
-  - expr: "len([a for a in state.assignments\n     if a.file_name == 'project_submission.pdf'\n\
-      \     and a.submission_status in ('submitted', 'late')]) >= 1"
-    desc: At least one project submission was made
-  - expr: all(a.is_read for a in state.announcements)
-    desc: All announcements are marked as read
-  negative_checks:
-  - expr: "not any(a.submission_status in ('submitted', 'late')\n        and a.file_name\
-      \ == 'project_submission.pdf'\n        and a.weight_category != 'project'\n\
-      \        for a in state.assignments)"
-    desc: No non-project assignments were submitted with the project file name
-    penalty: 0.3
-  - expr: all(e.status != 'dropped' for e in state.enrollments)
-    desc: No courses were dropped during analysis
-    penalty: 0.2
 secondary_primitives: []

@@ -286,51 +286,6 @@ canonical_diff:
   - expr: sorted(state.blocked_users) == sorted(initial.blocked_users)
     desc: Blocked users preserved when blocking is not requested
     severity: high
-eval:
-  source: server_state
-  checks:
-  - expr: any(s.name == 'MachineLearning' and s.is_subscribed for s in state.subreddits)
-    desc: Joined ML
-  - expr: any(s.name == 'Piracy' and s.is_subscribed for s in state.subreddits)
-    desc: Joined Piracy
-  - expr: any(p.subreddit_name == "MachineLearning" and "open-source LLMs" in p.title and p.author_name == state.owner_username for p in state.posts)
-    desc: ML post created
-  - expr: state.get_post('{target.ask_id}').vote_direction == 1
-    desc: AskReddit post upvoted
-  - expr: any(c.post_id == '{target.ask_id}' and "Negotiation" in c.body and c.parent_id is None and c.author_name == state.owner_username for c in state.comments)
-    desc: Top comment on AskReddit
-  - expr: any(c.parent_id == '{target.reply_id}' and "financial literacy" in c.body and c.author_name == state.owner_username for c in state.comments)
-    desc: Reply to MidnightCoder
-  - expr: any(m.to_user == "NeuralNexus" and "LLM benchmark" in m.body for m in state.sent_messages)
-    desc: Msg to NeuralNexus
-  - expr: any(m.to_user == "DataWizard42" and "LLM benchmark" in m.body for m in state.sent_messages)
-    desc: Msg to DataWizard42
-  - expr: state.unread_notification_count() == 0
-    desc: Notifications cleared
-  - expr: state.settings.theme == 'dark'
-    desc: Theme dark
-  - expr: state.settings.default_comment_sort == 'new'
-    desc: Comment sort new
-  - expr: not state.settings.email_comment_reply
-    desc: Email comment reply off
-  - expr: not state.settings.email_mentions
-    desc: Email mentions off
-  negative_checks:
-  - expr: not any(p.vote_direction == -1 for p in state.posts)
-    desc: Nothing downvoted
-    penalty: 0.15
-  - expr: all(sid in state.subscriptions for sid in {target.initial_subscriptions})
-    desc: Existing subs preserved
-    penalty: 0.2
-  - expr: not any(state.get_post(did).vote_direction != 0 for did in {target.decoy_ids})
-    desc: Decoys not voted
-    penalty: 0.15
-  - expr: not any(e.action.startswith('reddit.user.block') or e.action.startswith('reddit.user.unblock') for e in state.audit_log)
-    desc: No off-task user blocks were changed
-    penalty: 0.1
-  - expr: not any(e.action in {'reddit.post.hide', 'reddit.post.unhide'} for e in state.audit_log)
-    desc: No off-task posts were hidden or unhidden
-    penalty: 0.1
 env_id: reddit
 start_path: /feed
 secondary_primitives: []

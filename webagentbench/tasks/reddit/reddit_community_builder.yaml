@@ -249,48 +249,6 @@ canonical_diff:
   - expr: sorted(state.subscriptions) == sorted([s.id for s in state.subreddits if s.is_subscribed])
     desc: Subscription primitive list matches subreddit subscription flags
     severity: high
-eval:
-  source: server_state
-  checks:
-  - expr: any(s.name == '{target.j1}' and s.is_subscribed for s in state.subreddits)
-    desc: Subscribed to r/{target.j1}
-  - expr: any(s.name == '{target.j2}' and s.is_subscribed for s in state.subreddits)
-    desc: Subscribed to r/{target.j2}
-  - expr: any(s.name == '{target.j3}' and s.is_subscribed for s in state.subreddits)
-    desc: Subscribed to r/{target.j3}
-  - expr: any(p.subreddit_name == '{target.j1}' and p.title == '{target.p1_title}' and p.author_name == state.owner_username for p in state.posts)
-    desc: Post created in r/{target.j1} with correct title
-  - expr: state.get_post('{target.prog_id}').vote_direction == 1
-    desc: Programming post upvoted
-  - expr: any(c.post_id == '{target.prog_id}' and '{target.cc}' in c.body and c.author_name == state.owner_username for c in state.comments)
-    desc: Commented on programming post
-  - expr: any(m.to_user == 'NeuralNexus' and m.subject == '{target.ms}' and m.body == '{target.mb}' for m in state.sent_messages)
-    desc: Message sent to u/NeuralNexus
-  - expr: any(m.to_user == 'ByteRunner' and m.subject == '{target.ms}' and m.body == '{target.mb}' for m in state.sent_messages)
-    desc: Message sent to u/ByteRunner
-  - expr: any(m.to_user == 'DataWizard42' and m.subject == '{target.ms}' and m.body == '{target.mb}' for m in state.sent_messages)
-    desc: Message sent to u/DataWizard42
-  - expr: state.unread_notification_count() == 0
-    desc: All notifications read
-  - expr: state.settings.theme == 'dark'
-    desc: Theme set to dark
-  - expr: state.settings.default_comment_sort == 'new'
-    desc: Comment sort set to new
-  - expr: state.settings.show_active_communities == False
-    desc: Show active communities disabled
-  negative_checks:
-  - expr: all(sid in state.subscriptions for sid in {target.initial_subscriptions})
-    desc: Existing subscriptions preserved
-    penalty: 0.2
-  - expr: (len(state.sent_messages) - state._initial_snapshot.get('sent_message_count', 0)) <= 3
-    desc: No extra messages were sent
-    penalty: 0.15
-  - expr: not any( e.action == 'reddit.post.create' and e.payload.get('subreddit') != '{target.j1}' for e in state.audit_log)
-    desc: No extra posts were created outside the intended community post
-    penalty: 0.15
-  - expr: not any( e.action == 'reddit.message.send' and e.payload.get('to_user') not in ['NeuralNexus', 'ByteRunner', 'DataWizard42'] for e in state.audit_log)
-    desc: Outreach messages were sent only to the three intended users
-    penalty: 0.15
 env_id: reddit
 start_path: /feed
 secondary_primitives: []

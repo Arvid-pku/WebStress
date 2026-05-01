@@ -46,31 +46,4 @@ canonical_diff:
   - expr: state.settings.default_feed_sort == initial.settings.default_feed_sort and state.settings.default_comment_sort == initial.settings.default_comment_sort and state.settings.show_nsfw == initial.settings.show_nsfw and state.settings.blur_nsfw == initial.settings.blur_nsfw and state.settings.open_links_in_new_tab == initial.settings.open_links_in_new_tab and state.settings.theme == initial.settings.theme and state.settings.compact_view == initial.settings.compact_view and state.settings.country == initial.settings.country and state.settings.language == initial.settings.language and state.settings.auto_play_media == initial.settings.auto_play_media and state.settings.reduce_animations == initial.settings.reduce_animations
     desc: Unmentioned settings preserved
     severity: high
-eval:
-  source: server_state
-  checks:
-  - expr: not state.settings.show_online_status
-    desc: Show online status disabled
-  - expr: not state.settings.allow_followers
-    desc: Allow followers disabled
-  - expr: not state.settings.show_active_communities
-    desc: Show active communities disabled
-  - expr: not state.settings.email_comment_reply
-    desc: Email comment reply disabled
-  - expr: not state.settings.email_post_reply
-    desc: Email post reply disabled
-  - expr: not state.settings.email_mentions
-    desc: Email mentions disabled
-  - expr: not state.settings.email_messages
-    desc: Email messages disabled
-  negative_checks:
-  - expr: state.settings.theme == 'light'
-    desc: Theme not changed
-    penalty: 0.15
-  - expr: state.settings.default_feed_sort == 'hot'
-    desc: Feed sort not changed
-    penalty: 0.15
-  - expr: state.settings.show_nsfw == False
-    desc: NSFW setting not changed
-    penalty: 0.15
 secondary_primitives: []

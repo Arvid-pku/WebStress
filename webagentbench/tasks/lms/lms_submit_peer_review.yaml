@@ -124,25 +124,4 @@ canonical_diff:
     - name: Agent did not send messages
       ref: invariant[10]
       severity: medium
-eval:
-  source: server_state
-  checks:
-  - expr: state.get_peer_review('{target.target_review_id}') is not None and state.get_peer_review('{target.target_review_id}').status
-      == 'submitted'
-    desc: Target peer review was submitted
-  - expr: state.get_peer_review('{target.target_review_id}') is not None and len(state.get_peer_review('{target.target_review_id}').rubric_scores)
-      >= 1
-    desc: Rubric scores were filled in
-  - expr: state.get_peer_review('{target.target_review_id}') is not None and len(state.get_peer_review('{target.target_review_id}').comments.strip())
-      > 10
-    desc: Review includes a meaningful comment
-  negative_checks:
-  - expr: "not any(pr.status == 'submitted'\n        and pr.reviewer_student_id ==\
-      \ state.student.id\n        and len(pr.rubric_scores) < 1\n        for pr in\
-      \ state.peer_reviews)"
-    desc: No reviews submitted without rubric scores
-    penalty: 0.15
-  - expr: all(e.status != 'dropped' for e in state.enrollments)
-    desc: No courses were dropped
-    penalty: 0.2
 secondary_primitives: []

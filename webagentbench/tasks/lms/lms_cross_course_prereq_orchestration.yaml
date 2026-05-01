@@ -256,31 +256,4 @@ canonical_diff:
   - name: Agent did not modify calendar events
     ref: invariant[9]
     severity: low
-eval:
-  source: server_state
-  checks:
-  - expr: sum(1 for m in state.modules if m.status == 'completed') >= 7
-    desc: At least 7 modules completed (3 initial + 4 new)
-  - expr: "all(any(m.id == mid and m.status == 'completed' for m in state.modules)\n    for mid in ['{target.next_available_module_id_1}', '{target.first_locked_module_id_1}', '{target.next_available_module_id_2}', '{target.next_available_module_id_3}'])"
-    desc: All required modules were completed
-  - expr: "all(any(m.id == mid and m.status == 'completed'\n    and all(ci.completed for ci in m.content_items)\n    for m in state.modules)\n    for mid in ['{target.next_available_module_id_1}', '{target.first_locked_module_id_1}', '{target.next_available_module_id_2}', '{target.next_available_module_id_3}'])"
-    desc: All content items in the completed modules are marked done
-  - expr: "sum(1 for m in state.modules\n    if m.status == 'completed'\n    and all(ci.completed for ci in m.content_items)) >= 7"
-    desc: At least 7 modules have all content items completed
-  - expr: "all(e.status == 'enrolled'\n    for e in state.enrollments)"
-    desc: All enrollments remain active
-  - expr: len(state.sent_messages) >= 1
-    desc: Agent sent a progress update
-  - expr: "any('{target.advisor_name}' in m.get('to', '')\n    for m in state.sent_messages)"
-    desc: Message addressed to advisor
-  negative_checks:
-  - expr: "not any(m.status == 'completed'\n        and not all(ci.completed for ci in m.content_items)\n        for m in state.modules)"
-    desc: No modules marked complete with incomplete content items
-    penalty: 0.2
-  - expr: all(e.status != 'dropped' for e in state.enrollments)
-    desc: No courses were dropped
-    penalty: 0.3
-  - expr: len(state.sent_messages) <= 1
-    desc: Agent did not send excessive messages
-    penalty: 0.1
 secondary_primitives: []

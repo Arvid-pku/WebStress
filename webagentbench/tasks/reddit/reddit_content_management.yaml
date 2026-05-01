@@ -176,40 +176,6 @@ canonical_diff:
   - expr: sorted(state.hidden_post_ids) == sorted([p.id for p in state.posts if p.is_hidden])
     desc: Hidden-post primitive list matches hidden post flags
     severity: high
-eval:
-  source: server_state
-  checks:
-  - expr: state.get_post('{target.hide_id}').is_hidden
-    desc: Post hidden
-  - expr: not any(p.subreddit_name == 'memes' and p.id in state.saved_post_ids for p in state.posts)
-    desc: Memes unsaved
-  - expr: '''{target.save_id}'' in state.saved_post_ids'
-    desc: Science post saved
-  - expr: "any(\n  p.subreddit_name == 'programming'\n  and p.title == '{target.create_title}'\n  and p.body == '{target.create_body}'\n  and p.author_name == state.owner_username\n  for p in state.posts\n)"
-    desc: Programming post created
-  - expr: state.settings.default_feed_sort == 'new'
-    desc: Feed sort new
-  - expr: state.settings.compact_view
-    desc: Compact view on
-  negative_checks:
-  - expr: sum(1 for e in state.audit_log if e.action == 'reddit.post.create') == 1
-    desc: Exactly one post was created for the programming write-up
-    penalty: 0.15
-  - expr: "not any(\n  e.action == 'reddit.post.hide'\n  and e.payload.get('post_id') != '{target.hide_id}'\n  for e in state.audit_log\n)"
-    desc: No unrelated post was hidden
-    penalty: 0.1
-  - expr: "not any(\n  e.action == 'reddit.post.save'\n  and e.payload.get('post_id') != '{target.save_id}'\n  for e in state.audit_log\n)"
-    desc: No unrelated post was saved
-    penalty: 0.1
-  - expr: sum(1 for e in state.audit_log if e.action == 'reddit.post.unsave') == len({target.saved_ids})
-    desc: Every meme save was explicitly removed
-    penalty: 0.1
-  - expr: "not any(\n  e.action == 'reddit.post.unsave'\n  and e.payload.get('post_id') not in {target.saved_ids}\n  for e in state.audit_log\n)"
-    desc: No non-meme saved post was unsaved
-    penalty: 0.1
-  - expr: "not any(\n  e.action in ['reddit.message.send', 'reddit.user.block']\n  for e in state.audit_log\n)"
-    desc: No direct messages or user blocks were performed in this content workflow
-    penalty: 0.1
 env_id: reddit
 start_path: /feed
 secondary_primitives: []

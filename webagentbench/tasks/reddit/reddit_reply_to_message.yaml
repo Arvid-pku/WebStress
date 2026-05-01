@@ -94,22 +94,3 @@ canonical_diff:
   - name: Agent did not modify any other inbox messages
     ref: invariant[0]
     severity: high
-eval:
-  source: server_state
-  checks:
-  - expr: "state.get_message('{target.message_id}').is_read"
-    desc: Target message was marked as read
-  - expr: >
-      any(m.to_user == '{target.from_user}' and
-      m.body == "Thanks for reaching out! I'd love to discuss this further."
-      for m in state.sent_messages)
-    desc: Reply sent with exact required body
-  - expr: >
-      any(m.to_user == '{target.from_user}' and
-      m.subject == 'Re: {target.message_subject}'
-      for m in state.sent_messages)
-    desc: Reply has correct subject line
-  negative_checks:
-  - expr: "(len(state.sent_messages) - state._initial_snapshot.get('sent_message_count', 0)) <= 3"
-    desc: No excessive replies sent
-    penalty: 0.2

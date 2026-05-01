@@ -241,29 +241,4 @@ canonical_diff:
     - name: Agent did not send messages
       ref: invariant[10]
       severity: medium
-eval:
-  source: server_state
-  checks:
-  - expr: "(float('{target.gpa}') >= 2.5 and sum(1 for m in state.modules if m.status\
-      \ == 'completed') >= 3 and state.get_assignment('{target.course_plan_assignment_id}')\
-      \ is not None and state.get_assignment('{target.course_plan_assignment_id}').submission_status\
-      \ in ('submitted', 'late') and state.get_assignment('{target.course_plan_assignment_id}').file_name\
-      \ == 'course_plan.pdf') or ( (float('{target.gpa}') < 2.5\n or sum(1 for m in\
-      \ state.modules if m.status == 'completed') < 3)\nand all(a.is_read for a in\
-      \ state.announcements))"
-    desc: Submitted course_plan.pdf IFF eligible, OR all announcements read IFF not
-      eligible
-  negative_checks:
-  - expr: all(e.status != 'dropped' for e in state.enrollments)
-    desc: No courses were dropped
-    penalty: 0.3
-  - expr: "(len([a for a in state.assignments\n     if a.file_name == 'course_plan.pdf'\n\
-      \     and a.submission_status in ('submitted', 'late')]) <= 1)"
-    desc: At most one course_plan.pdf was submitted
-    penalty: 0.15
-  - expr: "(len([a for a in state.assignments\n     if a.submission_status in ('submitted',\
-      \ 'late')\n     and a.file_name is not None\n     and a.file_name not in ('course_plan.pdf',\
-      \ 'submission.pdf')]) == 0)"
-    desc: No extraneous non-default files were submitted
-    penalty: 0.1
 secondary_primitives: []

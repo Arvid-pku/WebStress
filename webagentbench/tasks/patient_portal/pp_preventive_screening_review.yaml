@@ -102,37 +102,4 @@ canonical_diff:
     - name: "Agent did not schedule more appointments than overdue screenings"
       ref: create[0]
       severity: medium
-eval:
-  source: server_state
-  checks:
-  - expr: "len([\n  a for a in state.appointments\n  if a.status == 'scheduled'\n\
-      \  and a.id not in state._initial_snapshot.get('appointments', {})\n]) == len([\n\
-      \  screening for screening in state.patient.applicable_screenings\n  if screening.next_due\
-      \ is not None\n  and screening.next_due < state.created_at.date()\n])"
-    desc: Exactly one appointment was scheduled for each overdue screening
-  - expr: "sorted(\n  a.reason\n  for a in state.appointments\n  if a.status == 'scheduled'\n\
-      \  and a.id not in state._initial_snapshot.get('appointments', {})\n) == sorted(\n\
-      \  screening.screening_name\n  for screening in state.patient.applicable_screenings\n\
-      \  if screening.next_due is not None\n  and screening.next_due < state.created_at.date()\n\
-      )"
-    desc: Every new appointment uses the exact overdue screening name as its reason
-  negative_checks:
-  - expr: "len([\n  m for m in state.messages\n  if m.from_type == 'patient'\n  and\
-      \ m.id not in state._initial_snapshot.get('messages', {})\n]) == 0"
-    desc: Agent did not send any patient messages
-    penalty: 0.2
-  - expr: "not any(\n  m.from_type == 'patient'\n  and any(\n    screening.screening_name.lower()\
-      \ in m.body.lower()\n    for screening in state.patient.applicable_screenings\n\
-      \    if screening.next_due is not None\n    and screening.next_due < state.created_at.date()\n\
-      \  )\n  and m.id not in state._initial_snapshot.get('messages', {})\n  for m\
-      \ in state.messages\n)"
-    desc: Agent did not message about overdue screenings instead of scheduling them
-    penalty: 0.1
-  - expr: "not any(\n  a.status == 'scheduled'\n  and a.id not in state._initial_snapshot.get('appointments',\
-      \ {})\n  and a.reason not in [\n    screening.screening_name\n    for screening\
-      \ in state.patient.applicable_screenings\n    if screening.next_due is not None\n\
-      \    and screening.next_due < state.created_at.date()\n  ]\n  for a in state.appointments\n\
-      )"
-    desc: Agent did not schedule appointments for screenings that were not overdue
-    penalty: 0.15
 secondary_primitives: []

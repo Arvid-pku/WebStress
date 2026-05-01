@@ -124,24 +124,4 @@ canonical_diff:
     - name: "Agent did not create or modify referrals"
       ref: invariant[6]
       severity: high
-eval:
-  source: server_state
-  checks:
-  - expr: "any(a.status == 'scheduled'\n    and a.id not in {target.upcoming_ids}\n\
-      \    and state.get_provider(a.provider_id) is not None\n    and state.get_provider(a.provider_id).specialty\
-      \ == 'dermatology'\n    for a in state.appointments)"
-    desc: A new appointment with a dermatologist was scheduled
-  - expr: "any(a.status == 'scheduled'\n    and a.id not in {target.upcoming_ids}\n\
-      \    and state.get_provider(a.provider_id) is not None\n    and state.get_provider(a.provider_id).accepting_new\n\
-      \    for a in state.appointments)"
-    desc: The dermatologist is accepting new patients
-  - expr: "any(a.type == 'in-person'\n    and a.status == 'scheduled'\n    and a.id\
-      \ not in {target.upcoming_ids}\n    for a in state.appointments)"
-    desc: The appointment is in-person as requested
-  negative_checks:
-  - expr: "not any(a.status == 'scheduled'\n        and a.id not in {target.upcoming_ids}\n\
-      \        and state.get_provider(a.provider_id) is not None\n        and state.get_provider(a.provider_id).specialty\
-      \ != 'dermatology'\n        for a in state.appointments)"
-    desc: Agent did not schedule with a non-dermatology provider
-    penalty: 0.25
 secondary_primitives: []

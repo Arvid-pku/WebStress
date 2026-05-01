@@ -125,25 +125,4 @@ canonical_diff:
     - name: "Agent did not submit more than one renewal request message"
       ref: create[0]
       severity: medium
-eval:
-  source: server_state
-  checks:
-  - expr: "any(r.id == '{target.zero_refill_rx_id}'\n    and r.status == 'pending_renewal'\n\
-      \    for r in state.prescriptions)"
-    desc: The zero-refill prescription status changed to pending_renewal
-  - expr: "any(m.from_type == 'patient'\n    and m.category == 'rx_renewal'\n    and\
-      \ m.id not in state._initial_snapshot.get('messages', {})\n    for m in state.messages)"
-    desc: A renewal request message was sent with rx_renewal category
-  - expr: "len([r for r in state.prescriptions\n     if r.id == '{target.zero_refill_rx_id}'\n\
-      \     and r.status == 'pending_renewal']) == 1"
-    desc: Exactly one prescription was moved to pending_renewal
-  negative_checks:
-  - expr: "not any(r.id != '{target.zero_refill_rx_id}'\n        and r.status == 'pending_renewal'\n\
-      \        and r.id in {target.active_rx_ids}\n        for r in state.prescriptions)"
-    desc: Agent did not request renewal for prescriptions with remaining refills
-    penalty: 0.2
-  - expr: "len([m for m in state.messages\n     if m.from_type == 'patient'\n    \
-      \ and m.id not in state._initial_snapshot.get('messages', {})]) <= 1"
-    desc: Agent did not send excessive messages beyond the renewal request
-    penalty: 0.15
 secondary_primitives: []

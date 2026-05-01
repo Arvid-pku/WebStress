@@ -149,33 +149,4 @@ canonical_diff:
   - name: Agent did not modify calendar events
     ref: invariant[9]
     severity: low
-eval:
-  source: server_state
-  checks:
-  - expr: "any(a.file_name == 'scholarship_save.pdf'\n    and a.submission_status\
-      \ in ('submitted', 'late')\n    for a in state.assignments)"
-    desc: At least one scholarship-saving submission made
-  - expr: "any(a.file_name == 'scholarship_save.pdf'\n    and a.submission_status\
-      \ in ('submitted', 'late')\n    and a.id in [mid.strip() for mid in '{target.missing_assignment_ids}'.split(',')]\n\
-      \    for a in state.assignments)"
-    desc: Scholarship file submitted for an identified missing assignment
-  - expr: "all(e.status == 'enrolled'\n    for e in state.enrollments)"
-    desc: All enrollments remain active (dropping would lose credit hours)
-  - expr: len(state.sent_messages) >= 1
-    desc: Agent sent a maintenance plan
-  - expr: "any('{target.advisor_name}' in m.get('to', '')\n    for m in state.sent_messages)"
-    desc: Message addressed to advisor
-  - expr: sum(1 for e in state.enrollments if e.status == 'enrolled') >= 5
-    desc: All 5 enrolled courses are still active (scholarship requires full load)
-  negative_checks:
-  - expr: all(e.status != 'dropped' for e in state.enrollments)
-    desc: No courses were dropped (would lose credit hours)
-    penalty: 0.3
-  - expr: len(state.sent_messages) <= 4
-    desc: Agent did not send excessive messages
-    penalty: 0.15
-  - expr: "len([a for a in state.assignments\n     if a.file_name == 'scholarship_save.pdf'])\
-      \ <= 3"
-    desc: Agent did not submit excessively many files
-    penalty: 0.1
 secondary_primitives: []

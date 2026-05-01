@@ -152,40 +152,6 @@ canonical_diff:
   - expr: sorted(state.saved_comment_ids) == sorted([c.id for c in state.comments if c.is_saved])
     desc: Saved-comment primitive list matches saved comment flags
     severity: high
-eval:
-  source: server_state
-  checks:
-  - expr: state.get_post('{target.post_id}').vote_direction == 1
-    desc: Post upvoted
-  - expr: '''{target.post_id}'' in state.saved_post_ids'
-    desc: Post saved
-  - expr: any(c.post_id == '{target.post_id}' and c.body == '{target.comment}' for c in state.comments)
-    desc: Comment posted
-  - expr: "any(\n  m.to_user == '{target.user}'\n  and m.subject == '{target.msg_sub}'\n  and m.body == '{target.msg_body}'\n  for m in state.sent_messages\n)"
-    desc: Message sent
-  - expr: any(s.name == 'MachineLearning' and s.is_subscribed for s in state.subreddits)
-    desc: Subscribed ML
-  - expr: state.settings.theme == 'dark'
-    desc: Theme dark
-  negative_checks:
-  - expr: sum(1 for e in state.audit_log if e.action == 'reddit.message.send') == 1
-    desc: Exactly one outreach message was sent
-    penalty: 0.15
-  - expr: "not any(\n  e.action == 'reddit.message.send'\n  and e.payload.get('to_user') != '{target.user}'\n  for e in state.audit_log\n)"
-    desc: No message was sent to the wrong user
-    penalty: 0.15
-  - expr: "not any(\n  e.action == 'reddit.comment.create'\n  and e.payload.get('post_id') != '{target.post_id}'\n  for e in state.audit_log\n)"
-    desc: No comment was posted on the wrong submission
-    penalty: 0.1
-  - expr: "not any(\n  e.action == 'reddit.post.vote'\n  and e.payload.get('post_id') != '{target.post_id}'\n  for e in state.audit_log\n)"
-    desc: No unrelated post was voted on
-    penalty: 0.1
-  - expr: "not any(\n  e.action == 'reddit.post.save'\n  and e.payload.get('post_id') != '{target.post_id}'\n  for e in state.audit_log\n)"
-    desc: No unrelated post was saved
-    penalty: 0.1
-  - expr: "not any(\n  e.action in ['reddit.post.create', 'reddit.user.block']\n  for e in state.audit_log\n)"
-    desc: No new posts or user blocks were created during the outreach workflow
-    penalty: 0.1
 env_id: reddit
 start_path: /feed
 secondary_primitives: []

@@ -91,12 +91,3 @@ canonical_diff:
   - name: Agent did not modify user profiles
     ref: invariant[6]
     severity: low
-eval:
-  source: server_state
-  checks:
-  - expr: "state.get_post('{target.post_id}').vote_direction == 1"
-    desc: Target post was upvoted
-  negative_checks:
-  - expr: "all(state.get_post(did).vote_direction == 0 for did in {target.decoy_post_ids})"
-    desc: Decoy posts were not voted on
-    penalty: 0.3

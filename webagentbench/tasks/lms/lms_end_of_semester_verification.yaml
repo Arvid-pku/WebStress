@@ -165,31 +165,4 @@ canonical_diff:
   - name: Agent did not send messages
     ref: invariant[10]
     severity: medium
-eval:
-  source: server_state
-  checks:
-  - expr: "all(\n    state.get_assignment(aid) is not None\n    and state.get_assignment(aid).submission_status\
-      \ in ('submitted', 'late')\n    and state.get_assignment(aid).file_name == 'grade_audit.pdf'\n\
-      \    for aid in '{target.discrepant_resubmit_assignment_ids}'.split(',')\n \
-      \   if aid.strip()\n)"
-    desc: Most recently graded assignments in discrepant courses were resubmitted
-  - expr: all(a.is_read for a in state.announcements)
-    desc: All announcements are marked as read
-  - expr: len(state.unread_announcements()) == 0
-    desc: No unread announcements remain
-  negative_checks:
-  - expr: "not any(a.submission_status in ('submitted', 'late')\n        and a.file_name\
-      \ == 'grade_audit.pdf'\n        and a.course_id in\n            [cid.strip()\
-      \ for cid in '{target.non_discrepant_course_ids}'.split(',')]\n        for a\
-      \ in state.assignments)"
-    desc: No grade_audit.pdf was submitted for non-discrepant courses
-    penalty: 0.25
-  - expr: all(e.status != 'dropped' for e in state.enrollments)
-    desc: No courses were dropped during verification
-    penalty: 0.3
-  - expr: "len([a for a in state.assignments\n     if a.file_name == 'grade_audit.pdf'\n\
-      \     and a.submission_status in ('submitted', 'late')]) <= len([aid.strip()\
-      \ for aid in '{target.discrepant_resubmit_assignment_ids}'.split(',') if aid.strip()])"
-    desc: No more grade_audit.pdf submissions than discrepant courses
-    penalty: 0.15
 secondary_primitives: []

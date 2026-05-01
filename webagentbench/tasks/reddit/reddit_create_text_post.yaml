@@ -67,15 +67,4 @@ canonical_diff:
   - name: Agent did not modify user profiles
     ref: invariant[5]
     severity: low
-eval:
-  source: server_state
-  checks:
-  - expr: any(p.subreddit_name == "Python" and p.title == "What are the best Python libraries for data validation in 2026?" and p.author_name == state.owner_username for p in state.posts)
-    desc: Post created with exact title in r/Python
-  - expr: any(p.subreddit_name == "Python" and p.body == "I have been using Pydantic but wondering if there are better alternatives. What do you all recommend?" and p.author_name == state.owner_username for p in state.posts)
-    desc: Post has exact body text
-  negative_checks:
-  - expr: not any(p.author_name == state.owner_username and p.subreddit_name != 'Python' and p.subreddit_name not in ('technology', 'personalfinance') for p in state.posts)
-    desc: No posts in wrong subreddits
-    penalty: 0.2
 secondary_primitives: []

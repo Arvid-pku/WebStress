@@ -141,29 +141,4 @@ canonical_diff:
     - name: "Agent did not appeal more or fewer than the top 3 eligible claims"
       ref: update[0]
       severity: high
-eval:
-  source: server_state
-  checks:
-  - expr: len([c for c in state.claims if c.status == 'appealed']) == 3
-    desc: Exactly three claims were appealed
-  - expr: "all(\n  state.get_claim(cid) is not None\n  and state.get_claim(cid).status\
-      \ == 'appealed'\n  for cid in sorted(\n    [\n      cid for cid in {target.denied_claim_ids}\n\
-      \      if state.get_claim(cid).eob_available\n      and state.get_claim(cid).appeal_deadline\
-      \ >= state.created_at\n    ],\n    key=lambda cid: (\n      -float(state._initial_snapshot['claims'][cid]['patient_responsibility']),\n\
-      \      cid,\n    ),\n  )[:3]\n)"
-    desc: The top 3 eligible denied claims by patient responsibility were appealed
-  - expr: "all(\n  state.get_claim(cid) is not None\n  and state.get_claim(cid).status\
-      \ == 'denied'\n  for cid in [\n    cid for cid in {target.denied_claim_ids}\n\
-      \    if cid not in sorted(\n      [\n        inner_cid for inner_cid in {target.denied_claim_ids}\n\
-      \        if state.get_claim(inner_cid).eob_available\n        and state.get_claim(inner_cid).appeal_deadline\
-      \ >= state.created_at\n      ],\n      key=lambda inner_cid: (\n        -float(state._initial_snapshot['claims'][inner_cid]['patient_responsibility']),\n\
-      \        inner_cid,\n      ),\n    )[:3]\n  ]\n)"
-    desc: No denied claim outside the exact top 3 eligible set was appealed
-  - expr: "all(c.status == 'approved'\n    for c in state.claims\n    if c.id in {target.approved_claim_ids})"
-    desc: Approved claims were not modified
-  negative_checks:
-  - expr: "len([\n  m for m in state.messages\n  if m.from_type == 'patient'\n  and\
-      \ m.id not in state._initial_snapshot.get('messages', {})\n]) == 0"
-    desc: Agent did not send any patient messages
-    penalty: 0.2
 secondary_primitives: []

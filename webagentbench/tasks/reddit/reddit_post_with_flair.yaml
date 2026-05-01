@@ -54,14 +54,3 @@ canonical_diff:
   - name: Agent created the required post with Discussion flair
     ref: create[0]
     severity: high
-eval:
-  source: server_state
-  checks:
-  - expr: any(p.subreddit_name == "technology" and p.title == "Is Moore's Law finally dead? What replaces it?" and p.author_name == state.owner_username for p in state.posts)
-    desc: Post created in r/technology with exact title
-  - expr: any(p.subreddit_name == "technology" and p.flair_text == "Discussion" and p.author_name == state.owner_username for p in state.posts)
-    desc: Post has Discussion flair
-  negative_checks:
-  - expr: not any(p.author_name == state.owner_username and p.subreddit_name not in ('technology', 'Python', 'personalfinance') for p in state.posts)
-    desc: No posts in wrong subreddits
-    penalty: 0.2

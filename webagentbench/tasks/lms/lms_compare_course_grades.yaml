@@ -123,25 +123,4 @@ canonical_diff:
     - name: Agent did not send messages
       ref: invariant[10]
       severity: medium
-eval:
-  source: server_state
-  checks:
-  - expr: state.get_enrollment_for_course('{target.lower_grade_course_id}') is not
-      None and state.get_enrollment_for_course('{target.lower_grade_course_id}').status
-      == 'dropped'
-    desc: The course with the lower weighted grade was dropped
-  negative_checks:
-  - expr: sum(1 for e in state.enrollments if e.status == 'dropped') <= 1
-    desc: Only one course was dropped (not both)
-    penalty: 0.5
-  - expr: "(state.get_course_by_code('CS101') is None\n or state.get_course_by_code('MATH201')\
-      \ is None\n or (state.weighted_score_for_course(state.get_course_by_code('CS101').id)\n\
-      \     < state.weighted_score_for_course(state.get_course_by_code('MATH201').id)\n\
-      \     and state.get_enrollment_for_course(state.get_course_by_code('MATH201').id).status\
-      \ != 'dropped')\n or (state.weighted_score_for_course(state.get_course_by_code('MATH201').id)\n\
-      \     <= state.weighted_score_for_course(state.get_course_by_code('CS101').id)\n\
-      \     and state.get_enrollment_for_course(state.get_course_by_code('CS101').id).status\
-      \ != 'dropped'))"
-    desc: The higher-grade course was not dropped (wrong course)
-    penalty: 0.5
 secondary_primitives: []

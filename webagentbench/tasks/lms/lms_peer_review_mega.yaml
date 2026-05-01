@@ -180,30 +180,4 @@ canonical_diff:
     ref: invariant[10]
     severity: medium
 
-eval:
-  source: server_state
-  checks:
-  - expr: "sum(1 for pr in state.peer_reviews\n    if pr.reviewer_student_id == state.student.id\n\
-      \    and pr.status == 'submitted') >= 4"
-    desc: At least 4 peer reviews completed
-  - expr: "any(a.file_name == 'revised_after_review.pdf'\n    and a.submission_status\
-      \ in ('submitted', 'late')\n    and a.id in [rid.strip() for rid in '{target.resubmit_assignment_ids}'.split(',')]\n\
-      \    for a in state.assignments)"
-    desc: At least one feedback-tagged assignment resubmitted with revised file
-  - expr: "sum(1 for pr in state.peer_reviews\n    if pr.reviewer_student_id == state.student.id\n\
-      \    and pr.status == 'submitted'\n    and len(pr.rubric_scores) >= 3) >= 4"
-    desc: At least 4 complete reviews with all criteria scored
-  negative_checks:
-  - expr: "not any(pr.status == 'submitted'\n        and pr.reviewer_student_id ==\
-      \ state.student.id\n        and len(pr.rubric_scores) < 3\n        for pr in\
-      \ state.peer_reviews)"
-    desc: No reviews were submitted with incomplete rubric scores
-    penalty: 0.25
-  - expr: all(e.status != 'dropped' for e in state.enrollments)
-    desc: No courses were dropped
-    penalty: 0.3
-  - expr: "not any(pr.status == 'submitted'\n        and pr.reviewer_student_id ==\
-      \ state.student.id\n        and len(pr.comments) < 20\n        for pr in state.peer_reviews)"
-    desc: No reviews were submitted with short/empty comments
-    penalty: 0.2
 secondary_primitives: []

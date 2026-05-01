@@ -132,40 +132,6 @@ canonical_diff:
   - expr: "target['block_user'] in state.blocked_users and all(u in initial.blocked_users or u == target['block_user'] for u in state.blocked_users)"
     desc: Required blocked-users side effect enforced
     severity: critical
-eval:
-  source: server_state
-  checks:
-  - expr: '''CryptoSkeptic'' in state.blocked_users'
-    desc: User blocked
-  - expr: state.get_post('{target.hide_id}').is_hidden
-    desc: Their post hidden
-  - expr: not any(m.id == '{target.delete_msg_id}' for m in state.messages)
-    desc: Message deleted
-  - expr: not state.settings.allow_followers
-    desc: Followers disabled
-  - expr: not state.settings.show_online_status
-    desc: Online status hidden
-  - expr: '''{target.save_id}'' in state.saved_post_ids'
-    desc: PF post saved
-  negative_checks:
-  - expr: sum(1 for e in state.audit_log if e.action == 'reddit.user.block') == 1
-    desc: Only one block action was used
-    penalty: 0.15
-  - expr: "not any(\n  e.action == 'reddit.user.block'\n  and e.payload.get('username') != '{target.block_user}'\n  for e in state.audit_log\n)"
-    desc: No non-target user was blocked
-    penalty: 0.15
-  - expr: "not any(\n  e.action == 'reddit.post.hide'\n  and e.payload.get('post_id') != '{target.hide_id}'\n  for e in state.audit_log\n)"
-    desc: No unrelated post was hidden
-    penalty: 0.1
-  - expr: "not any(\n  e.action == 'reddit.message.delete'\n  and e.payload.get('message_id') != '{target.delete_msg_id}'\n  for e in state.audit_log\n)"
-    desc: No unrelated message was deleted
-    penalty: 0.1
-  - expr: "not any(\n  e.action == 'reddit.post.save'\n  and e.payload.get('post_id') != '{target.save_id}'\n  for e in state.audit_log\n)"
-    desc: No unrelated post was saved
-    penalty: 0.1
-  - expr: "not any(\n  e.action in ['reddit.message.send', 'reddit.post.create']\n  for e in state.audit_log\n)"
-    desc: No direct messages or new posts were created during cleanup
-    penalty: 0.1
 env_id: reddit
 start_path: /feed
 secondary_primitives: []

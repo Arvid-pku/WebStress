@@ -144,9 +144,8 @@ def test_all_robinhood_tasks_seed(task_id: str):
     assert state.env_id == "robinhood"
     assert state.task_id == task_id
 
-    # Verify eval config exists
-    assert task.eval is not None, f"{task_id} has no eval config"
-    assert len(task.eval.checks) > 0, f"{task_id} has no eval checks"
+    # Verify canonical_diff exists (the runtime evaluation format)
+    assert task.canonical_diff is not None, f"{task_id} has no canonical_diff"
 
 
 def test_all_live_task_trajectories_valid():

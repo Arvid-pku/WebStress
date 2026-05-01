@@ -125,24 +125,4 @@ canonical_diff:
     - name: "Agent did not schedule more appointments than overdue vaccines"
       ref: create[0]
       severity: medium
-eval:
-  source: server_state
-  checks:
-  - expr: "len([a for a in state.appointments\n     if a.status == 'scheduled'\n \
-      \    and a.id not in {target.upcoming_ids}]) >= 1"
-    desc: At least one new appointment was scheduled for immunizations
-  - expr: "(len([a for a in state.appointments\n     if a.status == 'scheduled'\n\
-      \     and a.id not in {target.upcoming_ids}]) >= len({target.due_imm_ids})\n\
-      or len({target.due_imm_ids}) == 0)"
-    desc: Number of new appointments matches number of due vaccines
-  negative_checks:
-  - expr: "not any(a.status == 'cancelled'\n        and a.id in {target.upcoming_ids}\n\
-      \        for a in state.appointments)"
-    desc: Agent did not cancel existing non-immunization appointments
-    penalty: 0.2
-  - expr: "len([a for a in state.appointments\n     if a.status == 'scheduled'\n \
-      \    and a.id not in {target.upcoming_ids}]) <= len({target.due_imm_ids}) +\
-      \ 1"
-    desc: Agent did not schedule excessive appointments beyond due vaccines
-    penalty: 0.15
 secondary_primitives: []

@@ -126,22 +126,4 @@ canonical_diff:
   - name: Agent did not modify calendar events
     ref: invariant[9]
     severity: low
-eval:
-  source: server_state
-  checks:
-  - expr: len(state.sent_messages) >= 1
-    desc: Agent sent a decision message
-  - expr: "any('{target.advisor_name}' in m.get('to', '')\n    for m in state.sent_messages)"
-    desc: Message addressed to advisor
-  negative_checks:
-  - expr: sum(1 for e in state.enrollments if e.status == 'dropped') <= 1
-    desc: At most one course was dropped
-    penalty: 0.3
-  - expr: len(state.sent_messages) <= 4
-    desc: Agent did not send excessive messages
-    penalty: 0.15
-  - expr: "not any(a.submission_status in ('submitted', 'late')\n        and a.score\
-      \ is None\n        for a in state.assignments)"
-    desc: Agent did not submit assignments unnecessarily
-    penalty: 0.1
 secondary_primitives: []

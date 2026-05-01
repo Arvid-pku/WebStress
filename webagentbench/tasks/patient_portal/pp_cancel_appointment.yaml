@@ -104,17 +104,3 @@ canonical_diff:
   - name: Agent did not touch referrals
     ref: invariant[6]
     severity: high
-eval:
-  source: server_state
-  checks:
-  - expr: state.get_appointment('{target.target_apt_id}') is not None and state.get_appointment('{target.target_apt_id}').status
-      == 'cancelled'
-    desc: Target appointment is cancelled
-  - expr: "(sum(1 for a in state.appointments if a.status == 'cancelled') > sum(1 for aid, snap in state._initial_snapshot.get('appointments',\
-      \ {}).items()\n      if snap.get('status') == 'cancelled'))"
-    desc: More appointments are cancelled now than at session start
-  negative_checks:
-  - expr: "all(\n  a.status == state._initial_snapshot['appointments'][a.id]['status']\n  for a in state.appointments\n  if\
-      \ a.id != '{target.target_apt_id}'\n  and a.id in state._initial_snapshot.get('appointments', {})\n)"
-    desc: Non-target appointments were not modified
-    penalty: 0.25

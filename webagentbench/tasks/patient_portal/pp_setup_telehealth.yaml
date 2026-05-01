@@ -108,22 +108,4 @@ canonical_diff:
     - name: "Agent did not touch referrals"
       ref: invariant[6]
       severity: high
-eval:
-  source: server_state
-  checks:
-  - expr: "state.get_appointment('{target.next_appointment_id}') is not None and state.get_appointment('{target.next_appointment_id}').type == 'telehealth' and state.get_appointment('{target.next_appointment_id}').status == 'scheduled'"
-    desc: The target in-person appointment was rescheduled to telehealth (same appointment, type changed)
-  - expr: "state.get_appointment('{target.next_appointment_id}').provider_id == state._initial_snapshot['appointments']['{target.next_appointment_id}']['provider_id']"
-    desc: The rescheduled appointment kept the same provider
-  - expr: "state.get_appointment('{target.next_appointment_id}').datetime.isoformat() == min(slot['datetime'] for slot in state._initial_snapshot['providers'][state._initial_snapshot['appointments']['{target.next_appointment_id}']['provider_id']]['available_slots'])"
-    desc: The rescheduled appointment uses the provider's earliest originally-available slot
-  negative_checks:
-  - expr: "len([a for a in state.appointments\n      if a.id not in state._initial_snapshot.get('appointments',\
-      \ {})]) == 0"
-    desc: Agent did not create an additional new appointment (use Reschedule, not Cancel+Rebook)
-    penalty: 0.2
-  - expr: "not any(a.id in {target.upcoming_ids}\n        and a.id != '{target.next_appointment_id}'\n\
-      \        and a.status == 'cancelled'\n        for a in state.appointments)"
-    desc: Agent did not cancel a different upcoming appointment
-    penalty: 0.25
 secondary_primitives: []

@@ -85,19 +85,3 @@ canonical_diff:
   - expr: sorted(state.subscriptions) == sorted([s.id for s in state.subreddits if s.is_subscribed])
     desc: Subscription primitive list matches subreddit subscription flags
     severity: high
-eval:
-  source: server_state
-  checks:
-  - expr: any(s.name == 'MachineLearning' and s.is_subscribed for s in state.subreddits)
-    desc: Subscribed to r/MachineLearning
-  - expr: any(s.name == 'Piracy' and s.is_subscribed for s in state.subreddits)
-    desc: Subscribed to r/Piracy
-  - expr: any(s.name == 'memes' and not s.is_subscribed for s in state.subreddits)
-    desc: Unsubscribed from r/memes
-  negative_checks:
-  - expr: any(s.name == 'AskReddit' and s.is_subscribed for s in state.subreddits)
-    desc: r/AskReddit subscription unchanged
-    penalty: 0.2
-  - expr: any(s.name == 'technology' and s.is_subscribed for s in state.subreddits)
-    desc: r/technology subscription unchanged
-    penalty: 0.2

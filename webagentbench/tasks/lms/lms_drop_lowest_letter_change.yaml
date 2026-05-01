@@ -224,30 +224,4 @@ canonical_diff:
     - name: Agent did not send messages
       ref: invariant[10]
       severity: medium
-eval:
-  source: server_state
-  checks:
-  - expr: "(('{target.drop_changes_letter}' == 'true'\n and state.get_assignment('{target.lowest_hw_id}')\
-      \ is not None\n and state.get_assignment('{target.lowest_hw_id}').submission_status\
-      \ in ('submitted', 'late')\n and state.get_assignment('{target.lowest_hw_id}').file_name\
-      \ == 'letter_grade_report.pdf')\nor ('{target.drop_changes_letter}' == 'false'\n\
-      \    and state.get_announcement('{target.latest_announcement_id}') is not None\n\
-      \    and state.get_announcement('{target.latest_announcement_id}').is_read ==\
-      \ True))"
-    desc: Submit letter_grade_report.pdf for lowest homework if drop changes letter
-      grade, or mark latest announcement as read if it does not
-  negative_checks:
-  - expr: '''{target.drop_changes_letter}'' != ''false'' or state.get_announcement(''{target.latest_announcement_id}'')
-      is None or state.get_announcement(''{target.latest_announcement_id}'').is_read
-      == True'
-    desc: Did not mark announcement as read when drop does not change letter grade
-      (wrong branch)
-    penalty: 0.3
-  - expr: '''{target.drop_changes_letter}'' != ''true'' or state.get_assignment(''{target.lowest_hw_id}'')
-      is None or state.get_assignment(''{target.lowest_hw_id}'').file_name != ''letter_grade_report.pdf'''
-    desc: Did not submit when drop changes letter grade (wrong branch)
-    penalty: 0.3
-  - expr: all(e.status != 'dropped' for e in state.enrollments)
-    desc: No courses were dropped during analysis
-    penalty: 0.3
 secondary_primitives: []

@@ -64,14 +64,3 @@ canonical_diff:
   - expr: sorted(state.saved_post_ids) == sorted([p.id for p in state.posts if p.is_saved])
     desc: Saved-post primitive list matches saved post flags
     severity: high
-eval:
-  source: server_state
-  checks:
-  - expr: '''{target.post_id}'' in state.saved_post_ids'
-    desc: Target post was saved
-  - expr: state.get_post('{target.post_id}').is_saved
-    desc: Post is_saved flag is True
-  negative_checks:
-  - expr: sum(1 for pid in state.saved_post_ids if pid != '{target.post_id}') <= 4
-    desc: No extra posts saved beyond baseline
-    penalty: 0.2

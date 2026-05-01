@@ -157,26 +157,4 @@ canonical_diff:
     - name: "Agent did not touch referrals"
       ref: invariant[6]
       severity: high
-eval:
-  source: server_state
-  checks:
-  - expr: state.get_appointment('{target.target_apt_id}') is not None and state.get_appointment('{target.target_apt_id}').status
-      == 'cancelled'
-    desc: The original dermatology appointment was cancelled
-  - expr: "any(a.status == 'scheduled'\n    and a.id not in {target.upcoming_ids}\n\
-      \    for a in state.appointments)"
-    desc: A new appointment was scheduled as a replacement
-  - expr: "len([a for a in state.appointments\n     if a.status == 'scheduled'\n \
-      \    and a.id not in {target.upcoming_ids}]) >= 1"
-    desc: At least one new scheduled appointment exists
-  negative_checks:
-  - expr: "not any(a.status == 'cancelled'\n        and a.id != '{target.target_apt_id}'\n\
-      \        and a.id in {target.upcoming_ids}\n        for a in state.appointments)"
-    desc: Agent did not cancel a non-dermatology upcoming appointment
-    penalty: 0.25
-  - expr: "not any(\n  a.status == 'cancelled'\n  and a.id not in {target.upcoming_ids}\n\
-      \  and state._initial_snapshot.get('appointments', {}).get(a.id, {}).get('status')\
-      \ != 'cancelled'\n  for a in state.appointments\n)"
-    desc: Agent did not cancel any newly created appointments
-    penalty: 0.15
 secondary_primitives: []

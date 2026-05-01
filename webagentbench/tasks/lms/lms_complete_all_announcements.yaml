@@ -114,17 +114,4 @@ canonical_diff:
   - name: Agent did not send messages
     ref: invariant[10]
     severity: medium
-eval:
-  source: server_state
-  checks:
-  - expr: len(state.unread_announcements()) == 0
-    desc: All announcements are now marked as read
-  - expr: all(a.is_read for a in state.announcements)
-    desc: Every announcement entity has is_read == True
-  - expr: len(state.announcements) >= 8
-    desc: All announcements still exist (none deleted)
-  negative_checks:
-  - expr: all(e.status != 'dropped' for e in state.enrollments)
-    desc: No courses were dropped while marking announcements
-    penalty: 0.2
 secondary_primitives: []

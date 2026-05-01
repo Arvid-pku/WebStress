@@ -65,14 +65,3 @@ canonical_diff:
   - expr: sorted(state.hidden_post_ids) == sorted([p.id for p in state.posts if p.is_hidden])
     desc: Hidden-post primitive list matches hidden post flags
     severity: high
-eval:
-  source: server_state
-  checks:
-  - expr: state.get_post('{target.post_id}').is_hidden
-    desc: Target post is hidden
-  - expr: '''{target.post_id}'' in state.hidden_post_ids'
-    desc: Post ID in hidden list
-  negative_checks:
-  - expr: len(state.hidden_post_ids) <= 1
-    desc: At most one post was hidden
-    penalty: 0.2

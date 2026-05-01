@@ -105,20 +105,4 @@ canonical_diff:
     - name: "Agent did not touch referrals"
       ref: invariant[6]
       severity: high
-eval:
-  source: server_state
-  checks:
-  - expr: "any(a.provider_id == '{target.pcp_id}' and a.status == 'scheduled'\n  \
-      \  and a.type == 'in-person'\n    and a.id not in {target.upcoming_ids}\n  \
-      \  for a in state.appointments)"
-    desc: A new in-person appointment with the PCP exists
-  - expr: "any(a.provider_id == '{target.pcp_id}' and a.status == 'scheduled'\n  \
-      \  and a.id not in {target.upcoming_ids}\n    and a.datetime is not None\n \
-      \   for a in state.appointments)"
-    desc: The new PCP appointment has a scheduled time
-  negative_checks:
-  - expr: "not any(a.provider_id != '{target.pcp_id}' and a.status == 'scheduled'\n\
-      \        and a.id not in {target.upcoming_ids}\n        for a in state.appointments)"
-    desc: Agent did not schedule with a non-PCP provider
-    penalty: 0.25
 secondary_primitives: []

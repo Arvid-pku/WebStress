@@ -175,36 +175,4 @@ canonical_diff:
   - name: Agent did not modify calendar events
     ref: invariant[9]
     severity: low
-eval:
-  source: server_state
-  checks:
-  - expr: "any(a.file_name == 'recovery.pdf'\n    and a.submission_status in ('submitted',\
-      \ 'late')\n    for a in state.assignments)"
-    desc: At least one recovery submission was made
-  - expr: "any(a.file_name == 'recovery.pdf'\n    and a.submission_status in ('submitted',\
-      \ 'late')\n    and a.id in [mid.strip() for mid in '{target.missing_assignment_ids}'.split(',')]\n\
-      \    for a in state.assignments)"
-    desc: Recovery file submitted for an identified missing assignment
-  - expr: "len([e for e in state.enrollments\n     if e.status == 'enrolled']) >=\
-      \ 3"
-    desc: At least 3 courses remain enrolled (did not over-drop)
-  - expr: len(state.sent_messages) >= 1
-    desc: Agent sent a recovery plan message
-  - expr: "any('{target.advisor_name}' in m.get('to', '')\n    for m in state.sent_messages)"
-    desc: Message addressed to advisor
-  - expr: "len([a for a in state.assignments\n     if a.file_name == 'recovery.pdf'\n\
-      \     and a.submission_status in ('submitted', 'late')]) >= 2"
-    desc: At least 2 recovery submissions were made (multiple missing/late assignments
-      exist)
-  negative_checks:
-  - expr: sum(1 for e in state.enrollments if e.status == 'dropped') <= 2
-    desc: No more than 2 courses were dropped
-    penalty: 0.3
-  - expr: len(state.sent_messages) <= 4
-    desc: Agent did not send excessive messages
-    penalty: 0.15
-  - expr: "all(a.file_name != 'recovery.pdf' or a.submission_status in ('submitted',\
-      \ 'late')\n    for a in state.assignments)"
-    desc: No recovery files were attached to non-submitted assignments
-    penalty: 0.1
 secondary_primitives: []

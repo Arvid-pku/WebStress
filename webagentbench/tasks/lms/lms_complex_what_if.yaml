@@ -134,21 +134,4 @@ canonical_diff:
   - name: Agent did not send messages
     ref: invariant[10]
     severity: medium
-eval:
-  source: server_state
-  checks:
-  - expr: state.get_assignment('{target.highest_weight_ungraded_id}') is not None
-      and state.get_assignment('{target.highest_weight_ungraded_id}').submission_status
-      in ('submitted', 'late') and state.get_assignment('{target.highest_weight_ungraded_id}').file_name
-      == 'priority_submission.pdf'
-    desc: Highest-weight ungraded assignment submitted with priority_submission.pdf
-  negative_checks:
-  - expr: "not any(\n  a.submission_status in ('submitted', 'late')\n  and a.file_name\
-      \ == 'priority_submission.pdf'\n  and a.id != '{target.highest_weight_ungraded_id}'\n\
-      \  for a in state.assignments\n)"
-    desc: No other assignment was submitted with priority_submission.pdf
-    penalty: 0.3
-  - expr: all(e.status != 'dropped' for e in state.enrollments)
-    desc: No courses were dropped
-    penalty: 0.3
 secondary_primitives: []

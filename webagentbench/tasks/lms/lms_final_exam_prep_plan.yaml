@@ -160,36 +160,4 @@ canonical_diff:
   - name: Agent did not send messages
     ref: invariant[10]
     severity: medium
-eval:
-  source: server_state
-  checks:
-  - expr: "all(\n    state.get_enrollment_for_course(cid) is not None\n    and state.get_enrollment_for_course(cid).status\
-      \ == 'dropped'\n    for cid in '{target.impossible_b_course_ids}'.split(',')\n\
-      \    if cid.strip()\n)"
-    desc: All impossible-B courses were dropped
-  - expr: "all(\n    state.get_assignment(aid) is not None\n    and state.get_assignment(aid).submission_status\
-      \ in ('submitted', 'late')\n    and state.get_assignment(aid).file_name == 'exam_prep.pdf'\n\
-      \    for aid in '{target.final_exam_assignment_ids}'.split(',')\n    if aid.strip()\n\
-      )"
-    desc: Final exam assignments submitted for achievable courses
-  - expr: "all(\n    state.get_enrollment_for_course(cid) is not None\n    and state.get_enrollment_for_course(cid).status\
-      \ == 'enrolled'\n    for cid in '{target.achievable_course_ids}'.split(',')\n\
-      \    if cid.strip()\n)"
-    desc: Achievable courses were NOT dropped
-  negative_checks:
-  - expr: "not any(e.status == 'dropped'\n        and e.course_id in\n           \
-      \ [cid.strip() for cid in '{target.achievable_course_ids}'.split(',')]\n   \
-      \     for e in state.enrollments)"
-    desc: No achievable course was dropped
-    penalty: 0.3
-  - expr: "not any(a.submission_status in ('submitted', 'late')\n        and a.file_name\
-      \ == 'exam_prep.pdf'\n        and a.course_id in\n            [cid.strip() for\
-      \ cid in '{target.impossible_b_course_ids}'.split(',')]\n        for a in state.assignments)"
-    desc: No exam_prep.pdf was submitted for impossible-B courses
-    penalty: 0.25
-  - expr: "len([a for a in state.assignments\n     if a.file_name == 'exam_prep.pdf'\n\
-      \     and a.submission_status in ('submitted', 'late')]) <= len([aid.strip()\
-      \ for aid in '{target.final_exam_assignment_ids}'.split(',') if aid.strip()])"
-    desc: No more exam_prep submissions than achievable courses
-    penalty: 0.15
 secondary_primitives: []

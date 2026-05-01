@@ -158,36 +158,4 @@ canonical_diff:
   - name: Agent did not send messages
     ref: invariant[10]
     severity: medium
-eval:
-  source: server_state
-  checks:
-  - expr: "any(a.submission_status in ('submitted', 'late')\n    and a.file_name ==\
-      \ 'recovery_submission.pdf'\n    for a in state.assignments)"
-    desc: At least one recovery submission was made
-  - expr: "any(a.submission_status in ('submitted', 'late')\n    and a.file_name ==\
-      \ 'recovery_submission.pdf'\n    and a.id in [mid.strip() for mid in '{target.missing_assignment_ids}'.split(',')]\n\
-      \    for a in state.assignments)"
-    desc: Recovery submission was for an identified missing assignment
-  - expr: "all(e.status == 'enrolled'\n    for e in state.enrollments)"
-    desc: All enrollments remain active (none dropped)
-  - expr: sum(1 for e in state.enrollments if e.status == 'enrolled') >= 4
-    desc: At least 4 course enrollments exist (seed integrity)
-  - expr: "len([a for a in state.assignments\n     if a.submission_status in ('submitted',\
-      \ 'late')\n     and a.file_name == 'recovery_submission.pdf']) >= 2"
-    desc: At least 2 recovery submissions were made (multiple recoverable assignments
-      exist)
-  negative_checks:
-  - expr: "not any(a.submission_status in ('submitted', 'late')\n        and a.file_name\
-      \ == 'recovery_submission.pdf'\n        and a.id not in [mid.strip() for mid\
-      \ in '{target.missing_assignment_ids}'.split(',')]\n        and a.id not in\
-      \ [lid.strip() for lid in '{target.late_assignment_ids}'.split(',')]\n     \
-      \   for a in state.assignments)"
-    desc: No non-missing/non-late assignments were submitted with recovery file
-    penalty: 0.25
-  - expr: all(e.status != 'dropped' for e in state.enrollments)
-    desc: No courses were dropped
-    penalty: 0.3
-  - expr: len(state.sent_messages) <= 2
-    desc: Agent did not send excessive messages
-    penalty: 0.1
 secondary_primitives: []

@@ -154,29 +154,4 @@ canonical_diff:
   - name: Agent did not send messages
     ref: invariant[10]
     severity: medium
-eval:
-  source: server_state
-  checks:
-  - expr: "all(state.meets_discussion_requirements(did)\n    for did in [d.id for\
-      \ d in state.discussions\n                if d.course_id == '{target.target_course_id}'])"
-    desc: All discussions in the course meet minimum requirements
-  - expr: "any(p.author_id == state.student.id\n    for p in state.discussion_posts\n\
-      \    if p.discussion_id in [d.id for d in state.discussions\n              \
-      \             if d.course_id == '{target.target_course_id}'])"
-    desc: Student created posts in course discussions
-  - expr: "len([p for p in state.discussion_posts\n     if p.author_id == state.student.id\n\
-      \     and p.discussion_id in [d.id for d in state.discussions\n            \
-      \                 if d.course_id == '{target.target_course_id}']]) >= 1"
-    desc: At least one new post was made in the target course
-  - expr: "all(e.status == 'enrolled'\n    for e in state.enrollments)"
-    desc: All enrollments remain active
-  negative_checks:
-  - expr: "not any(p.author_id == state.student.id\n        and p.discussion_id not\
-      \ in [d.id for d in state.discussions\n                                    if\
-      \ d.course_id == '{target.target_course_id}']\n        for p in state.discussion_posts)"
-    desc: Student did not post in discussions outside the target course
-    penalty: 0.2
-  - expr: all(e.status != 'dropped' for e in state.enrollments)
-    desc: No courses were dropped
-    penalty: 0.3
 secondary_primitives: []

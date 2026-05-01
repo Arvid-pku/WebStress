@@ -107,19 +107,3 @@ canonical_diff:
     - name: Agent did not send messages
       ref: invariant[10]
       severity: medium
-
-eval:
-  source: server_state
-  checks:
-    - expr: >-
-        state.get_enrollment_for_course('{target.target_course_id}') is not None and
-        state.get_enrollment_for_course('{target.target_course_id}').status == 'dropped'
-      desc: Target course enrollment status is dropped
-    - expr: >-
-        sum(1 for e in state.enrollments if e.status == 'dropped') >= 1
-      desc: At least one course enrollment is in dropped status
-  negative_checks:
-    - expr: >-
-        sum(1 for e in state.enrollments if e.status == 'dropped') <= 1
-      desc: Only one course was dropped (not multiple)
-      penalty: 0.3

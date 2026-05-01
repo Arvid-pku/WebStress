@@ -145,36 +145,6 @@ canonical_diff:
   - expr: sorted(state.blocked_users) == sorted(initial.blocked_users)
     desc: Blocked users preserved when blocking is not requested
     severity: high
-eval:
-  source: server_state
-  checks:
-  - expr: not any(p.subreddit_name == 'memes' and p.id in state.saved_post_ids for p in state.posts)
-    desc: Memes posts unsaved
-  - expr: '''{target.save1_id}'' in state.saved_post_ids'
-    desc: Intel post saved
-  - expr: '''{target.save2_id}'' in state.saved_post_ids'
-    desc: Walking post saved
-  - expr: state.get_post('{target.save2_id}').vote_direction == 1
-    desc: Walking post upvoted
-  - expr: state.settings.default_feed_sort == 'top'
-    desc: Feed sort top
-  - expr: state.settings.default_comment_sort == 'new'
-    desc: Comment sort new
-  - expr: any(m.to_user == "NeuralNexus" and "Intel 18A" in m.body for m in state.sent_messages)
-    desc: Message sent
-  negative_checks:
-  - expr: state.get_post('{target.save1_id}').vote_direction == 0
-    desc: Intel post not voted on
-    penalty: 0.1
-  - expr: (len(state.sent_messages) - state._initial_snapshot.get('sent_message_count', 0)) <= 3
-    desc: No excessive messages sent
-    penalty: 0.15
-  - expr: sum(1 for p in state.posts if p.author_name == state.owner_username and p.id not in state._initial_snapshot.get('posts', {})) == 0
-    desc: No posts created when none required
-    penalty: 0.15
-  - expr: len(state.blocked_users) == 0
-    desc: No users blocked when none required
-    penalty: 0.15
 env_id: reddit
 start_path: /feed
 secondary_primitives: []

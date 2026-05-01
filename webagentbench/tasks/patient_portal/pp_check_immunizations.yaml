@@ -103,19 +103,4 @@ canonical_diff:
     - name: "Agent did not touch referrals"
       ref: invariant[6]
       severity: high
-eval:
-  source: server_state
-  checks:
-  - expr: "any(a.status == 'scheduled'\n    and a.id not in {target.upcoming_ids}\n\
-      \    for a in state.appointments)"
-    desc: A new appointment was scheduled
-  - expr: "any(a.status == 'scheduled'\n    and a.id not in {target.upcoming_ids}\n\
-      \    and a.reason is not None and any(v in a.reason for v in {target.due_vaccine_names})\n\
-      \    for a in state.appointments)"
-    desc: The new appointment is for a due vaccine
-  negative_checks:
-  - expr: "sum(1 for a in state.appointments\n    if a.status == 'scheduled'\n   \
-      \ and a.id not in {target.upcoming_ids}) <= 1"
-    desc: Agent did not schedule more than one new appointment
-    penalty: 0.2
 secondary_primitives: []

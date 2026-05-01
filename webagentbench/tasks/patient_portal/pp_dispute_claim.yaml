@@ -133,19 +133,4 @@ canonical_diff:
   - name: Agent did not modify providers
     ref: invariant[8]
     severity: medium
-eval:
-  source: server_state
-  checks:
-  - expr: "any(\n  c.id == max(\n    {target.denied_claim_ids},\n    key=lambda cid: (\n      state._initial_snapshot['claims'][cid]['service_date'],\n\
-      \      cid,\n    ),\n  )\n  and c.status == 'appealed'\n  for c in state.claims\n)"
-    desc: The most recent denied claim was appealed
-  - expr: "all(\n  c.status == state._initial_snapshot['claims'][c.id]['status']\n  for c in state.claims\n  if c.id in {target.denied_claim_ids}\n\
-      \  and c.id != max(\n    {target.denied_claim_ids},\n    key=lambda cid: (\n      state._initial_snapshot['claims'][cid]['service_date'],\n\
-      \      cid,\n    ),\n  )\n)"
-    desc: Older denied claims were not appealed instead
-  negative_checks:
-  - expr: "not any(\n  c.id in {target.approved_claim_ids}\n  and c.status != state._initial_snapshot['claims'][c.id]['status']\n\
-      \  for c in state.claims\n)"
-    desc: Agent did not modify any approved claim
-    penalty: 0.25
 secondary_primitives: []

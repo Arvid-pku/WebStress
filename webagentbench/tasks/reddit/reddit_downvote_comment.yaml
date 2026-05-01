@@ -85,15 +85,3 @@ canonical_diff:
   - name: Agent did not vote on the post itself
     ref: invariant[1]
     severity: high
-eval:
-  source: server_state
-  checks:
-  - expr: state.get_comment('{target.comment_id}').vote_direction == -1
-    desc: Target comment was downvoted
-  negative_checks:
-  - expr: state.get_post('{target.post_id}').vote_direction == 0
-    desc: Post itself was not voted on
-    penalty: 0.25
-  - expr: all(state.get_comment(cid).vote_direction == 0 for cid in {target.comment_ids} if cid != '{target.comment_id}')
-    desc: Other comments were not voted on
-    penalty: 0.2

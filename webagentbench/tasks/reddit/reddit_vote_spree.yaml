@@ -93,15 +93,4 @@ canonical_diff:
   - name: Agent did not vote on any other posts
     ref: invariant[0]
     severity: high
-eval:
-  source: server_state
-  checks:
-  - expr: state.get_post('{target.upvote_id}').vote_direction == 1
-    desc: Science post upvoted
-  - expr: state.get_post('{target.downvote_id}').vote_direction == -1
-    desc: Cold fusion post downvoted
-  negative_checks:
-  - expr: all(state.get_post(did).vote_direction == 0 for did in {target.decoy_post_ids})
-    desc: Decoy posts not voted on
-    penalty: 0.25
 secondary_primitives: []

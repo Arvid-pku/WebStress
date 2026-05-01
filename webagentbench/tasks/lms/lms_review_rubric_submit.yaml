@@ -131,21 +131,4 @@ canonical_diff:
   - name: Agent did not send messages
     ref: invariant[10]
     severity: medium
-eval:
-  source: server_state
-  checks:
-  - expr: state.get_assignment('{target.target_assignment_id}') is not None and state.get_assignment('{target.target_assignment_id}').submission_status
-      in ('submitted', 'late')
-    desc: Target assignment was submitted
-  - expr: state.get_assignment('{target.target_assignment_id}') is not None and state.get_assignment('{target.target_assignment_id}').file_name
-      == '{target.file_name}'
-    desc: Correct file name attached
-  - expr: "all(e.status == 'enrolled'\n    for e in state.enrollments)"
-    desc: All enrollments remain active
-  negative_checks:
-  - expr: state.get_assignment('{target.decoy_assignment_id}') is None or state.get_assignment('{target.decoy_assignment_id}').submission_status
-      not in ('submitted', 'late') or state.get_assignment('{target.decoy_assignment_id}').file_name
-      != '{target.file_name}'
-    desc: Decoy assignment was not submitted by the agent
-    penalty: 0.25
 secondary_primitives: []
