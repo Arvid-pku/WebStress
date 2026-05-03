@@ -166,6 +166,59 @@ python scripts/pixel_aggregate.py /usr/xtmp/$USER/wab-runs/pixel-opus_47-<JOBID>
 The template auto-detects `SLURM_ARRAY_TASK_ID` / `SLURM_ARRAY_TASK_COUNT`
 and passes them as `--shard-id` / `--shard-of` to the runner.
 
+## Running without slurm (plain Python)
+
+If you don't have access to a slurm cluster (or want to dev-test
+locally), both harnesses run as plain Python — slurm is just a wrapper.
+You boot the backend yourself, then invoke the runner.
+
+### Stock — one process with built-in concurrency
+```bash
+# Terminal 1 — backend (any free port)
+source .venv/bin/activate
+set -a; source webagentbench/.env; set +a
+python -m uvicorn webagentbench.app:app --host 127.0.0.1 --port 8080
+# Wait for "Uvicorn running on http://127.0.0.1:8080"
+
+# Terminal 2 — runner with --concurrency N
+python scripts/run_picks.py \
+  --picks scripts/sweep_picks/primbench_v2_full.json \
+  --model us.anthropic.claude-sonnet-4-6 --provider bedrock \
+  --backend-port 8080 --frontend-port 8080 \
+  --concurrency 4 \
+  --output-dir /tmp/sonnet-46-run
+```
+
+### Pixel — manual process-level sharding (the only way to parallelize)
+```bash
+# Terminal 1 — backend (single instance serves all shards)
+source .venv/bin/activate
+set -a; source webagentbench/.env; set +a
+export WEBAGENTBENCH_CONTROLLER_SECRET="$(python3 -c 'import secrets;print(secrets.token_urlsafe(32))')"
+python -m uvicorn webagentbench.app:app --host 127.0.0.1 --port 8080
+
+# Terminal 2 — fan out N parallel processes (must inherit the same SECRET)
+export WEBAGENTBENCH_CONTROLLER_SECRET=<paste-the-same-one-from-terminal-1>
+N=4
+for i in $(seq 0 $((N-1))); do
+  python scripts/pixel_run_picks.py \
+    --picks scripts/sweep_picks/primbench_v2_full.json \
+    --model claude-opus-4-7 --provider anthropic \
+    --backend-port 8080 \
+    --shard-of $N --shard-id $i \
+    --output-dir /tmp/opus-pixel-run &
+done
+wait
+
+# Aggregate the N shard outputs into one summary
+python scripts/pixel_aggregate.py /tmp/opus-pixel-run
+```
+
+Notes for the no-slurm pixel pattern:
+- Each shard process owns its own Chrome — budget ~600 MB RAM and 1 core per shard
+- The single backend handles all shards (FastAPI is multi-tenant; sessions are UUID-isolated)
+- `WEBAGENTBENCH_CONTROLLER_SECRET` must match between the backend env and every runner env, otherwise BrowserGym `_ensure_server` rejects the externally-managed backend
+
 ## Important: don't run (1) and (2) in parallel
 
 Both hit Bedrock; opus 4.7 and sonnet 4.6 share the same TPM quota and
