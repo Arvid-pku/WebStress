@@ -1,24 +1,24 @@
 #!/usr/bin/env bash
-#SBATCH --job-name=pixel-opus-47
+#SBATCH --job-name=pixel-gpt-54
 #SBATCH --partition=compsci
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=10G
 #SBATCH --time=24:00:00
-#SBATCH --output=/usr/xtmp/%u/wab-logs/pixel-opus-47-%j.out
-#SBATCH --error=/usr/xtmp/%u/wab-logs/pixel-opus-47-%j.err
+#SBATCH --output=/usr/xtmp/%u/wab-logs/pixel-gpt-54-%j.out
+#SBATCH --error=/usr/xtmp/%u/wab-logs/pixel-gpt-54-%j.err
 
 # Pixel-mode (BrowserGym + PixelLLMAgent, screenshot-only obs, coord
-# action_space) sweep using opus 4.7 via OpenRouter. We deliberately
-# avoid Bedrock here because Bedrock's opus TPM quota self-throttles
-# under sustained load (verified during smoke — credential probe alone
-# fails with ThrottlingException when other Bedrock jobs are active).
-# Switch to `--provider bedrock --model us.anthropic.claude-opus-4-7`
-# only if you've serialized all Bedrock jobs via sbatch --dependency.
+# action_space) sweep using gpt-5.4 via OpenRouter. PrimBench v2 used
+# the same OpenRouter route (model_id `openai/gpt-5.4`) — see
+# webagentbench/results/.../run_manifest.json for canonical id.
 #
-# PrimBench v2 never ran any model in pixel mode — this is the first
-# opus pixel sweep. Defaults (--timeout 1200 --max-steps 60) inherited
-# from pixel_run_picks.py since commit dbc59360.
+# To switch to native OpenAI: add OPENAI_API_KEY to webagentbench/.env,
+# then change `--provider openrouter` → `--provider openai` and
+# `--model openai/gpt-5.4` → `--model gpt-5.4`.
+#
+# Defaults (--timeout 1200 --max-steps 60) come from pixel_run_picks.py
+# (commit dbc59360).
 
 set -euo pipefail
 export HF_HOME=/usr/xtmp/$USER/.cache/huggingface
@@ -36,13 +36,12 @@ PICKS="${PICKS:-scripts/sweep_picks/primbench_v2_full_1038.json}"
 [ -f "$PICKS" ] || { echo "ERROR: picks file $PICKS not found. See RUNNING_SWEEPS.md for regen."; exit 1; }
 
 BACKEND_PORT=$(( 9400 + (SLURM_JOB_ID % 600) ))
-echo "=== opus 4.7 × pixel-vlm × $(python3 -c "import json; print(len(json.load(open('$PICKS'))))") picks ==="
+echo "=== gpt-5.4 × pixel-vlm × $(python3 -c "import json; print(len(json.load(open('$PICKS'))))") picks ==="
 echo "Job $SLURM_JOB_ID on $(hostname), backend :$BACKEND_PORT, picks=$PICKS"
 
 # Pixel mode goes through BrowserGym's _ensure_server() which requires
-# WEBAGENTBENCH_CONTROLLER_SECRET to be set when an externally-managed
-# server is detected. Generate one here and inherit it into both the
-# uvicorn child and the runner.
+# WEBAGENTBENCH_CONTROLLER_SECRET when an externally-managed server is
+# detected.
 export WEBAGENTBENCH_CONTROLLER_SECRET="$(python3 -c 'import secrets;print(secrets.token_urlsafe(32))')"
 export WEBAGENTBENCH_AUTO_BUILD_FRONTENDS=0
 
@@ -59,12 +58,12 @@ for i in $(seq 1 120); do
 done
 [ "$READY" = "0" ] && { echo "ERROR: backend /health never came up"; tail -40 /usr/xtmp/$USER/wab-logs/backend-${SLURM_JOB_ID}.log; exit 1; }
 
-OUT_DIR=/usr/xtmp/$USER/wab-runs/pixel-opus-47-${SLURM_JOB_ID}
+OUT_DIR=/usr/xtmp/$USER/wab-runs/pixel-gpt-54-${SLURM_JOB_ID}
 
 export PYTHONUNBUFFERED=1
 python -u scripts/pixel_run_picks.py \
   --picks "$PICKS" \
-  --model anthropic/claude-opus-4.7 \
+  --model openai/gpt-5.4 \
   --provider openrouter \
   --backend-port "$BACKEND_PORT" \
   --output-dir "$OUT_DIR"

@@ -88,13 +88,17 @@ can't return plain text instead of structured tool_use).
 Pixel mode runs through BrowserGym with screenshot-only obs and coord-action
 output. PrimBench v2 has no pixel data yet — these are first runs.
 
-### 3a. Pixel + opus 4.7
+### 3a. Pixel + opus 4.7 (OpenRouter)
 
 ```bash
 sbatch scripts/sweep_templates/pixel_opus_47.sbatch
 ```
 
-**Model id / provider:** `us.anthropic.claude-opus-4-7` via `bedrock`.
+**Model id / provider:** `anthropic/claude-opus-4.7` via `openrouter`.
+Deliberately not bedrock — Bedrock's opus TPM quota self-throttles
+(verified during smoke). To switch back to Bedrock, change two flags
+in the template and serialize all Bedrock jobs via sbatch
+`--dependency=afterany`.
 
 **What to expect:**
 - Cost-heavy due to per-step screenshot in tokens; budget ~$150-200 / 1049 picks
@@ -108,13 +112,34 @@ sbatch scripts/sweep_templates/pixel_gemini_31_pro.sbatch
 ```
 
 **Model id / provider:** `gemini-3-pro-preview` via `gemini` (native API).
-Coordinates are normalized 0-1000 → pixel transform happens in
-`pixel_agent.py:_transform_normalized_to_pixel`.
+Note: PrimBench v2 used `google/gemini-3.1-pro-preview` via openrouter,
+which is the same underlying model. Native gemini API exposes it without
+the `.1` suffix. Coordinates are normalized 0-1000 → pixel transform
+happens in `pixel_agent.py:_transform_normalized_to_pixel`.
 
 **What to expect:**
 - Much cheaper than opus pixel (~$10-20 / 1049 picks)
 - Walltime ~6h
 - Output: `/usr/xtmp/$USER/wab-runs/pixel-gemini-31-pro-<JOBID>/`
+
+### 3c. Pixel + gpt-5.4 (OpenRouter)
+
+```bash
+sbatch scripts/sweep_templates/pixel_gpt_54.sbatch
+```
+
+**Model id / provider:** `openai/gpt-5.4` via `openrouter` (matches the
+canonical id from PrimBench v2 manifests).
+
+To switch to native OpenAI: add `OPENAI_API_KEY` to
+`webagentbench/.env`, then change `--provider openrouter` →
+`--provider openai` and `--model openai/gpt-5.4` → `--model gpt-5.4`
+in the template.
+
+**What to expect:**
+- Mid-cost: budget ~$30-60 / 1049 picks
+- Walltime ~8h
+- Output: `/usr/xtmp/$USER/wab-runs/pixel-gpt-54-<JOBID>/`
 
 ---
 
