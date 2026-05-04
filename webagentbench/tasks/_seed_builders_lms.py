@@ -838,19 +838,74 @@ def _build_assignment_battery(ctx: LMSSeedContext, params: dict[str, Any]) -> di
         assignment["max_attempts"] = max(assignment.get("max_attempts", 1), assignment["attempt_count"] + 1)
 
     # Guarantee requested resubmission targets exist so feedback-based tasks are non-vacuous.
+    # Also ensure at least one resubmit_requested assignment is in the catalog-level
+    # target_course_id so course-scoped tasks (lms_resubmit_after_feedback's instruction
+    # says "Find the assignment in {target.course_code}…") can find one. Without scoping,
+    # the resubmit can land in any course and the agent has nothing to act on in the
+    # course they were told to look in.
+    _resubmit_target_cid = ctx.outputs.get("target_course_id", "")
     needed_resubmits = max(0, resubmit_count - len(resubmit_ids))
     if needed_resubmits > 0:
-        resubmit_candidates = [
+        # Prefer target-course candidates first
+        target_course_candidates = [
             a for a in all_assignments
             if a["id"] not in resubmit_ids
+            and a["course_id"] == _resubmit_target_cid
+            and a["submission_status"] in ("graded", "late", "submitted")
+        ] if _resubmit_target_cid else []
+        other_candidates = [
+            a for a in all_assignments
+            if a["id"] not in resubmit_ids
+            and a["course_id"] != _resubmit_target_cid
             and a["submission_status"] in ("graded", "late", "submitted")
         ]
+        resubmit_candidates = target_course_candidates + other_candidates
         for assignment in resubmit_candidates[:needed_resubmits]:
             _ensure_scored_submission(assignment, Decimal("0.62"))
             assignment["submission_status"] = "resubmit_requested"
             assignment["feedback"] = ctx.rng.choice(_RESUBMIT_FEEDBACK)
             if assignment["id"] not in resubmit_ids:
                 resubmit_ids.append(assignment["id"])
+    # Even if needed_resubmits was 0, ensure a target-course resubmit_requested exists
+    # when target_course_id is set. If existing resubmit_ids are all outside target course,
+    # convert one target-course assignment so user finds it where instruction said to look.
+    if (
+        _resubmit_target_cid
+        and resubmit_count > 0
+        and not any(
+            (a["id"] in resubmit_ids and a["course_id"] == _resubmit_target_cid)
+            for a in all_assignments
+        )
+    ):
+        # Pick the first eligible non-resubmit assignment in target course and convert it.
+        convert = next(
+            (
+                a for a in all_assignments
+                if a["course_id"] == _resubmit_target_cid
+                and a["id"] not in resubmit_ids
+                and a["submission_status"] in ("graded", "late", "submitted")
+            ),
+            None,
+        )
+        if convert is not None:
+            _ensure_scored_submission(convert, Decimal("0.62"))
+            convert["submission_status"] = "resubmit_requested"
+            convert["feedback"] = ctx.rng.choice(_RESUBMIT_FEEDBACK)
+            resubmit_ids.append(convert["id"])
+
+    # Ensure resubmit_ids[0] (which task YAMLs map to target.resubmit_assignment_id) is
+    # inside the target course. Some task seeds end up with multiple resubmit_requested
+    # assignments across courses; the eval picks index 0, so it must point at the one
+    # the user is told to find in the target course.
+    if _resubmit_target_cid and len(resubmit_ids) > 1:
+        target_idx = next(
+            (i for i, rid in enumerate(resubmit_ids)
+             if any(a["id"] == rid and a["course_id"] == _resubmit_target_cid for a in all_assignments)),
+            -1,
+        )
+        if target_idx > 0:
+            target_id = resubmit_ids.pop(target_idx)
+            resubmit_ids.insert(0, target_id)
 
     # Guarantee late-within-grace examples when requested for grading-dispute tasks.
     needed_grace_lates = late_within_grace_count

@@ -135,7 +135,20 @@ export function ProfilePage() {
       {/* Demographics */}
       <section aria-label="Patient Demographics" className="pp-section">
         <h3>Demographics</h3>
-        {profile && (
+        {profile && (!profile.name || !profile.dob) && (
+          <div className="pp-card pp-card--warning" aria-label="Profile data incomplete">
+            <p>Profile is loading or returned incomplete data (name/DOB missing). Submitting now would overwrite other fields with blanks. Click below to retry.</p>
+            <button
+              type="button"
+              className="pp-btn pp-btn--secondary"
+              onClick={() => void refreshProfile()}
+              aria-label="Refresh profile"
+            >
+              Refresh profile
+            </button>
+          </div>
+        )}
+        {profile && profile.name && profile.dob && (
           <form aria-label="Patient Demographics" onSubmit={(e) => { e.preventDefault(); handleSaveDemographics(); }}>
             <div className="pp-form-field">
               <label htmlFor="profile-name">Name</label>

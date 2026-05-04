@@ -62,10 +62,17 @@ export function AppointmentsPage() {
     void api.listReferrals().then(setReferrals).catch(() => setReferrals([]));
   }, [api]);
 
-  useEffect(() => {
+  const loadSlots = useCallback(async () => {
     if (!selectedProviderId) { setSlots([]); return; }
-    void api.getAvailableSlots(selectedProviderId).then(setSlots).catch(() => setSlots([]));
+    try {
+      const items = await api.getAvailableSlots(selectedProviderId);
+      setSlots(items);
+    } catch {
+      setSlots([]);
+    }
   }, [api, selectedProviderId]);
+
+  useEffect(() => { void loadSlots(); }, [loadSlots]);
 
   const handleCancel = async (aptId: string) => {
     try {
@@ -329,19 +336,34 @@ export function AppointmentsPage() {
             {selectedProviderId && (
               <div className="pp-form-field">
                 <label htmlFor="apt-slot">Date/Time</label>
-                <select
-                  id="apt-slot"
-                  value={selectedSlot}
-                  onChange={(e) => setSelectedSlot(e.target.value)}
-                  aria-label="Select appointment slot"
-                >
-                  <option value="">Select a slot...</option>
-                  {slots.map((s) => (
-                    <option key={s.datetime} value={s.datetime}>
-                      {new Date(s.datetime).toLocaleString()} - {s.type} ({s.duration_minutes}min)
-                    </option>
-                  ))}
-                </select>
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <select
+                    id="apt-slot"
+                    value={selectedSlot}
+                    onChange={(e) => setSelectedSlot(e.target.value)}
+                    aria-label="Select appointment slot"
+                  >
+                    <option value="">Select a slot...</option>
+                    {slots.map((s) => (
+                      <option key={s.datetime} value={s.datetime}>
+                        {new Date(s.datetime).toLocaleString()} - {s.type} ({s.duration_minutes}min)
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    className="pp-btn pp-btn--secondary pp-btn--sm"
+                    onClick={() => void loadSlots()}
+                    aria-label="Refresh available slots"
+                  >
+                    Refresh slots
+                  </button>
+                </div>
+                {slots.length === 0 && (
+                  <p className="pp-helper" style={{ fontSize: "0.85em", color: "#666", marginTop: 4 }}>
+                    No slots loaded — click "Refresh slots" to retry.
+                  </p>
+                )}
               </div>
             )}
 

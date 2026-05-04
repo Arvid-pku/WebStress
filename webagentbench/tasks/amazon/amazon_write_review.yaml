@@ -2,8 +2,9 @@ task_id: amazon_write_review
 env_id: amazon
 title: Write a 5-Star Product Review
 instruction_template: 'Find the product "{target.product_name}" and write a 5-star
-  review with the title "Absolutely love it" and a body describing how much you enjoy
-  using the product.
+  review with the title "Absolutely love it" and a body of at least 11 characters
+  describing how much you enjoy using the product (a one- or two-word body is too
+  short).
 
   '
 difficulty: easy
