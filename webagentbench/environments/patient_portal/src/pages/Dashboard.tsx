@@ -1,16 +1,14 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 
+import { preserveQueryParams } from "@webagentbench/shared";
+
 import { usePatientPortal } from "../context";
 import type { Appointment, InsuranceClaim, Prescription } from "../types";
 
-function preserveSession(to: string, search: string): string {
-  const params = new URLSearchParams(search);
-  const session = params.get("session");
-  if (!session) return to;
-  const sep = to.includes("?") ? "&" : "?";
-  return `${to}${sep}session=${encodeURIComponent(session)}`;
-}
+// Use shared preserveQueryParams — see Shell.tsx for the bug-history note on
+// why a session-only preserve helper here was catastrophic for recording.
+const preserveSession = preserveQueryParams;
 
 export function DashboardPage() {
   const location = useLocation();

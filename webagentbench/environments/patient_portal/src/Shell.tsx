@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   BenchmarkToolbar,
   Toast,
+  preserveQueryParams,
   useApi,
   useBenchmarkState,
 } from "@webagentbench/shared";
@@ -11,13 +12,13 @@ import { createPatientPortalApi } from "./api";
 import { PatientPortalContext } from "./context";
 import type { Patient, Provider } from "./types";
 
-function preserveSession(to: string, search: string): string {
-  const params = new URLSearchParams(search);
-  const session = params.get("session");
-  if (!session) return to;
-  const sep = to.includes("?") ? "&" : "?";
-  return `${to}${sep}session=${encodeURIComponent(session)}`;
-}
+// Use shared preserveQueryParams instead of a session-only local helper —
+// internal SPA navigation MUST keep `control=on` or BenchmarkToolbar's
+// recorder/heartbeat will silently die. Bug history: a custom session-only
+// preserve here caused all in-task navigations on patient_portal to drop the
+// recorder; ~45 task-conditions across Tianchen/Xunjian/duplicate annotators
+// were affected before this was caught.
+const preserveSession = preserveQueryParams;
 
 export function PatientPortalShell({ sessionId }: { sessionId: string }) {
   const location = useLocation();

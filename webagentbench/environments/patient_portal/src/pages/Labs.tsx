@@ -1,16 +1,13 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 
+import { preserveQueryParams } from "@webagentbench/shared";
+
 import { usePatientPortal } from "../context";
 import type { LabResult } from "../types";
 
-function preserveSession(to: string, search: string): string {
-  const params = new URLSearchParams(search);
-  const session = params.get("session");
-  if (!session) return to;
-  const sep = to.includes("?") ? "&" : "?";
-  return `${to}${sep}session=${encodeURIComponent(session)}`;
-}
+// Use shared preserveQueryParams — see Shell.tsx for the bug-history note.
+const preserveSession = preserveQueryParams;
 
 export function LabsPage() {
   const location = useLocation();
