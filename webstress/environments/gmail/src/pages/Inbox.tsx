@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { EmptyState, Tabs } from "@webagentbench/shared";
+import { EmptyState, Tabs } from "@webstress/shared";
 import { useSearchParams } from "react-router-dom";
 
 import { EmailRow } from "../components/EmailRow";

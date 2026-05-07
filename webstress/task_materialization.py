@@ -3,10 +3,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from webagentbench.backend.models.base import BaseEnvState
-from webagentbench.backend.state import materialize_task_state
-from webagentbench.task_rendering import render_template
-from webagentbench.tasks._schema import TaskDefinition
+from webstress.backend.models.base import BaseEnvState
+from webstress.backend.state import materialize_task_state
+from webstress.task_rendering import render_template
+from webstress.tasks._schema import TaskDefinition
 
 
 @dataclass(frozen=True, slots=True)

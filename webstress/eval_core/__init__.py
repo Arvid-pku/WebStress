@@ -5,7 +5,7 @@ against the computed state diff. Legacy ``eval.checks`` / ``negative_checks``
 are no longer supported.
 
 Public entry:
-    from webagentbench.eval_core import evaluate
+    from webstress.eval_core import evaluate
     result = evaluate(task, server_state, targets, trajectory)
 """
 

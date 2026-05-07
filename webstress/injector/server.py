@@ -445,8 +445,8 @@ def apply_server_injection(state: Any, params: dict[str, Any]) -> None:
                 )
                 mutated = True
         elif hasattr(state, "notifications"):
-            from webagentbench.backend.models.robinhood import Notification
-            from webagentbench.backend.models.base import utc_now
+            from webstress.backend.models.robinhood import Notification
+            from webstress.backend.models.base import utc_now
             rng = random.Random(params.get("seed", 42))
             _NOTIF_TEMPLATES = [
                 ("system", "Account Update", "Your account settings have been reviewed."),
@@ -488,7 +488,7 @@ def apply_server_injection(state: Any, params: dict[str, Any]) -> None:
 
     elif action in {"add_lms_correction_notice", "inject_lms_correction_notice"}:
         if hasattr(state, "courses") and hasattr(state, "announcements"):
-            from webagentbench.backend.models.lms import Announcement, DiscussionPost
+            from webstress.backend.models.lms import Announcement, DiscussionPost
             rng = random.Random(params.get("seed", 42))
 
             def pick_course() -> Any:

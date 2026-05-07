@@ -8,7 +8,7 @@ importers:
 
   .:
     dependencies:
-      '@webagentbench/shared':
+      '@webstress/shared':
         specifier: workspace:*
         version: link:../shared
       react:

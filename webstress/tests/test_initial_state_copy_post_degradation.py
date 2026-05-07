@@ -15,10 +15,10 @@ from __future__ import annotations
 
 import pytest
 
-from webagentbench.backend.routes.amazon import SessionCreateRequest, create_session
-from webagentbench.backend.state import SessionManager
-from webagentbench.eval_core import compute_diff
-from webagentbench.injector.middleware import clear_all_degradations
+from webstress.backend.routes.amazon import SessionCreateRequest, create_session
+from webstress.backend.state import SessionManager
+from webstress.eval_core import compute_diff
+from webstress.injector.middleware import clear_all_degradations
 
 
 @pytest.fixture(autouse=True)

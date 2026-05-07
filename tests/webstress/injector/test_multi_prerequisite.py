@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
-from webagentbench.injector.server import apply_server_injection
+from webstress.injector.server import apply_server_injection
 
 
 def _gmail_state(*, labels=(), contacts=(), filters=()):

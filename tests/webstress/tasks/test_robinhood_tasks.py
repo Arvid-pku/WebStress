@@ -7,9 +7,9 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from webagentbench.backend.models.robinhood import RobinhoodState
-from webagentbench.backend.seeders.robinhood import RobinhoodSeedRunner
-from webagentbench.tasks._registry import load_all_tasks, get_task
+from webstress.backend.models.robinhood import RobinhoodState
+from webstress.backend.seeders.robinhood import RobinhoodSeedRunner
+from webstress.tasks._registry import load_all_tasks, get_task
 
 
 EXPECTED_RH_EASY_TASKS = [
@@ -150,8 +150,8 @@ def test_all_robinhood_tasks_seed(task_id: str):
 
 def test_all_live_task_trajectories_valid():
     """Every task with price_trajectory must pass economic validation."""
-    from webagentbench.backend.price_validation import validate_trajectory
-    from webagentbench.backend.price_engine import TrajectoryConfig, StockTrajectory
+    from webstress.backend.price_validation import validate_trajectory
+    from webstress.backend.price_engine import TrajectoryConfig, StockTrajectory
 
     all_tasks = load_all_tasks()
     rh_tasks = {k: v for k, v in all_tasks.items() if k.startswith("rh_")}

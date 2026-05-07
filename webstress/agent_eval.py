@@ -4,9 +4,9 @@ Runs an LLM agent against WebStress tasks using the standard BrowserGym
 observation and action format — identical to WebArena, WorkArena, etc.
 
 Usage:
-    python -m webagentbench.agent_eval --model gpt-4o --provider openai
-    python -m webagentbench.agent_eval --model gpt-4o --provider openai --tasks gmail_board_briefing_prep
-    python -m webagentbench.agent_eval --model gpt-4o --provider openai --degradation gmail_compliance_settings__patience.yaml
+    python -m webstress.agent_eval --model gpt-4o --provider openai
+    python -m webstress.agent_eval --model gpt-4o --provider openai --tasks gmail_board_briefing_prep
+    python -m webstress.agent_eval --model gpt-4o --provider openai --degradation gmail_compliance_settings__patience.yaml
 """
 
 from __future__ import annotations
@@ -29,7 +29,7 @@ BASE_DIR = Path(__file__).parent
 _MANIFEST = json.loads((BASE_DIR / "manifest.json").read_text())
 
 # Load local secrets (OPENAI_API_KEY, AWS_BEDROCK_API_KEY, GEMINI_API_KEY, ...)
-# from webagentbench/.env if present. .env is gitignored.
+# from webstress/.env if present. .env is gitignored.
 try:
     from dotenv import load_dotenv as _load_dotenv
     _load_dotenv(BASE_DIR / ".env", override=False)
@@ -528,7 +528,7 @@ def run_evaluation(
     reasoning_effort: str | None = None,
     server_host: str = "127.0.0.1",
     server_port: int = 8080,
-    output_path: str = "results/webagentbench/results.json",
+    output_path: str = "results/webstress/results.json",
     seed: int | None = None,
     degradation: str | None = None,
     all_variants: bool = False,
@@ -586,7 +586,7 @@ def run_evaluation(
         print(f"{'=' * 60}\n")
 
     # For parallel workers, start the server once in the parent process so all
-    # child processes inherit WEBAGENTBENCH_CONTROLLER_SECRET and share it.
+    # child processes inherit WEBSTRESS_CONTROLLER_SECRET and share it.
     _server_proc = None
     if effective_workers > 1:
         from .runner import ensure_controller_secret, start_server, wait_for_server
@@ -595,9 +595,9 @@ def run_evaluation(
             _server_proc = start_server(server_host, server_port)
             if not wait_for_server(server_host, server_port):
                 raise RuntimeError("WebStress server failed to start")
-        elif not os.environ.get("WEBAGENTBENCH_CONTROLLER_SECRET"):
+        elif not os.environ.get("WEBSTRESS_CONTROLLER_SECRET"):
             raise RuntimeError(
-                "A WebStress server is already running but WEBAGENTBENCH_CONTROLLER_SECRET "
+                "A WebStress server is already running but WEBSTRESS_CONTROLLER_SECRET "
                 "is not set. Export the same secret or use a free port."
             )
 
@@ -715,7 +715,7 @@ def main():
     parser.add_argument("--no-headless", action="store_false", dest="headless")
     parser.add_argument("--server-host", default="127.0.0.1")
     parser.add_argument("--server-port", type=int, default=8080)
-    parser.add_argument("--output", default="results/webagentbench/results.json")
+    parser.add_argument("--output", default="results/webstress/results.json")
     parser.add_argument("--workers", type=int, default=1, help="Parallel worker threads (default: 1)")
     parser.add_argument("--quiet", "-q", action="store_true")
     parser.add_argument(

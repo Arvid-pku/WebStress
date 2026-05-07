@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from webagentbench.tasks._registry import load_all_tasks
+from webstress.tasks._registry import load_all_tasks
 
 
 def _task(task_id: str) -> Any:

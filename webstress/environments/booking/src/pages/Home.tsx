@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { preserveQueryParams } from "@webagentbench/shared";
+import { preserveQueryParams } from "@webstress/shared";
 import { useBookingLayout } from "../context";
 import type {
   Destination,

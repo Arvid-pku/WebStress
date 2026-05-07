@@ -17,11 +17,11 @@ The launcher handles everything: start backend + env dev servers, open a dashboa
 ```bash
 git clone git@github.com:<org>/LLMOS.git
 cd LLMOS
-./scripts/webagentbench.sh build          # one-time: install deps + build SPAs
+./scripts/webstress.sh build          # one-time: install deps + build SPAs
 ./scripts/human-record.sh <YourName>      # e.g. P1, P2, P3, P4, D1, D2, D3, D4
 # Browser opens automatically at http://localhost:8080/static/human.html?annotator=<YourName>
 # When done:
-git add webagentbench/human/traces/<YourName>/
+git add webstress/human/traces/<YourName>/
 git commit -m "human traces: <YourName>"
 git push && open a PR
 ```
@@ -40,7 +40,7 @@ You need:
 One-time build:
 
 ```bash
-./scripts/webagentbench.sh build
+./scripts/webstress.sh build
 ```
 
 This installs all env dependencies and builds static bundles. You only need to re-run `build` if someone changes an env SPA; the recording launcher will use them as-is.
@@ -96,7 +96,7 @@ You read the instruction in the Control tab, act in the Env tab, and come back t
 4. **Evaluate.** When you're done, come back to the control tab and click **Evaluate**. The backend scores the session, stops recording, and saves the trace to:
 
    ```
-   webagentbench/human/traces/<YourName>/<role>/<env>/<base_task_id>/<condition>/cold/
+   webstress/human/traces/<YourName>/<role>/<env>/<base_task_id>/<condition>/cold/
        metadata.json
        trace.json
    ```
@@ -122,7 +122,7 @@ When you click **Abandon** (or re-Start a previously-completed assignment), the 
 1. Wipes the `cold_done` / `warm_done` flags in `progress.json` so the dashboard treats the assignment as not-started.
 2. Stamps any existing `cold/metadata.json` + `warm/metadata.json` with `"abandoned": true` and `"abandoned_at": "<timestamp>"`. **Files are kept on disk** — abandoned attempts are still useful as data, and analysts filter them out by the flag.
 
-So after an Abandon you'll see leftover folders under `webagentbench/human/traces/<YourName>/...` in `git status`. That's expected. Commit them along with the rest — don't manually delete.
+So after an Abandon you'll see leftover folders under `webstress/human/traces/<YourName>/...` in `git status`. That's expected. Commit them along with the rest — don't manually delete.
 
 If you redo the same assignment later and Evaluate cleanly, the new save overwrites the metadata file (without the `abandoned` key), so the marker is gone automatically.
 
@@ -137,11 +137,11 @@ If you redo the same assignment later and Evaluate cleanly, the new save overwri
 
 ## 4. Submit your traces
 
-Your traces live under `webagentbench/human/traces/<YourName>/`. That path is *not* gitignored (the rest of `trajectory/` / `trajectories/` is). When you're done for the week:
+Your traces live under `webstress/human/traces/<YourName>/`. That path is *not* gitignored (the rest of `trajectory/` / `trajectories/` is). When you're done for the week:
 
 ```bash
 git checkout -b human-traces-<YourName>-w<N>
-git add webagentbench/human/traces/<YourName>/
+git add webstress/human/traces/<YourName>/
 git commit -m "human: <YourName> week N traces (X assignments, Y attempts)"
 git push origin HEAD
 ```
@@ -161,7 +161,7 @@ Expected PR size:
 | "No assignments for annotator 'X'" | Name typo | Use exactly: P1, P2, P3, P4, D1, D2, D3, D4 (case-insensitive). |
 | Popup blocked notice | Browser blocked popups | Allow popups for `localhost` in browser settings, then click Start again. |
 | Control tab shows "Env tab unresponsive" | You closed the env tab | Click **Reopen env tab** in the warn banner. |
-| Env tab shows "Not Found" | Env SPA isn't running | Check the launcher terminal for `[frontend:<env>]` lines. If missing, rerun `./scripts/webagentbench.sh build` then retry. |
+| Env tab shows "Not Found" | Env SPA isn't running | Check the launcher terminal for `[frontend:<env>]` lines. If missing, rerun `./scripts/webstress.sh build` then retry. |
 | Evaluate returned error after 15s | Env tab isn't posting the trace back (possibly refreshed by hand) | Click Abandon, start over. |
 | Browser didn't auto-open | Headless env / xdg-open missing | Copy the URL printed by the launcher manually. |
 | Suspected task bug | Ambiguous instruction, evaluator bug, broken intervention | Abandon the attempt. On a future attempt of the same task (or a different clean/intervention pair on the same base task), tick "suspected bug" in the post-task form and add a note. Ping the maintainer with the `aid`. |
@@ -187,7 +187,7 @@ You don't have to memorize the rules. The system already enforces:
 ## 7. File layout (for curious folks)
 
 ```
-webagentbench/human/
+webstress/human/
 ├── README.md                 # this file
 ├── assignments_v1.yaml       # source of truth: 280 primary + 35 duplicate rows
 ├── assignment_summary.md     # per-annotator totals, difficulty balance, etc.
@@ -206,4 +206,4 @@ webagentbench/human/
 
 The `trace.json` is the primary artifact for analysis: DOM events from `trajectory-recorder.js` (clicks / inputs / scrolls / navigations) plus the server-side audit_log plus the evaluator verdict. Metadata carries annotator / attempt / timing / variant / viewport info.
 
-Questions → #webagentbench Slack, or ping the project maintainer.
+Questions → #webstress Slack, or ping the project maintainer.

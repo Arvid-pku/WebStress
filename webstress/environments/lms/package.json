@@ -1,5 +1,5 @@
 {
-  "name": "@webagentbench/lms",
+  "name": "@webstress/lms",
   "private": true,
   "version": "1.0.0",
   "type": "module",
@@ -9,7 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@webagentbench/shared": "workspace:*",
+    "@webstress/shared": "workspace:*",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.28.0"

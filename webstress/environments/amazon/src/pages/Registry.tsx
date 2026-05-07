@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { preserveQueryParams } from "@webagentbench/shared";
+import { preserveQueryParams } from "@webstress/shared";
 
 import { useAmazonLayout } from "../context";
 

@@ -4,8 +4,8 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from webagentbench.backend.models.amazon import PromoCode
-from webagentbench.backend.routes.amazon import (
+from webstress.backend.models.amazon import PromoCode
+from webstress.backend.routes.amazon import (
     ApplyPromoRequest,
     ClearPromoRequest,
     PlaceOrderRequest,
@@ -17,9 +17,9 @@ from webagentbench.backend.routes.amazon import (
     get_order,
     place_order,
 )
-from webagentbench.backend.state import SessionManager
-from webagentbench.tasks._evaluator import evaluate
-from webagentbench.tasks._registry import env_tasks, get_task
+from webstress.backend.state import SessionManager
+from webstress.tasks._evaluator import evaluate
+from webstress.tasks._registry import env_tasks, get_task
 
 
 _AMAZON_TASK_IDS = [task.task_id for task in env_tasks("amazon")]

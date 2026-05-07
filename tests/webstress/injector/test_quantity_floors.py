@@ -20,7 +20,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-VARIANT_DIR = Path(__file__).resolve().parents[3] / "webagentbench/injector/variants"
+VARIANT_DIR = Path(__file__).resolve().parents[3] / "webstress/injector/variants"
 
 # Multiplier-aware seed actions with the post-bump count floor: variants
 # that use a `count: N` knob (rather than a hand-typed list) must have
@@ -145,7 +145,7 @@ def _task_time_limits() -> dict[str, int]:
     out: dict[str, int] = {}
     repo_root = Path(__file__).resolve().parents[3]
     for kind in ("gmail", "robinhood"):
-        for path in (repo_root / "webagentbench/tasks" / kind).glob("*.yaml"):
+        for path in (repo_root / "webstress/tasks" / kind).glob("*.yaml"):
             try:
                 with open(path) as f:
                     raw = yaml.safe_load(f)

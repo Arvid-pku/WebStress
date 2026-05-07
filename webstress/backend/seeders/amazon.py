@@ -16,7 +16,7 @@ from typing import Any
 import json
 from pathlib import Path
 
-from webagentbench.backend.models.amazon import (
+from webstress.backend.models.amazon import (
     AmazonSettings,
     Address,
     PaymentMethod,
@@ -27,10 +27,10 @@ from webagentbench.backend.models.amazon import (
     Notification,
     BrowsingHistory,
 )
-from webagentbench.backend.seeder import derive_anchor_time
-from webagentbench.backend.seeders._common import _assign_output
-from webagentbench.tasks._schema import TaskDefinition
-from webagentbench.tasks._seed_builders_amazon import (
+from webstress.backend.seeder import derive_anchor_time
+from webstress.backend.seeders._common import _assign_output
+from webstress.tasks._schema import TaskDefinition
+from webstress.tasks._seed_builders_amazon import (
     AMAZON_BUILDER_REGISTRY,
     AmazonSeedContext,
 )

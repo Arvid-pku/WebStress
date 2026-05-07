@@ -12,7 +12,7 @@ from datetime import datetime, timedelta, timezone
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Any, Callable
 
-from webagentbench.backend.models.lms import (
+from webstress.backend.models.lms import (
     Announcement,
     Assignment,
     CalendarEvent,

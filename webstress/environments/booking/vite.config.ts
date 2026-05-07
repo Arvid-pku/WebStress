@@ -8,7 +8,7 @@ export default defineConfig({
   plugins: [react()],
   base: "/env/booking/",
   optimizeDeps: {
-    exclude: ["@webagentbench/shared", "@webagentbench/booking"],
+    exclude: ["@webstress/shared", "@webstress/booking"],
   },
   build: {
     outDir: "../../static/envs/booking",

@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { preserveQueryParams } from "@webagentbench/shared";
+import { preserveQueryParams } from "@webstress/shared";
 
 import type { Post } from "../types";
 import { activateOnKeyDown, formatNumber, safeHostname, timeAgo } from "../utils";

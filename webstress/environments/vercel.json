@@ -2,7 +2,7 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
   "installCommand": "pnpm install",
-  "buildCommand": "pnpm --filter @webagentbench/demo-site build",
+  "buildCommand": "pnpm --filter @webstress/demo-site build",
   "outputDirectory": "demo-site/out",
   "cleanUrls": true
 }

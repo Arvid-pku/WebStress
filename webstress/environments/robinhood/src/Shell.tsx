@@ -6,7 +6,7 @@ import {
   preserveQueryParams,
   useApi,
   useBenchmarkState,
-} from "@webagentbench/shared";
+} from "@webstress/shared";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 
 import { createRobinhoodApi } from "./api";

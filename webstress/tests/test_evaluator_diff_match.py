@@ -1,7 +1,7 @@
 """Unit tests for match_diff — non-bijection cases only (Task 4)."""
 
-from webagentbench.eval_core import match_diff, Create, Update
-from webagentbench.tasks.canonical_diff import CanonicalDiff
+from webstress.eval_core import match_diff, Create, Update
+from webstress.tasks.canonical_diff import CanonicalDiff
 
 
 def _diff(d: dict) -> CanonicalDiff:
@@ -281,7 +281,7 @@ def test_named_invariant_severity_penalty_applied():
 # ── Task 7: Integration with TaskDefinition + evaluator.py ──────────
 
 def test_task_definition_parses_canonical_diff():
-    from webagentbench.tasks._schema import TaskDefinition
+    from webstress.tasks._schema import TaskDefinition
     td = TaskDefinition.model_validate({
         "task_id": "test_dispatch",
         "env_id": "patient_portal",
@@ -298,13 +298,13 @@ def test_task_definition_parses_canonical_diff():
 def test_named_invariant_ref_resolution_validated_at_load():
     """A canonical_diff referencing invariant[99] when only 1 exists is rejected."""
     import pytest
-    from webagentbench.tasks._schema import TaskDefinition
+    from webstress.tasks._schema import TaskDefinition
     from pydantic import ValidationError
     with pytest.raises((ValueError, ValidationError)):
         # This fails at canonical_diff-level load validation (not pydantic field parsing,
         # since the ref string is structurally valid — it's the out-of-range index that
         # fails).
-        from webagentbench.tasks._registry import _validate_canonical_diff_refs
+        from webstress.tasks._registry import _validate_canonical_diff_refs
         td = TaskDefinition.model_validate({
             "task_id": "bad_ref",
             "env_id": "patient_portal",
@@ -322,7 +322,7 @@ def test_named_invariant_ref_resolution_validated_at_load():
 
 def test_session_captures_initial_snapshot():
     """After create_session, the session exposes an initial_snapshot attribute."""
-    from webagentbench.backend.state import SessionManager
+    from webstress.backend.state import SessionManager
     sm = SessionManager()
     sid, _, _ = sm.create_session(
         env_id="patient_portal",
@@ -338,8 +338,8 @@ def test_session_captures_initial_snapshot():
 
 def test_gmail_collection_map_no_overwrite():
     """Class 13 regression: Email → emails (not deleted); sent/deleted reachable directly."""
-    from webagentbench.backend.models.gmail import GmailSettings, GmailState
-    from webagentbench.eval_core.diff import collection_for, collection_map_for
+    from webstress.backend.models.gmail import GmailSettings, GmailState
+    from webstress.eval_core.diff import collection_for, collection_map_for
 
     state = GmailState(
         env_id="gmail", task_id="test", owner_name="T", owner_email="t@t.com",

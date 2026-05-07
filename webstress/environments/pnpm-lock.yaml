@@ -16,7 +16,7 @@ importers:
 
   amazon:
     dependencies:
-      '@webagentbench/shared':
+      '@webstress/shared':
         specifier: workspace:*
         version: link:../shared
       react:
@@ -47,7 +47,7 @@ importers:
 
   booking:
     dependencies:
-      '@webagentbench/shared':
+      '@webstress/shared':
         specifier: workspace:*
         version: link:../shared
       react:
@@ -78,10 +78,10 @@ importers:
 
   demo-site:
     dependencies:
-      '@webagentbench/gmail':
+      '@webstress/gmail':
         specifier: workspace:*
         version: link:../gmail
-      '@webagentbench/shared':
+      '@webstress/shared':
         specifier: workspace:*
         version: link:../shared
       katex:
@@ -151,7 +151,7 @@ importers:
 
   gmail:
     dependencies:
-      '@webagentbench/shared':
+      '@webstress/shared':
         specifier: workspace:*
         version: link:../shared
       react:
@@ -185,7 +185,7 @@ importers:
 
   lms:
     dependencies:
-      '@webagentbench/shared':
+      '@webstress/shared':
         specifier: workspace:*
         version: link:../shared
       react:
@@ -216,7 +216,7 @@ importers:
 
   patient_portal:
     dependencies:
-      '@webagentbench/shared':
+      '@webstress/shared':
         specifier: workspace:*
         version: link:../shared
       react:
@@ -247,7 +247,7 @@ importers:
 
   reddit:
     dependencies:
-      '@webagentbench/shared':
+      '@webstress/shared':
         specifier: workspace:*
         version: link:../shared
       react:
@@ -278,7 +278,7 @@ importers:
 
   robinhood:
     dependencies:
-      '@webagentbench/shared':
+      '@webstress/shared':
         specifier: workspace:*
         version: link:../shared
       react:

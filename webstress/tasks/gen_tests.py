@@ -2,11 +2,11 @@
 from an already-authored canonical_diff block.
 
 Usage:
-    python -m webagentbench.tasks.gen_tests <task_id>
-    python -m webagentbench.tasks.gen_tests <task_id> --force   # overwrite
+    python -m webstress.tasks.gen_tests <task_id>
+    python -m webstress.tasks.gen_tests <task_id> --force   # overwrite
 
 Emits:
-  webagentbench/tests/test_<task_id>_canonical_diff.py
+  webstress/tests/test_<task_id>_canonical_diff.py
 
 Adversarial coverage is automatic: tests/test_adversarial_battery.py
 parametrizes ``synthesize_adversarial_cases`` over every task whose YAML
@@ -26,8 +26,8 @@ import yaml
 
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
-_TASKS_DIR = _REPO_ROOT / "webagentbench" / "tasks"
-_TESTS_DIR = _REPO_ROOT / "webagentbench" / "tests"
+_TASKS_DIR = _REPO_ROOT / "webstress" / "tasks"
+_TESTS_DIR = _REPO_ROOT / "webstress" / "tests"
 
 
 def _find_task_yaml(task_id: str) -> Path | None:
@@ -137,18 +137,18 @@ def _canonical_diff_test_source(task_id: str, env_id: str, cd: dict) -> str:
 
 Auto-generated scaffolding — fill in the TODO blocks before running.
 
-After filling: `python -m webagentbench.tasks.validate {task_id}`
+After filling: `python -m webstress.tasks.validate {task_id}`
 """
 
 from datetime import datetime, timezone, timedelta
 
-from webagentbench.backend.state import SessionManager
-from webagentbench.eval_core import compute_diff, match_diff
-from webagentbench.tasks._registry import get_task
+from webstress.backend.state import SessionManager
+from webstress.eval_core import compute_diff, match_diff
+from webstress.tasks._registry import get_task
 
 
 # TODO(author): import the entity class(es) this task's canonical_diff targets:
-# from webagentbench.backend.models.{env_id} import ...
+# from webstress.backend.models.{env_id} import ...
 
 
 def _setup_session(seed: int = 42):
@@ -278,7 +278,7 @@ def main() -> int:
     print()
     print("Next steps:")
     print("  1. Open the canonical_diff test file and fill in the TODO blocks.")
-    print(f"  2. Run: python -m webagentbench.tasks.validate {args.task_id}")
+    print(f"  2. Run: python -m webstress.tasks.validate {args.task_id}")
     print("  3. Adversarial coverage is automatic via test_adversarial_battery.py;")
     print("     only write a bespoke test_<task_id>_adversarial.py if the task needs")
     print("     oneof-branch logic the generic synthesizer can't express.")

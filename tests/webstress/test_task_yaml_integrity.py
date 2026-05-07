@@ -11,7 +11,7 @@ from pathlib import Path
 
 import yaml
 
-WAB_DIR = Path(__file__).resolve().parents[2] / "webagentbench"
+WAB_DIR = Path(__file__).resolve().parents[2] / "webstress"
 TASKS_DIR = WAB_DIR / "tasks"
 
 

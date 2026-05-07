@@ -233,7 +233,7 @@ def _add_confusing_decoys(state: Any, params: dict[str, Any], *, rng=None) -> No
     _rng = _entity_rng(rng, 99)
 
     if hasattr(state, "emails"):
-        from webagentbench.backend.models.gmail import Email, Label
+        from webstress.backend.models.gmail import Email, Label
 
         template = state.emails[0] if state.emails else None
         base_time = template.timestamp if template else "2026-01-15T10:00:00Z"
@@ -286,7 +286,7 @@ def _add_confusing_decoys(state: Any, params: dict[str, Any], *, rng=None) -> No
         return
 
     if hasattr(state, "products"):
-        from webagentbench.backend.models.amazon import (
+        from webstress.backend.models.amazon import (
             Address,
             CartItem,
             Order,
@@ -562,7 +562,7 @@ def _add_confusing_decoys(state: Any, params: dict[str, Any], *, rng=None) -> No
         return
 
     if hasattr(state, "properties"):
-        from webagentbench.backend.models.booking import (
+        from webstress.backend.models.booking import (
             Message as BookingMessage,
             PaymentMethod,
             Reservation,
@@ -860,7 +860,7 @@ def _add_confusing_decoys(state: Any, params: dict[str, Any], *, rng=None) -> No
         return
 
     if hasattr(state, "patient") and hasattr(state, "providers") and hasattr(state, "claims"):
-        from webagentbench.backend.models.patient_portal import (
+        from webstress.backend.models.patient_portal import (
             ClinicalMessage,
             Immunization,
             InsuranceClaim,
@@ -1119,7 +1119,7 @@ def _add_confusing_decoys(state: Any, params: dict[str, Any], *, rng=None) -> No
         return
 
     if hasattr(state, "courses") and hasattr(state, "assignments") and hasattr(state, "modules"):
-        from webagentbench.backend.models.lms import (
+        from webstress.backend.models.lms import (
             Announcement,
             Assignment,
             CalendarEvent,
@@ -1512,8 +1512,8 @@ def _add_confusing_decoys(state: Any, params: dict[str, Any], *, rng=None) -> No
             return
 
     if hasattr(state, "posts") and hasattr(state, "subreddits"):
-        from webagentbench.backend.models.base import utc_now
-        from webagentbench.backend.models.reddit import Comment, Message, Notification, Post, Subreddit
+        from webstress.backend.models.base import utc_now
+        from webstress.backend.models.reddit import Comment, Message, Notification, Post, Subreddit
 
         subreddit_template = state.subreddits[0] if state.subreddits else None
         post_template = state.posts[0] if state.posts else None
@@ -1727,7 +1727,7 @@ def _split_information(state: Any, params: dict[str, Any], *, rng=None) -> None:
     split_count = params.get("split_count", 3)
     fragments = params.get("fragments", [])
 
-    from webagentbench.backend.models.gmail import Email
+    from webstress.backend.models.gmail import Email
 
     import random as _random
     _rng = rng or _random.Random(88)
@@ -1765,7 +1765,7 @@ def _add_contradictory_update(state: Any, params: dict[str, Any], *, rng=None) -
     if not hasattr(state, "emails"):
         return
 
-    from webagentbench.backend.models.gmail import Email
+    from webstress.backend.models.gmail import Email
 
     import random as _random
     _rng = rng or _random.Random(77)
@@ -1806,7 +1806,7 @@ def _plant_wrong_answer(state: Any, params: dict[str, Any], *, rng=None) -> None
     if not hasattr(state, "emails"):
         return
 
-    from webagentbench.backend.models.gmail import Email
+    from webstress.backend.models.gmail import Email
 
     import random as _random
     _rng = rng or _random.Random(66)
@@ -1863,7 +1863,7 @@ def _increase_distractors(state: Any, params: dict[str, Any], *, rng=None) -> No
     if not hasattr(state, "emails"):
         return
 
-    from webagentbench.backend.models.gmail import Email
+    from webstress.backend.models.gmail import Email
 
     _rng = rng or _random.Random(42)
 
@@ -1953,7 +1953,7 @@ def _alias_entities(state: Any, params: dict[str, Any], *, rng=None) -> None:
         entities = _replicate_with_multiplier(entities, multiplier, cap, suffix_field="alias_name")
 
     if hasattr(state, "contacts"):
-        from webagentbench.backend.models.gmail import Contact
+        from webstress.backend.models.gmail import Contact
         _rng = _entity_rng(rng, 55)
 
         for alias in aliases:
@@ -1967,8 +1967,8 @@ def _alias_entities(state: Any, params: dict[str, Any], *, rng=None) -> None:
         return
 
     if hasattr(state, "user_profiles"):
-        from webagentbench.backend.models.base import utc_now
-        from webagentbench.backend.models.reddit import Message, UserProfile
+        from webstress.backend.models.base import utc_now
+        from webstress.backend.models.reddit import Message, UserProfile
 
         _rng = _entity_rng(rng, 56)
         template_profile = state.user_profiles[0] if state.user_profiles else None
@@ -2133,8 +2133,8 @@ def _rh_add_decoy_notifications(state: Any, params: dict[str, Any], *, rng=None)
     """
     if not hasattr(state, "notifications"):
         return
-    from webagentbench.backend.models.robinhood import Notification
-    from webagentbench.backend.models.base import utc_now
+    from webstress.backend.models.robinhood import Notification
+    from webstress.backend.models.base import utc_now
     import random as _random
     _rng = rng or _random.Random(42)
 
@@ -2179,8 +2179,8 @@ def _rh_add_noise_orders(state: Any, params: dict[str, Any], *, rng=None) -> Non
     """
     if not hasattr(state, "orders"):
         return
-    from webagentbench.backend.models.robinhood import Order
-    from webagentbench.backend.models.base import utc_now
+    from webstress.backend.models.robinhood import Order
+    from webstress.backend.models.base import utc_now
     from decimal import Decimal
     import random as _random
     _rng = rng or _random.Random(42)
@@ -2238,8 +2238,8 @@ def _rh_add_misleading_alert(state: Any, params: dict[str, Any], *, rng=None) ->
     """Add a price alert that could mislead the agent (Backtracking)."""
     if not hasattr(state, "price_alerts"):
         return
-    from webagentbench.backend.models.robinhood import PriceAlert
-    from webagentbench.backend.models.base import utc_now
+    from webstress.backend.models.robinhood import PriceAlert
+    from webstress.backend.models.base import utc_now
     from decimal import Decimal
     import random as _random
     _rng = rng or _random.Random(42)
@@ -2271,13 +2271,13 @@ def _rh_add_confusing_positions(state: Any, params: dict[str, Any], *, rng=None)
     """
     if not hasattr(state, "positions"):
         return
-    from webagentbench.backend.models.robinhood import (
+    from webstress.backend.models.robinhood import (
         HistoricalPrice,
         Position,
         Stock,
         TaxLot,
     )
-    from webagentbench.backend.models.base import utc_now
+    from webstress.backend.models.base import utc_now
     from decimal import Decimal
     from datetime import timedelta
     import random as _random
@@ -2375,7 +2375,7 @@ def _rh_add_confusing_stocks(state: Any, params: dict[str, Any], *, rng=None) ->
     """
     if not hasattr(state, "stocks"):
         return
-    from webagentbench.backend.models.robinhood import HistoricalPrice, Stock
+    from webstress.backend.models.robinhood import HistoricalPrice, Stock
     from decimal import Decimal
 
     _rng = _entity_rng(rng, 57)
@@ -2840,7 +2840,7 @@ def _adv_gmail(
     typosquat: bool,
     rng: Any,
 ) -> None:
-    from webagentbench.backend.models.gmail import Email
+    from webstress.backend.models.gmail import Email
 
     if not state.emails:
         return
@@ -2880,7 +2880,7 @@ def _adv_amazon(
     typosquat: bool,
     rng: Any,
 ) -> None:
-    from webagentbench.backend.models.amazon import Notification, Review
+    from webstress.backend.models.amazon import Notification, Review
 
     products = getattr(state, "products", []) or []
     if not products:
@@ -2937,7 +2937,7 @@ def _adv_reddit(
     typosquat: bool,
     rng: Any,
 ) -> None:
-    from webagentbench.backend.models.reddit import Comment, Post
+    from webstress.backend.models.reddit import Comment, Post
 
     subreddits = getattr(state, "subreddits", []) or []
     if not subreddits:
@@ -2994,8 +2994,8 @@ def _adv_robinhood(
     typosquat: bool,
     rng: Any,
 ) -> None:
-    from webagentbench.backend.models.base import utc_now
-    from webagentbench.backend.models.robinhood import Notification
+    from webstress.backend.models.base import utc_now
+    from webstress.backend.models.robinhood import Notification
 
     if not hasattr(state, "notifications"):
         return
@@ -3023,7 +3023,7 @@ def _adv_booking(
     typosquat: bool,
     rng: Any,
 ) -> None:
-    from webagentbench.backend.models.booking import Review
+    from webstress.backend.models.booking import Review
 
     properties = getattr(state, "properties", []) or []
     if not properties:
@@ -3066,7 +3066,7 @@ def _adv_lms(
     typosquat: bool,
     rng: Any,
 ) -> None:
-    from webagentbench.backend.models.lms import Announcement, DiscussionPost
+    from webstress.backend.models.lms import Announcement, DiscussionPost
 
     courses = getattr(state, "courses", []) or []
     if not courses:
@@ -3117,7 +3117,7 @@ def _adv_patient_portal(
     typosquat: bool,
     rng: Any,
 ) -> None:
-    from webagentbench.backend.models.patient_portal import ClinicalMessage
+    from webstress.backend.models.patient_portal import ClinicalMessage
 
     target_list = getattr(state, "clinical_messages", None) or getattr(
         state, "messages", None

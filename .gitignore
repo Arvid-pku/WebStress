@@ -47,8 +47,8 @@ sonnet_4_6_full_openrouter3/
 trajectory/
 history/
 raw_instructions/
-# NOTE: webagentbench/human/traces/ is explicitly tracked (annotator recordings).
-# Agent trajectories (webagentbench/trajectories/, gold_trajectories/) remain ignored below.
+# NOTE: webstress/human/traces/ is explicitly tracked (annotator recordings).
+# Agent trajectories (webstress/trajectories/, gold_trajectories/) remain ignored below.
 
 # Local planning scratch files
 task_plan.md
@@ -78,16 +78,16 @@ scripts/debug_screenshots/
 
 # Frontend and generated benchmark assets
 *.tsbuildinfo
-webagentbench/static/*.html
-!webagentbench/static/docs.html
-!webagentbench/static/control.html
-!webagentbench/static/human.html
-!webagentbench/static/human_control.html
-webagentbench/static/envs/
-webagentbench/static/.frontend-build.lock
-webagentbench/trajectories/*
-webagentbench/.codex
-webagentbench/.playwright-mcp/*
+webstress/static/*.html
+!webstress/static/docs.html
+!webstress/static/control.html
+!webstress/static/human.html
+!webstress/static/human_control.html
+webstress/static/envs/
+webstress/static/.frontend-build.lock
+webstress/trajectories/*
+webstress/.codex
+webstress/.playwright-mcp/*
 .vercel
 .claude/
 
@@ -105,16 +105,16 @@ docs/worker_prompts/*/
 # Local model run archives + their extracted contents
 opus_4_7_anthropic_full.tar.gz
 sonnet_4_6_full_openrouter.tar.gz
-webagentbench/results/opus_4_7_anthropic_full/
-webagentbench/results/sonnet_4_6_full_openrouter3/
+webstress/results/opus_4_7_anthropic_full/
+webstress/results/sonnet_4_6_full_openrouter3/
 
 # Local notes
 RUNNING_EVALS.md
 
 # In-progress human trajectory recordings + their finalized gold outputs
 # (re-include when the recording session is done and we want to commit them).
-webagentbench/human/traces/
-webagentbench/gold_trajectories/
+webstress/human/traces/
+webstress/gold_trajectories/
 
 # NeurIPS 2026 paper draft + its source archive (kept locally, not in git).
 # paper/ holds the LaTeX source uploaded to Overleaf; paper_workspace/ holds

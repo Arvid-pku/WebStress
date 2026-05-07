@@ -10,7 +10,7 @@ import {
 import { buildGmailReplayStepStates } from "@/lib/gmailReplay";
 import { TrajectoryViewer } from "@/components/replay/TrajectoryViewer";
 import { GmailWrapper } from "@/components/gmail-wrapper";
-import type { GmailFixture } from "@webagentbench/gmail/mutator";
+import type { GmailFixture } from "@webstress/gmail/mutator";
 
 interface TaskFixture {
   task_id: string;

@@ -8,24 +8,24 @@ import pytest
 import yaml
 from fastapi import HTTPException
 
-from webagentbench.agent_eval import run_episode
-from webagentbench.app import MANIFEST_FINGERPRINT
-from webagentbench.backend.routes.gmail import SessionCreateRequest, create_session
-from webagentbench.backend.state import SessionManager
-from webagentbench.injector.middleware import (
+from webstress.agent_eval import run_episode
+from webstress.app import MANIFEST_FINGERPRINT
+from webstress.backend.routes.gmail import SessionCreateRequest, create_session
+from webstress.backend.state import SessionManager
+from webstress.injector.middleware import (
     _normalize_progressive_stages,
     _progressive_delay_ms,
 )
-from webagentbench.injector.seed import apply_seed_injection
-from webagentbench.injector.server import apply_server_injection
-from webagentbench.runner import controller_headers, ensure_controller_secret
-from webagentbench.task_rendering import render_template
-from webagentbench.tasks._evaluator import evaluate
-from webagentbench.tasks._schema import Check, EvalConfig, NegativeCheck
-from webagentbench.tasks._registry import get_task
+from webstress.injector.seed import apply_seed_injection
+from webstress.injector.server import apply_server_injection
+from webstress.runner import controller_headers, ensure_controller_secret
+from webstress.task_rendering import render_template
+from webstress.tasks._evaluator import evaluate
+from webstress.tasks._schema import Check, EvalConfig, NegativeCheck
+from webstress.tasks._registry import get_task
 
 try:
-    from webagentbench.browsergym_task import WebStressTask
+    from webstress.browsergym_task import WebStressTask
 except ModuleNotFoundError as exc:
     WebStressTask = None
     _BROWSERGYM_IMPORT_ERROR = exc
@@ -173,7 +173,7 @@ def test_incident_postmortem_exploration_variant_hides_corrected_email() -> None
 def test_hide_prerequisite_variants_always_specify_a_target() -> None:
     """Each hide_prerequisite injection must declare what to remove.
 
-    Two valid shapes (see webagentbench/injector/server.py):
+    Two valid shapes (see webstress/injector/server.py):
         legacy: label_name: "Foo"
         multi:  prerequisites: [{kind, name|email|key, ...}, ...]
     """
@@ -404,11 +404,11 @@ def test_search_and_star_passes_when_target_starred() -> None:
 @pytest.mark.skipif(WebStressTask is None, reason="browsergym is not installed")
 def test_browsergym_task_rejects_stale_server_manifest(monkeypatch: pytest.MonkeyPatch) -> None:
     task = WebStressTask(seed=42, task_id="gmail_search_and_star", server_port=8099)
-    monkeypatch.setenv("WEBAGENTBENCH_CONTROLLER_SECRET", "test-controller-secret")
+    monkeypatch.setenv("WEBSTRESS_CONTROLLER_SECRET", "test-controller-secret")
 
-    monkeypatch.setattr("webagentbench.runner.wait_for_server", lambda host, port, timeout=2: True)
+    monkeypatch.setattr("webstress.runner.wait_for_server", lambda host, port, timeout=2: True)
     monkeypatch.setattr(
-        "webagentbench.browsergym_task._http_json",
+        "webstress.browsergym_task._http_json",
         lambda url, **kwargs: {
             "status": "ok",
             "manifest_fingerprint": "stale-server",
@@ -419,7 +419,7 @@ def test_browsergym_task_rejects_stale_server_manifest(monkeypatch: pytest.Monke
         task._ensure_server()
 
     monkeypatch.setattr(
-        "webagentbench.browsergym_task._http_json",
+        "webstress.browsergym_task._http_json",
         lambda url, **kwargs: {
             "status": "ok",
             "manifest_fingerprint": MANIFEST_FINGERPRINT,
@@ -430,7 +430,7 @@ def test_browsergym_task_rejects_stale_server_manifest(monkeypatch: pytest.Monke
 
 
 def test_controller_secret_helpers_round_trip(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.delenv("WEBAGENTBENCH_CONTROLLER_SECRET", raising=False)
+    monkeypatch.delenv("WEBSTRESS_CONTROLLER_SECRET", raising=False)
 
     assert controller_headers() == {}
 

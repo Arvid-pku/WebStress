@@ -9,7 +9,7 @@ from __future__ import annotations
 from datetime import timedelta
 from typing import Any
 
-from webagentbench.tasks._seed_builders import SeedContext, _register
+from webstress.tasks._seed_builders import SeedContext, _register
 
 
 # ---------------------------------------------------------------------------

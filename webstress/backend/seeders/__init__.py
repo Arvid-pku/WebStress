@@ -10,7 +10,7 @@ from __future__ import annotations
 import random
 from typing import Any, Protocol
 
-from webagentbench.tasks._schema import TaskDefinition
+from webstress.tasks._schema import TaskDefinition
 
 from .amazon import AmazonSeedRunner
 from .booking import BookingSeedRunner

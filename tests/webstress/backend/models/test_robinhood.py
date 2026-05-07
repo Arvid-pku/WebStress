@@ -7,7 +7,7 @@ from decimal import Decimal
 
 import pytest
 
-from webagentbench.backend.models.robinhood import (
+from webstress.backend.models.robinhood import (
     AccountSettings,
     Greeks,
     HistoricalPrice,

@@ -51,10 +51,10 @@ Python benchmark and integrity suite:
 python -m pytest -q tests
 ```
 
-If you run tests from the workspace root above `webagentbench/`, use:
+If you run tests from the workspace root above `webstress/`, use:
 
 ```bash
-python -m pytest -q webagentbench/tests
+python -m pytest -q webstress/tests
 ```
 
 High-signal subsets:
@@ -67,8 +67,8 @@ python -m pytest -q tests/test_task_linter.py tests/test_scoring_audit.py tests/
 Frontend workspace:
 
 ```bash
-./scripts/webagentbench.sh status
-./scripts/webagentbench.sh build --clean
+./scripts/webstress.sh status
+./scripts/webstress.sh build --clean
 pnpm -C environments build
 pnpm -C environments test
 pnpm -C environments dev:amazon
@@ -77,11 +77,11 @@ pnpm -C environments dev:gmail
 
 The built bundles are written to `static/envs/<env>/`. The FastAPI app marks an environment unavailable when its bundle is missing or stale relative to `environments/<env>/src/` and `environments/shared/src/`.
 
-`./scripts/webagentbench.sh status` prints the current availability check per environment. `./scripts/webagentbench.sh build --clean` removes old static bundles and rebuilds every benchmark frontend in the workspace, excluding only `demo-site`.
+`./scripts/webstress.sh status` prints the current availability check per environment. `./scripts/webstress.sh build --clean` removes old static bundles and rebuilds every benchmark frontend in the workspace, excluding only `demo-site`.
 
 ## Running the Stock Browser-Use Harness
 
-`webagentbench/stock_browseruse_eval.py` is a second evaluation harness built on
+`webstress/stock_browseruse_eval.py` is a second evaluation harness built on
 upstream `browser_use.Agent` with minimal customization (stock system prompt,
 stock vision, stock planner, action registry minus a few
 benchmark-incompatible actions). It runs alongside the custom harness in
@@ -101,12 +101,12 @@ uv sync --extra browser-use
 uv run playwright install chromium
 
 # 3. Environment frontends (React SPAs served by the backend)
-pnpm -C webagentbench/environments install
-./scripts/webagentbench.sh build     # re-run after any frontend source change
+pnpm -C webstress/environments install
+./scripts/webstress.sh build     # re-run after any frontend source change
 
 # 4. API keys — copy the template and fill in the providers you plan to use
-cp webagentbench/.env.example webagentbench/.env
-$EDITOR webagentbench/.env           # paste keys; file is gitignored
+cp webstress/.env.example webstress/.env
+$EDITOR webstress/.env           # paste keys; file is gitignored
 ```
 
 > **AWS Bedrock users:** an `AWS_BEDROCK_API_KEY` alone is not enough. Go to
@@ -119,8 +119,8 @@ $EDITOR webagentbench/.env           # paste keys; file is gitignored
 Sanity check the frontend build and the `.env`:
 
 ```bash
-./scripts/webagentbench.sh status    # all 7 envs should report "ready"
-grep -E '^[A-Z_]+=' webagentbench/.env | grep -v '=$'   # keys you've filled
+./scripts/webstress.sh status    # all 7 envs should report "ready"
+grep -E '^[A-Z_]+=' webstress/.env | grep -v '=$'   # keys you've filled
 ```
 
 ### Zero-to-first-PASS smoke (copy-paste)
@@ -130,23 +130,23 @@ Two terminals in the repo root:
 ```bash
 # Terminal 1 — backend
 source .venv/bin/activate            # or:  uv shell
-set -a; source webagentbench/.env; set +a
-export WEBAGENTBENCH_AUTO_BUILD_FRONTENDS=0
-python -m uvicorn webagentbench.app:app --host 127.0.0.1 --port 8080
+set -a; source webstress/.env; set +a
+export WEBSTRESS_AUTO_BUILD_FRONTENDS=0
+python -m uvicorn webstress.app:app --host 127.0.0.1 --port 8080
 # Leave this running. Wait for: "Uvicorn running on http://127.0.0.1:8080".
 ```
 
 ```bash
 # Terminal 2 — run one task end-to-end (~90 seconds)
 source .venv/bin/activate
-set -a; source webagentbench/.env; set +a
-python -m webagentbench.stock_browseruse_eval \
+set -a; source webstress/.env; set +a
+python -m webstress.stock_browseruse_eval \
     --model us.anthropic.claude-sonnet-4-6 --provider bedrock \
     --tasks amazon_browse_category \
     --backend-port 8080 --frontend-port 8080 \
-    --output-dir webagentbench/results/smoke
+    --output-dir webstress/results/smoke
 # Expect: "SUMMARY: 1/1 passed | avg score: 1.000"
-# Artifacts written under webagentbench/results/smoke/:
+# Artifacts written under webstress/results/smoke/:
 #   summary.json, run_manifest.json, tasks/amazon_browse_category/{trajectory.json,screenshots/*.png}
 ```
 
@@ -167,7 +167,7 @@ bedrock             AWS_BEDROCK_API_KEY + AWS_BEDROCK_REGION (Converse API)
 anthropic_bedrock   same env as bedrock; Anthropic-native Messages API path
 anthropic           ANTHROPIC_API_KEY
 openrouter          OPENROUTER_API_KEY
-vllm                WEBAGENTBENCH_API_BASE_URL + WEBAGENTBENCH_API_KEY
+vllm                WEBSTRESS_API_BASE_URL + WEBSTRESS_API_KEY
 ```
 
 The `bedrock` provider uses `ChatAWSBedrock` under the hood but injects
@@ -180,11 +180,11 @@ without it — so behavior never regresses below upstream.
 ### Single task (smoke)
 
 ```bash
-python -m webagentbench.stock_browseruse_eval \
+python -m webstress.stock_browseruse_eval \
     --model us.anthropic.claude-sonnet-4-6 --provider bedrock \
     --tasks amazon_browse_category \
     --backend-port 8080 --frontend-port 8080 \
-    --output-dir webagentbench/results/single_task
+    --output-dir webstress/results/single_task
 ```
 
 ### Batch run via `run_picks.py`
@@ -193,11 +193,11 @@ python -m webagentbench.stock_browseruse_eval \
 one of two sources:
 
 - `--subset all` — **the agent benchmark default.** Enumerates every task
-  under `webagentbench/tasks/<env>/*.yaml` (519 base tasks) plus every
-  intervention variant under `webagentbench/injector/variants/*.yaml`
+  under `webstress/tasks/<env>/*.yaml` (519 base tasks) plus every
+  intervention variant under `webstress/injector/variants/*.yaml`
   (~530). Produces **519 clean + 530 intervention ≈ 1049 picks**.
 - `--subset primary / duplicate / both` — subsets curated for the *human*
-  annotator study in `webagentbench/human/assignments_v1.yaml`. These are
+  annotator study in `webstress/human/assignments_v1.yaml`. These are
   for reproducing the human-study slice, **not the agent sweep.**
 
 `scripts/run_picks.py` then consumes the picks JSON and runs the tasks
@@ -228,8 +228,8 @@ python scripts/gen_picks.py --subset duplicate -o picks_duplicate.json  # 35  ×
 
 ```bash
 # Terminal 1 — backend (frontends must already be built; see Prerequisites above)
-export WEBAGENTBENCH_AUTO_BUILD_FRONTENDS=0
-python -m uvicorn webagentbench.app:app --host 127.0.0.1 --port 8080
+export WEBSTRESS_AUTO_BUILD_FRONTENDS=0
+python -m uvicorn webstress.app:app --host 127.0.0.1 --port 8080
 
 # Terminal 2 — agent (sequential, one episode at a time)
 python scripts/run_picks.py \
@@ -237,7 +237,7 @@ python scripts/run_picks.py \
     --model us.anthropic.claude-sonnet-4-6 --provider bedrock \
     --backend-port 8080 --frontend-port 8080 \
     --max-steps 40 --timeout 600 \
-    --output-dir webagentbench/results/sonnet_duplicate
+    --output-dir webstress/results/sonnet_duplicate
 ```
 
 **Parallel execution with `--concurrency N`** (default `1` = sequential). Each
@@ -252,7 +252,7 @@ python scripts/run_picks.py \
     --backend-port 8080 --frontend-port 8080 \
     --concurrency 4 \
     --max-steps 40 --timeout 600 \
-    --output-dir webagentbench/results/sonnet_full
+    --output-dir webstress/results/sonnet_full
 ```
 
 Wall-time scales close to linearly with `--concurrency` until the backend or
@@ -275,11 +275,11 @@ or timeout mid-sweep still leaves every completed task inspectable on disk.
 set -euo pipefail
 cd /home/users/$USER/projects/LLMOS
 source .venv/bin/activate
-set -a; source webagentbench/.env; set +a
+set -a; source webstress/.env; set +a
 
 BACKEND_PORT=$(( 9400 + (SLURM_JOB_ID % 600) ))
-export WEBAGENTBENCH_AUTO_BUILD_FRONTENDS=0
-python -m uvicorn webagentbench.app:app \
+export WEBSTRESS_AUTO_BUILD_FRONTENDS=0
+python -m uvicorn webstress.app:app \
     --host 127.0.0.1 --port "$BACKEND_PORT" --log-level warning \
     > /usr/xtmp/$USER/wab-logs/backend-${SLURM_JOB_ID}.log 2>&1 &
 BPID=$!
@@ -308,7 +308,7 @@ throughput.
 Every run produces a directory with the following layout:
 
 ```
-webagentbench/results/<run_name>/
+webstress/results/<run_name>/
 ├── summary.json            top-level aggregation (score/pass/avg + trajectory_path per task)
 ├── run_manifest.json       reproducibility metadata (model, provider, picks file, git SHA, timestamps)
 └── tasks/
@@ -336,7 +336,7 @@ Inspect a run with the existing visualizer (pass either the top-level
 `summary.json` or a single task's `trajectory.json`):
 
 ```bash
-python -m webagentbench.visualize webagentbench/results/<run_name>/summary.json
+python -m webstress.visualize webstress/results/<run_name>/summary.json
 # opens an HTML viewer: iframe of the live WAB page on the left, step-by-step
 # timeline on the right. Each step has "Thought" and (for stock harness)
 # "Screenshot" <details> you can expand. Screenshots are re-encoded from the
@@ -407,11 +407,11 @@ JSON). Defaults are on.
 
   | Env var | Type | Default | Purpose |
   |---|---|---|---|
-  | `WEBAGENTBENCH_OPENROUTER_IGNORE` | csv | `Amazon Bedrock,Novita` | Replace the ignore list. Empty string allows all upstreams. |
-  | `WEBAGENTBENCH_OPENROUTER_ONLY` | csv | _(unset)_ | Force-restrict to these upstreams. |
-  | `WEBAGENTBENCH_OPENROUTER_ORDER` | csv | _(unset)_ | Preferred upstream ordering. |
-  | `WEBAGENTBENCH_OPENROUTER_ALLOW_FALLBACKS` | bool | true | Allow OR to fall back if preferred upstream is unavailable. |
-  | `WEBAGENTBENCH_OPENROUTER_REQUIRE_PARAMETERS` | bool | false | Strict-match upstream parameters. **Off by default** — turning it on can return `404 No endpoints found` for models like `qwen3-vl-235b-a22b-thinking` whose OR pool has no perfect parameter match. |
+  | `WEBSTRESS_OPENROUTER_IGNORE` | csv | `Amazon Bedrock,Novita` | Replace the ignore list. Empty string allows all upstreams. |
+  | `WEBSTRESS_OPENROUTER_ONLY` | csv | _(unset)_ | Force-restrict to these upstreams. |
+  | `WEBSTRESS_OPENROUTER_ORDER` | csv | _(unset)_ | Preferred upstream ordering. |
+  | `WEBSTRESS_OPENROUTER_ALLOW_FALLBACKS` | bool | true | Allow OR to fall back if preferred upstream is unavailable. |
+  | `WEBSTRESS_OPENROUTER_REQUIRE_PARAMETERS` | bool | false | Strict-match upstream parameters. **Off by default** — turning it on can return `404 No endpoints found` for models like `qwen3-vl-235b-a22b-thinking` whose OR pool has no perfect parameter match. |
 
   Users who want Bedrock as the actual model host should pass
   `--provider bedrock` directly (native Converse API, no OAI-compat
@@ -521,7 +521,7 @@ Files:
 
 ### Zero-to-first-PASS smoke (copy-paste, mirrors the browser-use quickstart)
 
-Two terminals in the repo root. Assumes `webagentbench/.env` is filled,
+Two terminals in the repo root. Assumes `webstress/.env` is filled,
 frontends are built, and `.venv` is set up — see the [Prerequisites][prereq]
 section above (the same steps apply to both harnesses).
 
@@ -530,24 +530,24 @@ section above (the same steps apply to both harnesses).
 ```bash
 # Terminal 1 — backend (same as browser-use mode)
 source .venv/bin/activate
-set -a; source webagentbench/.env; set +a
-export WEBAGENTBENCH_AUTO_BUILD_FRONTENDS=0
-python -m uvicorn webagentbench.app:app --host 127.0.0.1 --port 8080
+set -a; source webstress/.env; set +a
+export WEBSTRESS_AUTO_BUILD_FRONTENDS=0
+python -m uvicorn webstress.app:app --host 127.0.0.1 --port 8080
 # Wait for: "Uvicorn running on http://127.0.0.1:8080"
 ```
 
 ```bash
 # Terminal 2 — single pixel-mode task (~90s, costs ~$0.05 on Gemini Flash)
 source .venv/bin/activate
-set -a; source webagentbench/.env; set +a
-python -m webagentbench.pixel_eval \
+set -a; source webstress/.env; set +a
+python -m webstress.pixel_eval \
     --task booking_clear_search_history \
     --model gemini-3-flash-preview --provider gemini \
     --backend-port 8080 \
     --max-steps 25 --timeout 600 \
-    --output-dir webagentbench/results/pixel-smoke
+    --output-dir webstress/results/pixel-smoke
 # Expect a JSON dump with score=1.0 / success=True.
-# Per-step screenshots: webagentbench/results/pixel-smoke/screenshots/stepNN.png
+# Per-step screenshots: webstress/results/pixel-smoke/screenshots/stepNN.png
 ```
 
 ### Pre-flight: validate credentials in <10s before launching anything
@@ -560,10 +560,10 @@ locally before submitting any sbatch:
 
 ```bash
 source .venv/bin/activate
-set -a; source webagentbench/.env; set +a
+set -a; source webstress/.env; set +a
 
 python -c "
-from webagentbench.pixel_agent import PixelLLMAgent
+from webstress.pixel_agent import PixelLLMAgent
 for model, prov in [
     ('gemini-3-flash-preview', 'gemini'),
     ('anthropic/claude-opus-4.6', 'openrouter'),
@@ -580,16 +580,16 @@ for model, prov in [
 
 ```bash
 source .venv/bin/activate
-set -a; source webagentbench/.env; set +a
+set -a; source webstress/.env; set +a
 
-python -m webagentbench.pixel_eval \
+python -m webstress.pixel_eval \
     --task booking_save_property \
     --variant booking_save_property__property_twin.yaml \
     --model gemini-3-flash-preview \
     --provider gemini \
     --backend-port 8080 \
     --max-steps 40 --timeout 600 \
-    --output-dir webagentbench/results/pixel-smoke
+    --output-dir webstress/results/pixel-smoke
 ```
 
 ### Running a sweep — sequential (any machine, no slurm needed)
@@ -611,7 +611,7 @@ cat > picks.json <<'EOF'
 EOF
 
 # Terminal 1 — backend on any free port
-python -m uvicorn webagentbench.app:app --host 127.0.0.1 --port 8080
+python -m uvicorn webstress.app:app --host 127.0.0.1 --port 8080
 
 # Terminal 2 — sequential runner
 python scripts/pixel_run_picks.py \
@@ -619,7 +619,7 @@ python scripts/pixel_run_picks.py \
     --model gemini-3-flash-preview --provider gemini \
     --backend-port 8080 \
     --max-steps 40 --timeout 600 \
-    --output-dir webagentbench/results/pixel-sweep
+    --output-dir webstress/results/pixel-sweep
 ```
 
 Per-task trajectories (with `screenshots/stepNN.png`) are written
@@ -636,11 +636,11 @@ multi-tenant; each session gets its own UUID). Pattern:
 
 ```bash
 # Terminal 1 — single backend, any free port
-python -m uvicorn webagentbench.app:app --host 127.0.0.1 --port 8080
+python -m uvicorn webstress.app:app --host 127.0.0.1 --port 8080
 
 # Terminal 2 — fan out N runner processes
 N=4   # how many parallel processes; tune to your CPU/RAM
-mkdir -p webagentbench/results/pixel-sweep
+mkdir -p webstress/results/pixel-sweep
 for i in $(seq 0 $((N-1))); do
     python scripts/pixel_run_picks.py \
         --picks picks.json \
@@ -648,12 +648,12 @@ for i in $(seq 0 $((N-1))); do
         --backend-port 8080 \
         --max-steps 40 --timeout 600 \
         --shard-of $N --shard-id $i \
-        --output-dir webagentbench/results/pixel-sweep &
+        --output-dir webstress/results/pixel-sweep &
 done
 wait
 
 # Aggregate the N shard outputs into one summary
-python scripts/pixel_aggregate.py webagentbench/results/pixel-sweep
+python scripts/pixel_aggregate.py webstress/results/pixel-sweep
 ```
 
 Each shard writes to `<output-dir>/shard_NN/`; `pixel_aggregate.py`
@@ -713,14 +713,14 @@ Either generate one with `scripts/gen_picks.py` or hand-write a list, e.g.:
 set -euo pipefail
 cd "${WAB_ROOT:-/home/users/$USER/projects/LLMOS}"
 source .venv/bin/activate
-set -a; source webagentbench/.env; set +a
+set -a; source webstress/.env; set +a
 
 # Each array task gets a unique backend port (SLURM_JOB_ID is per-task)
 BACKEND_PORT=$(( 9400 + (SLURM_JOB_ID % 600) ))
-export WEBAGENTBENCH_AUTO_BUILD_FRONTENDS=0
-export WEBAGENTBENCH_CONTROLLER_SECRET="pixel-${SLURM_JOB_ID}"
+export WEBSTRESS_AUTO_BUILD_FRONTENDS=0
+export WEBSTRESS_CONTROLLER_SECRET="pixel-${SLURM_JOB_ID}"
 
-python -m uvicorn webagentbench.app:app \
+python -m uvicorn webstress.app:app \
     --host 127.0.0.1 --port "$BACKEND_PORT" --log-level warning \
     > /usr/xtmp/$USER/wab-logs/backend-${SLURM_JOB_ID}.log 2>&1 &
 BPID=$!
@@ -812,7 +812,7 @@ MODEL=us.anthropic.claude-sonnet-4-6 PROVIDER=bedrock \
 
 ## Results And Artifacts
 
-Sample review artifacts checked into this repo live under [results/webagentbench/](results/webagentbench/). For the current local artifact layout and naming, see [results/webagentbench/README.md](results/webagentbench/README.md).
+Sample review artifacts checked into this repo live under [results/webstress/](results/webstress/). For the current local artifact layout and naming, see [results/webstress/README.md](results/webstress/README.md).
 
 These checked-in JSON files are examples and review artifacts, not a canonical leaderboard for the benchmark.
 

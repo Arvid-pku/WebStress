@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
-import { SearchBar, preserveQueryParams } from "@webagentbench/shared";
+import { SearchBar, preserveQueryParams } from "@webstress/shared";
 
 import { useRobinhoodLayout } from "../context";
 import type { Stock } from "../types";

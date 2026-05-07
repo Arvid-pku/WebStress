@@ -1,5 +1,5 @@
 /**
- * WebAgentBench — Shared Benchmark State Harness
+ * WebStress — Shared Benchmark State Harness
  *
  * Loaded by every benchmark page. Initializes window.__benchmarkState and
  * provides helpers for logging events, updating data, and marking completion.

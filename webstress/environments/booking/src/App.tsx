@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { useSession } from "@webagentbench/shared";
+import { useSession } from "@webstress/shared";
 import BookingShell from "./Shell";
 import Home from "./pages/Home";
 import SearchResults from "./pages/SearchResults";

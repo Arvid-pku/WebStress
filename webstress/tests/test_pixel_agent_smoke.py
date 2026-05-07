@@ -14,7 +14,7 @@ from types import SimpleNamespace
 
 import numpy as np
 
-from webagentbench.pixel_agent import (
+from webstress.pixel_agent import (
     PixelLLMAgent,
     VALID_COORD_ACTIONS,
     _extract_thinking_and_action,

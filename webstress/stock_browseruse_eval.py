@@ -17,10 +17,10 @@ Defense in depth: Browser(allowed_domains=["127.0.0.1","localhost"]) blocks any
 cross-origin attempts at the browser level.
 
 CLI:
-    python -m webagentbench.stock_browseruse_eval \\
+    python -m webstress.stock_browseruse_eval \\
         --model gemini-3-flash-preview --provider gemini \\
         --tasks booking_cancel_upcoming booking_budget_comparison \\
-        --output-dir webagentbench/results/gemini_booking
+        --output-dir webstress/results/gemini_booking
 """
 from __future__ import annotations
 
@@ -40,7 +40,7 @@ from typing import Any
 logger = logging.getLogger(__name__)
 BASE_DIR = Path(__file__).parent
 
-# Load GEMINI_API_KEY / OPENAI_API_KEY / etc. from webagentbench/.env.
+# Load GEMINI_API_KEY / OPENAI_API_KEY / etc. from webstress/.env.
 try:
     from dotenv import load_dotenv as _load_dotenv
     _load_dotenv(BASE_DIR / ".env", override=False)
@@ -283,7 +283,7 @@ def _make_bedrock_forced_class():
 #   - Novita: returns `model features structured outputs not support` for
 #     models other providers (Alibaba, DeepInfra, Fireworks, etc.) handle —
 #     Novita just hasn't implemented strict `response_format=json_schema`.
-# This is the default applied when `WEBAGENTBENCH_OPENROUTER_IGNORE` env var
+# This is the default applied when `WEBSTRESS_OPENROUTER_IGNORE` env var
 # is unset. Users can override via env (see `_openrouter_provider_pref`).
 # Direct providers (`--provider bedrock` etc.) are unaffected — Bedrock's
 # native Converse API has no such issue, only its OAI-compat endpoint does.
@@ -300,11 +300,11 @@ def _openrouter_provider_pref() -> dict[str, Any]:
         {"ignore": ["Amazon Bedrock", "Novita"]}
 
     Env vars (all optional):
-        WEBAGENTBENCH_OPENROUTER_IGNORE              csv, replaces default
-        WEBAGENTBENCH_OPENROUTER_ONLY                csv, optional allowlist
-        WEBAGENTBENCH_OPENROUTER_ORDER               csv, optional ordering
-        WEBAGENTBENCH_OPENROUTER_ALLOW_FALLBACKS     bool, default true (omitted)
-        WEBAGENTBENCH_OPENROUTER_REQUIRE_PARAMETERS  bool, default false (omitted)
+        WEBSTRESS_OPENROUTER_IGNORE              csv, replaces default
+        WEBSTRESS_OPENROUTER_ONLY                csv, optional allowlist
+        WEBSTRESS_OPENROUTER_ORDER               csv, optional ordering
+        WEBSTRESS_OPENROUTER_ALLOW_FALLBACKS     bool, default true (omitted)
+        WEBSTRESS_OPENROUTER_REQUIRE_PARAMETERS  bool, default false (omitted)
 
     Empty / unset env vars are omitted from the result so OpenRouter never
     sees `provider.only=[]` etc. (which would be invalid). `IGNORE` is the
@@ -325,25 +325,25 @@ def _openrouter_provider_pref() -> dict[str, Any]:
 
     pref: dict[str, Any] = {}
 
-    ignore = _csv("WEBAGENTBENCH_OPENROUTER_IGNORE")
+    ignore = _csv("WEBSTRESS_OPENROUTER_IGNORE")
     if ignore is None:
         ignore = list(_OPENROUTER_DEFAULT_IGNORE)
     if ignore:
         pref["ignore"] = ignore
 
-    only = _csv("WEBAGENTBENCH_OPENROUTER_ONLY")
+    only = _csv("WEBSTRESS_OPENROUTER_ONLY")
     if only:
         pref["only"] = only
 
-    order = _csv("WEBAGENTBENCH_OPENROUTER_ORDER")
+    order = _csv("WEBSTRESS_OPENROUTER_ORDER")
     if order:
         pref["order"] = order
 
-    allow_fb = _bool("WEBAGENTBENCH_OPENROUTER_ALLOW_FALLBACKS")
+    allow_fb = _bool("WEBSTRESS_OPENROUTER_ALLOW_FALLBACKS")
     if allow_fb is not None:
         pref["allow_fallbacks"] = allow_fb
 
-    if _bool("WEBAGENTBENCH_OPENROUTER_REQUIRE_PARAMETERS"):
+    if _bool("WEBSTRESS_OPENROUTER_REQUIRE_PARAMETERS"):
         pref["require_parameters"] = True
 
     return pref
@@ -531,7 +531,7 @@ def _build_llm(
       anthropic_bedrock   — Claude via AnthropicBedrock SDK (same auth as bedrock).
       anthropic           — Direct Anthropic API. Env: ANTHROPIC_API_KEY
       openrouter          — OpenRouter (meta-provider). Env: OPENROUTER_API_KEY
-      vllm                — Local vLLM endpoint. Env: WEBAGENTBENCH_API_BASE_URL + _API_KEY
+      vllm                — Local vLLM endpoint. Env: WEBSTRESS_API_BASE_URL + _API_KEY
     """
     common: dict[str, Any] = {}
     if temperature is not None:
@@ -543,7 +543,7 @@ def _build_llm(
         from browser_use import ChatGoogle
         key = os.environ.get("GEMINI_API_KEY", "")
         if not key:
-            raise ValueError("GEMINI_API_KEY not set (add to webagentbench/.env)")
+            raise ValueError("GEMINI_API_KEY not set (add to webstress/.env)")
         return ChatGoogle(model=model, api_key=key, **common)
 
     if provider == "openai":
@@ -603,8 +603,8 @@ def _build_llm(
 
     if provider == "vllm":
         from browser_use.llm.openai.chat import ChatOpenAI as BUChatOpenAI
-        base_url = os.environ.get("WEBAGENTBENCH_API_BASE_URL", "http://localhost:8000/v1")
-        key = os.environ.get("WEBAGENTBENCH_API_KEY", "dummy")
+        base_url = os.environ.get("WEBSTRESS_API_BASE_URL", "http://localhost:8000/v1")
+        key = os.environ.get("WEBSTRESS_API_KEY", "dummy")
         return BUChatOpenAI(model=model, api_key=key, base_url=base_url, **common)
 
     raise ValueError(
@@ -628,7 +628,7 @@ def _history_to_trajectory(
     """Convert a browser_use.AgentHistoryList into the WAB trajectory format.
 
     Step shape matches `browseruse_eval.build_trajectory_step`'s output, so
-    `webagentbench.visualize` can render trajectories from either harness.
+    `webstress.visualize` can render trajectories from either harness.
 
     Screenshot handling (stock-harness-only; custom harness doesn't set this):
       - If `include_screenshots` is False: `screenshot` field is omitted.
@@ -641,7 +641,7 @@ def _history_to_trajectory(
     """
     from pathlib import Path
     import base64
-    from webagentbench.browseruse_eval import _get_action_index, build_trajectory_step
+    from webstress.browseruse_eval import _get_action_index, build_trajectory_step
 
     if history is None or not hasattr(history, "history"):
         return []
@@ -879,7 +879,7 @@ async def run_episode(
     # 1. Create a fresh session via the backend API. The response gives us
     #    the session id + rendered instruction + start path. Optionally apply
     #    a degradation variant by passing its filename (backend resolves it
-    #    against webagentbench/injector/variants/).
+    #    against webstress/injector/variants/).
     backend = f"http://{server_host}:{backend_port}"
     session_payload: dict[str, Any] = {"task_id": task_id}
     if variant_filename:
@@ -1046,7 +1046,7 @@ async def run_episode(
         pass
 
     # 9. Build trajectory in the same schema as browseruse_eval.py so
-    #    webagentbench.visualize can render runs from either harness. When a
+    #    webstress.visualize can render runs from either harness. When a
     #    `trajectory_dir` is provided, PNG screenshots are externalized to
     #    `<trajectory_dir>/screenshots/` and the step's `screenshot` field
     #    becomes a relative path ("screenshots/stepNN.png") instead of a
@@ -1226,7 +1226,7 @@ async def run_evaluation(
     server_host: str = "127.0.0.1",
     backend_port: int = 8080,
     frontend_port: int = 8084,
-    output_dir: str = "webagentbench/results/stock_bu_run",
+    output_dir: str = "webstress/results/stock_bu_run",
     verbose: bool = True,
     # --- Stock browser-use tunables (threaded to run_episode) ---
     temperature: float | None = None,
@@ -1360,10 +1360,10 @@ def main():
     p.add_argument("--frontend-port", type=int, default=8084)
     p.add_argument(
         "--output-dir",
-        default="webagentbench/results/stock_bu_run",
+        default="webstress/results/stock_bu_run",
         help="Directory for run artifacts: summary.json, run_manifest.json, "
              "tasks/<task_id>/trajectory.json, tasks/<task_id>/screenshots/*.png "
-             "(default: webagentbench/results/stock_bu_run)",
+             "(default: webstress/results/stock_bu_run)",
     )
     p.add_argument("--quiet", "-q", action="store_true")
 

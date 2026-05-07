@@ -47,7 +47,7 @@ def start_server(host: str, port: int) -> subprocess.Popen:
             sys.executable,
             "-m",
             "uvicorn",
-            "webagentbench.app:app",
+            "webstress.app:app",
             "--host",
             host,
             "--port",

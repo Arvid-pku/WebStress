@@ -19,14 +19,14 @@ End-to-end task scores tell you that a 15-step booking failed; they don't tell y
 
 | Asset | Path | Notes |
 |---|---|---|
-| 7 environment SPAs | `webagentbench/environments/` | Self-hosted React + FastAPI stack; no production data. |
-| 519 base task YAMLs | `webagentbench/tasks/<env>/` | Five-tier difficulty (easy → frontier). |
-| 519 intervention variants | `webagentbench/injector/variants/` | Each ties to one base task and one target primitive. |
-| Canonical-diff evaluator | `webagentbench/evaluator.py`, `webagentbench/eval_core/` | Grades positive obligations + negative invariants against backend state. |
-| Text harness | `webagentbench/stock_browseruse_eval.py` | Browser-Use action grammar over an accessibility-tree observation. |
-| Pixel harness | `webagentbench/pixel_eval.py` | BrowserGym + screenshot-only observation. |
-| Human traces | `webagentbench/human/` | 140-task panel × clean + intervention × cold + warm; annotators are pseudonymized as P1–P4 (primary) and D1–D4 (duplicate audit). |
-| Trajectory viewer | `webagentbench/visualize.py` | Renders an agent run side-by-side with the live page. |
+| 7 environment SPAs | `webstress/environments/` | Self-hosted React + FastAPI stack; no production data. |
+| 519 base task YAMLs | `webstress/tasks/<env>/` | Five-tier difficulty (easy → frontier). |
+| 519 intervention variants | `webstress/injector/variants/` | Each ties to one base task and one target primitive. |
+| Canonical-diff evaluator | `webstress/evaluator.py`, `webstress/eval_core/` | Grades positive obligations + negative invariants against backend state. |
+| Text harness | `webstress/stock_browseruse_eval.py` | Browser-Use action grammar over an accessibility-tree observation. |
+| Pixel harness | `webstress/pixel_eval.py` | BrowserGym + screenshot-only observation. |
+| Human traces | `webstress/human/` | 140-task panel × clean + intervention × cold + warm; annotators are pseudonymized as P1–P4 (primary) and D1–D4 (duplicate audit). |
+| Trajectory viewer | `webstress/visualize.py` | Renders an agent run side-by-side with the live page. |
 
 ## Quick start
 
@@ -35,9 +35,9 @@ Requires Python ≥ 3.10, Node 24+, and pnpm.
 ```bash
 uv sync                                         # install Python deps
 uv run playwright install chromium              # headless Chromium for the harness
-pnpm -C webagentbench/environments install      # frontend deps
-./scripts/webagentbench.sh build                # build the 7 SPAs once
-./scripts/webagentbench.sh dev                  # start backend + frontends on :8080
+pnpm -C webstress/environments install      # frontend deps
+./scripts/webstress.sh build                # build the 7 SPAs once
+./scripts/webstress.sh dev                  # start backend + frontends on :8080
 ```
 
 The launcher then lives at `http://localhost:8080/launch`.
@@ -51,7 +51,7 @@ uv sync --extra browser-use
 ## Run one task
 
 ```bash
-./scripts/webagentbench.sh dev --env booking
+./scripts/webstress.sh dev --env booking
 # open http://localhost:8080/launch and pick a task — the launcher opens a
 # benchmark tab (what the agent sees) and a control tab (instruction + record).
 ```
@@ -61,7 +61,7 @@ uv sync --extra browser-use
 The minimal evaluation call against a single task with the BrowserGym harness:
 
 ```bash
-python -m webagentbench.agent_eval \
+python -m webstress.agent_eval \
     --model gpt-5.4 --provider openai \
     --tasks gmail_star_email \
     --seed 42
@@ -70,7 +70,7 @@ python -m webagentbench.agent_eval \
 The Browser-Use text harness used in the paper:
 
 ```bash
-python -m webagentbench.stock_browseruse_eval \
+python -m webstress.stock_browseruse_eval \
     --model claude-opus-4-7 --provider anthropic \
     --environments gmail amazon \
     --seed 42
@@ -78,7 +78,7 @@ python -m webagentbench.stock_browseruse_eval \
 
 Both write per-trajectory JSON under `results/`; the canonical-diff evaluator scores against the final backend state regardless of how the trajectory terminated.
 
-For the pixel harness, slurm sweep templates, and viewport-per-model details, see [webagentbench/README.md](webagentbench/README.md).
+For the pixel harness, slurm sweep templates, and viewport-per-model details, see [webstress/README.md](webstress/README.md).
 
 ## Reproduce paper results
 
@@ -93,18 +93,18 @@ Trajectory bundles, the rule-based failure-mode classifier, and the per-(env, pr
 
 ## Human traces
 
-The 140-base-task human panel is recorded under both conditions, with a cold attempt followed by a warm attempt by the same annotator. Annotator identifiers in `webagentbench/human/assignments_v1.yaml` are pseudonyms (P1–P4 for primary annotators; D1–D4 for the duplicate-audit panel); the mapping to real names is private. Recording UI:
+The 140-base-task human panel is recorded under both conditions, with a cold attempt followed by a warm attempt by the same annotator. Annotator identifiers in `webstress/human/assignments_v1.yaml` are pseudonyms (P1–P4 for primary annotators; D1–D4 for the duplicate-audit panel); the mapping to real names is private. Recording UI:
 
 ```bash
 ./scripts/human-record.sh P1 --env booking      # opens the launcher filtered to P1's assignments
 ```
 
-Trace cleaning rules and the post-task rating instrument are documented in `webagentbench/human/GUIDELINES.md`.
+Trace cleaning rules and the post-task rating instrument are documented in `webstress/human/GUIDELINES.md`.
 
 ## Repository layout
 
 ```
-webagentbench/
+webstress/
 ├── agent_eval.py / stock_browseruse_eval.py / pixel_eval.py    # eval entrypoints
 ├── evaluator.py + eval_core/                                   # canonical-diff scoring
 ├── tasks/<env>/*.yaml                                          # 519 base tasks
@@ -117,9 +117,9 @@ docs/                                                           # design docs + 
 scripts/                                                        # launcher, sweep templates, debug tools
 ```
 
-> The Python package and filesystem layout still live under `webagentbench/`
+> The Python package and filesystem layout still live under `webstress/`
 > for legacy compatibility — only the public-facing branding has been updated
-> to **WebStress**. Imports remain `from webagentbench.X import …`.
+> to **WebStress**. Imports remain `from webstress.X import …`.
 
 ## Caveats and responsible use
 
@@ -127,7 +127,7 @@ scripts/                                                        # launcher, swee
 - **Stressor content.** The intervention catalog includes phishing-style email bodies, fabricated-success HTTP responses, and look-alike decoys. They are bounded by the local sandbox and reflect publicly-known failure patterns; the assets are intended as a defensive evaluation harness and **not** as templates for live-traffic attacks.
 - **Human traces.** Recordings are pseudonymized (P1–P4, D1–D4) and annotators gave informed consent under an IRB-exempt protocol. Per-step timing and DOM-event traces are released; viewport screenshots and free-text rubric comments are withheld pending a personal-information audit. Do not attempt to re-identify annotators from cleaned traces.
 - **Synthetic environments.** The 7 environments are self-hosted clones with synthetic seed data (no real users, payments, medical records, or live API calls). They do not model production rate limiting, geo-restrictions, fraud detection, or third-party scripts. Generalization to live sites is an open question — see the *Limitations* section of the paper.
-- **Failure-mode classifier.** The rule-based classifier in `webagentbench/eval_core/` is keyword-sensitive on the agent's terminal thought; the combined "belief-failure" class is robust, but the split between `misleading_success_taken` and `premature_done` is brittle and should be treated as a qualitative signal.
+- **Failure-mode classifier.** The rule-based classifier in `webstress/eval_core/` is keyword-sensitive on the agent's terminal thought; the combined "belief-failure" class is robust, but the split between `misleading_success_taken` and `premature_done` is brittle and should be treated as a qualitative signal.
 
 ## Citation
 

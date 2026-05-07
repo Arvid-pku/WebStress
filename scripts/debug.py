@@ -48,7 +48,7 @@ class EnvConfig:
     name: str
     api_prefix: str          # e.g. "/api/env/gmail"
     frontend_base: str       # e.g. "/env/gmail"
-    task_dir: str            # e.g. "webagentbench/tasks/gmail"
+    task_dir: str            # e.g. "webstress/tasks/gmail"
     variant_glob: str        # e.g. "gmail_*.yaml"
     task_prefix: str         # e.g. "gmail_"
     session_file: str        # e.g. "scripts/.gmail_session.json"
@@ -60,7 +60,7 @@ GMAIL = EnvConfig(
     name="gmail",
     api_prefix="/api/env/gmail",
     frontend_base="/env/gmail",
-    task_dir="webagentbench/tasks/gmail",
+    task_dir="webstress/tasks/gmail",
     variant_glob="gmail_*.yaml",
     task_prefix="gmail_",
     session_file="scripts/.gmail_session.json",
@@ -83,7 +83,7 @@ ROBINHOOD = EnvConfig(
     name="robinhood",
     api_prefix="/api/env/robinhood",
     frontend_base="/env/robinhood",
-    task_dir="webagentbench/tasks/robinhood",
+    task_dir="webstress/tasks/robinhood",
     variant_glob="rh_*.yaml",
     task_prefix="rh_",
     session_file="scripts/.rh_session.json",
@@ -111,7 +111,7 @@ LMS = EnvConfig(
     name="lms",
     api_prefix="/api/env/lms",
     frontend_base="/env/lms",
-    task_dir="webagentbench/tasks/lms",
+    task_dir="webstress/tasks/lms",
     variant_glob="lms_*.yaml",
     task_prefix="lms_",
     session_file="scripts/.lms_session.json",
@@ -136,7 +136,7 @@ PATIENT_PORTAL = EnvConfig(
     name="patient_portal",
     api_prefix="/api/env/patient_portal",
     frontend_base="/env/patient_portal",
-    task_dir="webagentbench/tasks/patient_portal",
+    task_dir="webstress/tasks/patient_portal",
     variant_glob="pp_*.yaml",
     task_prefix="pp_",
     session_file="scripts/.pp_session.json",
@@ -527,7 +527,7 @@ def batch(task_ids, workers=8, include_variants=False, variants_only=False, env_
                 jobs.extend(({"task_id": tid, "variant_filename": None}, env) for tid in base_ids)
 
         if include_variants or variants_only:
-            variant_dir = Path("webagentbench/injector/variants")
+            variant_dir = Path("webstress/injector/variants")
             for f in sorted(variant_dir.glob(env.variant_glob)):
                 data = yaml.safe_load(f.read_text()) or {}
                 jobs.append((

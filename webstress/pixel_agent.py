@@ -18,8 +18,8 @@ some VLMs (Qwen3-VL, Gemini-3-Flash) emit normalized 0-1000 coords, GPT/Claude
 emit pixel coords. `normalize_coordinates` controls whether we transform
 output 0-1000 → pixel before returning the action.
 
-Designed to slot in to `webagentbench/agent_eval.py`'s `run_episode()` in
-place of `webagentbench.agent.LLMAgent`.
+Designed to slot in to `webstress/agent_eval.py`'s `run_episode()` in
+place of `webstress.agent.LLMAgent`.
 """
 from __future__ import annotations
 
@@ -402,7 +402,7 @@ class PixelLLMAgent:
     """Vision-only VLM agent with coord-mode action output.
 
     Conforms to the same `act(obs) -> str` interface as
-    `webagentbench.agent.LLMAgent`, so it slots into `agent_eval.run_episode`.
+    `webstress.agent.LLMAgent`, so it slots into `agent_eval.run_episode`.
     """
 
     def __init__(
@@ -514,7 +514,7 @@ class PixelLLMAgent:
         }
         if "openrouter.ai" in resolved_url:
             client_kwargs["default_headers"] = {
-                "HTTP-Referer": "https://github.com/anthropics/webagentbench",
+                "HTTP-Referer": "https://github.com/anthropics/webstress",
                 "X-Title": "WebStress Pixel Harness",
             }
         self.client = openai.OpenAI(**client_kwargs)

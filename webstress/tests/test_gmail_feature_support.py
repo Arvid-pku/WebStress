@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from webagentbench.backend.models.gmail import Contact, Email, FilterRule, GmailSettings, GmailState, Label
+from webstress.backend.models.gmail import Contact, Email, FilterRule, GmailSettings, GmailState, Label
 
 
 def _dt(value: str) -> datetime:

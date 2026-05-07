@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from starlette.testclient import TestClient
 
-from webagentbench.app import app
-from webagentbench.backend.routes.lms import list_variants
+from webstress.app import app
+from webstress.backend.routes.lms import list_variants
 
 
 def test_lms_variants_endpoint_exists_and_returns_list() -> None:

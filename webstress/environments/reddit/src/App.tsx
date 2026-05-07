@@ -3,7 +3,7 @@ import {
   Button,
   FormField,
   useSession,
-} from "@webagentbench/shared";
+} from "@webstress/shared";
 import {
   Navigate,
   Route,

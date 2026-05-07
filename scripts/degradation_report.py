@@ -35,7 +35,7 @@ from typing import Any
 import yaml
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_VARIANTS_DIR = REPO_ROOT / "webagentbench" / "injector" / "variants"
+DEFAULT_VARIANTS_DIR = REPO_ROOT / "webstress" / "injector" / "variants"
 
 
 @dataclass(frozen=True)

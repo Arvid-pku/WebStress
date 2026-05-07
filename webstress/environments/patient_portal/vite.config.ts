@@ -7,7 +7,7 @@ const backendUrl = `http://127.0.0.1:${process.env.VITE_BACKEND_PORT || 8080}`;
 export default defineConfig({
   plugins: [react()],
   base: "/env/patient_portal/",
-  optimizeDeps: { exclude: ["@webagentbench/shared", "@webagentbench/patient_portal"] },
+  optimizeDeps: { exclude: ["@webstress/shared", "@webstress/patient_portal"] },
   build: { outDir: "../../static/envs/patient_portal", emptyOutDir: true },
   server: {
     port: serverPort,

@@ -1,5 +1,5 @@
 {
-  "name": "@webagentbench/environments",
+  "name": "@webstress/environments",
   "private": true,
   "packageManager": "pnpm@10.15.0",
   "pnpm": {
@@ -11,18 +11,18 @@
     }
   },
   "scripts": {
-    "build": "pnpm -r --filter '!@webagentbench/demo-site' build",
-    "dev:amazon": "pnpm --filter @webagentbench/amazon dev",
-    "dev:booking": "pnpm --filter @webagentbench/booking dev",
-    "dev:gmail": "pnpm --filter @webagentbench/gmail dev",
-    "dev:reddit": "pnpm --filter @webagentbench/reddit dev",
-    "dev:robinhood": "pnpm --filter @webagentbench/robinhood dev",
-    "dev:lms": "pnpm --filter @webagentbench/lms dev",
-    "dev:patient_portal": "pnpm --filter @webagentbench/patient_portal dev",
+    "build": "pnpm -r --filter '!@webstress/demo-site' build",
+    "dev:amazon": "pnpm --filter @webstress/amazon dev",
+    "dev:booking": "pnpm --filter @webstress/booking dev",
+    "dev:gmail": "pnpm --filter @webstress/gmail dev",
+    "dev:reddit": "pnpm --filter @webstress/reddit dev",
+    "dev:robinhood": "pnpm --filter @webstress/robinhood dev",
+    "dev:lms": "pnpm --filter @webstress/lms dev",
+    "dev:patient_portal": "pnpm --filter @webstress/patient_portal dev",
     "typecheck": "pnpm -r typecheck",
-    "test": "pnpm --filter @webagentbench/gmail test:run",
-    "test:gmail": "pnpm --filter @webagentbench/gmail test:run",
-    "start:amazon": "bash ../../scripts/webagentbench.sh dev --env amazon",
-    "start:gmail": "bash ../../scripts/webagentbench.sh dev --env gmail"
+    "test": "pnpm --filter @webstress/gmail test:run",
+    "test:gmail": "pnpm --filter @webstress/gmail test:run",
+    "start:amazon": "bash ../../scripts/webstress.sh dev --env amazon",
+    "start:gmail": "bash ../../scripts/webstress.sh dev --env gmail"
   }
 }

@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate, useParams, useLocation, Link } from "react-router-dom";
-import { preserveQueryParams } from "@webagentbench/shared";
+import { preserveQueryParams } from "@webstress/shared";
 
 import type { Product, Review, ProductQuestion } from "../types";
 import { useAmazonLayout } from "../context";

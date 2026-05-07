@@ -1,6 +1,6 @@
 # WebStress Human Recording Assignment Plan v1
 
-This file summarizes the task assignment generated from `webagentbench_human_panel_v2_140.yaml`.
+This file summarizes the task assignment generated from `webstress_human_panel_v2_140.yaml`.
 
 The full WebStress benchmark currently has **519 base tasks** across 7 sandbox websites
 (full agent evaluation = 519 × 2 = 1038 task-conditions). The human plan covers a curated

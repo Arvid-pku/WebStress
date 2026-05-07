@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { preserveQueryParams } from "@webagentbench/shared";
+import { preserveQueryParams } from "@webstress/shared";
 
 export function Footer() {
   const location = useLocation();

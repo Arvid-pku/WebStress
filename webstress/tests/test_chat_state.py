@@ -1,6 +1,6 @@
 """Chat messages appear in state.chat after send_msg_to_user."""
 
-from webagentbench.backend.state import SessionManager
+from webstress.backend.state import SessionManager
 
 
 def test_chat_starts_empty():

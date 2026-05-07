@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from webagentbench.browseruse_eval import (
+from webstress.browseruse_eval import (
     _extract_replay_path,
     action_to_trajectory_format,
     build_trajectory_step,

@@ -72,7 +72,7 @@ class WebStressTask(AbstractBrowserTask):
 
     @classmethod
     def get_task_id(cls):
-        return "webagentbench"
+        return "webstress"
 
     def __init__(
         self,
@@ -122,9 +122,9 @@ class WebStressTask(AbstractBrowserTask):
     def _ensure_server(self) -> None:
         from .runner import ensure_controller_secret, start_server, wait_for_server
         if wait_for_server(self.server_host, self.server_port, timeout=2):
-            if not os.environ.get("WEBAGENTBENCH_CONTROLLER_SECRET"):
+            if not os.environ.get("WEBSTRESS_CONTROLLER_SECRET"):
                 raise RuntimeError(
-                    "A WebStress server is already running, but WEBAGENTBENCH_CONTROLLER_SECRET "
+                    "A WebStress server is already running, but WEBSTRESS_CONTROLLER_SECRET "
                     "is not set in this process. Export the same secret or use a free port."
                 )
             _assert_server_matches_local_manifest(self._bench_url, self.server_host, self.server_port)

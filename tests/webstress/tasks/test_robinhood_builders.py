@@ -9,7 +9,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from webagentbench.tasks._seed_builders_robinhood import (
+from webstress.tasks._seed_builders_robinhood import (
     ROBINHOOD_BUILDER_REGISTRY,
     RobinhoodSeedContext,
     _STOCK_SEED_DATA,

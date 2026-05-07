@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Button } from "@webagentbench/shared";
+import { Button } from "@webstress/shared";
 
 import { useRobinhoodLayout } from "../context";
 import type { AccountSettings, SecurityEntry } from "../types";

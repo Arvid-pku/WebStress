@@ -1,4 +1,4 @@
-import { gmailMutator, type GmailFixture } from "@webagentbench/gmail/mutator";
+import { gmailMutator, type GmailFixture } from "@webstress/gmail/mutator";
 
 import type { TrajectoryStep, TrajectoryTarget } from "./results";
 

@@ -23,7 +23,7 @@ VARIANTS=(
   "gmail_contact_audit__verification_v3.yaml"
 )
 
-RESULTS_DIR="results/webagentbench/stress"
+RESULTS_DIR="results/webstress/stress"
 mkdir -p "$RESULTS_DIR"
 
 for variant in "${VARIANTS[@]}"; do
@@ -33,7 +33,7 @@ for variant in "${VARIANTS[@]}"; do
   echo "STRESS TEST: $variant ($prim)"
   echo "================================================================"
 
-  UV_CACHE_DIR=/tmp/uv-cache uv run python -m webagentbench.agent_eval \
+  UV_CACHE_DIR=/tmp/uv-cache uv run python -m webstress.agent_eval \
     $COMMON \
     --degradation "$variant" \
     --output "$RESULTS_DIR/gpt54_stress_${prim}.json" \

@@ -4,14 +4,14 @@ Scans all task YAMLs and test files to report which tasks have been migrated
 to canonical_diff and which are still on the legacy eval path.
 
 Usage:
-    python -m webagentbench.tasks.migration_status
-    python -m webagentbench.tasks.migration_status --env patient_portal
-    python -m webagentbench.tasks.migration_status --json
+    python -m webstress.tasks.migration_status
+    python -m webstress.tasks.migration_status --env patient_portal
+    python -m webstress.tasks.migration_status --json
 
 A task is "fully migrated" when all of these are true:
   1. Its YAML declares a canonical_diff: block.
-  2. webagentbench/tests/test_<task>_canonical_diff.py exists.
-  3. webagentbench/tests/test_<task>_adversarial.py exists.
+  2. webstress/tests/test_<task>_canonical_diff.py exists.
+  3. webstress/tests/test_<task>_adversarial.py exists.
 
 "Partial" tasks have a canonical_diff but are missing one or both test files.
 """
@@ -29,8 +29,8 @@ import yaml
 
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
-_TASKS_DIR = _REPO_ROOT / "webagentbench" / "tasks"
-_TESTS_DIR = _REPO_ROOT / "webagentbench" / "tests"
+_TASKS_DIR = _REPO_ROOT / "webstress" / "tasks"
+_TESTS_DIR = _REPO_ROOT / "webstress" / "tests"
 
 
 @dataclass

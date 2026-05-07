@@ -25,20 +25,20 @@ import yaml
 REPO_ROOT = Path(__file__).parent.parent.parent
 
 TASK_DIRS = [
-    REPO_ROOT / "webagentbench/tasks/patient_portal",
-    REPO_ROOT / "webagentbench/tasks/lms",
-    REPO_ROOT / "webagentbench/tasks/amazon",
-    REPO_ROOT / "webagentbench/tasks/robinhood",
-    REPO_ROOT / "webagentbench/tasks/gmail",
-    REPO_ROOT / "webagentbench/tasks/booking",
-    REPO_ROOT / "webagentbench/tasks/reddit",
+    REPO_ROOT / "webstress/tasks/patient_portal",
+    REPO_ROOT / "webstress/tasks/lms",
+    REPO_ROOT / "webstress/tasks/amazon",
+    REPO_ROOT / "webstress/tasks/robinhood",
+    REPO_ROOT / "webstress/tasks/gmail",
+    REPO_ROOT / "webstress/tasks/booking",
+    REPO_ROOT / "webstress/tasks/reddit",
 ]
 
-PP_PAGES = REPO_ROOT / "webagentbench/environments/patient_portal/src/pages"
-LMS_PAGES = REPO_ROOT / "webagentbench/environments/lms/src/pages"
-AMAZON_COMPONENTS = REPO_ROOT / "webagentbench/environments/amazon/src/components"
-RH_PAGES = REPO_ROOT / "webagentbench/environments/robinhood/src/pages"
-GMAIL_PAGES = REPO_ROOT / "webagentbench/environments/gmail/src/pages"
+PP_PAGES = REPO_ROOT / "webstress/environments/patient_portal/src/pages"
+LMS_PAGES = REPO_ROOT / "webstress/environments/lms/src/pages"
+AMAZON_COMPONENTS = REPO_ROOT / "webstress/environments/amazon/src/components"
+RH_PAGES = REPO_ROOT / "webstress/environments/robinhood/src/pages"
+GMAIL_PAGES = REPO_ROOT / "webstress/environments/gmail/src/pages"
 
 # Maps (instruction keyword regex) -> (frontend_file, field_string_that_must_appear)
 # The keyword regex is matched case-insensitively against instruction_template.

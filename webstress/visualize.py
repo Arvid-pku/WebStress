@@ -12,17 +12,17 @@ Requires the WebStress server to be running for the iframe pages.
 
 Usage:
     # Generate visualization (auto-starts server, opens browser)
-    python -m webagentbench.visualize results/webagentbench/qwen3.5-35b-a3b-v5.json
+    python -m webstress.visualize results/webstress/qwen3.5-35b-a3b-v5.json
 
     # Custom output path
-    python -m webagentbench.visualize results/webagentbench/qwen3.5-35b-a3b-v5.json \
+    python -m webstress.visualize results/webstress/qwen3.5-35b-a3b-v5.json \
         --output viz.html
 
     # Don't auto-open browser
-    python -m webagentbench.visualize results/webagentbench/qwen3.5-35b-a3b-v5.json --no-open
+    python -m webstress.visualize results/webstress/qwen3.5-35b-a3b-v5.json --no-open
 
     # Use a different server URL (if already running)
-    python -m webagentbench.visualize results/webagentbench/qwen3.5-35b-a3b-v5.json \
+    python -m webstress.visualize results/webstress/qwen3.5-35b-a3b-v5.json \
         --server-url http://localhost:8080
 """
 

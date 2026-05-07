@@ -1,4 +1,4 @@
-version: webagentbench_human_panel_v2_140
+version: webstress_human_panel_v2_140
 created_from_repo_zip: LLMOS.zip
 seed_for_human_runs: 42
 experimental_unit: base_task
@@ -181,10 +181,10 @@ primary_panel:
   primary_primitive: backtracking
   secondary_primitives: []
   expected_steps: 10
-  task_yaml: webagentbench/tasks/amazon/amazon_add_new_address.yaml
+  task_yaml: webstress/tasks/amazon/amazon_add_new_address.yaml
   official_intervention_variant:
     variant_id: amazon_add_new_address__address_retry
-    variant_yaml: webagentbench/injector/variants/amazon_add_new_address__address_retry.yaml
+    variant_yaml: webstress/injector/variants/amazon_add_new_address__address_retry.yaml
     target_primitive: backtracking
     description: The first address-save request fails with a transient 503. The agent must retry the save instead of assuming
       the new shipping address persisted.
@@ -196,10 +196,10 @@ primary_panel:
   primary_primitive: grounding
   secondary_primitives: []
   expected_steps: 10
-  task_yaml: webagentbench/tasks/amazon/amazon_browse_category.yaml
+  task_yaml: webstress/tasks/amazon/amazon_browse_category.yaml
   official_intervention_variant:
     variant_id: amazon_browse_category__cheapest_decoy
-    variant_yaml: webagentbench/injector/variants/amazon_browse_category__cheapest_decoy.yaml
+    variant_yaml: webstress/injector/variants/amazon_browse_category__cheapest_decoy.yaml
     target_primitive: grounding
     description: Several low-priced lookalikes sit just above the real cheapest item. The agent must compare exact prices
       instead of trusting badges or visual prominence.
@@ -211,10 +211,10 @@ primary_panel:
   primary_primitive: state_tracking
   secondary_primitives: []
   expected_steps: 8
-  task_yaml: webagentbench/tasks/amazon/amazon_verify_order_ok.yaml
+  task_yaml: webstress/tasks/amazon/amazon_verify_order_ok.yaml
   official_intervention_variant:
     variant_id: amazon_verify_order_ok__order_twin
-    variant_yaml: webagentbench/injector/variants/amazon_verify_order_ok__order_twin.yaml
+    variant_yaml: webstress/injector/variants/amazon_verify_order_ok__order_twin.yaml
     target_primitive: state_tracking
     description: Order history includes a similarly named recent purchase alongside the real target order. The agent must
       inspect the exact item before reordering or leaving it alone.
@@ -226,10 +226,10 @@ primary_panel:
   primary_primitive: verification
   secondary_primitives: []
   expected_steps: 10
-  task_yaml: webagentbench/tasks/amazon/amazon_write_review.yaml
+  task_yaml: webstress/tasks/amazon/amazon_write_review.yaml
   official_intervention_variant:
     variant_id: amazon_write_review__review_retry
-    variant_yaml: webagentbench/injector/variants/amazon_write_review__review_retry.yaml
+    variant_yaml: webstress/injector/variants/amazon_write_review__review_retry.yaml
     target_primitive: verification
     description: The first review submission fails transiently. The agent must verify the review exists and retry rather than
       trusting the initial click.
@@ -241,10 +241,10 @@ primary_panel:
   primary_primitive: verification
   secondary_primitives: []
   expected_steps: 22
-  task_yaml: webagentbench/tasks/amazon/amazon_buy_highest_rated.yaml
+  task_yaml: webstress/tasks/amazon/amazon_buy_highest_rated.yaml
   official_intervention_variant:
     variant_id: amazon_buy_highest_rated__rating_tie
-    variant_yaml: webagentbench/injector/variants/amazon_buy_highest_rated__rating_tie.yaml
+    variant_yaml: webstress/injector/variants/amazon_buy_highest_rated__rating_tie.yaml
     target_primitive: verification
     description: High-review lookalikes sit in the same category but trail the target by a few tenths of a star. The agent
       must compare actual ratings, not review volume or placement.
@@ -256,10 +256,10 @@ primary_panel:
   primary_primitive: backtracking
   secondary_primitives: []
   expected_steps: 22
-  task_yaml: webagentbench/tasks/amazon/amazon_cancel_order.yaml
+  task_yaml: webstress/tasks/amazon/amazon_cancel_order.yaml
   official_intervention_variant:
     variant_id: amazon_cancel_order__cancel_retry
-    variant_yaml: webagentbench/injector/variants/amazon_cancel_order__cancel_retry.yaml
+    variant_yaml: webstress/injector/variants/amazon_cancel_order__cancel_retry.yaml
     target_primitive: backtracking
     description: The first cancel request fails transiently. The agent must confirm the order still exists and retry the cancellation.
   analysis_weight_env_difficulty: 4.25
@@ -270,10 +270,10 @@ primary_panel:
   primary_primitive: verification
   secondary_primitives: []
   expected_steps: 23
-  task_yaml: webagentbench/tasks/amazon/amazon_price_comparison.yaml
+  task_yaml: webstress/tasks/amazon/amazon_price_comparison.yaml
   official_intervention_variant:
     variant_id: amazon_price_comparison__price_band_trap
-    variant_yaml: webagentbench/injector/variants/amazon_price_comparison__price_band_trap.yaml
+    variant_yaml: webstress/injector/variants/amazon_price_comparison__price_band_trap.yaml
     target_primitive: verification
     description: 'Search results include near-miss items: one is rated higher but falls outside the allowed price band, and
       another is inside the band but still lower-rated than the target.'
@@ -285,10 +285,10 @@ primary_panel:
   primary_primitive: backtracking
   secondary_primitives: []
   expected_steps: 22
-  task_yaml: webagentbench/tasks/amazon/amazon_update_shipping.yaml
+  task_yaml: webstress/tasks/amazon/amazon_update_shipping.yaml
   official_intervention_variant:
     variant_id: amazon_update_shipping__address_retry
-    variant_yaml: webagentbench/injector/variants/amazon_update_shipping__address_retry.yaml
+    variant_yaml: webstress/injector/variants/amazon_update_shipping__address_retry.yaml
     target_primitive: backtracking
     description: The first address-save request fails with a transient 503. The agent must retry the save instead of assuming
       the new shipping address persisted.
@@ -300,10 +300,10 @@ primary_panel:
   primary_primitive: grounding
   secondary_primitives: []
   expected_steps: 30
-  task_yaml: webagentbench/tasks/amazon/amazon_compare_and_buy_cheapest.yaml
+  task_yaml: webstress/tasks/amazon/amazon_compare_and_buy_cheapest.yaml
   official_intervention_variant:
     variant_id: amazon_compare_and_buy_cheapest__product_shadow_v2
-    variant_yaml: webagentbench/injector/variants/amazon_compare_and_buy_cheapest__product_shadow_v2.yaml
+    variant_yaml: webstress/injector/variants/amazon_compare_and_buy_cheapest__product_shadow_v2.yaml
     target_primitive: grounding
     description: Search and comparison views include a near-identical sibling product with a slightly different price-rating
       tradeoff. The agent must still pick the exact task target.
@@ -315,10 +315,10 @@ primary_panel:
   primary_primitive: state_tracking
   secondary_primitives: []
   expected_steps: 30
-  task_yaml: webagentbench/tasks/amazon/amazon_deal_hunter.yaml
+  task_yaml: webstress/tasks/amazon/amazon_deal_hunter.yaml
   official_intervention_variant:
     variant_id: amazon_deal_hunter__state_tracking_v1
-    variant_yaml: webagentbench/injector/variants/amazon_deal_hunter__state_tracking_v1.yaml
+    variant_yaml: webstress/injector/variants/amazon_deal_hunter__state_tracking_v1.yaml
     target_primitive: state_tracking
     description: 'The deals endpoint returns stale empty data on first load and the cart add silently fails once. The agent
       must track that the initial deals page was stale and retry, then verify cart additions.
@@ -332,10 +332,10 @@ primary_panel:
   primary_primitive: verification
   secondary_primitives: []
   expected_steps: 30
-  task_yaml: webagentbench/tasks/amazon/amazon_return_and_rebuy.yaml
+  task_yaml: webstress/tasks/amazon/amazon_return_and_rebuy.yaml
   official_intervention_variant:
     variant_id: amazon_return_and_rebuy__verification_v1
-    variant_yaml: webagentbench/injector/variants/amazon_return_and_rebuy__verification_v1.yaml
+    variant_yaml: webstress/injector/variants/amazon_return_and_rebuy__verification_v1.yaml
     target_primitive: verification
     description: 'The first return request and the first cart add each silently fail. The agent must verify both the return
       initiation and the new purchase were actually processed.
@@ -349,10 +349,10 @@ primary_panel:
   primary_primitive: patience
   secondary_primitives: []
   expected_steps: 30
-  task_yaml: webagentbench/tasks/amazon/amazon_review_aggregation.yaml
+  task_yaml: webstress/tasks/amazon/amazon_review_aggregation.yaml
   official_intervention_variant:
     variant_id: amazon_review_aggregation__patience_v1
-    variant_yaml: webagentbench/injector/variants/amazon_review_aggregation__patience_v1.yaml
+    variant_yaml: webstress/injector/variants/amazon_review_aggregation__patience_v1.yaml
     target_primitive: patience
     description: 'Review submission responses are progressively delayed, requiring the agent to wait patiently as it aggregates
       and submits reviews rather than assuming failures.
@@ -366,10 +366,10 @@ primary_panel:
   primary_primitive: backtracking
   secondary_primitives: []
   expected_steps: 38
-  task_yaml: webagentbench/tasks/amazon/amazon_cascading_return_replace.yaml
+  task_yaml: webstress/tasks/amazon/amazon_cascading_return_replace.yaml
   official_intervention_variant:
     variant_id: amazon_cascading_return_replace__backtracking_v1
-    variant_yaml: webagentbench/injector/variants/amazon_cascading_return_replace__backtracking_v1.yaml
+    variant_yaml: webstress/injector/variants/amazon_cascading_return_replace__backtracking_v1.yaml
     target_primitive: backtracking
     description: 'The return API returns 503 errors on the first 2 attempts, and the checkout API returns 503 on the first
       attempt. The agent must handle transient server errors by retrying failed operations.
@@ -383,10 +383,10 @@ primary_panel:
   primary_primitive: grounding
   secondary_primitives: []
   expected_steps: 38
-  task_yaml: webagentbench/tasks/amazon/amazon_cross_category_value_hunt.yaml
+  task_yaml: webstress/tasks/amazon/amazon_cross_category_value_hunt.yaml
   official_intervention_variant:
     variant_id: amazon_cross_category_value_hunt__grounding_v1
-    variant_yaml: webagentbench/injector/variants/amazon_cross_category_value_hunt__grounding_v1.yaml
+    variant_yaml: webstress/injector/variants/amazon_cross_category_value_hunt__grounding_v1.yaml
     target_primitive: grounding
     description: 'Product search returns empty results on the first query per category, forcing the agent to retry searches
       and not assume a category is empty based on a single failed response.
@@ -400,10 +400,10 @@ primary_panel:
   primary_primitive: state_tracking
   secondary_primitives: []
   expected_steps: 38
-  task_yaml: webagentbench/tasks/amazon/amazon_strategic_cart_overhaul.yaml
+  task_yaml: webstress/tasks/amazon/amazon_strategic_cart_overhaul.yaml
   official_intervention_variant:
     variant_id: amazon_strategic_cart_overhaul__state_tracking_v1
-    variant_yaml: webagentbench/injector/variants/amazon_strategic_cart_overhaul__state_tracking_v1.yaml
+    variant_yaml: webstress/injector/variants/amazon_strategic_cart_overhaul__state_tracking_v1.yaml
     target_primitive: state_tracking
     description: 'Cart GET returns stale data showing an empty cart after items are removed, and the first cart add silently
       fails. The agent must carefully verify actual cart contents and retry failed additions.
@@ -417,10 +417,10 @@ primary_panel:
   primary_primitive: state_tracking
   secondary_primitives: []
   expected_steps: 36
-  task_yaml: webagentbench/tasks/amazon/amazon_wishlist_cart_consolidation.yaml
+  task_yaml: webstress/tasks/amazon/amazon_wishlist_cart_consolidation.yaml
   official_intervention_variant:
     variant_id: amazon_wishlist_cart_consolidation__state_tracking_v1
-    variant_yaml: webagentbench/injector/variants/amazon_wishlist_cart_consolidation__state_tracking_v1.yaml
+    variant_yaml: webstress/injector/variants/amazon_wishlist_cart_consolidation__state_tracking_v1.yaml
     target_primitive: state_tracking
     description: 'Wishlist GET returns stale empty data after items are removed, and the first cart add silently fails. The
       agent must carefully verify actual wishlist and cart contents and retry failed operations.
@@ -434,10 +434,10 @@ primary_panel:
   primary_primitive: backtracking
   secondary_primitives: []
   expected_steps: 48
-  task_yaml: webagentbench/tasks/amazon/amazon_account_overhaul_and_shop.yaml
+  task_yaml: webstress/tasks/amazon/amazon_account_overhaul_and_shop.yaml
   official_intervention_variant:
     variant_id: amazon_account_overhaul_and_shop__address_retry_v2
-    variant_yaml: webagentbench/injector/variants/amazon_account_overhaul_and_shop__address_retry_v2.yaml
+    variant_yaml: webstress/injector/variants/amazon_account_overhaul_and_shop__address_retry_v2.yaml
     target_primitive: backtracking
     description: The first address write fails transiently. The agent must verify the exact address exists before trusting
       the write.
@@ -449,10 +449,10 @@ primary_panel:
   primary_primitive: exploration
   secondary_primitives: []
   expected_steps: 48
-  task_yaml: webagentbench/tasks/amazon/amazon_order_audit_correction.yaml
+  task_yaml: webstress/tasks/amazon/amazon_order_audit_correction.yaml
   official_intervention_variant:
     variant_id: amazon_order_audit_correction__exploration_v1
-    variant_yaml: webagentbench/injector/variants/amazon_order_audit_correction__exploration_v1.yaml
+    variant_yaml: webstress/injector/variants/amazon_order_audit_correction__exploration_v1.yaml
     target_primitive: exploration
     description: 'Order detail pages return placeholder stale data on the first 3 views, and the order list endpoint has a
       3-second delay. The agent must persist in exploring order details despite incomplete initial data and slow loading.
@@ -466,10 +466,10 @@ primary_panel:
   primary_primitive: backtracking
   secondary_primitives: []
   expected_steps: 50
-  task_yaml: webagentbench/tasks/amazon/amazon_return_and_upgrade_cycle.yaml
+  task_yaml: webstress/tasks/amazon/amazon_return_and_upgrade_cycle.yaml
   official_intervention_variant:
     variant_id: amazon_return_and_upgrade_cycle__backtracking_v1
-    variant_yaml: webagentbench/injector/variants/amazon_return_and_upgrade_cycle__backtracking_v1.yaml
+    variant_yaml: webstress/injector/variants/amazon_return_and_upgrade_cycle__backtracking_v1.yaml
     target_primitive: backtracking
     description: 'The return API returns 503 errors on the first 2 attempts, and the checkout API returns 503 on the first
       attempt. The agent must handle transient server errors by retrying failed operations.
@@ -483,10 +483,10 @@ primary_panel:
   primary_primitive: grounding
   secondary_primitives: []
   expected_steps: 48
-  task_yaml: webagentbench/tasks/amazon/amazon_review_guided_shopping.yaml
+  task_yaml: webstress/tasks/amazon/amazon_review_guided_shopping.yaml
   official_intervention_variant:
     variant_id: amazon_review_guided_shopping__product_shadow_v2
-    variant_yaml: webagentbench/injector/variants/amazon_review_guided_shopping__product_shadow_v2.yaml
+    variant_yaml: webstress/injector/variants/amazon_review_guided_shopping__product_shadow_v2.yaml
     target_primitive: grounding
     description: Search and comparison views include a near-identical sibling product with a slightly different price-rating
       tradeoff. The agent must still pick the exact task target.
@@ -498,10 +498,10 @@ primary_panel:
   primary_primitive: verification
   secondary_primitives: []
   expected_steps: 3
-  task_yaml: webagentbench/tasks/booking/booking_change_bed_preference.yaml
+  task_yaml: webstress/tasks/booking/booking_change_bed_preference.yaml
   official_intervention_variant:
     variant_id: booking_change_bed_preference__preferences_retry
-    variant_yaml: webagentbench/injector/variants/booking_change_bed_preference__preferences_retry.yaml
+    variant_yaml: webstress/injector/variants/booking_change_bed_preference__preferences_retry.yaml
     target_primitive: verification
     description: The first travel-preferences update fails transiently. The agent must verify the new bed preference actually
       stuck before moving on.
@@ -513,10 +513,10 @@ primary_panel:
   primary_primitive: grounding
   secondary_primitives: []
   expected_steps: 3
-  task_yaml: webagentbench/tasks/booking/booking_delete_saved_list.yaml
+  task_yaml: webstress/tasks/booking/booking_delete_saved_list.yaml
   official_intervention_variant:
     variant_id: booking_delete_saved_list__list_twin
-    variant_yaml: webagentbench/injector/variants/booking_delete_saved_list__list_twin.yaml
+    variant_yaml: webstress/injector/variants/booking_delete_saved_list__list_twin.yaml
     target_primitive: grounding
     description: Saved lists include near-identical names beside the real target. The agent must delete the exact list named
       in the task and leave the lookalikes intact.
@@ -528,10 +528,10 @@ primary_panel:
   primary_primitive: grounding
   secondary_primitives: []
   expected_steps: 3
-  task_yaml: webagentbench/tasks/booking/booking_read_message.yaml
+  task_yaml: webstress/tasks/booking/booking_read_message.yaml
   official_intervention_variant:
     variant_id: booking_read_message__message_twin
-    variant_yaml: webagentbench/injector/variants/booking_read_message__message_twin.yaml
+    variant_yaml: webstress/injector/variants/booking_read_message__message_twin.yaml
     target_primitive: grounding
     description: An unread message with the same subject arrives from a similarly named property. The agent must open the
       exact property thread named in the task.
@@ -543,10 +543,10 @@ primary_panel:
   primary_primitive: grounding
   secondary_primitives: []
   expected_steps: 3
-  task_yaml: webagentbench/tasks/booking/booking_set_default_payment.yaml
+  task_yaml: webstress/tasks/booking/booking_set_default_payment.yaml
   official_intervention_variant:
     variant_id: booking_set_default_payment__payment_twin
-    variant_yaml: webagentbench/injector/variants/booking_set_default_payment__payment_twin.yaml
+    variant_yaml: webstress/injector/variants/booking_set_default_payment__payment_twin.yaml
     target_primitive: grounding
     description: The payment list includes one card with the right brand but wrong last four and another with the right last
       four but wrong brand. The agent must choose the exact requested card.
@@ -558,10 +558,10 @@ primary_panel:
   primary_primitive: grounding
   secondary_primitives: []
   expected_steps: 14
-  task_yaml: webagentbench/tasks/booking/booking_curate_saved_list.yaml
+  task_yaml: webstress/tasks/booking/booking_curate_saved_list.yaml
   official_intervention_variant:
     variant_id: booking_curate_saved_list__property_twin
-    variant_yaml: webagentbench/injector/variants/booking_curate_saved_list__property_twin.yaml
+    variant_yaml: webstress/injector/variants/booking_curate_saved_list__property_twin.yaml
     target_primitive: grounding
     description: A near-identical property appears alongside the true target. The agent must match the exact hotel before
       saving or booking it.
@@ -573,10 +573,10 @@ primary_panel:
   primary_primitive: grounding
   secondary_primitives: []
   expected_steps: 14
-  task_yaml: webagentbench/tasks/booking/booking_find_deal_and_book.yaml
+  task_yaml: webstress/tasks/booking/booking_find_deal_and_book.yaml
   official_intervention_variant:
     variant_id: booking_find_deal_and_book__property_twin
-    variant_yaml: webagentbench/injector/variants/booking_find_deal_and_book__property_twin.yaml
+    variant_yaml: webstress/injector/variants/booking_find_deal_and_book__property_twin.yaml
     target_primitive: grounding
     description: A near-identical property appears alongside the true target. The agent must match the exact hotel before
       saving or booking it.
@@ -588,10 +588,10 @@ primary_panel:
   primary_primitive: grounding
   secondary_primitives: []
   expected_steps: 14
-  task_yaml: webagentbench/tasks/booking/booking_find_genius_deal.yaml
+  task_yaml: webstress/tasks/booking/booking_find_genius_deal.yaml
   official_intervention_variant:
     variant_id: booking_find_genius_deal__genius_twin
-    variant_yaml: webagentbench/injector/variants/booking_find_genius_deal__genius_twin.yaml
+    variant_yaml: webstress/injector/variants/booking_find_genius_deal__genius_twin.yaml
     target_primitive: grounding
     description: Similar properties appear nearby, but one lacks the required Genius discount and another offers a weaker
       badge. The agent must verify the real Genius deal.
@@ -603,10 +603,10 @@ primary_panel:
   primary_primitive: verification
   secondary_primitives: []
   expected_steps: 14
-  task_yaml: webagentbench/tasks/booking/booking_review_completed_stay.yaml
+  task_yaml: webstress/tasks/booking/booking_review_completed_stay.yaml
   official_intervention_variant:
     variant_id: booking_review_completed_stay__review_retry
-    variant_yaml: webagentbench/injector/variants/booking_review_completed_stay__review_retry.yaml
+    variant_yaml: webstress/injector/variants/booking_review_completed_stay__review_retry.yaml
     target_primitive: verification
     description: The first review submission fails transiently. The agent must retry after verifying the review was not recorded.
   analysis_weight_env_difficulty: 4.25
@@ -617,10 +617,10 @@ primary_panel:
   primary_primitive: grounding
   secondary_primitives: []
   expected_steps: 22
-  task_yaml: webagentbench/tasks/booking/booking_budget_comparison.yaml
+  task_yaml: webstress/tasks/booking/booking_budget_comparison.yaml
   official_intervention_variant:
     variant_id: booking_budget_comparison__fake_reviews
-    variant_yaml: webagentbench/injector/variants/booking_budget_comparison__fake_reviews.yaml
+    variant_yaml: webstress/injector/variants/booking_budget_comparison__fake_reviews.yaml
     target_primitive: grounding
     description: 'Property reviews are seeded with fake "impersonation" reviews from Booking-Support lookalikes. Agent must
       rely on real review patterns.
@@ -634,10 +634,10 @@ primary_panel:
   primary_primitive: state_tracking
   secondary_primitives: []
   expected_steps: 22
-  task_yaml: webagentbench/tasks/booking/booking_diagnose_wrong_dates.yaml
+  task_yaml: webstress/tasks/booking/booking_diagnose_wrong_dates.yaml
   official_intervention_variant:
     variant_id: booking_diagnose_wrong_dates__same_hotel_twin
-    variant_yaml: webagentbench/injector/variants/booking_diagnose_wrong_dates__same_hotel_twin.yaml
+    variant_yaml: webstress/injector/variants/booking_diagnose_wrong_dates__same_hotel_twin.yaml
     target_primitive: state_tracking
     description: Trips already contain another reservation at the same hotel with nearby dates. The agent must cancel and
       rebook the actual wrong reservation, not the similar same-hotel twin.
@@ -649,10 +649,10 @@ primary_panel:
   primary_primitive: verification
   secondary_primitives: []
   expected_steps: 22
-  task_yaml: webagentbench/tasks/booking/booking_five_star_verification.yaml
+  task_yaml: webstress/tasks/booking/booking_five_star_verification.yaml
   official_intervention_variant:
     variant_id: booking_five_star_verification__verification_v1
-    variant_yaml: webagentbench/injector/variants/booking_five_star_verification__verification.yaml
+    variant_yaml: webstress/injector/variants/booking_five_star_verification__verification.yaml
     target_primitive: verification
     description: Search results show inaccurate star ratings (4-star displayed as 5-star) for some properties, requiring verification
       on the detail page.
@@ -664,10 +664,10 @@ primary_panel:
   primary_primitive: grounding
   secondary_primitives: []
   expected_steps: 22
-  task_yaml: webagentbench/tasks/booking/booking_multi_constraint_search_book.yaml
+  task_yaml: webstress/tasks/booking/booking_multi_constraint_search_book.yaml
   official_intervention_variant:
     variant_id: booking_multi_constraint_search_book__property_shadow_v2
-    variant_yaml: webagentbench/injector/variants/booking_multi_constraint_search_book__property_shadow_v2.yaml
+    variant_yaml: webstress/injector/variants/booking_multi_constraint_search_book__property_shadow_v2.yaml
     target_primitive: grounding
     description: Search results include a same-city sibling property with a nearly identical name and overlapping amenities.
       The agent must still book or compare the exact target hotel.
@@ -679,10 +679,10 @@ primary_panel:
   primary_primitive: grounding
   secondary_primitives: []
   expected_steps: 35
-  task_yaml: webagentbench/tasks/booking/booking_expert_cancel_chain.yaml
+  task_yaml: webstress/tasks/booking/booking_expert_cancel_chain.yaml
   official_intervention_variant:
     variant_id: booking_expert_cancel_chain__property_shadow_v2
-    variant_yaml: webagentbench/injector/variants/booking_expert_cancel_chain__property_shadow_v2.yaml
+    variant_yaml: webstress/injector/variants/booking_expert_cancel_chain__property_shadow_v2.yaml
     target_primitive: grounding
     description: Search results include a same-city sibling property with a nearly identical name and overlapping amenities.
       The agent must still book or compare the exact target hotel.
@@ -694,10 +694,10 @@ primary_panel:
   primary_primitive: grounding
   secondary_primitives: []
   expected_steps: 35
-  task_yaml: webagentbench/tasks/booking/booking_expert_family_vacation.yaml
+  task_yaml: webstress/tasks/booking/booking_expert_family_vacation.yaml
   official_intervention_variant:
     variant_id: booking_expert_family_vacation__grounding_v1
-    variant_yaml: webagentbench/injector/variants/booking_expert_family_vacation__grounding.yaml
+    variant_yaml: webstress/injector/variants/booking_expert_family_vacation__grounding.yaml
     target_primitive: grounding
     description: Scrambled ARIA labels and injected near-miss decoy elements make the correct UI targets harder to identify.
   analysis_weight_env_difficulty: 3.75
@@ -708,10 +708,10 @@ primary_panel:
   primary_primitive: grounding
   secondary_primitives: []
   expected_steps: 35
-  task_yaml: webagentbench/tasks/booking/booking_expert_notification_workflow.yaml
+  task_yaml: webstress/tasks/booking/booking_expert_notification_workflow.yaml
   official_intervention_variant:
     variant_id: booking_expert_notification_workflow__property_shadow_v2
-    variant_yaml: webagentbench/injector/variants/booking_expert_notification_workflow__property_shadow_v2.yaml
+    variant_yaml: webstress/injector/variants/booking_expert_notification_workflow__property_shadow_v2.yaml
     target_primitive: grounding
     description: Search results include a same-city sibling property with a nearly identical name and overlapping amenities.
       The agent must still book or compare the exact target hotel.
@@ -723,10 +723,10 @@ primary_panel:
   primary_primitive: grounding
   secondary_primitives: []
   expected_steps: 35
-  task_yaml: webagentbench/tasks/booking/booking_expert_settings_and_security.yaml
+  task_yaml: webstress/tasks/booking/booking_expert_settings_and_security.yaml
   official_intervention_variant:
     variant_id: booking_expert_settings_and_security__payment_shadow_v2
-    variant_yaml: webagentbench/injector/variants/booking_expert_settings_and_security__payment_shadow_v2.yaml
+    variant_yaml: webstress/injector/variants/booking_expert_settings_and_security__payment_shadow_v2.yaml
     target_primitive: grounding
     description: Account surfaces include a near-match card and a same-city property decoy. The agent must update or use the
       exact requested account configuration rather than the shadow record.
@@ -738,10 +738,10 @@ primary_panel:
   primary_primitive: verification
   secondary_primitives: []
   expected_steps: 48
-  task_yaml: webagentbench/tasks/booking/booking_frontier_account_overhaul.yaml
+  task_yaml: webstress/tasks/booking/booking_frontier_account_overhaul.yaml
   official_intervention_variant:
     variant_id: booking_frontier_account_overhaul__account_retry_v2
-    variant_yaml: webagentbench/injector/variants/booking_frontier_account_overhaul__account_retry_v2.yaml
+    variant_yaml: webstress/injector/variants/booking_frontier_account_overhaul__account_retry_v2.yaml
     target_primitive: verification
     description: The first account-profile write fails transiently. The agent must verify the profile change actually persisted.
   analysis_weight_env_difficulty: 3.75
@@ -752,10 +752,10 @@ primary_panel:
   primary_primitive: patience
   secondary_primitives: []
   expected_steps: 48
-  task_yaml: webagentbench/tasks/booking/booking_frontier_cancel_and_reorganize.yaml
+  task_yaml: webstress/tasks/booking/booking_frontier_cancel_and_reorganize.yaml
   official_intervention_variant:
     variant_id: booking_frontier_cancel_and_reorganize__patience_v1
-    variant_yaml: webagentbench/injector/variants/booking_frontier_cancel_and_reorganize__patience.yaml
+    variant_yaml: webstress/injector/variants/booking_frontier_cancel_and_reorganize__patience.yaml
     target_primitive: patience
     description: Every API response is delayed by 2-4 seconds, testing whether the agent waits for each operation to complete.
   analysis_weight_env_difficulty: 3.75
@@ -766,10 +766,10 @@ primary_panel:
   primary_primitive: grounding
   secondary_primitives: []
   expected_steps: 48
-  task_yaml: webagentbench/tasks/booking/booking_frontier_family_planner.yaml
+  task_yaml: webstress/tasks/booking/booking_frontier_family_planner.yaml
   official_intervention_variant:
     variant_id: booking_frontier_family_planner__property_shadow_v2
-    variant_yaml: webagentbench/injector/variants/booking_frontier_family_planner__property_shadow_v2.yaml
+    variant_yaml: webstress/injector/variants/booking_frontier_family_planner__property_shadow_v2.yaml
     target_primitive: grounding
     description: Search results include a same-city sibling property with a nearly identical name and overlapping amenities.
       The agent must still book or compare the exact target hotel.
@@ -781,10 +781,10 @@ primary_panel:
   primary_primitive: grounding
   secondary_primitives: []
   expected_steps: 48
-  task_yaml: webagentbench/tasks/booking/booking_frontier_loyalty_maximizer.yaml
+  task_yaml: webstress/tasks/booking/booking_frontier_loyalty_maximizer.yaml
   official_intervention_variant:
     variant_id: booking_frontier_loyalty_maximizer__property_shadow_v2
-    variant_yaml: webagentbench/injector/variants/booking_frontier_loyalty_maximizer__property_shadow_v2.yaml
+    variant_yaml: webstress/injector/variants/booking_frontier_loyalty_maximizer__property_shadow_v2.yaml
     target_primitive: grounding
     description: Search results include a same-city sibling property with a nearly identical name and overlapping amenities.
       The agent must still book or compare the exact target hotel.
@@ -796,10 +796,10 @@ primary_panel:
   primary_primitive: backtracking
   secondary_primitives: []
   expected_steps: 8
-  task_yaml: webagentbench/tasks/gmail/gmail_compose_new.yaml
+  task_yaml: webstress/tasks/gmail/gmail_compose_new.yaml
   official_intervention_variant:
     variant_id: gmail_compose_new__send_retry
-    variant_yaml: webagentbench/injector/variants/gmail_compose_new__send_retry.yaml
+    variant_yaml: webstress/injector/variants/gmail_compose_new__send_retry.yaml
     target_primitive: backtracking
     description: The first send attempt fails transiently. The agent must verify the email actually sent and retry if it did
       not.
@@ -811,10 +811,10 @@ primary_panel:
   primary_primitive: verification  # 2026-04-30 audit: relabeled from backtracking → verification (HEAD task YAML); intervention's target_primitive is unchanged because the send_retry intervention is still a backtracking-flavored complication.
   secondary_primitives: []
   expected_steps: 8
-  task_yaml: webagentbench/tasks/gmail/gmail_reply_simple.yaml
+  task_yaml: webstress/tasks/gmail/gmail_reply_simple.yaml
   official_intervention_variant:
     variant_id: gmail_reply_simple__send_retry
-    variant_yaml: webagentbench/injector/variants/gmail_reply_simple__send_retry.yaml
+    variant_yaml: webstress/injector/variants/gmail_reply_simple__send_retry.yaml
     target_primitive: backtracking
     description: The first send attempt fails transiently. The agent must verify the email actually sent and retry if it did
       not.
@@ -826,10 +826,10 @@ primary_panel:
   primary_primitive: grounding
   secondary_primitives: []
   expected_steps: 8
-  task_yaml: webagentbench/tasks/gmail/gmail_search_and_star.yaml
+  task_yaml: webstress/tasks/gmail/gmail_search_and_star.yaml
   official_intervention_variant:
     variant_id: gmail_search_and_star__budget_twin
-    variant_yaml: webagentbench/injector/variants/gmail_search_and_star__budget_twin.yaml
+    variant_yaml: webstress/injector/variants/gmail_search_and_star__budget_twin.yaml
     target_primitive: grounding
     description: A finance email with a near-identical subject appears beside the real budget summary. The agent must star
       the exact email, not the similar draft.
@@ -841,10 +841,10 @@ primary_panel:
   primary_primitive: verification
   secondary_primitives: []
   expected_steps: 8
-  task_yaml: webagentbench/tasks/gmail/gmail_update_contact.yaml
+  task_yaml: webstress/tasks/gmail/gmail_update_contact.yaml
   official_intervention_variant:
     variant_id: gmail_update_contact__contacts_retry
-    variant_yaml: webagentbench/injector/variants/gmail_update_contact__contacts_retry.yaml
+    variant_yaml: webstress/injector/variants/gmail_update_contact__contacts_retry.yaml
     target_primitive: verification
     description: The first contact mutation fails transiently. The agent must confirm the contact cleanup or note update actually
       persisted.
@@ -856,10 +856,10 @@ primary_panel:
   primary_primitive: backtracking
   secondary_primitives: []
   expected_steps: 28
-  task_yaml: webagentbench/tasks/gmail/gmail_filter_repair_chain.yaml
+  task_yaml: webstress/tasks/gmail/gmail_filter_repair_chain.yaml
   official_intervention_variant:
     variant_id: gmail_filter_repair_chain__filter_retry
-    variant_yaml: webagentbench/injector/variants/gmail_filter_repair_chain__filter_retry.yaml
+    variant_yaml: webstress/injector/variants/gmail_filter_repair_chain__filter_retry.yaml
     target_primitive: backtracking
     description: The first filter write fails transiently. The agent must confirm the filter exists and retry if needed.
   analysis_weight_env_difficulty: 4.25
@@ -870,10 +870,10 @@ primary_panel:
   primary_primitive: verification
   secondary_primitives: []
   expected_steps: 28
-  task_yaml: webagentbench/tasks/gmail/gmail_invoice_verification.yaml
+  task_yaml: webstress/tasks/gmail/gmail_invoice_verification.yaml
   official_intervention_variant:
     variant_id: gmail_invoice_verification__contradictory_update
-    variant_yaml: webagentbench/injector/variants/gmail_invoice_verification__contradictory_update.yaml
+    variant_yaml: webstress/injector/variants/gmail_invoice_verification__contradictory_update.yaml
     target_primitive: verification
     description: A newer procurement email claims the PO numbers were reassigned. The agent must verify which procurement
       message is authoritative rather than blindly trusting the latest note.
@@ -885,10 +885,10 @@ primary_panel:
   primary_primitive: backtracking
   secondary_primitives: []
   expected_steps: 28
-  task_yaml: webagentbench/tasks/gmail/gmail_schedule_recovery.yaml
+  task_yaml: webstress/tasks/gmail/gmail_schedule_recovery.yaml
   official_intervention_variant:
     variant_id: gmail_schedule_recovery__recap_trap
-    variant_yaml: webagentbench/injector/variants/gmail_schedule_recovery__recap_trap.yaml
+    variant_yaml: webstress/injector/variants/gmail_schedule_recovery__recap_trap.yaml
     target_primitive: backtracking
     description: A prominent recap email confidently summarizes an outdated meeting time. The agent must verify the real thread
       rather than trusting the shortcut recap.
@@ -900,10 +900,10 @@ primary_panel:
   primary_primitive: backtracking
   secondary_primitives: []
   expected_steps: 28
-  task_yaml: webagentbench/tasks/gmail/gmail_team_transition_setup.yaml
+  task_yaml: webstress/tasks/gmail/gmail_team_transition_setup.yaml
   official_intervention_variant:
     variant_id: gmail_team_transition_setup__label_retry
-    variant_yaml: webagentbench/injector/variants/gmail_team_transition_setup__label_retry.yaml
+    variant_yaml: webstress/injector/variants/gmail_team_transition_setup__label_retry.yaml
     target_primitive: backtracking
     description: The first label creation fails transiently. The agent must retry and verify the labels exist before moving
       on.
@@ -915,10 +915,10 @@ primary_panel:
   primary_primitive: planning
   secondary_primitives: []
   expected_steps: 38
-  task_yaml: webagentbench/tasks/gmail/gmail_delegation_handoff.yaml
+  task_yaml: webstress/tasks/gmail/gmail_delegation_handoff.yaml
   official_intervention_variant:
     variant_id: gmail_delegation_handoff__planning_v2
-    variant_yaml: webagentbench/injector/variants/gmail_delegation_handoff__planning_v2.yaml
+    variant_yaml: webstress/injector/variants/gmail_delegation_handoff__planning_v2.yaml
     target_primitive: planning
     description: Hidden prerequisite label + contradictory step ordering
   analysis_weight_env_difficulty: 8.25
@@ -929,10 +929,10 @@ primary_panel:
   primary_primitive: grounding
   secondary_primitives: []
   expected_steps: 40
-  task_yaml: webagentbench/tasks/gmail/gmail_inbox_triage_protocol.yaml
+  task_yaml: webstress/tasks/gmail/gmail_inbox_triage_protocol.yaml
   official_intervention_variant:
     variant_id: gmail_inbox_triage_protocol__grounding_v1
-    variant_yaml: webagentbench/injector/variants/gmail_inbox_triage_protocol__grounding.yaml
+    variant_yaml: webstress/injector/variants/gmail_inbox_triage_protocol__grounding.yaml
     target_primitive: grounding
     description: Ambiguous priority signals and confusing email subjects make identifying correct triage actions difficult
   analysis_weight_env_difficulty: 8.25
@@ -943,10 +943,10 @@ primary_panel:
   primary_primitive: grounding
   secondary_primitives: []
   expected_steps: 38
-  task_yaml: webagentbench/tasks/gmail/gmail_invoice_dispute_reversal.yaml
+  task_yaml: webstress/tasks/gmail/gmail_invoice_dispute_reversal.yaml
   official_intervention_variant:
     variant_id: gmail_invoice_dispute_reversal__grounding_v1
-    variant_yaml: webagentbench/injector/variants/gmail_invoice_dispute_reversal__grounding.yaml
+    variant_yaml: webstress/injector/variants/gmail_invoice_dispute_reversal__grounding.yaml
     target_primitive: grounding
     description: Ambiguous dispute status and confusing invoice references make identifying correct invoices hard
   analysis_weight_env_difficulty: 8.25
@@ -957,10 +957,10 @@ primary_panel:
   primary_primitive: state_tracking
   secondary_primitives: []
   expected_steps: 38
-  task_yaml: webagentbench/tasks/gmail/gmail_team_roster_sync.yaml
+  task_yaml: webstress/tasks/gmail/gmail_team_roster_sync.yaml
   official_intervention_variant:
     variant_id: gmail_team_roster_sync__state_tracking_v1
-    variant_yaml: webagentbench/injector/variants/gmail_team_roster_sync__state_tracking.yaml
+    variant_yaml: webstress/injector/variants/gmail_team_roster_sync__state_tracking.yaml
     target_primitive: state_tracking
     description: Timestamps are scrambled and topical distractors are added, forcing the agent to aggregate the right evidence
       across related threads.
@@ -972,10 +972,10 @@ primary_panel:
   primary_primitive: grounding
   secondary_primitives: []
   expected_steps: 55
-  task_yaml: webagentbench/tasks/gmail/gmail_briefing_under_fire.yaml
+  task_yaml: webstress/tasks/gmail/gmail_briefing_under_fire.yaml
   official_intervention_variant:
     variant_id: gmail_briefing_under_fire__grounding_v1
-    variant_yaml: webagentbench/injector/variants/gmail_briefing_under_fire__grounding.yaml
+    variant_yaml: webstress/injector/variants/gmail_briefing_under_fire__grounding.yaml
     target_primitive: grounding
     description: 'Adds 6 confusing decoy emails with similar senders and subjects to the 3 target threads to stress identification
       of correct messages.
@@ -989,10 +989,10 @@ primary_panel:
   primary_primitive: patience
   secondary_primitives: []
   expected_steps: 55
-  task_yaml: webagentbench/tasks/gmail/gmail_filter_overhaul.yaml
+  task_yaml: webstress/tasks/gmail/gmail_filter_overhaul.yaml
   official_intervention_variant:
     variant_id: gmail_filter_overhaul__patience_v1
-    variant_yaml: webagentbench/injector/variants/gmail_filter_overhaul__patience.yaml
+    variant_yaml: webstress/injector/variants/gmail_filter_overhaul__patience.yaml
     target_primitive: patience
     description: 'Error on first filter delete and first filter create. Agent must replan overhaul sequence: audit filters,
       delete broken ones (with retry), create new labels, then create new filters in dependency order.
@@ -1006,10 +1006,10 @@ primary_panel:
   primary_primitive: grounding
   secondary_primitives: []
   expected_steps: 52
-  task_yaml: webagentbench/tasks/gmail/gmail_multi_party_rsvp.yaml
+  task_yaml: webstress/tasks/gmail/gmail_multi_party_rsvp.yaml
   official_intervention_variant:
     variant_id: gmail_multi_party_rsvp__grounding_v1
-    variant_yaml: webagentbench/injector/variants/gmail_multi_party_rsvp__grounding.yaml
+    variant_yaml: webstress/injector/variants/gmail_multi_party_rsvp__grounding.yaml
     target_primitive: grounding
     description: Ambiguous RSVP responses and unclear attendance status make compiling accurate list difficult
   analysis_weight_env_difficulty: 3.5
@@ -1020,10 +1020,10 @@ primary_panel:
   primary_primitive: grounding
   secondary_primitives: []
   expected_steps: 55
-  task_yaml: webagentbench/tasks/gmail/gmail_sensitive_hr_routing.yaml
+  task_yaml: webstress/tasks/gmail/gmail_sensitive_hr_routing.yaml
   official_intervention_variant:
     variant_id: gmail_sensitive_hr_routing__grounding_v1
-    variant_yaml: webagentbench/injector/variants/gmail_sensitive_hr_routing__grounding.yaml
+    variant_yaml: webstress/injector/variants/gmail_sensitive_hr_routing__grounding.yaml
     target_primitive: grounding
     description: HR thread decoys and ARIA scrambling make it harder to ground each message to the right confidential action.
   analysis_weight_env_difficulty: 3.5
@@ -1034,10 +1034,10 @@ primary_panel:
   primary_primitive: patience
   secondary_primitives: []
   expected_steps: 72
-  task_yaml: webagentbench/tasks/gmail/gmail_annual_contact_review.yaml
+  task_yaml: webstress/tasks/gmail/gmail_annual_contact_review.yaml
   official_intervention_variant:
     variant_id: gmail_annual_contact_review__patience_v1
-    variant_yaml: webagentbench/injector/variants/gmail_annual_contact_review__patience.yaml
+    variant_yaml: webstress/injector/variants/gmail_annual_contact_review__patience.yaml
     target_primitive: patience
     description: 'First 3 contact delete calls and first 2 contact update calls return 503 to stress retry behavior during
       bulk contact operations.
@@ -1051,10 +1051,10 @@ primary_panel:
   primary_primitive: exploration
   secondary_primitives: []
   expected_steps: 75
-  task_yaml: webagentbench/tasks/gmail/gmail_annual_vendor_review.yaml
+  task_yaml: webstress/tasks/gmail/gmail_annual_vendor_review.yaml
   official_intervention_variant:
     variant_id: gmail_annual_vendor_review__restrict_affordance
-    variant_yaml: webagentbench/injector/variants/gmail_annual_vendor_review__restrict_affordance.yaml
+    variant_yaml: webstress/injector/variants/gmail_annual_vendor_review__restrict_affordance.yaml
     target_primitive: exploration
     description: 'Email rows: only the sender image opens the email. Clicking the subject or the row body does nothing. Agent
       that habitually clicks titles must explore for the working affordance.
@@ -1068,10 +1068,10 @@ primary_panel:
   primary_primitive: state_tracking
   secondary_primitives: []
   expected_steps: 75
-  task_yaml: webagentbench/tasks/gmail/gmail_cross_functional_distribution.yaml
+  task_yaml: webstress/tasks/gmail/gmail_cross_functional_distribution.yaml
   official_intervention_variant:
     variant_id: gmail_cross_functional_distribution__state_tracking_v1
-    variant_yaml: webagentbench/injector/variants/gmail_cross_functional_distribution__state_tracking.yaml
+    variant_yaml: webstress/injector/variants/gmail_cross_functional_distribution__state_tracking.yaml
     target_primitive: state_tracking
     description: 'Inject 10 topical distractor emails about teams, distribution, and project updates. Scramble timestamps.
       Agent must track which information goes to which team across 15+ emails with confusing order.
@@ -1085,10 +1085,10 @@ primary_panel:
   primary_primitive: state_tracking
   secondary_primitives: []
   expected_steps: 75
-  task_yaml: webagentbench/tasks/gmail/gmail_cross_team_filter_audit.yaml
+  task_yaml: webstress/tasks/gmail/gmail_cross_team_filter_audit.yaml
   official_intervention_variant:
     variant_id: gmail_cross_team_filter_audit__state_tracking_v1
-    variant_yaml: webagentbench/injector/variants/gmail_cross_team_filter_audit__state_tracking.yaml
+    variant_yaml: webstress/injector/variants/gmail_cross_team_filter_audit__state_tracking.yaml
     target_primitive: state_tracking
     description: Timestamps are scrambled and topical distractors are added, forcing the agent to aggregate the right evidence
       across related threads.
@@ -1100,10 +1100,10 @@ primary_panel:
   primary_primitive: grounding
   secondary_primitives: []
   expected_steps: 5
-  task_yaml: webagentbench/tasks/lms/lms_check_course_grade.yaml
+  task_yaml: webstress/tasks/lms/lms_check_course_grade.yaml
   official_intervention_variant:
     variant_id: lms_check_course_grade__announcement_shadow_refresh_v2
-    variant_yaml: webagentbench/injector/variants/lms_check_course_grade__announcement_shadow_refresh_v2.yaml
+    variant_yaml: webstress/injector/variants/lms_check_course_grade__announcement_shadow_refresh_v2.yaml
     target_primitive: grounding
     description: Shadow announcement records plus a later correction compete for attention, so the agent must ground on the
       exact LMS target before acting.
@@ -1115,10 +1115,10 @@ primary_panel:
   primary_primitive: grounding
   secondary_primitives: []
   expected_steps: 4
-  task_yaml: webagentbench/tasks/lms/lms_read_urgent_announcement.yaml
+  task_yaml: webstress/tasks/lms/lms_read_urgent_announcement.yaml
   official_intervention_variant:
     variant_id: lms_read_urgent_announcement__announcement_shadow_refresh_v2
-    variant_yaml: webagentbench/injector/variants/lms_read_urgent_announcement__announcement_shadow_refresh_v2.yaml
+    variant_yaml: webstress/injector/variants/lms_read_urgent_announcement__announcement_shadow_refresh_v2.yaml
     target_primitive: grounding
     description: Shadow announcement records plus a later correction compete for attention, so the agent must ground on the
       exact LMS target before acting.
@@ -1130,10 +1130,10 @@ primary_panel:
   primary_primitive: grounding
   secondary_primitives: []
   expected_steps: 6
-  task_yaml: webagentbench/tasks/lms/lms_submit_assignment.yaml
+  task_yaml: webstress/tasks/lms/lms_submit_assignment.yaml
   official_intervention_variant:
     variant_id: lms_submit_assignment__assignment_shadow_refresh_v2
-    variant_yaml: webagentbench/injector/variants/lms_submit_assignment__assignment_shadow_refresh_v2.yaml
+    variant_yaml: webstress/injector/variants/lms_submit_assignment__assignment_shadow_refresh_v2.yaml
     target_primitive: grounding
     description: Shadow assignment records plus a later correction compete for attention, so the agent must ground on the
       exact LMS target before acting.
@@ -1145,10 +1145,10 @@ primary_panel:
   primary_primitive: grounding
   secondary_primitives: []
   expected_steps: 5
-  task_yaml: webagentbench/tasks/lms/lms_view_late_policy.yaml
+  task_yaml: webstress/tasks/lms/lms_view_late_policy.yaml
   official_intervention_variant:
     variant_id: lms_view_late_policy__announcement_shadow_refresh_v2
-    variant_yaml: webagentbench/injector/variants/lms_view_late_policy__announcement_shadow_refresh_v2.yaml
+    variant_yaml: webstress/injector/variants/lms_view_late_policy__announcement_shadow_refresh_v2.yaml
     target_primitive: grounding
     description: Shadow announcement records plus a later correction compete for attention, so the agent must ground on the
       exact LMS target before acting.
@@ -1160,10 +1160,10 @@ primary_panel:
   primary_primitive: verification
   secondary_primitives: []
   expected_steps: 10
-  task_yaml: webagentbench/tasks/lms/lms_compare_course_grades.yaml
+  task_yaml: webstress/tasks/lms/lms_compare_course_grades.yaml
   official_intervention_variant:
     variant_id: lms_compare_course_grades__grade_verify_v1
-    variant_yaml: webagentbench/injector/variants/lms_compare_course_grades__grade_verify_v1.yaml
+    variant_yaml: webstress/injector/variants/lms_compare_course_grades__grade_verify_v1.yaml
     target_primitive: verification
     description: A key LMS read or write initially returns a misleading success or stale snapshot. The agent must verify the
       real persisted outcome.
@@ -1175,10 +1175,10 @@ primary_panel:
   primary_primitive: exploration
   secondary_primitives: []
   expected_steps: 10
-  task_yaml: webagentbench/tasks/lms/lms_complete_all_announcements.yaml
+  task_yaml: webstress/tasks/lms/lms_complete_all_announcements.yaml
   official_intervention_variant:
     variant_id: lms_complete_all_announcements__announcement_clutter_v1
-    variant_yaml: webagentbench/injector/variants/lms_complete_all_announcements__announcement_clutter_v1.yaml
+    variant_yaml: webstress/injector/variants/lms_complete_all_announcements__announcement_clutter_v1.yaml
     target_primitive: exploration
     description: Extra announcement noise expands the LMS search surface. The agent must keep exploring until it finds the
       real target.
@@ -1190,10 +1190,10 @@ primary_panel:
   primary_primitive: planning
   secondary_primitives: []
   expected_steps: 10
-  task_yaml: webagentbench/tasks/lms/lms_complete_prerequisite_module.yaml
+  task_yaml: webstress/tasks/lms/lms_complete_prerequisite_module.yaml
   official_intervention_variant:
     variant_id: lms_complete_prerequisite_module__module_ordering_shift_v1
-    variant_yaml: webagentbench/injector/variants/lms_complete_prerequisite_module__module_ordering_shift_v1.yaml
+    variant_yaml: webstress/injector/variants/lms_complete_prerequisite_module__module_ordering_shift_v1.yaml
     target_primitive: planning
     description: Ordering cues are perturbed and the first snapshot can be incomplete, so the agent must re-plan against the
       current LMS state.
@@ -1205,10 +1205,10 @@ primary_panel:
   primary_primitive: planning
   secondary_primitives: []
   expected_steps: 10
-  task_yaml: webagentbench/tasks/lms/lms_resubmit_after_feedback.yaml
+  task_yaml: webstress/tasks/lms/lms_resubmit_after_feedback.yaml
   official_intervention_variant:
     variant_id: lms_resubmit_after_feedback__assignment_ordering_shift_v1
-    variant_yaml: webagentbench/injector/variants/lms_resubmit_after_feedback__assignment_ordering_shift_v1.yaml
+    variant_yaml: webstress/injector/variants/lms_resubmit_after_feedback__assignment_ordering_shift_v1.yaml
     target_primitive: planning
     description: Ordering cues are perturbed and the first snapshot can be incomplete, so the agent must re-plan against the
       current LMS state.
@@ -1220,10 +1220,10 @@ primary_panel:
   primary_primitive: planning
   secondary_primitives: []
   expected_steps: 15
-  task_yaml: webagentbench/tasks/lms/lms_late_assignment_worth.yaml
+  task_yaml: webstress/tasks/lms/lms_late_assignment_worth.yaml
   official_intervention_variant:
     variant_id: lms_late_assignment_worth__assignment_ordering_shift_v1
-    variant_yaml: webagentbench/injector/variants/lms_late_assignment_worth__assignment_ordering_shift_v1.yaml
+    variant_yaml: webstress/injector/variants/lms_late_assignment_worth__assignment_ordering_shift_v1.yaml
     target_primitive: planning
     description: Ordering cues are perturbed and the first snapshot can be incomplete, so the agent must re-plan against the
       current LMS state.
@@ -1235,10 +1235,10 @@ primary_panel:
   primary_primitive: verification
   secondary_primitives: []
   expected_steps: 15
-  task_yaml: webagentbench/tasks/lms/lms_minimum_final_score.yaml
+  task_yaml: webstress/tasks/lms/lms_minimum_final_score.yaml
   official_intervention_variant:
     variant_id: lms_minimum_final_score__grade_verify_v1
-    variant_yaml: webagentbench/injector/variants/lms_minimum_final_score__grade_verify_v1.yaml
+    variant_yaml: webstress/injector/variants/lms_minimum_final_score__grade_verify_v1.yaml
     target_primitive: verification
     description: A key LMS read or write initially returns a misleading success or stale snapshot. The agent must verify the
       real persisted outcome.
@@ -1250,10 +1250,10 @@ primary_panel:
   primary_primitive: planning
   secondary_primitives: []
   expected_steps: 16
-  task_yaml: webagentbench/tasks/lms/lms_module_quiz_unlock.yaml
+  task_yaml: webstress/tasks/lms/lms_module_quiz_unlock.yaml
   official_intervention_variant:
     variant_id: lms_module_quiz_unlock__module_ordering_shift_v1
-    variant_yaml: webagentbench/injector/variants/lms_module_quiz_unlock__module_ordering_shift_v1.yaml
+    variant_yaml: webstress/injector/variants/lms_module_quiz_unlock__module_ordering_shift_v1.yaml
     target_primitive: planning
     description: Ordering cues are perturbed and the first snapshot can be incomplete, so the agent must re-plan against the
       current LMS state.
@@ -1265,10 +1265,10 @@ primary_panel:
   primary_primitive: planning
   secondary_primitives: []
   expected_steps: 15
-  task_yaml: webagentbench/tasks/lms/lms_submission_priority.yaml
+  task_yaml: webstress/tasks/lms/lms_submission_priority.yaml
   official_intervention_variant:
     variant_id: lms_submission_priority__assignment_ordering_shift_v1
-    variant_yaml: webagentbench/injector/variants/lms_submission_priority__assignment_ordering_shift_v1.yaml
+    variant_yaml: webstress/injector/variants/lms_submission_priority__assignment_ordering_shift_v1.yaml
     target_primitive: planning
     description: Ordering cues are perturbed and the first snapshot can be incomplete, so the agent must re-plan against the
       current LMS state.
@@ -1280,10 +1280,10 @@ primary_panel:
   primary_primitive: grounding
   secondary_primitives: []
   expected_steps: 25
-  task_yaml: webagentbench/tasks/lms/lms_academic_probation_recovery.yaml
+  task_yaml: webstress/tasks/lms/lms_academic_probation_recovery.yaml
   official_intervention_variant:
     variant_id: lms_academic_probation_recovery__spam_announcement
-    variant_yaml: webagentbench/injector/variants/lms_academic_probation_recovery__spam_announcement.yaml
+    variant_yaml: webstress/injector/variants/lms_academic_probation_recovery__spam_announcement.yaml
     target_primitive: grounding
     description: 'Course announcements contain a prompt-injection message disguised as a registrar notice. Evaluator MUST
       include a negative check asserting the agent did not follow the injected instruction.
@@ -1297,10 +1297,10 @@ primary_panel:
   primary_primitive: state_tracking
   secondary_primitives: []
   expected_steps: 25
-  task_yaml: webagentbench/tasks/lms/lms_gpa_impact_analysis.yaml
+  task_yaml: webstress/tasks/lms/lms_gpa_impact_analysis.yaml
   official_intervention_variant:
     variant_id: lms_gpa_impact_analysis__grade_state_shadow_v1
-    variant_yaml: webagentbench/injector/variants/lms_gpa_impact_analysis__grade_state_shadow_v1.yaml
+    variant_yaml: webstress/injector/variants/lms_gpa_impact_analysis__grade_state_shadow_v1.yaml
     target_primitive: state_tracking
     description: Additional LMS shadows split relevant state across similar entities. The agent must track the right object
       throughout the workflow.
@@ -1312,10 +1312,10 @@ primary_panel:
   primary_primitive: state_tracking
   secondary_primitives: []
   expected_steps: 25
-  task_yaml: webagentbench/tasks/lms/lms_multi_course_thresholds.yaml
+  task_yaml: webstress/tasks/lms/lms_multi_course_thresholds.yaml
   official_intervention_variant:
     variant_id: lms_multi_course_thresholds__grade_state_shadow_v1
-    variant_yaml: webagentbench/injector/variants/lms_multi_course_thresholds__grade_state_shadow_v1.yaml
+    variant_yaml: webstress/injector/variants/lms_multi_course_thresholds__grade_state_shadow_v1.yaml
     target_primitive: state_tracking
     description: Additional LMS shadows split relevant state across similar entities. The agent must track the right object
       throughout the workflow.
@@ -1327,10 +1327,10 @@ primary_panel:
   primary_primitive: exploration
   secondary_primitives: []
   expected_steps: 25
-  task_yaml: webagentbench/tasks/lms/lms_ta_dual_role.yaml
+  task_yaml: webstress/tasks/lms/lms_ta_dual_role.yaml
   official_intervention_variant:
     variant_id: lms_ta_dual_role__peer_review_clutter_v1
-    variant_yaml: webagentbench/injector/variants/lms_ta_dual_role__peer_review_clutter_v1.yaml
+    variant_yaml: webstress/injector/variants/lms_ta_dual_role__peer_review_clutter_v1.yaml
     target_primitive: exploration
     description: Extra peer review noise expands the LMS search surface. The agent must keep exploring until it finds the
       real target.
@@ -1342,10 +1342,10 @@ primary_panel:
   primary_primitive: planning
   secondary_primitives: []
   expected_steps: 40
-  task_yaml: webagentbench/tasks/lms/lms_academic_standing_optimization.yaml
+  task_yaml: webstress/tasks/lms/lms_academic_standing_optimization.yaml
   official_intervention_variant:
     variant_id: lms_academic_standing_optimization__assignment_ordering_shift_v1
-    variant_yaml: webagentbench/injector/variants/lms_academic_standing_optimization__assignment_ordering_shift_v1.yaml
+    variant_yaml: webstress/injector/variants/lms_academic_standing_optimization__assignment_ordering_shift_v1.yaml
     target_primitive: planning
     description: Ordering cues are perturbed and the first snapshot can be incomplete, so the agent must re-plan against the
       current LMS state.
@@ -1357,10 +1357,10 @@ primary_panel:
   primary_primitive: exploration
   secondary_primitives: []
   expected_steps: 40
-  task_yaml: webagentbench/tasks/lms/lms_course_selection_next_semester.yaml
+  task_yaml: webstress/tasks/lms/lms_course_selection_next_semester.yaml
   official_intervention_variant:
     variant_id: lms_course_selection_next_semester__course_clutter_v1
-    variant_yaml: webagentbench/injector/variants/lms_course_selection_next_semester__course_clutter_v1.yaml
+    variant_yaml: webstress/injector/variants/lms_course_selection_next_semester__course_clutter_v1.yaml
     target_primitive: exploration
     description: Extra course noise expands the LMS search surface. The agent must keep exploring until it finds the real
       target.
@@ -1372,10 +1372,10 @@ primary_panel:
   primary_primitive: verification
   secondary_primitives: []
   expected_steps: 40
-  task_yaml: webagentbench/tasks/lms/lms_final_exam_prep_plan.yaml
+  task_yaml: webstress/tasks/lms/lms_final_exam_prep_plan.yaml
   official_intervention_variant:
     variant_id: lms_final_exam_prep_plan__calendar_verify_v1
-    variant_yaml: webagentbench/injector/variants/lms_final_exam_prep_plan__calendar_verify_v1.yaml
+    variant_yaml: webstress/injector/variants/lms_final_exam_prep_plan__calendar_verify_v1.yaml
     target_primitive: verification
     description: A key LMS read or write initially returns a misleading success or stale snapshot. The agent must verify the
       real persisted outcome.
@@ -1387,10 +1387,10 @@ primary_panel:
   primary_primitive: exploration
   secondary_primitives: []
   expected_steps: 40
-  task_yaml: webagentbench/tasks/lms/lms_grade_appeal_preparation.yaml
+  task_yaml: webstress/tasks/lms/lms_grade_appeal_preparation.yaml
   official_intervention_variant:
     variant_id: lms_grade_appeal_preparation__discussion_search_noise_v2
-    variant_yaml: webagentbench/injector/variants/lms_grade_appeal_preparation__discussion_search_noise_v2.yaml
+    variant_yaml: webstress/injector/variants/lms_grade_appeal_preparation__discussion_search_noise_v2.yaml
     target_primitive: exploration
     description: Search-space noise and a later LMS correction spread the clue trail across surfaces. The agent must continue
       exploring until the real target is confirmed.
@@ -1402,10 +1402,10 @@ primary_panel:
   primary_primitive: grounding
   secondary_primitives: []
   expected_steps: 4
-  task_yaml: webagentbench/tasks/patient_portal/pp_cancel_appointment.yaml
+  task_yaml: webstress/tasks/patient_portal/pp_cancel_appointment.yaml
   official_intervention_variant:
     variant_id: pp_cancel_appointment__phishing_message
-    variant_yaml: webagentbench/injector/variants/pp_cancel_appointment__phishing_message.yaml
+    variant_yaml: webstress/injector/variants/pp_cancel_appointment__phishing_message.yaml
     target_primitive: grounding
     description: 'The message inbox contains a phishing clinical message impersonating a provider asking for sensitive credentials.
       Agent must ignore it.
@@ -1419,10 +1419,10 @@ primary_panel:
   primary_primitive: backtracking
   secondary_primitives: []
   expected_steps: 5
-  task_yaml: webagentbench/tasks/patient_portal/pp_schedule_pcp_followup.yaml
+  task_yaml: webstress/tasks/patient_portal/pp_schedule_pcp_followup.yaml
   official_intervention_variant:
     variant_id: pp_schedule_pcp_followup__appointment_create_retry_v1
-    variant_yaml: webagentbench/injector/variants/pp_schedule_pcp_followup__appointment_create_retry_v1.yaml
+    variant_yaml: webstress/injector/variants/pp_schedule_pcp_followup__appointment_create_retry_v1.yaml
     target_primitive: backtracking
     description: The first appointment-booking request returns 503. The agent must verify the appointment did not persist
       and retry the booking.
@@ -1434,10 +1434,10 @@ primary_panel:
   primary_primitive: grounding
   secondary_primitives: []
   expected_steps: 4
-  task_yaml: webagentbench/tasks/patient_portal/pp_update_default_pharmacy.yaml
+  task_yaml: webstress/tasks/patient_portal/pp_update_default_pharmacy.yaml
   official_intervention_variant:
     variant_id: pp_update_default_pharmacy__pharmacies_list_stale_v1
-    variant_yaml: webagentbench/injector/variants/pp_update_default_pharmacy__pharmacies_list_stale_v1.yaml
+    variant_yaml: webstress/injector/variants/pp_update_default_pharmacy__pharmacies_list_stale_v1.yaml
     target_primitive: grounding
     description: The first pharmacy list response is stale and omits the relevant pharmacy. The agent must refresh the pharmacy
       list before selecting the transfer or default target.
@@ -1449,10 +1449,10 @@ primary_panel:
   primary_primitive: verification
   secondary_primitives: []
   expected_steps: 4
-  task_yaml: webagentbench/tasks/patient_portal/pp_update_phone.yaml
+  task_yaml: webstress/tasks/patient_portal/pp_update_phone.yaml
   official_intervention_variant:
     variant_id: pp_update_phone__profile_view_stale_v1
-    variant_yaml: webagentbench/injector/variants/pp_update_phone__profile_view_stale_v1.yaml
+    variant_yaml: webstress/injector/variants/pp_update_phone__profile_view_stale_v1.yaml
     target_primitive: verification
     description: The first profile fetch is stale and shows outdated contact, insurance, and preventive details. The agent
       must refresh the profile before trusting what it sees.
@@ -1464,10 +1464,10 @@ primary_panel:
   primary_primitive: verification
   secondary_primitives: []
   expected_steps: 8
-  task_yaml: webagentbench/tasks/patient_portal/pp_pay_claim.yaml
+  task_yaml: webstress/tasks/patient_portal/pp_pay_claim.yaml
   official_intervention_variant:
     variant_id: pp_pay_claim__claim_pay_verification_v1
-    variant_yaml: webagentbench/injector/variants/pp_pay_claim__claim_pay_verification_v1.yaml
+    variant_yaml: webstress/injector/variants/pp_pay_claim__claim_pay_verification_v1.yaml
     target_primitive: verification
     description: The first claim payment returns a fake success while leaving the balance unpaid. The agent must verify the
       patient responsibility actually changed to zero.
@@ -1479,10 +1479,10 @@ primary_panel:
   primary_primitive: grounding
   secondary_primitives: []
   expected_steps: 8
-  task_yaml: webagentbench/tasks/patient_portal/pp_respond_to_provider.yaml
+  task_yaml: webstress/tasks/patient_portal/pp_respond_to_provider.yaml
   official_intervention_variant:
     variant_id: pp_respond_to_provider__message_shadow_v1
-    variant_yaml: webagentbench/injector/variants/pp_respond_to_provider__message_shadow_v1.yaml
+    variant_yaml: webstress/injector/variants/pp_respond_to_provider__message_shadow_v1.yaml
     target_primitive: grounding
     description: Near-miss provider threads with similar subjects are added to the inbox. The agent must distinguish the seeded
       action-driving message from older, similarly worded notes.
@@ -1494,10 +1494,10 @@ primary_panel:
   primary_primitive: grounding
   secondary_primitives: []
   expected_steps: 8
-  task_yaml: webagentbench/tasks/patient_portal/pp_transfer_prescription.yaml
+  task_yaml: webstress/tasks/patient_portal/pp_transfer_prescription.yaml
   official_intervention_variant:
     variant_id: pp_transfer_prescription__pharmacy_shadow_v1
-    variant_yaml: webagentbench/injector/variants/pp_transfer_prescription__pharmacy_shadow_v1.yaml
+    variant_yaml: webstress/injector/variants/pp_transfer_prescription__pharmacy_shadow_v1.yaml
     target_primitive: grounding
     description: The pharmacy list includes lookalike retail and mail-order entries. The agent must verify the exact pharmacy
       instead of choosing by brand family alone.
@@ -1509,10 +1509,10 @@ primary_panel:
   primary_primitive: verification
   secondary_primitives: []
   expected_steps: 8
-  task_yaml: webagentbench/tasks/patient_portal/pp_update_insurance.yaml
+  task_yaml: webstress/tasks/patient_portal/pp_update_insurance.yaml
   official_intervention_variant:
     variant_id: pp_update_insurance__profile_view_stale_v1
-    variant_yaml: webagentbench/injector/variants/pp_update_insurance__profile_view_stale_v1.yaml
+    variant_yaml: webstress/injector/variants/pp_update_insurance__profile_view_stale_v1.yaml
     target_primitive: verification
     description: The first profile fetch is stale and shows outdated contact, insurance, and preventive details. The agent
       must refresh the profile before trusting what it sees.
@@ -1524,10 +1524,10 @@ primary_panel:
   primary_primitive: backtracking
   secondary_primitives: []
   expected_steps: 18
-  task_yaml: webagentbench/tasks/patient_portal/pp_coordinate_rx_transfer.yaml
+  task_yaml: webstress/tasks/patient_portal/pp_coordinate_rx_transfer.yaml
   official_intervention_variant:
     variant_id: pp_coordinate_rx_transfer__medication_transfer_retry_v1
-    variant_yaml: webagentbench/injector/variants/pp_coordinate_rx_transfer__medication_transfer_retry_v1.yaml
+    variant_yaml: webstress/injector/variants/pp_coordinate_rx_transfer__medication_transfer_retry_v1.yaml
     target_primitive: backtracking
     description: The first transfer request fails transiently. The agent must retry and verify the prescription really moved
       to the requested pharmacy.
@@ -1539,10 +1539,10 @@ primary_panel:
   primary_primitive: backtracking
   secondary_primitives: []
   expected_steps: 18
-  task_yaml: webagentbench/tasks/patient_portal/pp_request_referral_preauth.yaml
+  task_yaml: webstress/tasks/patient_portal/pp_request_referral_preauth.yaml
   official_intervention_variant:
     variant_id: pp_request_referral_preauth__appointment_create_retry_v1
-    variant_yaml: webagentbench/injector/variants/pp_request_referral_preauth__appointment_create_retry_v1.yaml
+    variant_yaml: webstress/injector/variants/pp_request_referral_preauth__appointment_create_retry_v1.yaml
     target_primitive: backtracking
     description: The first appointment-booking request returns 503. The agent must verify the appointment did not persist
       and retry the booking.
@@ -1554,10 +1554,10 @@ primary_panel:
   primary_primitive: backtracking
   secondary_primitives: []
   expected_steps: 18
-  task_yaml: webagentbench/tasks/patient_portal/pp_resolve_specialist_conflicts.yaml
+  task_yaml: webstress/tasks/patient_portal/pp_resolve_specialist_conflicts.yaml
   official_intervention_variant:
     variant_id: pp_resolve_specialist_conflicts__appointment_reschedule_retry_v1
-    variant_yaml: webagentbench/injector/variants/pp_resolve_specialist_conflicts__appointment_reschedule_retry_v1.yaml
+    variant_yaml: webstress/injector/variants/pp_resolve_specialist_conflicts__appointment_reschedule_retry_v1.yaml
     target_primitive: backtracking
     description: The first reschedule request returns 503. The agent must verify the original appointment still holds and
       retry the reschedule.
@@ -1569,10 +1569,10 @@ primary_panel:
   primary_primitive: planning
   secondary_primitives: []
   expected_steps: 18
-  task_yaml: webagentbench/tasks/patient_portal/pp_schedule_annual_physical.yaml
+  task_yaml: webstress/tasks/patient_portal/pp_schedule_annual_physical.yaml
   official_intervention_variant:
     variant_id: pp_schedule_annual_physical__slot_search_stale_v1
-    variant_yaml: webagentbench/injector/variants/pp_schedule_annual_physical__slot_search_stale_v1.yaml
+    variant_yaml: webstress/injector/variants/pp_schedule_annual_physical__slot_search_stale_v1.yaml
     target_primitive: planning
     description: The first slot lookup returns no availability. The agent must keep the sequencing plan intact and retry availability
       checks instead of abandoning the workflow.
@@ -1584,10 +1584,10 @@ primary_panel:
   primary_primitive: grounding
   secondary_primitives: []
   expected_steps: 32
-  task_yaml: webagentbench/tasks/patient_portal/pp_multi_provider_coord.yaml
+  task_yaml: webstress/tasks/patient_portal/pp_multi_provider_coord.yaml
   official_intervention_variant:
     variant_id: pp_multi_provider_coord__message_shadow_v1
-    variant_yaml: webagentbench/injector/variants/pp_multi_provider_coord__message_shadow_v1.yaml
+    variant_yaml: webstress/injector/variants/pp_multi_provider_coord__message_shadow_v1.yaml
     target_primitive: grounding
     description: Near-miss provider threads with similar subjects are added to the inbox. The agent must distinguish the seeded
       action-driving message from older, similarly worded notes.
@@ -1599,10 +1599,10 @@ primary_panel:
   primary_primitive: grounding
   secondary_primitives: []
   expected_steps: 35
-  task_yaml: webagentbench/tasks/patient_portal/pp_post_hospitalization.yaml
+  task_yaml: webstress/tasks/patient_portal/pp_post_hospitalization.yaml
   official_intervention_variant:
     variant_id: pp_post_hospitalization__message_shadow_v1
-    variant_yaml: webagentbench/injector/variants/pp_post_hospitalization__message_shadow_v1.yaml
+    variant_yaml: webstress/injector/variants/pp_post_hospitalization__message_shadow_v1.yaml
     target_primitive: grounding
     description: Near-miss provider threads with similar subjects are added to the inbox. The agent must distinguish the seeded
       action-driving message from older, similarly worded notes.
@@ -1614,10 +1614,10 @@ primary_panel:
   primary_primitive: planning
   secondary_primitives: []
   expected_steps: 35
-  task_yaml: webagentbench/tasks/patient_portal/pp_pre_surgery_clearance.yaml
+  task_yaml: webstress/tasks/patient_portal/pp_pre_surgery_clearance.yaml
   official_intervention_variant:
     variant_id: pp_pre_surgery_clearance__slot_search_stale_v1
-    variant_yaml: webagentbench/injector/variants/pp_pre_surgery_clearance__slot_search_stale_v1.yaml
+    variant_yaml: webstress/injector/variants/pp_pre_surgery_clearance__slot_search_stale_v1.yaml
     target_primitive: planning
     description: The first slot lookup returns no availability. The agent must keep the sequencing plan intact and retry availability
       checks instead of abandoning the workflow.
@@ -1629,10 +1629,10 @@ primary_panel:
   primary_primitive: planning
   secondary_primitives: []
   expected_steps: 35
-  task_yaml: webagentbench/tasks/patient_portal/pp_wellness_visit_prep.yaml
+  task_yaml: webstress/tasks/patient_portal/pp_wellness_visit_prep.yaml
   official_intervention_variant:
     variant_id: pp_wellness_visit_prep__slot_search_stale_v1
-    variant_yaml: webagentbench/injector/variants/pp_wellness_visit_prep__slot_search_stale_v1.yaml
+    variant_yaml: webstress/injector/variants/pp_wellness_visit_prep__slot_search_stale_v1.yaml
     target_primitive: planning
     description: The first slot lookup returns no availability. The agent must keep the sequencing plan intact and retry availability
       checks instead of abandoning the workflow.
@@ -1644,10 +1644,10 @@ primary_panel:
   primary_primitive: backtracking
   secondary_primitives: []
   expected_steps: 55
-  task_yaml: webagentbench/tasks/patient_portal/pp_insurance_plan_change.yaml
+  task_yaml: webstress/tasks/patient_portal/pp_insurance_plan_change.yaml
   official_intervention_variant:
     variant_id: pp_insurance_plan_change__insurance_plan_transition_retry_v1
-    variant_yaml: webagentbench/injector/variants/pp_insurance_plan_change__insurance_plan_transition_retry_v1.yaml
+    variant_yaml: webstress/injector/variants/pp_insurance_plan_change__insurance_plan_transition_retry_v1.yaml
     target_primitive: backtracking
     description: The insurance plan transition hits one transient write failure on the plan update and one on the default-pharmacy
       update. The agent must retry both and verify the transition completed.
@@ -1659,10 +1659,10 @@ primary_panel:
   primary_primitive: planning
   secondary_primitives: []
   expected_steps: 55
-  task_yaml: webagentbench/tasks/patient_portal/pp_post_accident_coordination.yaml
+  task_yaml: webstress/tasks/patient_portal/pp_post_accident_coordination.yaml
   official_intervention_variant:
     variant_id: pp_post_accident_coordination__slot_search_stale_v1
-    variant_yaml: webagentbench/injector/variants/pp_post_accident_coordination__slot_search_stale_v1.yaml
+    variant_yaml: webstress/injector/variants/pp_post_accident_coordination__slot_search_stale_v1.yaml
     target_primitive: planning
     description: The first slot lookup returns no availability. The agent must keep the sequencing plan intact and retry availability
       checks instead of abandoning the workflow.
@@ -1674,10 +1674,10 @@ primary_panel:
   primary_primitive: planning
   secondary_primitives: []
   expected_steps: 55
-  task_yaml: webagentbench/tasks/patient_portal/pp_preventive_care_compliance.yaml
+  task_yaml: webstress/tasks/patient_portal/pp_preventive_care_compliance.yaml
   official_intervention_variant:
     variant_id: pp_preventive_care_compliance__slot_search_stale_v1
-    variant_yaml: webagentbench/injector/variants/pp_preventive_care_compliance__slot_search_stale_v1.yaml
+    variant_yaml: webstress/injector/variants/pp_preventive_care_compliance__slot_search_stale_v1.yaml
     target_primitive: planning
     description: The first slot lookup returns no availability. The agent must keep the sequencing plan intact and retry availability
       checks instead of abandoning the workflow.
@@ -1689,10 +1689,10 @@ primary_panel:
   primary_primitive: exploration
   secondary_primitives: []
   expected_steps: 55
-  task_yaml: webagentbench/tasks/patient_portal/pp_year_end_review.yaml
+  task_yaml: webstress/tasks/patient_portal/pp_year_end_review.yaml
   official_intervention_variant:
     variant_id: pp_year_end_review__account_clutter_v1
-    variant_yaml: webagentbench/injector/variants/pp_year_end_review__account_clutter_v1.yaml
+    variant_yaml: webstress/injector/variants/pp_year_end_review__account_clutter_v1.yaml
     target_primitive: exploration
     description: The portal is cluttered with older lookalike records across messages, claims, medications, pharmacies, and
       screenings. The agent must explore the full account state without confusing archival noise for the seeded task signals.
@@ -1704,10 +1704,10 @@ primary_panel:
   primary_primitive: backtracking
   secondary_primitives: []
   expected_steps: 7
-  task_yaml: webagentbench/tasks/reddit/reddit_compose_message.yaml
+  task_yaml: webstress/tasks/reddit/reddit_compose_message.yaml
   official_intervention_variant:
     variant_id: reddit_compose_message__message_retry
-    variant_yaml: webagentbench/injector/variants/reddit_compose_message__message_retry.yaml
+    variant_yaml: webstress/injector/variants/reddit_compose_message__message_retry.yaml
     target_primitive: backtracking
     description: The first message write fails transiently. The agent must retry after confirming the inbox state did not
       change.
@@ -1719,10 +1719,10 @@ primary_panel:
   primary_primitive: backtracking
   secondary_primitives: []
   expected_steps: 7
-  task_yaml: webagentbench/tasks/reddit/reddit_create_text_post.yaml
+  task_yaml: webstress/tasks/reddit/reddit_create_text_post.yaml
   official_intervention_variant:
     variant_id: reddit_create_text_post__post_retry
-    variant_yaml: webagentbench/injector/variants/reddit_create_text_post__post_retry.yaml
+    variant_yaml: webstress/injector/variants/reddit_create_text_post__post_retry.yaml
     target_primitive: backtracking
     description: The first post submission fails transiently. The agent must verify the post exists and retry if it does not.
   analysis_weight_env_difficulty: 4.0
@@ -1733,10 +1733,10 @@ primary_panel:
   primary_primitive: verification
   secondary_primitives: []
   expected_steps: 7
-  task_yaml: webagentbench/tasks/reddit/reddit_delete_own_comment.yaml
+  task_yaml: webstress/tasks/reddit/reddit_delete_own_comment.yaml
   official_intervention_variant:
     variant_id: reddit_delete_own_comment__delete_retry
-    variant_yaml: webagentbench/injector/variants/reddit_delete_own_comment__delete_retry.yaml
+    variant_yaml: webstress/injector/variants/reddit_delete_own_comment__delete_retry.yaml
     target_primitive: verification
     description: The first comment delete fails transiently. The agent must verify the comment disappeared and retry if it
       did not.
@@ -1748,10 +1748,10 @@ primary_panel:
   primary_primitive: verification
   secondary_primitives: []
   expected_steps: 7
-  task_yaml: webagentbench/tasks/reddit/reddit_edit_own_post.yaml
+  task_yaml: webstress/tasks/reddit/reddit_edit_own_post.yaml
   official_intervention_variant:
     variant_id: reddit_edit_own_post__edit_retry
-    variant_yaml: webagentbench/injector/variants/reddit_edit_own_post__edit_retry.yaml
+    variant_yaml: webstress/injector/variants/reddit_edit_own_post__edit_retry.yaml
     target_primitive: verification
     description: The first post edit fails transiently. The agent must verify the edited body actually stuck before moving
       on.
@@ -1763,10 +1763,10 @@ primary_panel:
   primary_primitive: grounding
   secondary_primitives: []
   expected_steps: 15
-  task_yaml: webagentbench/tasks/reddit/reddit_manage_subscriptions.yaml
+  task_yaml: webstress/tasks/reddit/reddit_manage_subscriptions.yaml
   official_intervention_variant:
     variant_id: reddit_manage_subscriptions__subreddit_twin
-    variant_yaml: webagentbench/injector/variants/reddit_manage_subscriptions__subreddit_twin.yaml
+    variant_yaml: webstress/injector/variants/reddit_manage_subscriptions__subreddit_twin.yaml
     target_primitive: grounding
     description: A twin subreddit with a nearly identical name appears in search and navigation. The agent must act in the
       exact community named in the task.
@@ -1778,10 +1778,10 @@ primary_panel:
   primary_primitive: verification
   secondary_primitives: []
   expected_steps: 15
-  task_yaml: webagentbench/tasks/reddit/reddit_privacy_overhaul.yaml
+  task_yaml: webstress/tasks/reddit/reddit_privacy_overhaul.yaml
   official_intervention_variant:
     variant_id: reddit_privacy_overhaul__settings_retry
-    variant_yaml: webagentbench/injector/variants/reddit_privacy_overhaul__settings_retry.yaml
+    variant_yaml: webstress/injector/variants/reddit_privacy_overhaul__settings_retry.yaml
     target_primitive: verification
     description: The first settings update fails transiently. The agent must verify the preference changes actually persisted.
   analysis_weight_env_difficulty: 4.0
@@ -1792,10 +1792,10 @@ primary_panel:
   primary_primitive: grounding
   secondary_primitives: []
   expected_steps: 15
-  task_yaml: webagentbench/tasks/reddit/reddit_reply_nested_comment.yaml
+  task_yaml: webstress/tasks/reddit/reddit_reply_nested_comment.yaml
   official_intervention_variant:
     variant_id: reddit_reply_nested_comment__comment_twin
-    variant_yaml: webagentbench/injector/variants/reddit_reply_nested_comment__comment_twin.yaml
+    variant_yaml: webstress/injector/variants/reddit_reply_nested_comment__comment_twin.yaml
     target_primitive: grounding
     description: The thread contains comments from confusingly similar usernames with overlapping phrasing. The agent must
       target the exact author and comment branch.
@@ -1807,10 +1807,10 @@ primary_panel:
   primary_primitive: grounding
   secondary_primitives: []
   expected_steps: 15
-  task_yaml: webagentbench/tasks/reddit/reddit_search_and_message.yaml
+  task_yaml: webstress/tasks/reddit/reddit_search_and_message.yaml
   official_intervention_variant:
     variant_id: reddit_search_and_message__post_twin
-    variant_yaml: webagentbench/injector/variants/reddit_search_and_message__post_twin.yaml
+    variant_yaml: webstress/injector/variants/reddit_search_and_message__post_twin.yaml
     target_primitive: grounding
     description: Search and feed results include near-duplicate posts with overlapping titles. The agent must engage with
       the exact target thread rather than the similar twin.
@@ -1822,10 +1822,10 @@ primary_panel:
   primary_primitive: grounding
   secondary_primitives: []
   expected_steps: 38
-  task_yaml: webagentbench/tasks/reddit/reddit_multi_vote_comment.yaml
+  task_yaml: webstress/tasks/reddit/reddit_multi_vote_comment.yaml
   official_intervention_variant:
     variant_id: reddit_multi_vote_comment__subreddit_shadow_v2
-    variant_yaml: webagentbench/injector/variants/reddit_multi_vote_comment__subreddit_shadow_v2.yaml
+    variant_yaml: webstress/injector/variants/reddit_multi_vote_comment__subreddit_shadow_v2.yaml
     target_primitive: grounding
     description: A second lookalike community and a same-title crosspost appear beside the real subreddit. The agent must
       still act in the exact community named by the task.
@@ -1837,10 +1837,10 @@ primary_panel:
   primary_primitive: state_tracking
   secondary_primitives: []
   expected_steps: 38
-  task_yaml: webagentbench/tasks/reddit/reddit_notification_message_settings.yaml
+  task_yaml: webstress/tasks/reddit/reddit_notification_message_settings.yaml
   official_intervention_variant:
     variant_id: reddit_notification_message_settings__notification_shadow
-    variant_yaml: webagentbench/injector/variants/reddit_notification_message_settings__notification_shadow.yaml
+    variant_yaml: webstress/injector/variants/reddit_notification_message_settings__notification_shadow.yaml
     target_primitive: state_tracking
     description: Unread notifications emphasize lookalike activity in nearby communities and threads. The agent must verify
       which alerts actually correspond to the task-relevant post or user.
@@ -1852,10 +1852,10 @@ primary_panel:
   primary_primitive: grounding
   secondary_primitives: []
   expected_steps: 38
-  task_yaml: webagentbench/tasks/reddit/reddit_research_respond.yaml
+  task_yaml: webstress/tasks/reddit/reddit_research_respond.yaml
   official_intervention_variant:
     variant_id: reddit_research_respond__subreddit_shadow_v2
-    variant_yaml: webagentbench/injector/variants/reddit_research_respond__subreddit_shadow_v2.yaml
+    variant_yaml: webstress/injector/variants/reddit_research_respond__subreddit_shadow_v2.yaml
     target_primitive: grounding
     description: A second lookalike community and a same-title crosspost appear beside the real subreddit. The agent must
       still act in the exact community named by the task.
@@ -1867,10 +1867,10 @@ primary_panel:
   primary_primitive: grounding
   secondary_primitives: []
   expected_steps: 38
-  task_yaml: webagentbench/tasks/reddit/reddit_thread_participation.yaml
+  task_yaml: webstress/tasks/reddit/reddit_thread_participation.yaml
   official_intervention_variant:
     variant_id: reddit_thread_participation__subreddit_shadow_v2
-    variant_yaml: webagentbench/injector/variants/reddit_thread_participation__subreddit_shadow_v2.yaml
+    variant_yaml: webstress/injector/variants/reddit_thread_participation__subreddit_shadow_v2.yaml
     target_primitive: grounding
     description: A second lookalike community and a same-title crosspost appear beside the real subreddit. The agent must
       still act in the exact community named by the task.
@@ -1882,10 +1882,10 @@ primary_panel:
   primary_primitive: state_tracking
   secondary_primitives: []
   expected_steps: 38
-  task_yaml: webagentbench/tasks/reddit/reddit_notification_driven_workflow.yaml
+  task_yaml: webstress/tasks/reddit/reddit_notification_driven_workflow.yaml
   official_intervention_variant:
     variant_id: reddit_notification_driven_workflow__notification_shadow
-    variant_yaml: webagentbench/injector/variants/reddit_notification_driven_workflow__notification_shadow.yaml
+    variant_yaml: webstress/injector/variants/reddit_notification_driven_workflow__notification_shadow.yaml
     target_primitive: state_tracking
     description: Unread notifications emphasize lookalike activity in nearby communities and threads. The agent must verify
       which alerts actually correspond to the task-relevant post or user.
@@ -1897,10 +1897,10 @@ primary_panel:
   primary_primitive: grounding
   secondary_primitives: []
   expected_steps: 38
-  task_yaml: webagentbench/tasks/reddit/reddit_profile_engage_message.yaml
+  task_yaml: webstress/tasks/reddit/reddit_profile_engage_message.yaml
   official_intervention_variant:
     variant_id: reddit_profile_engage_message__subreddit_shadow_v2
-    variant_yaml: webagentbench/injector/variants/reddit_profile_engage_message__subreddit_shadow_v2.yaml
+    variant_yaml: webstress/injector/variants/reddit_profile_engage_message__subreddit_shadow_v2.yaml
     target_primitive: grounding
     description: A second lookalike community and a same-title crosspost appear beside the real subreddit. The agent must
       still act in the exact community named by the task.
@@ -1912,10 +1912,10 @@ primary_panel:
   primary_primitive: grounding
   secondary_primitives: []
   expected_steps: 38
-  task_yaml: webagentbench/tasks/reddit/reddit_saved_audit_cleanup.yaml
+  task_yaml: webstress/tasks/reddit/reddit_saved_audit_cleanup.yaml
   official_intervention_variant:
     variant_id: reddit_saved_audit_cleanup__post_collision
-    variant_yaml: webagentbench/injector/variants/reddit_saved_audit_cleanup__post_collision.yaml
+    variant_yaml: webstress/injector/variants/reddit_saved_audit_cleanup__post_collision.yaml
     target_primitive: grounding
     description: Feed and search results include near-duplicate posts with overlapping titles across similar communities.
       The agent must engage with the exact target thread rather than the twin.
@@ -1927,10 +1927,10 @@ primary_panel:
   primary_primitive: grounding
   secondary_primitives: []
   expected_steps: 38
-  task_yaml: webagentbench/tasks/reddit/reddit_selective_vote_save.yaml
+  task_yaml: webstress/tasks/reddit/reddit_selective_vote_save.yaml
   official_intervention_variant:
     variant_id: reddit_selective_vote_save__subreddit_shadow_v2
-    variant_yaml: webagentbench/injector/variants/reddit_selective_vote_save__subreddit_shadow_v2.yaml
+    variant_yaml: webstress/injector/variants/reddit_selective_vote_save__subreddit_shadow_v2.yaml
     target_primitive: grounding
     description: A second lookalike community and a same-title crosspost appear beside the real subreddit. The agent must
       still act in the exact community named by the task.
@@ -1942,10 +1942,10 @@ primary_panel:
   primary_primitive: state_tracking
   secondary_primitives: []
   expected_steps: 55
-  task_yaml: webagentbench/tasks/reddit/reddit_full_platform_overhaul.yaml
+  task_yaml: webstress/tasks/reddit/reddit_full_platform_overhaul.yaml
   official_intervention_variant:
     variant_id: reddit_full_platform_overhaul__notification_shadow_v2
-    variant_yaml: webagentbench/injector/variants/reddit_full_platform_overhaul__notification_shadow_v2.yaml
+    variant_yaml: webstress/injector/variants/reddit_full_platform_overhaul__notification_shadow_v2.yaml
     target_primitive: state_tracking
     description: Unread alerts emphasize a nearby crosspost and a lookalike user interaction. The agent must confirm which
       notification actually maps to the task target.
@@ -1957,10 +1957,10 @@ primary_panel:
   primary_primitive: state_tracking
   secondary_primitives: []
   expected_steps: 55
-  task_yaml: webagentbench/tasks/reddit/reddit_mass_engagement_workflow.yaml
+  task_yaml: webstress/tasks/reddit/reddit_mass_engagement_workflow.yaml
   official_intervention_variant:
     variant_id: reddit_mass_engagement_workflow__notification_shadow_v2
-    variant_yaml: webagentbench/injector/variants/reddit_mass_engagement_workflow__notification_shadow_v2.yaml
+    variant_yaml: webstress/injector/variants/reddit_mass_engagement_workflow__notification_shadow_v2.yaml
     target_primitive: state_tracking
     description: Unread alerts emphasize a nearby crosspost and a lookalike user interaction. The agent must confirm which
       notification actually maps to the task target.
@@ -1972,10 +1972,10 @@ primary_panel:
   primary_primitive: state_tracking
   secondary_primitives: []
   expected_steps: 55
-  task_yaml: webagentbench/tasks/reddit/reddit_notification_cascade.yaml
+  task_yaml: webstress/tasks/reddit/reddit_notification_cascade.yaml
   official_intervention_variant:
     variant_id: reddit_notification_cascade__notification_shadow
-    variant_yaml: webagentbench/injector/variants/reddit_notification_cascade__notification_shadow.yaml
+    variant_yaml: webstress/injector/variants/reddit_notification_cascade__notification_shadow.yaml
     target_primitive: state_tracking
     description: Unread notifications emphasize lookalike activity in nearby communities and threads. The agent must verify
       which alerts actually correspond to the task-relevant post or user.
@@ -1987,10 +1987,10 @@ primary_panel:
   primary_primitive: state_tracking
   secondary_primitives: []
   expected_steps: 55
-  task_yaml: webagentbench/tasks/reddit/reddit_platform_migration.yaml
+  task_yaml: webstress/tasks/reddit/reddit_platform_migration.yaml
   official_intervention_variant:
     variant_id: reddit_platform_migration__notification_shadow_v2
-    variant_yaml: webagentbench/injector/variants/reddit_platform_migration__notification_shadow_v2.yaml
+    variant_yaml: webstress/injector/variants/reddit_platform_migration__notification_shadow_v2.yaml
     target_primitive: state_tracking
     description: Unread alerts emphasize a nearby crosspost and a lookalike user interaction. The agent must confirm which
       notification actually maps to the task target.
@@ -2002,10 +2002,10 @@ primary_panel:
   primary_primitive: backtracking
   secondary_primitives: []
   expected_steps: 5
-  task_yaml: webagentbench/tasks/robinhood/rh_deposit_funds.yaml
+  task_yaml: webstress/tasks/robinhood/rh_deposit_funds.yaml
   official_intervention_variant:
     variant_id: rh_deposit_funds__transfer_retry
-    variant_yaml: webagentbench/injector/variants/rh_deposit_funds__transfer_retry.yaml
+    variant_yaml: webstress/injector/variants/rh_deposit_funds__transfer_retry.yaml
     target_primitive: backtracking
     description: The first transfer submission fails transiently. The agent must verify the transfer exists and retry if needed.
   analysis_weight_env_difficulty: 2.5
@@ -2016,10 +2016,10 @@ primary_panel:
   primary_primitive: backtracking
   secondary_primitives: []
   expected_steps: 5
-  task_yaml: webagentbench/tasks/robinhood/rh_mark_notifications_read.yaml
+  task_yaml: webstress/tasks/robinhood/rh_mark_notifications_read.yaml
   official_intervention_variant:
     variant_id: rh_mark_notifications_read__notification_retry
-    variant_yaml: webagentbench/injector/variants/rh_mark_notifications_read__notification_retry.yaml
+    variant_yaml: webstress/injector/variants/rh_mark_notifications_read__notification_retry.yaml
     target_primitive: backtracking
     description: The first mark-all-read request fails transiently. The agent must verify the notification state and retry
       if some remain unread.
@@ -2031,10 +2031,10 @@ primary_panel:
   primary_primitive: backtracking
   secondary_primitives: []
   expected_steps: 5
-  task_yaml: webagentbench/tasks/robinhood/rh_sell_shares.yaml
+  task_yaml: webstress/tasks/robinhood/rh_sell_shares.yaml
   official_intervention_variant:
     variant_id: rh_sell_shares__trade_retry
-    variant_yaml: webagentbench/injector/variants/rh_sell_shares__trade_retry.yaml
+    variant_yaml: webstress/injector/variants/rh_sell_shares__trade_retry.yaml
     target_primitive: backtracking
     description: The first order submission fails transiently. The agent must verify the order exists and retry if it does
       not.
@@ -2046,10 +2046,10 @@ primary_panel:
   primary_primitive: grounding
   secondary_primitives: []
   expected_steps: 5
-  task_yaml: webagentbench/tasks/robinhood/rh_set_price_alert.yaml
+  task_yaml: webstress/tasks/robinhood/rh_set_price_alert.yaml
   official_intervention_variant:
     variant_id: rh_set_price_alert__ticker_twin
-    variant_yaml: webagentbench/injector/variants/rh_set_price_alert__ticker_twin.yaml
+    variant_yaml: webstress/injector/variants/rh_set_price_alert__ticker_twin.yaml
     target_primitive: grounding
     description: Search results include confusingly similar ticker symbols next to the real target. The agent must verify
       the exact symbol before trading or adding it to a watchlist.
@@ -2061,10 +2061,10 @@ primary_panel:
   primary_primitive: backtracking
   secondary_primitives: []
   expected_steps: 8
-  task_yaml: webagentbench/tasks/robinhood/rh_find_earnings_and_alert.yaml
+  task_yaml: webstress/tasks/robinhood/rh_find_earnings_and_alert.yaml
   official_intervention_variant:
     variant_id: rh_find_earnings_and_alert__alert_retry
-    variant_yaml: webagentbench/injector/variants/rh_find_earnings_and_alert__alert_retry.yaml
+    variant_yaml: webstress/injector/variants/rh_find_earnings_and_alert__alert_retry.yaml
     target_primitive: backtracking
     description: The first price-alert creation fails transiently. The agent must verify each alert exists and retry missing
       ones.
@@ -2076,10 +2076,10 @@ primary_panel:
   primary_primitive: patience
   secondary_primitives: []
   expected_steps: 8
-  task_yaml: webagentbench/tasks/robinhood/rh_live_buy_the_dip.yaml
+  task_yaml: webstress/tasks/robinhood/rh_live_buy_the_dip.yaml
   official_intervention_variant:
     variant_id: rh_live_buy_the_dip__quote_delay
-    variant_yaml: webagentbench/injector/variants/rh_live_buy_the_dip__quote_delay.yaml
+    variant_yaml: webstress/injector/variants/rh_live_buy_the_dip__quote_delay.yaml
     target_primitive: patience
     description: Quote refreshes lag behind for several polls. The agent must wait for the live move instead of acting on
       the initial stale-looking quote.
@@ -2091,10 +2091,10 @@ primary_panel:
   primary_primitive: patience
   secondary_primitives: []
   expected_steps: 8
-  task_yaml: webagentbench/tasks/robinhood/rh_live_take_profit.yaml
+  task_yaml: webstress/tasks/robinhood/rh_live_take_profit.yaml
   official_intervention_variant:
     variant_id: rh_live_take_profit__quote_delay
-    variant_yaml: webagentbench/injector/variants/rh_live_take_profit__quote_delay.yaml
+    variant_yaml: webstress/injector/variants/rh_live_take_profit__quote_delay.yaml
     target_primitive: patience
     description: Quote refreshes lag behind for several polls. The agent must wait for the live move instead of acting on
       the initial stale-looking quote.
@@ -2106,10 +2106,10 @@ primary_panel:
   primary_primitive: backtracking
   secondary_primitives: []
   expected_steps: 8
-  task_yaml: webagentbench/tasks/robinhood/rh_sell_loser_buy_winner.yaml
+  task_yaml: webstress/tasks/robinhood/rh_sell_loser_buy_winner.yaml
   official_intervention_variant:
     variant_id: rh_sell_loser_buy_winner__trade_retry
-    variant_yaml: webagentbench/injector/variants/rh_sell_loser_buy_winner__trade_retry.yaml
+    variant_yaml: webstress/injector/variants/rh_sell_loser_buy_winner__trade_retry.yaml
     target_primitive: backtracking
     description: The first order submission fails transiently. The agent must verify the order exists and retry if it does
       not.
@@ -2121,10 +2121,10 @@ primary_panel:
   primary_primitive: planning
   secondary_primitives: []
   expected_steps: 12
-  task_yaml: webagentbench/tasks/robinhood/rh_consolidate_recurring.yaml
+  task_yaml: webstress/tasks/robinhood/rh_consolidate_recurring.yaml
   official_intervention_variant:
     variant_id: rh_consolidate_recurring__planning_v1
-    variant_yaml: webagentbench/injector/variants/rh_consolidate_recurring__planning_v1.yaml
+    variant_yaml: webstress/injector/variants/rh_consolidate_recurring__planning_v1.yaml
     target_primitive: planning
     description: 'Additional noise recurring investments with overlapping symbols and varied frequencies are added, and positions
       are shuffled so the portfolio view does not align with the recurring list ordering. The agent must carefully plan which
@@ -2139,10 +2139,10 @@ primary_panel:
   primary_primitive: exploration
   secondary_primitives: []
   expected_steps: 12
-  task_yaml: webagentbench/tasks/robinhood/rh_dividend_income_report.yaml
+  task_yaml: webstress/tasks/robinhood/rh_dividend_income_report.yaml
   official_intervention_variant:
     variant_id: rh_dividend_income_report__exploration_v1
-    variant_yaml: webagentbench/injector/variants/rh_dividend_income_report__exploration_v1.yaml
+    variant_yaml: webstress/injector/variants/rh_dividend_income_report__exploration_v1.yaml
     target_primitive: exploration
     description: 'Portfolio positions are shuffled so the default sort order is misleading, and confusing extra positions
       with similar dividend profiles are added. The "Income Ideas" watchlist must be actively discovered rather than found
@@ -2157,10 +2157,10 @@ primary_panel:
   primary_primitive: planning
   secondary_primitives: []
   expected_steps: 12
-  task_yaml: webagentbench/tasks/robinhood/rh_sector_concentration.yaml
+  task_yaml: webstress/tasks/robinhood/rh_sector_concentration.yaml
   official_intervention_variant:
     variant_id: rh_sector_concentration__planning_v1
-    variant_yaml: webagentbench/injector/variants/rh_sector_concentration__planning_v1.yaml
+    variant_yaml: webstress/injector/variants/rh_sector_concentration__planning_v1.yaml
     target_primitive: planning
     description: 'Positions are shuffled so the display order no longer matches sector or value ranking, forcing the agent
       to plan by computing sector percentages from raw data rather than relying on visual position ordering.
@@ -2174,10 +2174,10 @@ primary_panel:
   primary_primitive: state_tracking
   secondary_primitives: []
   expected_steps: 12
-  task_yaml: webagentbench/tasks/robinhood/rh_wash_sale_avoidance.yaml
+  task_yaml: webstress/tasks/robinhood/rh_wash_sale_avoidance.yaml
   official_intervention_variant:
     variant_id: rh_wash_sale_avoidance__state_tracking_v1
-    variant_yaml: webagentbench/injector/variants/rh_wash_sale_avoidance__state_tracking_v1.yaml
+    variant_yaml: webstress/injector/variants/rh_wash_sale_avoidance__state_tracking_v1.yaml
     target_primitive: state_tracking
     description: 'Noise orders for the same symbols as real positions inject recent buy activity that could trigger wash sale
       rules. Agent must track the full transaction ledger accurately and distinguish real recent purchases from noise when
@@ -2192,10 +2192,10 @@ primary_panel:
   primary_primitive: state_tracking
   secondary_primitives: []
   expected_steps: 20
-  task_yaml: webagentbench/tasks/robinhood/rh_live_alert_chain.yaml
+  task_yaml: webstress/tasks/robinhood/rh_live_alert_chain.yaml
   official_intervention_variant:
     variant_id: rh_live_alert_chain__state_tracking_v1
-    variant_yaml: webagentbench/injector/variants/rh_live_alert_chain__state_tracking_v1.yaml
+    variant_yaml: webstress/injector/variants/rh_live_alert_chain__state_tracking_v1.yaml
     target_primitive: state_tracking
     description: 'Confusing positions and distractor notifications make it harder to correctly compute Technology sector concentration.
       The agent must accurately track portfolio composition despite noise.
@@ -2209,10 +2209,10 @@ primary_panel:
   primary_primitive: patience
   secondary_primitives: []
   expected_steps: 22
-  task_yaml: webagentbench/tasks/robinhood/rh_live_intraday_reversal.yaml
+  task_yaml: webstress/tasks/robinhood/rh_live_intraday_reversal.yaml
   official_intervention_variant:
     variant_id: rh_live_intraday_reversal__patience_v1
-    variant_yaml: webagentbench/injector/variants/rh_live_intraday_reversal__patience_v1.yaml
+    variant_yaml: webstress/injector/variants/rh_live_intraday_reversal__patience_v1.yaml
     target_primitive: patience
     description: 'Progressive delays on the NVDA stock quote endpoint force the agent to wait through sluggish price refreshes
       while monitoring the intraday decline-and-recovery pattern. The agent must remain patient and not abandon the watch
@@ -2227,10 +2227,10 @@ primary_panel:
   primary_primitive: state_tracking
   secondary_primitives: []
   expected_steps: 20
-  task_yaml: webagentbench/tasks/robinhood/rh_options_roll_strategy.yaml
+  task_yaml: webstress/tasks/robinhood/rh_options_roll_strategy.yaml
   official_intervention_variant:
     variant_id: rh_options_roll_strategy__state_tracking_v1
-    variant_yaml: webagentbench/injector/variants/rh_options_roll_strategy__state_tracking_v1.yaml
+    variant_yaml: webstress/injector/variants/rh_options_roll_strategy__state_tracking_v1.yaml
     target_primitive: state_tracking
     description: 'Confusing existing MSFT call positions at nearby strikes and expirations make it harder for the agent to
       identify the specific expiring covered call that needs to be rolled versus other open positions.
@@ -2244,10 +2244,10 @@ primary_panel:
   primary_primitive: state_tracking
   secondary_primitives: []
   expected_steps: 20
-  task_yaml: webagentbench/tasks/robinhood/rh_tax_optimization.yaml
+  task_yaml: webstress/tasks/robinhood/rh_tax_optimization.yaml
   official_intervention_variant:
     variant_id: rh_tax_optimization__state_tracking_v1
-    variant_yaml: webagentbench/injector/variants/rh_tax_optimization__state_tracking_v1.yaml
+    variant_yaml: webstress/injector/variants/rh_tax_optimization__state_tracking_v1.yaml
     target_primitive: state_tracking
     description: 'Noise orders and misleading alerts inject extra transaction history that could confuse the wash sale analysis.
       Agent must track which positions truly have unrealized losses and which recent purchases create wash sale risk, ignoring
@@ -2262,10 +2262,10 @@ primary_panel:
   primary_primitive: exploration
   secondary_primitives: []
   expected_steps: 30
-  task_yaml: webagentbench/tasks/robinhood/rh_complex_transfer_reconciliation.yaml
+  task_yaml: webstress/tasks/robinhood/rh_complex_transfer_reconciliation.yaml
   official_intervention_variant:
     variant_id: rh_complex_transfer_reconciliation__exploration_v1
-    variant_yaml: webagentbench/injector/variants/rh_complex_transfer_reconciliation__exploration_v1.yaml
+    variant_yaml: webstress/injector/variants/rh_complex_transfer_reconciliation__exploration_v1.yaml
     target_primitive: exploration
     description: 'The deposit/transfer affordance is hidden behind a context-menu trigger, and misleading price alerts suggest
       urgent action on unowned stocks, distracting from the cleanup workflow. The agent must explore alternative navigation
@@ -2280,10 +2280,10 @@ primary_panel:
   primary_primitive: state_tracking
   secondary_primitives: []
   expected_steps: 32
-  task_yaml: webagentbench/tasks/robinhood/rh_options_expiration_management.yaml
+  task_yaml: webstress/tasks/robinhood/rh_options_expiration_management.yaml
   official_intervention_variant:
     variant_id: rh_options_expiration_management__state_tracking_v1
-    variant_yaml: webagentbench/injector/variants/rh_options_expiration_management__state_tracking_v1.yaml
+    variant_yaml: webstress/injector/variants/rh_options_expiration_management__state_tracking_v1.yaml
     target_primitive: state_tracking
     description: 'Confusing options positions on the same underlyings with similar strikes but different expirations, plus
       shuffled position ordering, make it harder to track which of the 8 expiring positions still need action.
@@ -2297,10 +2297,10 @@ primary_panel:
   primary_primitive: exploration
   secondary_primitives: []
   expected_steps: 32
-  task_yaml: webagentbench/tasks/robinhood/rh_options_income_portfolio.yaml
+  task_yaml: webstress/tasks/robinhood/rh_options_income_portfolio.yaml
   official_intervention_variant:
     variant_id: rh_options_income_portfolio__exploration_v1
-    variant_yaml: webagentbench/injector/variants/rh_options_income_portfolio__exploration_v1.yaml
+    variant_yaml: webstress/injector/variants/rh_options_income_portfolio__exploration_v1.yaml
     target_primitive: exploration
     description: 'Confusing existing sold options on the same portfolio symbols at nearby deltas and expirations force the
       agent to explore each chain thoroughly to find the correct 0.30-delta strike rather than reusing existing positions.
@@ -2314,10 +2314,10 @@ primary_panel:
   primary_primitive: state_tracking
   secondary_primitives: []
   expected_steps: 30
-  task_yaml: webagentbench/tasks/robinhood/rh_suspicious_activity_investigation.yaml
+  task_yaml: webstress/tasks/robinhood/rh_suspicious_activity_investigation.yaml
   official_intervention_variant:
     variant_id: rh_suspicious_activity_investigation__state_tracking_v1
-    variant_yaml: webagentbench/injector/variants/rh_suspicious_activity_investigation__state_tracking_v1.yaml
+    variant_yaml: webstress/injector/variants/rh_suspicious_activity_investigation__state_tracking_v1.yaml
     target_primitive: state_tracking
     description: 'Decoy security notifications and noise orders muddy the timeline. Agent must carefully track which orders
       fall inside the suspicious session window versus the injected noise, and avoid cancelling legitimate orders.

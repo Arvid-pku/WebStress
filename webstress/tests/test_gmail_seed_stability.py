@@ -6,13 +6,13 @@ import sys
 
 import pytest
 
-from webagentbench.backend.routes.gmail import SessionCreateRequest, create_session
-from webagentbench.backend.seeder import FakeDataGenerator
-from webagentbench.backend.seeders.gmail import GmailSeedRunner
-from webagentbench.backend.state import SessionManager
-from webagentbench.app import build_manifest
-from webagentbench.task_rendering import render_template
-from webagentbench.tasks._registry import env_tasks, get_task
+from webstress.backend.routes.gmail import SessionCreateRequest, create_session
+from webstress.backend.seeder import FakeDataGenerator
+from webstress.backend.seeders.gmail import GmailSeedRunner
+from webstress.backend.state import SessionManager
+from webstress.app import build_manifest
+from webstress.task_rendering import render_template
+from webstress.tasks._registry import env_tasks, get_task
 
 
 def _run_seed(task_id: str, seed: int = 42):
@@ -42,7 +42,7 @@ def test_seed_builders_import_without_circular_import() -> None:
         [
             sys.executable,
             "-c",
-            "from webagentbench.tasks._seed_builders import BUILDER_REGISTRY; print(len(BUILDER_REGISTRY))",
+            "from webstress.tasks._seed_builders import BUILDER_REGISTRY; print(len(BUILDER_REGISTRY))",
         ],
         capture_output=True,
         text=True,

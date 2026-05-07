@@ -1,4 +1,4 @@
-"""Unit tests for ``webagentbench.evaluator_diff.eval_predicate``.
+"""Unit tests for ``webstress.evaluator_diff.eval_predicate``.
 
 Covers every predicate kind defined in the canonical-diff spec §3.2. Each test
 builds a ``PredicateScope`` and asserts the boolean result of
@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import pytest
 
-from webagentbench.eval_core import PredicateScope, eval_predicate
+from webstress.eval_core import PredicateScope, eval_predicate
 
 
 def _scope(x, **kw):

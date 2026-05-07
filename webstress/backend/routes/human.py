@@ -14,7 +14,7 @@ Flow:
      reads these params (added in this change) and, on evaluate, POSTs the
      trace to /api/human/attempt/save.
   5. Backend writes trace.json + metadata.json under
-     webagentbench/human/traces/{annotator}/{role}/{env}/{base}/{cond}/{attempt}/
+     webstress/human/traces/{annotator}/{role}/{env}/{base}/{cond}/{attempt}/
      and updates progress.json.
   6. After the warm attempt is saved, the frontend shows a post-task form,
      which POSTs to /api/human/attempt/post_task_form to mark the assignment
@@ -45,7 +45,7 @@ router = APIRouter(prefix="/api/human", tags=["human"])
 # ---------------------------------------------------------------------------
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent.parent.parent
-_HUMAN_DIR = _REPO_ROOT / "webagentbench" / "human"
+_HUMAN_DIR = _REPO_ROOT / "webstress" / "human"
 _ASSIGNMENTS_YAML = _HUMAN_DIR / "assignments_v1.yaml"
 _TRACES_ROOT = _HUMAN_DIR / "traces"
 

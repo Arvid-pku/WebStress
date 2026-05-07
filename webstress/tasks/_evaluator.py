@@ -1,6 +1,6 @@
 """WebStress task evaluator — delegates to eval_core.
 
-All evaluation logic lives in ``webagentbench.eval_core``. This module
+All evaluation logic lives in ``webstress.eval_core``. This module
 preserves the public ``evaluate()`` signature and the Gmail-specific
 ``_compute_collateral`` helper for backward compatibility.
 """
@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from webagentbench.eval_core import evaluate as _evaluate
+from webstress.eval_core import evaluate as _evaluate
 
 
 def evaluate(

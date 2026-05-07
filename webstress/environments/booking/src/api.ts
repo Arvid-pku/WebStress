@@ -7,7 +7,7 @@
  * session_id ourselves.
  */
 
-import type { ApiRequestOptions } from "@webagentbench/shared";
+import type { ApiRequestOptions } from "@webstress/shared";
 
 import type {
   Property,

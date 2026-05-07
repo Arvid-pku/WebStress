@@ -2,9 +2,9 @@
 any task and reports pass/fail per stage with actionable remediation.
 
 Usage:
-    python -m webagentbench.tasks.validate <task_id>
-    python -m webagentbench.tasks.validate <task_id> --stages 1,2,3
-    python -m webagentbench.tasks.validate <task_id> --json
+    python -m webstress.tasks.validate <task_id>
+    python -m webstress.tasks.validate <task_id> --stages 1,2,3
+    python -m webstress.tasks.validate <task_id> --json
 
 Stages:
   1. YAML has a canonical_diff block
@@ -31,8 +31,8 @@ import yaml
 
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
-_TASKS_DIR = _REPO_ROOT / "webagentbench" / "tasks"
-_TESTS_DIR = _REPO_ROOT / "webagentbench" / "tests"
+_TASKS_DIR = _REPO_ROOT / "webstress" / "tasks"
+_TESTS_DIR = _REPO_ROOT / "webstress" / "tests"
 
 
 @dataclass
@@ -82,7 +82,7 @@ def stage1_yaml(task_id: str) -> StageResult:
 
 def stage2_schema(task_id: str) -> StageResult:
     try:
-        from webagentbench.tasks._registry import get_task
+        from webstress.tasks._registry import get_task
         task = get_task(task_id)
     except Exception as exc:
         return StageResult(2, "schema", passed=False, skipped=False,
@@ -101,9 +101,9 @@ def stage2_schema(task_id: str) -> StageResult:
 
 def stage3_preview(task_id: str, seed: int = 42) -> StageResult:
     try:
-        from webagentbench.backend.state import SessionManager
-        from webagentbench.tasks.preview import apply_canonical_diff
-        from webagentbench.tasks._registry import get_task
+        from webstress.backend.state import SessionManager
+        from webstress.tasks.preview import apply_canonical_diff
+        from webstress.tasks._registry import get_task
     except Exception as exc:
         return StageResult(3, "preview", passed=False, skipped=False,
                            summary=f"import failed: {exc}")
@@ -156,7 +156,7 @@ def stage4_roundtrip(task_id: str) -> StageResult:
     if path is None:
         return StageResult(4, "roundtrip", passed=False, skipped=True,
                            summary="no canonical_diff / end_to_end test file found",
-                           detail=f"Expected webagentbench/tests/test_{task_id}_canonical_diff.py "
+                           detail=f"Expected webstress/tests/test_{task_id}_canonical_diff.py "
                                   "or similar. Create it using the per-task test template.")
     ok, output = _run_pytest(path, node_expr="correct")
     if ok:
@@ -174,7 +174,7 @@ def stage5_adversarial(task_id: str) -> StageResult:
     if path is None:
         return StageResult(5, "adversarial", passed=False, skipped=True,
                            summary="no adversarial test file found",
-                           detail=f"Expected webagentbench/tests/test_{task_id}_adversarial.py")
+                           detail=f"Expected webstress/tests/test_{task_id}_adversarial.py")
     ok, output = _run_pytest(path)
     if ok:
         return StageResult(5, "adversarial", passed=True, skipped=False,

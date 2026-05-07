@@ -1,6 +1,6 @@
 """Unit tests for the preview CLI (Phase 0 — text-only mode)."""
 
-from webagentbench.tasks.preview import represent_predicate, apply_canonical_diff
+from webstress.tasks.preview import represent_predicate, apply_canonical_diff
 
 
 def test_represent_predicate_eq():
@@ -45,8 +45,8 @@ def test_represent_predicate_fields_recursive():
 def test_apply_canonical_diff_creates_entity_for_bijection():
     """Full smoke test: apply the pp_immunization canonical_diff to a seeded state."""
     # If the pilot task's canonical_diff is not yet wired (Task 10), skip this test
-    from webagentbench.tasks._registry import get_task
-    from webagentbench.backend.state import SessionManager
+    from webstress.tasks._registry import get_task
+    from webstress.backend.state import SessionManager
 
     task = get_task("pp_immunization_gap_review")
     # Use getattr so the test still works before Task 7 adds the schema field.

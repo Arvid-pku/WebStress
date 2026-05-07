@@ -9,7 +9,7 @@ import pathlib
 import pytest
 import yaml
 
-VARIANTS_DIR = pathlib.Path(__file__).resolve().parents[2] / "webagentbench" / "injector" / "variants"
+VARIANTS_DIR = pathlib.Path(__file__).resolve().parents[2] / "webstress" / "injector" / "variants"
 
 GMAIL_VARIANTS = sorted(VARIANTS_DIR.glob("gmail_*.yaml"))
 

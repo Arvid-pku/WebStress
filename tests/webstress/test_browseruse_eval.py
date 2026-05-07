@@ -1,7 +1,7 @@
 """Tests for browser-use eval helper functions.
 
 Tests are written TDD-style -- the module under test does not exist yet.
-Run with: pytest tests/webagentbench/test_browseruse_eval.py -v
+Run with: pytest tests/webstress/test_browseruse_eval.py -v
 """
 
 from __future__ import annotations
@@ -10,7 +10,7 @@ import json
 
 import pytest
 
-from webagentbench.browseruse_eval import (
+from webstress.browseruse_eval import (
     action_to_trajectory_format,
     build_trajectory_step,
     dom_element_to_target,
@@ -711,7 +711,7 @@ class TestSystemPromptActions:
     """Verify the system prompt documents all supported actions."""
 
     def test_all_action_types_in_prompt(self):
-        from webagentbench.browseruse_eval import SYSTEM_PROMPT_TEMPLATE
+        from webstress.browseruse_eval import SYSTEM_PROMPT_TEMPLATE
         expected = [
             "click", "input_text", "select_option", "send_keys",
             "scroll_down", "scroll_up", "scroll_left", "scroll_right",
@@ -721,13 +721,13 @@ class TestSystemPromptActions:
             assert action in SYSTEM_PROMPT_TEMPLATE, f"'{action}' missing from system prompt"
 
     def test_send_keys_examples_in_prompt(self):
-        from webagentbench.browseruse_eval import SYSTEM_PROMPT_TEMPLATE
+        from webstress.browseruse_eval import SYSTEM_PROMPT_TEMPLATE
         assert "Tab" in SYSTEM_PROMPT_TEMPLATE
         assert "Escape" in SYSTEM_PROMPT_TEMPLATE
         assert "ctrl+a" in SYSTEM_PROMPT_TEMPLATE
 
     def test_scroll_index_documented(self):
-        from webagentbench.browseruse_eval import SYSTEM_PROMPT_TEMPLATE
+        from webstress.browseruse_eval import SYSTEM_PROMPT_TEMPLATE
         assert "index" in SYSTEM_PROMPT_TEMPLATE
         assert "container" in SYSTEM_PROMPT_TEMPLATE
 

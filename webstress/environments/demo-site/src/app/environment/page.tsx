@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { loadTaskManifest, loadTaskDetail, type TaskMeta, type TaskDetail } from "@/lib/tasks";
 import { GmailWrapper } from "@/components/gmail-wrapper";
-import type { GmailFixture } from "@webagentbench/gmail/mutator";
+import type { GmailFixture } from "@webstress/gmail/mutator";
 
 interface EnvInfo {
   id: string;

@@ -5,7 +5,7 @@ import {
   preserveQueryParams,
   useApi,
   useBenchmarkState,
-} from "@webagentbench/shared";
+} from "@webstress/shared";
 import { Link, Outlet, useLocation } from "react-router-dom";
 
 import { createLmsApi } from "./api";

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Button, DataTable, FormField, Modal } from "@webagentbench/shared";
+import { Button, DataTable, FormField, Modal } from "@webstress/shared";
 import { useSearchParams } from "react-router-dom";
 
 import { IconDelete } from "../icons";

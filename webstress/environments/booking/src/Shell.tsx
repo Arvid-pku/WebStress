@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect, type ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { useApi, useSession, useBenchmarkState, BenchmarkToolbar, preserveQueryParams } from "@webagentbench/shared";
+import { useApi, useSession, useBenchmarkState, BenchmarkToolbar, preserveQueryParams } from "@webstress/shared";
 import { createBookingApi } from "./api";
 import { BookingLayoutContext, type ToastMessage } from "./context";
 

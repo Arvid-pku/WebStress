@@ -15,7 +15,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from types import SimpleNamespace
 
-from webagentbench.injector.seed import apply_seed_injection
+from webstress.injector.seed import apply_seed_injection
 
 
 def _make_state(emails: list) -> SimpleNamespace:
@@ -24,9 +24,9 @@ def _make_state(emails: list) -> SimpleNamespace:
 
 def _email(**kwargs):
     """Minimal duck-typed Email substitute is not enough — _plant_wrong_answer
-    instantiates webagentbench.backend.models.gmail.Email. We need the real
+    instantiates webstress.backend.models.gmail.Email. We need the real
     model for the test."""
-    from webagentbench.backend.models.gmail import Email
+    from webstress.backend.models.gmail import Email
     defaults = {
         "id": kwargs.get("id", "e_target"),
         "thread_id": kwargs.get("thread_id", "thread_target"),

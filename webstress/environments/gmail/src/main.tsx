@@ -2,7 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 
-import "@webagentbench/shared/styles/base.css";
+import "@webstress/shared/styles/base.css";
 
 import { App } from "./App";
 import "./gmail.css";

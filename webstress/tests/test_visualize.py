@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from webagentbench.visualize import (
+from webstress.visualize import (
     _prepare_result_for_js,
     _truncate_messages,
     _normalize_step_targets,

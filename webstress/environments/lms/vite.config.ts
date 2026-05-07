@@ -7,7 +7,7 @@ const backendUrl = `http://127.0.0.1:${process.env.VITE_BACKEND_PORT || 8080}`;
 export default defineConfig({
   plugins: [react()],
   base: "/env/lms/",
-  optimizeDeps: { exclude: ["@webagentbench/shared", "@webagentbench/lms"] },
+  optimizeDeps: { exclude: ["@webstress/shared", "@webstress/lms"] },
   build: { outDir: "../../static/envs/lms", emptyOutDir: true },
   server: {
     port: serverPort,

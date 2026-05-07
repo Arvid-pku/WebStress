@@ -22,13 +22,13 @@ git pull origin main
 cd /home/users/$USER/projects/LLMOS    # adjust path
 source .venv/bin/activate
 
-# 1. API keys in webagentbench/.env (only the ones you use)
+# 1. API keys in webstress/.env (only the ones you use)
 #    AWS_BEDROCK_API_KEY     — bedrock provider (opus/sonnet/qwen)
 #    ANTHROPIC_API_KEY       — anthropic provider (opus/sonnet native)
 #    OPENAI_API_KEY          — openai provider (gpt-5 native)
 #    OPENROUTER_API_KEY      — openrouter provider (any model)
 #    GEMINI_API_KEY          — gemini provider (native)
-grep -E '^[A-Z_]+_API_KEY=' webagentbench/.env
+grep -E '^[A-Z_]+_API_KEY=' webstress/.env
 
 # 2. Generate the full picks file (1049 entries: 519 clean + 530 intervention)
 python scripts/gen_picks.py --subset all -o scripts/sweep_picks/primbench_v2_full.json
@@ -205,8 +205,8 @@ You boot the backend yourself, then invoke the runner.
 ```bash
 # Terminal 1 — backend (any free port)
 source .venv/bin/activate
-set -a; source webagentbench/.env; set +a
-python -m uvicorn webagentbench.app:app --host 127.0.0.1 --port 8080
+set -a; source webstress/.env; set +a
+python -m uvicorn webstress.app:app --host 127.0.0.1 --port 8080
 # Wait for "Uvicorn running on http://127.0.0.1:8080"
 
 # Terminal 2 — runner with --concurrency N
@@ -222,12 +222,12 @@ python scripts/run_picks.py \
 ```bash
 # Terminal 1 — backend (single instance serves all shards)
 source .venv/bin/activate
-set -a; source webagentbench/.env; set +a
-export WEBAGENTBENCH_CONTROLLER_SECRET="$(python3 -c 'import secrets;print(secrets.token_urlsafe(32))')"
-python -m uvicorn webagentbench.app:app --host 127.0.0.1 --port 8080
+set -a; source webstress/.env; set +a
+export WEBSTRESS_CONTROLLER_SECRET="$(python3 -c 'import secrets;print(secrets.token_urlsafe(32))')"
+python -m uvicorn webstress.app:app --host 127.0.0.1 --port 8080
 
 # Terminal 2 — fan out N parallel processes (must inherit the same SECRET)
-export WEBAGENTBENCH_CONTROLLER_SECRET=<paste-the-same-one-from-terminal-1>
+export WEBSTRESS_CONTROLLER_SECRET=<paste-the-same-one-from-terminal-1>
 N=4
 for i in $(seq 0 $((N-1))); do
   python scripts/pixel_run_picks.py \
@@ -246,7 +246,7 @@ python scripts/pixel_aggregate.py /tmp/opus-pixel-run
 Notes for the no-slurm pixel pattern:
 - Each shard process owns its own Chrome — budget ~600 MB RAM and 1 core per shard
 - The single backend handles all shards (FastAPI is multi-tenant; sessions are UUID-isolated)
-- `WEBAGENTBENCH_CONTROLLER_SECRET` must match between the backend env and every runner env, otherwise BrowserGym `_ensure_server` rejects the externally-managed backend
+- `WEBSTRESS_CONTROLLER_SECRET` must match between the backend env and every runner env, otherwise BrowserGym `_ensure_server` rejects the externally-managed backend
 
 ## Important: don't run (1) and (2) in parallel
 
@@ -318,5 +318,5 @@ sacct -j <JOBID> --format=JobID,Elapsed,MaxRSS,State
 
 Common errors:
 - `ThrottlingException: Too many tokens` — Bedrock TPM throttle; reduce `CONCURRENCY` or serialize with `--dependency`
-- `RuntimeError: A WebStress server is already running, but WEBAGENTBENCH_CONTROLLER_SECRET is not set` — only happens for pixel mode if you launch `pixel_run_picks.py` outside the sbatch template; export a secret first
+- `RuntimeError: A WebStress server is already running, but WEBSTRESS_CONTROLLER_SECRET is not set` — only happens for pixel mode if you launch `pixel_run_picks.py` outside the sbatch template; export a secret first
 - `BadRequestError: 'temperature' is deprecated` — older sbatch templates passed `--temperature 0`; the current generic template doesn't, so this should not appear

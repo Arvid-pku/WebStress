@@ -6,10 +6,10 @@ an agent produces a sane trajectory vs a wrong-provider trajectory.
 
 from datetime import datetime, timedelta
 
-from webagentbench.backend.state import SessionManager
-from webagentbench.backend.models.patient_portal import Appointment
-from webagentbench.tasks._evaluator import evaluate
-from webagentbench.tasks._registry import get_task
+from webstress.backend.state import SessionManager
+from webstress.backend.models.patient_portal import Appointment
+from webstress.tasks._evaluator import evaluate
+from webstress.tasks._registry import get_task
 
 
 def _future_datetime_in_window(targets: dict) -> str:

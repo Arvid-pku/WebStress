@@ -9,17 +9,17 @@ Shows two sections per assignment:
      launch payload, dry-run launchability check (optional with --launch-probe).
 
 Usage:
-    python webagentbench/human/preview_assignment.py \\
+    python webstress/human/preview_assignment.py \\
         --annotator P1 --role primary --index 0
-    python webagentbench/human/preview_assignment.py \\
+    python webstress/human/preview_assignment.py \\
         --annotator D1 --role duplicate --index 0
-    python webagentbench/human/preview_assignment.py \\
+    python webstress/human/preview_assignment.py \\
         --annotator P4 --role primary --index 5 --launch-probe \\
         --backend-url http://127.0.0.1:8080
 
 `--launch-probe` POSTs `/api/env/{env}/session` to verify the task-condition
 launches cleanly, then deletes the session — does NOT actually record. Requires
-the WAB backend running and `WEBAGENTBENCH_CONTROLLER_SECRET` exported.
+the WAB backend running and `WEBSTRESS_CONTROLLER_SECRET` exported.
 """
 from __future__ import annotations
 
@@ -36,8 +36,8 @@ from typing import Any
 import yaml
 
 REPO = Path(__file__).resolve().parents[2]
-PLAN_PATH = REPO / "webagentbench/human/assignments_v1.yaml"
-TRACES_ROOT = REPO / "webagentbench/human/traces"
+PLAN_PATH = REPO / "webstress/human/assignments_v1.yaml"
+TRACES_ROOT = REPO / "webstress/human/traces"
 
 
 def load_assignments() -> tuple[list[dict], list[dict]]:
@@ -262,9 +262,9 @@ def main() -> None:
     p.add_argument("--backend-url", default="http://127.0.0.1:8080",
                    help="Backend URL for --launch-probe.")
     p.add_argument("--controller-secret",
-                   default=os.environ.get("WEBAGENTBENCH_CONTROLLER_SECRET", ""),
+                   default=os.environ.get("WEBSTRESS_CONTROLLER_SECRET", ""),
                    help="Controller secret. Defaults to "
-                        "WEBAGENTBENCH_CONTROLLER_SECRET env var.")
+                        "WEBSTRESS_CONTROLLER_SECRET env var.")
     p.add_argument("--json", action="store_true",
                    help="Emit machine-readable JSON instead of markdown.")
     args = p.parse_args()

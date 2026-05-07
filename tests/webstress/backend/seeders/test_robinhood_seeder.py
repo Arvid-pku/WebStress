@@ -10,22 +10,22 @@ import pytest
 
 def test_seeder_registered():
     """RobinhoodSeedRunner is present in SEEDER_REGISTRY."""
-    from webagentbench.backend.seeders import SEEDER_REGISTRY
+    from webstress.backend.seeders import SEEDER_REGISTRY
 
     assert "robinhood" in SEEDER_REGISTRY
 
 
 def test_state_type_registered():
     """RobinhoodState is present in STATE_TYPES."""
-    from webagentbench.backend.state import STATE_TYPES
+    from webstress.backend.state import STATE_TYPES
 
     assert "robinhood" in STATE_TYPES
 
 
 def test_robinhood_seeder_runs():
     """Seeder can run a simple Robinhood task end-to-end."""
-    from webagentbench.backend.seeders.robinhood import RobinhoodSeedRunner
-    from webagentbench.tasks._registry import get_task
+    from webstress.backend.seeders.robinhood import RobinhoodSeedRunner
+    from webstress.tasks._registry import get_task
 
     runner = RobinhoodSeedRunner()
     task = get_task("rh_buy_market_order")
@@ -46,9 +46,9 @@ def test_robinhood_seeder_runs():
 
 def test_robinhood_seeder_validates_with_model():
     """Seeded data can be validated by RobinhoodState model."""
-    from webagentbench.backend.models.robinhood import RobinhoodState
-    from webagentbench.backend.seeders.robinhood import RobinhoodSeedRunner
-    from webagentbench.tasks._registry import get_task
+    from webstress.backend.models.robinhood import RobinhoodState
+    from webstress.backend.seeders.robinhood import RobinhoodSeedRunner
+    from webstress.tasks._registry import get_task
 
     runner = RobinhoodSeedRunner()
     task = get_task("rh_enable_extended_hours")

@@ -1,6 +1,6 @@
 """Tests for the adversarial-content obviousness rubric.
 
-The rubric (`_adv_passes_obviousness_rubric` in `webagentbench/injector/seed.py`)
+The rubric (`_adv_passes_obviousness_rubric` in `webstress/injector/seed.py`)
 gates new "stealth-grade" adversarial payloads — moral_coercion templates and
 the persuasive `false_banner` copy — by rejecting strings that contain any
 of:
@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import pytest
 
-from webagentbench.injector.seed import (
+from webstress.injector.seed import (
     _ADVERSARIAL_TEMPLATES,
     _ADV_OBVIOUS_MODES,
     _adv_passes_obviousness_rubric,

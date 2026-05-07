@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
-import { preserveQueryParams, Tabs } from "@webagentbench/shared";
+import { preserveQueryParams, Tabs } from "@webstress/shared";
 
 import { useLmsLayout } from "../context";
 import type { LmsLayoutContextValue } from "../context";

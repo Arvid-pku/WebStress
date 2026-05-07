@@ -25,11 +25,11 @@ import yaml
 # ---------------------------------------------------------------------------
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
-SWEEP_DIR = REPO_ROOT / "results" / "webagentbench" / "bu_sweep_20260405_012047"
-TASK_YAML_DIR = REPO_ROOT / "webagentbench" / "tasks" / "gmail"
+SWEEP_DIR = REPO_ROOT / "results" / "webstress" / "bu_sweep_20260405_012047"
+TASK_YAML_DIR = REPO_ROOT / "webstress" / "tasks" / "gmail"
 DEMO_RESULTS_DIR = (
     REPO_ROOT
-    / "webagentbench"
+    / "webstress"
     / "environments"
     / "demo-site"
     / "public"
@@ -38,7 +38,7 @@ DEMO_RESULTS_DIR = (
 )
 INDEX_PATH = (
     REPO_ROOT
-    / "webagentbench"
+    / "webstress"
     / "environments"
     / "demo-site"
     / "public"

@@ -5,7 +5,7 @@ from typing import Any
 
 from fastapi import HTTPException, Request, status
 
-CONTROLLER_SECRET_ENV = "WEBAGENTBENCH_CONTROLLER_SECRET"
+CONTROLLER_SECRET_ENV = "WEBSTRESS_CONTROLLER_SECRET"
 CONTROLLER_SECRET_HEADER = "X-WAB-Controller-Secret"
 
 

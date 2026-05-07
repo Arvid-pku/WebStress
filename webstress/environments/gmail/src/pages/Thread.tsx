@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { EmptyState, preserveQueryParams } from "@webagentbench/shared";
+import { EmptyState, preserveQueryParams } from "@webstress/shared";
 import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 
 import { IconArrowBack, IconArchive, IconDelete, IconForward, IconStar, IconLabel, IconMoveToInbox } from "../icons";

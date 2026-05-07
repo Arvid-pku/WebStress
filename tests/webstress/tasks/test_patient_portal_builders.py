@@ -3,8 +3,8 @@
 import random
 from datetime import datetime, timezone
 
-from webagentbench.backend.seeder import FakeDataGenerator
-from webagentbench.tasks._seed_builders_patient_portal import (
+from webstress.backend.seeder import FakeDataGenerator
+from webstress.tasks._seed_builders_patient_portal import (
     PATIENT_PORTAL_BUILDER_REGISTRY,
     PatientPortalSeedContext,
 )

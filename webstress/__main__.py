@@ -1,4 +1,4 @@
-"""Allow running as: python -m webagentbench"""
+"""Allow running as: python -m webstress"""
 from .agent_eval import main
 
 if __name__ == "__main__":

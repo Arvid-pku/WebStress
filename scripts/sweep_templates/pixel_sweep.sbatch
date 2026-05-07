@@ -10,7 +10,7 @@
 
 # Generic pixel-mode (BrowserGym + PixelLLMAgent) sweep template. Pass
 # model + provider + picks via env vars. Examples in
-# webagentbench/docs/RUNNING_SWEEPS.md.
+# webstress/docs/RUNNING_SWEEPS.md.
 #
 # Per-model viewport is auto-applied:
 #   Claude  → 1024 × 768 (Anthropic XGA recommendation)
@@ -48,7 +48,7 @@ mkdir -p /usr/xtmp/$USER/wab-logs "$HF_HOME" "$PIP_CACHE_DIR"
 ROOT="${LLMOS_ROOT:-$HOME/projects/LLMOS}"
 cd "$ROOT"
 source .venv/bin/activate
-set -a; source webagentbench/.env; set +a
+set -a; source webstress/.env; set +a
 
 BACKEND_PORT=$(( 9400 + (SLURM_JOB_ID % 600) ))
 N_PICKS=$(python3 -c "import json; print(len(json.load(open('$PICKS'))))")
@@ -58,12 +58,12 @@ echo "Picks: $PICKS"
 echo "Output: /usr/xtmp/$USER/wab-runs/pixel-${OUTNAME}-${SLURM_JOB_ID}"
 
 # Pixel mode goes through BrowserGym _ensure_server() which requires
-# WEBAGENTBENCH_CONTROLLER_SECRET when an externally-managed server is
+# WEBSTRESS_CONTROLLER_SECRET when an externally-managed server is
 # detected (anti-collision guard).
-export WEBAGENTBENCH_CONTROLLER_SECRET="$(python3 -c 'import secrets;print(secrets.token_urlsafe(32))')"
-export WEBAGENTBENCH_AUTO_BUILD_FRONTENDS=0
+export WEBSTRESS_CONTROLLER_SECRET="$(python3 -c 'import secrets;print(secrets.token_urlsafe(32))')"
+export WEBSTRESS_AUTO_BUILD_FRONTENDS=0
 
-python -m uvicorn webagentbench.app:app \
+python -m uvicorn webstress.app:app \
   --host 127.0.0.1 --port "$BACKEND_PORT" --log-level warning \
   > /usr/xtmp/$USER/wab-logs/backend-${SLURM_JOB_ID}.log 2>&1 &
 BPID=$!

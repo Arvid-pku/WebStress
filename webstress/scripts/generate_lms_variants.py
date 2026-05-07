@@ -6,7 +6,7 @@ from typing import Any
 
 import yaml
 
-from webagentbench.tasks._registry import env_tasks
+from webstress.tasks._registry import env_tasks
 
 
 VARIANTS_DIR = Path(__file__).resolve().parents[1] / "injector" / "variants"

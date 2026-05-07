@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from webagentbench.backend.price_engine import TrajectoryConfig
+from webstress.backend.price_engine import TrajectoryConfig
 
 
 _MAX_PER_TICK_CHANGE_PCT = 2.0

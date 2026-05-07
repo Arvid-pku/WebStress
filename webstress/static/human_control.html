@@ -323,7 +323,7 @@ async function evaluate() {
     });
     state.evaluation = evalResult;
     // 2. Tell env tab to stop recording and (since human context is already
-    //    in control state) save the trace to webagentbench/human/traces/.
+    //    in control state) save the trace to webstress/human/traces/.
     await stopRecording(evalResult);
     // 3. Poll for save_result to show up in control state.
     const deadline = Date.now() + 15000;

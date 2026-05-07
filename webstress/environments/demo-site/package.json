@@ -1,5 +1,5 @@
 {
-  "name": "@webagentbench/demo-site",
+  "name": "@webstress/demo-site",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -8,8 +8,8 @@
     "start": "next start"
   },
   "dependencies": {
-    "@webagentbench/gmail": "workspace:*",
-    "@webagentbench/shared": "workspace:*",
+    "@webstress/gmail": "workspace:*",
+    "@webstress/shared": "workspace:*",
     "katex": "^0.16.44",
     "next": "^15.3.0",
     "react": "^19.0.0",

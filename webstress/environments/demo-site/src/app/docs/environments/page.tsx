@@ -183,7 +183,7 @@ export default function EnvironmentsPage() {
           </li>
         </ol>
         <CodeBlock code={`# Environment structure
-webagentbench/environments/
+webstress/environments/
 ├── shared/          # Adapter system, hooks, shared components
 │   └── src/adapters/
 │       ├── types.ts      # EnvAdapter, RouteMutator interfaces

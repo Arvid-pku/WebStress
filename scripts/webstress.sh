@@ -2,8 +2,8 @@
 set -eo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-ENV_DIR="$ROOT/webagentbench/environments"
-BACKEND_PORT="${WEBAGENTBENCH_PORT:-8080}"
+ENV_DIR="$ROOT/webstress/environments"
+BACKEND_PORT="${WEBSTRESS_PORT:-8080}"
 OPEN_BROWSER=true
 MODE="dev"
 PIDS=()
@@ -13,19 +13,19 @@ CLEAN_BUILD=false
 usage() {
   cat <<'EOF'
 Usage:
-  ./scripts/webagentbench.sh dev [--env ENV_ID] [--port PORT] [--no-open]
-  ./scripts/webagentbench.sh build [--clean]
-  ./scripts/webagentbench.sh status
+  ./scripts/webstress.sh dev [--env ENV_ID] [--port PORT] [--no-open]
+  ./scripts/webstress.sh build [--clean]
+  ./scripts/webstress.sh status
 
 Modes:
   dev     Start the FastAPI backend and frontend dev servers, then open /launch
-  build   Build the static frontend bundles under webagentbench/static/envs/
+  build   Build the static frontend bundles under webstress/static/envs/
   status  Print environment frontend freshness and availability status
 
 Options:
   --env ENV_ID   Start only the specified frontend in dev mode. Repeatable.
                  Use --env all to start all 7 environments at once.
-  --port PORT    Backend port (default: 8080). Also settable via WEBAGENTBENCH_PORT.
+  --port PORT    Backend port (default: 8080). Also settable via WEBSTRESS_PORT.
   --no-open      Do not open the browser automatically.
   --clean        Remove existing static frontend bundles before building.
 
@@ -250,8 +250,8 @@ build_frontends() {
   ensure_node_modules
   if [ "$CLEAN_BUILD" = true ]; then
     echo "[frontend] Removing previous static bundles..."
-    rm -rf "$ROOT/webagentbench/static/envs"
-    mkdir -p "$ROOT/webagentbench/static/envs"
+    rm -rf "$ROOT/webstress/static/envs"
+    mkdir -p "$ROOT/webstress/static/envs"
   fi
   echo "[frontend] Building workspace frontends..."
   (cd "$ENV_DIR" && pnpm build)
@@ -263,7 +263,7 @@ print_frontend_status() {
   ensure_python_deps
 
   "$ROOT/.venv/bin/python" - <<'PY'
-from webagentbench.app import build_manifest
+from webstress.app import build_manifest
 
 manifest = build_manifest()
 print("env_id\tstatus\ttasks\treason")
@@ -332,9 +332,9 @@ start_dev() {
   echo "  Backend  → http://localhost:$BACKEND_PORT"
   (
     cd "$ROOT"
-    export WEBAGENTBENCH_DEV_FRONTENDS="$dev_frontends"
+    export WEBSTRESS_DEV_FRONTENDS="$dev_frontends"
     source .venv/bin/activate
-    python -m uvicorn webagentbench.app:app \
+    python -m uvicorn webstress.app:app \
       --host 0.0.0.0 --port "$BACKEND_PORT" --reload \
       --log-level info 2>&1 | sed 's/^/  [backend] /'
   ) &

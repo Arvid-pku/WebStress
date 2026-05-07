@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import Any, Callable
 
-from webagentbench.backend.models.reddit import (
+from webstress.backend.models.reddit import (
     Award,
     Comment,
     Flair,

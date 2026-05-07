@@ -5,19 +5,19 @@ import { MemoryRouter, Route, Routes, useLocation, useNavigate } from "react-rou
 import {
   AdapterProvider,
   createStaticAdapter,
-} from "@webagentbench/shared";
-import { GmailShell } from "@webagentbench/gmail/Shell";
-import { gmailMutator, type GmailFixture } from "@webagentbench/gmail/mutator";
-import { InboxPage } from "@webagentbench/gmail/pages/Inbox";
-import { ThreadPage } from "@webagentbench/gmail/pages/Thread";
-import { ComposePage } from "@webagentbench/gmail/pages/Compose";
-import { SearchPage } from "@webagentbench/gmail/pages/Search";
-import { SettingsPage } from "@webagentbench/gmail/pages/Settings";
-import { LabelsPage } from "@webagentbench/gmail/pages/Labels";
+} from "@webstress/shared";
+import { GmailShell } from "@webstress/gmail/Shell";
+import { gmailMutator, type GmailFixture } from "@webstress/gmail/mutator";
+import { InboxPage } from "@webstress/gmail/pages/Inbox";
+import { ThreadPage } from "@webstress/gmail/pages/Thread";
+import { ComposePage } from "@webstress/gmail/pages/Compose";
+import { SearchPage } from "@webstress/gmail/pages/Search";
+import { SettingsPage } from "@webstress/gmail/pages/Settings";
+import { LabelsPage } from "@webstress/gmail/pages/Labels";
 
 import type { TrajectoryTarget } from "@/lib/results";
-import "@webagentbench/shared/styles/base.css";
-import "@webagentbench/gmail/gmail.css";
+import "@webstress/shared/styles/base.css";
+import "@webstress/gmail/gmail.css";
 import "./gmail-scope.css";
 
 interface GmailWrapperProps {

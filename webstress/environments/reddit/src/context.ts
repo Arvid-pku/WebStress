@@ -1,6 +1,6 @@
 import { createContext, useContext } from "react";
 
-import type { ToastMessage } from "@webagentbench/shared";
+import type { ToastMessage } from "@webstress/shared";
 
 import type { MyProfile, RedditSettings } from "./types";
 import type { createRedditApi } from "./api";

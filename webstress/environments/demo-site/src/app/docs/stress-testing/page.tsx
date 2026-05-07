@@ -29,7 +29,7 @@ export default function StressTestingPage() {
         <p className="text-[14px] text-[var(--text-secondary)] leading-[1.7]">
           Variants are defined as YAML configs in{" "}
           <code className="font-mono text-[13px] text-[var(--text-primary)] bg-[var(--surface)] px-1.5 py-0.5 rounded">
-            webagentbench/injector/variants/
+            webstress/injector/variants/
           </code>. Each specifies a{" "}
           <code className="font-mono text-[13px] text-[var(--text-primary)] bg-[var(--surface)] px-1.5 py-0.5 rounded">base_task_id</code>,{" "}
           <code className="font-mono text-[13px] text-[var(--text-primary)] bg-[var(--surface)] px-1.5 py-0.5 rounded">target_primitive</code>, and a list of{" "}
@@ -207,7 +207,7 @@ export default function StressTestingPage() {
           Pass the <code className="font-mono text-[13px] text-[var(--text-primary)] bg-[var(--surface)] px-1.5 py-0.5 rounded">--degradation</code> flag
           to apply a stress variant during evaluation:
         </p>
-        <CodeBlock code={`python -m webagentbench.agent_eval \\
+        <CodeBlock code={`python -m webstress.agent_eval \\
     --model gpt-4o --provider openai \\
     --degradation gmail_compliance_settings__patience.yaml`} language="bash" />
         <p className="text-[14px] text-[var(--text-secondary)] leading-[1.7] mt-5">

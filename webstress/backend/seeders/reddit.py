@@ -13,7 +13,7 @@ import random
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from webagentbench.backend.models.reddit import (
+from webstress.backend.models.reddit import (
     Award,
     Comment,
     Flair,
@@ -25,10 +25,10 @@ from webagentbench.backend.models.reddit import (
     SubredditRule,
     UserProfile,
 )
-from webagentbench.backend.seeder import derive_anchor_time
-from webagentbench.backend.seeders._common import _assign_output
-from webagentbench.tasks._schema import TaskDefinition
-from webagentbench.tasks._seed_builders_reddit import (
+from webstress.backend.seeder import derive_anchor_time
+from webstress.backend.seeders._common import _assign_output
+from webstress.tasks._schema import TaskDefinition
+from webstress.tasks._seed_builders_reddit import (
     REDDIT_BUILDER_REGISTRY,
     RedditSeedContext,
 )

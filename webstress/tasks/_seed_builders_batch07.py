@@ -10,7 +10,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from typing import Any
 
-from webagentbench.tasks._seed_builders import SeedContext, _register
+from webstress.tasks._seed_builders import SeedContext, _register
 
 
 def _aware(ctx: SeedContext, year: int, month: int, day: int, hour: int = 0, minute: int = 0) -> datetime:

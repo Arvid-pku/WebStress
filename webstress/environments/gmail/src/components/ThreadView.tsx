@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Avatar, Badge, Button } from "@webagentbench/shared";
-import { formatDateTime } from "@webagentbench/shared";
+import { Avatar, Badge, Button } from "@webstress/shared";
+import { formatDateTime } from "@webstress/shared";
 
 import { IconReply, IconReplyAll, IconCollapse } from "../icons";
 import { AttachmentPreview } from "./AttachmentPreview";

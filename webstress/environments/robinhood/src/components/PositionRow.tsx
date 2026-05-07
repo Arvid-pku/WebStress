@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { preserveQueryParams } from "@webagentbench/shared";
+import { preserveQueryParams } from "@webstress/shared";
 
 import type { Position } from "../types";
 import { Sparkline } from "./Sparkline";

@@ -7,8 +7,8 @@ Verifies that:
 - Decoy count is sufficient for comparison tasks
 """
 import pytest
-from webagentbench.backend.state import SessionManager
-from webagentbench.tasks._registry import load_all_tasks, get_task
+from webstress.backend.state import SessionManager
+from webstress.tasks._registry import load_all_tasks, get_task
 
 @pytest.fixture(scope="module")
 def all_tasks():
@@ -79,7 +79,7 @@ class TestAmazonSeedStability:
 
     def test_no_trivial_pass_on_empty_trajectory(self, all_tasks):
         """No Amazon task should fully pass with zero agent actions."""
-        from webagentbench.tasks._evaluator import evaluate as unified_evaluate
+        from webstress.tasks._evaluator import evaluate as unified_evaluate
         sm = SessionManager()
         trivial_passes = []
         for task_id, task in all_tasks.items():

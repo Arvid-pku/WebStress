@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import Any, Callable
 
-from webagentbench.backend.models.gmail import Attachment, Contact, Email, FilterRule, Label
+from webstress.backend.models.gmail import Attachment, Contact, Email, FilterRule, Label
 
 
 # ---------------------------------------------------------------------------
@@ -3293,14 +3293,14 @@ def build_update_contact(ctx: SeedContext, params: dict[str, Any]) -> dict[str, 
 # Import batch modules so their @_register decorators fire
 # ---------------------------------------------------------------------------
 
-import webagentbench.tasks._seed_builders_batch01 as _batch01  # noqa: E402, F401
-import webagentbench.tasks._seed_builders_batch02 as _batch02  # noqa: E402, F401
-import webagentbench.tasks._seed_builders_batch03 as _batch03  # noqa: E402, F401
-import webagentbench.tasks._seed_builders_batch04 as _batch04  # noqa: E402, F401
-import webagentbench.tasks._seed_builders_batch05 as _batch05  # noqa: E402, F401
-import webagentbench.tasks._seed_builders_batch06 as _batch06  # noqa: E402, F401
-import webagentbench.tasks._seed_builders_batch07 as _batch07  # noqa: E402, F401
-import webagentbench.tasks._seed_builders_batch08 as _batch08  # noqa: E402, F401
-import webagentbench.tasks._seed_builders_batch09 as _batch09  # noqa: E402, F401
-import webagentbench.tasks._seed_builders_batch10 as _batch10  # noqa: E402, F401
-import webagentbench.tasks._seed_builders_easy as _easy  # noqa: E402, F401
+import webstress.tasks._seed_builders_batch01 as _batch01  # noqa: E402, F401
+import webstress.tasks._seed_builders_batch02 as _batch02  # noqa: E402, F401
+import webstress.tasks._seed_builders_batch03 as _batch03  # noqa: E402, F401
+import webstress.tasks._seed_builders_batch04 as _batch04  # noqa: E402, F401
+import webstress.tasks._seed_builders_batch05 as _batch05  # noqa: E402, F401
+import webstress.tasks._seed_builders_batch06 as _batch06  # noqa: E402, F401
+import webstress.tasks._seed_builders_batch07 as _batch07  # noqa: E402, F401
+import webstress.tasks._seed_builders_batch08 as _batch08  # noqa: E402, F401
+import webstress.tasks._seed_builders_batch09 as _batch09  # noqa: E402, F401
+import webstress.tasks._seed_builders_batch10 as _batch10  # noqa: E402, F401
+import webstress.tasks._seed_builders_easy as _easy  # noqa: E402, F401

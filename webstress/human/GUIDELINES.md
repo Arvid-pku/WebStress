@@ -92,7 +92,7 @@ You read the instruction in the control tab and act in the env tab. You **never 
 3. **Cold attempt.** Switch to the env tab and perform the task. Your DOM events (clicks, typing, navigation, scrolls) are captured automatically. Don't worry about being slow — cold is the natural baseline.
 4. **Evaluate cold.** Back in the control tab, click **Evaluate**. The backend scores your session and saves the trace to:
    ```
-   webagentbench/human/traces/<YourName>/<role>/<env>/<base_task_id>/<condition>/cold/
+   webstress/human/traces/<YourName>/<role>/<env>/<base_task_id>/<condition>/cold/
        metadata.json
        trace.json
    ```
@@ -127,7 +127,7 @@ The dashboard itself is indefinitely resumable — shut down today, come back to
 - **No out-of-band help.** Don't ask another annotator or an AI assistant how to solve a task before recording.
 - **No URL bar / bookmark / history navigation** unless the task explicitly requires it.
 - **No browser resize / zoom / display change** mid-attempt. Your viewport is captured once at save; consistency matters.
-- **No editing saved traces** under `webagentbench/human/traces/`. If a run went bad, click Abandon and redo — don't delete files. Abandon stamps `"abandoned": true` into the metadata; we keep the file for analysis.
+- **No editing saved traces** under `webstress/human/traces/`. If a run went bad, click Abandon and redo — don't delete files. Abandon stamps `"abandoned": true` into the metadata; we keep the file for analysis.
 - **No sharing solutions** with other annotators before they finish the same assignment.
 - **No changing seed, task, condition, or intervention variant** — the launcher controls all of that.
 
@@ -170,7 +170,7 @@ After the warm attempt saves, you see two buttons:
 - **Alternate strategy** that obviously-works but feels different from what the task probably intended
 - **Intervention felt contrived / unfair / not human-reasonable**
 
-For those cases, either fill the form **or** drop a short message on the `#webagentbench-human-traces` Slack channel. Slack is fine if you're on a roll and don't want to lose focus — just include the `aid` (shown on each card) and a one-liner. The project maintainer triages both.
+For those cases, either fill the form **or** drop a short message on the `#webstress-human-traces` Slack channel. Slack is fine if you're on a roll and don't want to lose focus — just include the `aid` (shown on each card) and a one-liner. The project maintainer triages both.
 
 Everything in the form itself is still optional — submit with only the checkbox ticked, or only a one-line comment, or ratings only. Whatever fits what you want to say.
 
@@ -196,11 +196,11 @@ Good comments are specific:
 
 ## 7. Submitting your traces
 
-Your traces live under `webagentbench/human/traces/<YourName>/`. That path is **not gitignored** — it's meant to be committed. When you've done a meaningful batch:
+Your traces live under `webstress/human/traces/<YourName>/`. That path is **not gitignored** — it's meant to be committed. When you've done a meaningful batch:
 
 ```bash
 git checkout -b human-traces-<YourName>-w<N>
-git add webagentbench/human/traces/<YourName>/
+git add webstress/human/traces/<YourName>/
 git commit -m "human: <YourName> batch <N> (<count> assignments)"
 git push origin HEAD
 ```
@@ -244,4 +244,4 @@ No. Pause == redo. Assignment rolls back to not-started if you abandon mid-flow.
 Your call. Full-load annotators have 70 assignments total. At ~8 minutes/assignment (cold+warm) that's ~9 hours of recording. Splitting into 5–10 sessions of 1–2 hours is reasonable. Duplicate annotators only have 8–9 assignments — one afternoon is plenty.
 
 **Who to contact for bugs?**
-`#webagentbench-human-traces` on Slack, or the project maintainer directly. Include the `aid` (shown on each card) and a one-line description. See §6 for what counts as "please flag this".
+`#webstress-human-traces` on Slack, or the project maintainer directly. Include the `aid` (shown on each card) and a one-line description. See §6 for what counts as "please flag this".

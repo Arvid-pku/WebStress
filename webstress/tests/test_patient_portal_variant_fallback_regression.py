@@ -6,12 +6,12 @@ import pytest
 
 from starlette.testclient import TestClient
 
-from webagentbench.app import app
-from webagentbench.backend.routes.patient_portal import SessionCreateRequest, create_session, list_variants
-from webagentbench.backend.state import SessionManager
-from webagentbench.injector.middleware import clear_all_degradations
-from webagentbench.injector.seed import apply_seed_injection
-from webagentbench.tasks._registry import env_tasks
+from webstress.app import app
+from webstress.backend.routes.patient_portal import SessionCreateRequest, create_session, list_variants
+from webstress.backend.state import SessionManager
+from webstress.injector.middleware import clear_all_degradations
+from webstress.injector.seed import apply_seed_injection
+from webstress.tasks._registry import env_tasks
 
 
 @pytest.fixture(autouse=True)

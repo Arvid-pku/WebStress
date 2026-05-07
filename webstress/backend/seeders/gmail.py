@@ -13,11 +13,11 @@ import random
 from datetime import timedelta
 from typing import Any
 
-from webagentbench.backend.models.gmail import GmailSettings, Label
-from webagentbench.backend.seeder import derive_anchor_time
-from webagentbench.backend.seeders._common import _assign_output
-from webagentbench.tasks._schema import TaskDefinition
-from webagentbench.tasks._seed_builders import (
+from webstress.backend.models.gmail import GmailSettings, Label
+from webstress.backend.seeder import derive_anchor_time
+from webstress.backend.seeders._common import _assign_output
+from webstress.tasks._schema import TaskDefinition
+from webstress.tasks._seed_builders import (
     BUILDER_REGISTRY,
     SeedContext,
 )

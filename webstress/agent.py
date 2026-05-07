@@ -6,8 +6,8 @@ Receives BrowserGym observation dicts, outputs BrowserGym action strings
 Compatible with any BrowserGym environment (WebArena, WorkArena, WebStress).
 
 Usage:
-    from webagentbench.agent import LLMAgent
-    from webagentbench.browsergym_env import make_env
+    from webstress.agent import LLMAgent
+    from webstress.browsergym_env import make_env
 
     env = make_env("gmail_board_briefing_prep")
     agent = LLMAgent(model="gpt-4o", provider="openai")
@@ -193,12 +193,12 @@ def create_client(provider: str, base_url: str | None = None, api_key: str | Non
     from openai import OpenAI
     if base_url is None:
         if provider == "vllm":
-            base_url = os.environ.get("WEBAGENTBENCH_API_BASE_URL", "http://localhost:8000/v1")
+            base_url = os.environ.get("WEBSTRESS_API_BASE_URL", "http://localhost:8000/v1")
         else:
             base_url = os.environ.get("OPENAI_API_BASE_URL", "https://api.openai.com/v1")
     if api_key is None:
         if provider == "vllm":
-            api_key = os.environ.get("WEBAGENTBENCH_API_KEY", "dummy")
+            api_key = os.environ.get("WEBSTRESS_API_KEY", "dummy")
         else:
             api_key = os.environ.get("OPENAI_API_KEY", "")
     return OpenAI(base_url=base_url, api_key=api_key)

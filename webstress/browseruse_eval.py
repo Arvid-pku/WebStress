@@ -960,7 +960,7 @@ async def run_evaluation(
     reasoning_effort: str | None = None,
     server_host: str = "127.0.0.1",
     server_port: int = 8080,
-    output_path: str = "results/webagentbench/results.json",
+    output_path: str = "results/webstress/results.json",
     seed: int | None = None,
     degradation: str | None = None,
 ) -> list[dict]:
@@ -1171,7 +1171,7 @@ def main():
     parser.add_argument("--no-screenshots", action="store_false", dest="screenshots")
     parser.add_argument("--server-host", default="127.0.0.1")
     parser.add_argument("--server-port", type=int, default=8080)
-    parser.add_argument("--output", default="results/webagentbench/results.json")
+    parser.add_argument("--output", default="results/webstress/results.json")
     parser.add_argument("--quiet", "-q", action="store_true")
     args = parser.parse_args()
 

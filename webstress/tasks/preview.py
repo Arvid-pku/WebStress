@@ -93,7 +93,7 @@ def _substitute_variable(value: Any, var_name: str, var_value: Any, targets: dic
     # Target-reference expression — reuse the matcher's helper so we share
     # the safe-globals allowlist (avoids duplicating restricted eval logic).
     try:
-        from webagentbench.eval_core.safe_eval import SAFE_BUILTINS as _SAFE_BUILTINS  # noqa: PLC0415
+        from webstress.eval_core.safe_eval import SAFE_BUILTINS as _SAFE_BUILTINS  # noqa: PLC0415
         # _eval_target_expr only binds `target`; we need v bound too.
         # Inline the same pattern with the extra binding.
         return eval(  # noqa: S307 — mirrors evaluator_diff trust model (author-controlled)
@@ -120,13 +120,13 @@ def _substitute_in_predicate(pred: dict, var_name: str, var_value: Any, targets:
 
 
 _MODEL_SEARCH_PATHS = (
-    "webagentbench.backend.models.patient_portal",
-    "webagentbench.backend.models.gmail",
-    "webagentbench.backend.models.robinhood",
-    "webagentbench.backend.models.amazon",
-    "webagentbench.backend.models.booking",
-    "webagentbench.backend.models.lms",
-    "webagentbench.backend.models.reddit",
+    "webstress.backend.models.patient_portal",
+    "webstress.backend.models.gmail",
+    "webstress.backend.models.robinhood",
+    "webstress.backend.models.amazon",
+    "webstress.backend.models.booking",
+    "webstress.backend.models.lms",
+    "webstress.backend.models.reddit",
 )
 
 
@@ -160,8 +160,8 @@ def apply_canonical_diff(
     and ``delete`` are no-ops in preview (a comment is printed); full
     support lands in a Phase 1 follow-up.
     """
-    from webagentbench.tasks._registry import get_task
-    from webagentbench.eval_core.safe_eval import safe_eval
+    from webstress.tasks._registry import get_task
+    from webstress.eval_core.safe_eval import safe_eval
 
     task = get_task(task_id)
     cd = getattr(task, "canonical_diff", None)
@@ -244,7 +244,7 @@ def main() -> int:
                         help="Print canonical state as JSON text (Phase 0 mode).")
     args = parser.parse_args()
 
-    from webagentbench.backend.state import SessionManager
+    from webstress.backend.state import SessionManager
     sm = SessionManager()
     sid, targets, _ = sm.create_session(
         env_id=_infer_env_from_task(args.task_id),
@@ -261,7 +261,7 @@ def main() -> int:
 
 def _infer_env_from_task(task_id: str) -> str:
     """Map task_id prefix to env_id."""
-    from webagentbench.tasks._registry import get_task
+    from webstress.tasks._registry import get_task
     return get_task(task_id).env_id
 
 

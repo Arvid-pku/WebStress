@@ -800,7 +800,7 @@ async def price_preview(
 ):
     """Return itemized fees (taxes, city fee, resort fee, cleaning fee) for a
     potential booking, so the agent can read all-in cost before confirming."""
-    from webagentbench.backend.models.booking import compute_fee_breakdown
+    from webstress.backend.models.booking import compute_fee_breakdown
     state = _booking_state(sm, session_id)
     prop = state.get_property(property_id)
     if prop is None:

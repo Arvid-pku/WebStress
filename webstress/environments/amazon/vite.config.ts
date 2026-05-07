@@ -8,7 +8,7 @@ export default defineConfig({
   plugins: [react()],
   base: "/env/amazon/",
   optimizeDeps: {
-    exclude: ["@webagentbench/shared", "@webagentbench/amazon"],
+    exclude: ["@webstress/shared", "@webstress/amazon"],
   },
   build: {
     outDir: "../../static/envs/amazon",

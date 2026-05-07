@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Button, classNames, formatDateTime, preserveQueryParams } from "@webagentbench/shared";
+import { Button, classNames, formatDateTime, preserveQueryParams } from "@webstress/shared";
 
 import { IconStar, IconArchive, IconDelete, IconMoveToInbox } from "../icons";
 import { LabelChip } from "./LabelChip";

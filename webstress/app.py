@@ -61,21 +61,21 @@ def _env_assets_path(env_id: str) -> Path:
 
 
 def _frontend_build_command() -> str:
-    return "scripts/webagentbench.sh build"
+    return "scripts/webstress.sh build"
 
 
 def _auto_frontend_build_enabled() -> bool:
-    raw = os.getenv("WEBAGENTBENCH_AUTO_BUILD_FRONTENDS", "1").strip().lower()
+    raw = os.getenv("WEBSTRESS_AUTO_BUILD_FRONTENDS", "1").strip().lower()
     return raw not in {"0", "false", "no", "off"}
 
 
 def _auto_frontend_build_clean() -> bool:
-    raw = os.getenv("WEBAGENTBENCH_AUTO_BUILD_CLEAN", "").strip().lower()
+    raw = os.getenv("WEBSTRESS_AUTO_BUILD_CLEAN", "").strip().lower()
     return raw in {"1", "true", "yes", "on"}
 
 
 def _dev_frontend_overrides() -> dict[str, str]:
-    raw = os.getenv("WEBAGENTBENCH_DEV_FRONTENDS", "").strip()
+    raw = os.getenv("WEBSTRESS_DEV_FRONTENDS", "").strip()
     if not raw:
         return {}
 
@@ -227,8 +227,8 @@ def _run_frontend_build(env_ids: list[str]) -> None:
         (STATIC_DIR / "envs").mkdir(parents=True, exist_ok=True)
 
     commands = [
-        ["pnpm", "--filter", "@webagentbench/shared", "build"],
-        *[["pnpm", "--filter", f"@webagentbench/{env_id}", "build"] for env_id in env_ids],
+        ["pnpm", "--filter", "@webstress/shared", "build"],
+        *[["pnpm", "--filter", f"@webstress/{env_id}", "build"] for env_id in env_ids],
     ]
     for command in commands:
         subprocess.run(command, cwd=env_dir, check=True)
@@ -258,12 +258,12 @@ def _auto_build_frontends_if_needed() -> list[str]:
         except FileNotFoundError as exc:
             raise RuntimeError(
                 "Frontend auto-build requires `pnpm` on PATH. "
-                "Install pnpm or disable auto-build with WEBAGENTBENCH_AUTO_BUILD_FRONTENDS=0."
+                "Install pnpm or disable auto-build with WEBSTRESS_AUTO_BUILD_FRONTENDS=0."
             ) from exc
         except subprocess.CalledProcessError as exc:
             raise RuntimeError(
                 "Frontend auto-build failed while starting the backend. "
-                "Run `./scripts/webagentbench.sh build --clean` to inspect the failing build."
+                "Run `./scripts/webstress.sh build --clean` to inspect the failing build."
             ) from exc
 
         remaining = _stale_frontend_env_ids()
@@ -859,7 +859,7 @@ async def list_trajectories():
         f'<td style="text-align:right;color:#656d76">{e["size_kb"]} KB</td>'
         f'<td style="color:#656d76">{e["mtime"]}</td></tr>'
         for e in entries
-    ) or '<tr><td colspan="3" style="padding:30px;color:#656d76;text-align:center">No trajectories yet. Generate one with <code>python -m webagentbench.scripts.run_bedrock_subset</code> or <code>python -m webagentbench.visualize &lt;results.json&gt;</code>.</td></tr>'
+    ) or '<tr><td colspan="3" style="padding:30px;color:#656d76;text-align:center">No trajectories yet. Generate one with <code>python -m webstress.scripts.run_bedrock_subset</code> or <code>python -m webstress.visualize &lt;results.json&gt;</code>.</td></tr>'
 
     html = f"""<!DOCTYPE html>
 <html lang=\"en\"><head><meta charset=\"UTF-8\"><title>Trajectories — WebStress</title>
@@ -1007,4 +1007,4 @@ if __name__ == "__main__":
     parser.add_argument("--no-reload", action="store_false", dest="reload", help="Disable autoreload")
     args = parser.parse_args()
 
-    uvicorn.run("webagentbench.app:app", host=args.host, port=args.port, reload=args.reload)
+    uvicorn.run("webstress.app:app", host=args.host, port=args.port, reload=args.reload)

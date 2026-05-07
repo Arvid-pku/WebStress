@@ -13,7 +13,7 @@ All models use ``ConfigDict(extra="forbid")`` so unknown YAML keys raise
 ``changes``) are validated against an allowlist of predicate keys.
 
 The trust model for the ``{expr: "..."}`` predicate is implemented in
-``webagentbench/eval_core/safe_eval.py`` (AST validation + restricted builtins
+``webstress/eval_core/safe_eval.py`` (AST validation + restricted builtins
 + forbidden name/dunder checks) — no new security surface is introduced here.
 """
 

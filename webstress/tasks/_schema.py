@@ -1,7 +1,7 @@
 """Task definition schema for WebStress YAML tasks.
 
 Provides the :class:`TaskDefinition` dataclass that mirrors the structure of
-``webagentbench/tasks/gmail/*.yaml`` files.
+``webstress/tasks/gmail/*.yaml`` files.
 """
 
 from __future__ import annotations
@@ -12,7 +12,7 @@ from typing import Any
 
 import yaml
 
-from webagentbench.tasks.canonical_diff import CanonicalDiff
+from webstress.tasks.canonical_diff import CanonicalDiff
 
 
 # ------------------------------------------------------------------

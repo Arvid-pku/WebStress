@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
-import { preserveQueryParams } from "@webagentbench/shared";
+import { preserveQueryParams } from "@webstress/shared";
 import type { Property, RoomType, PaymentMethod } from "../types";
 import { useBookingLayout } from "../context";
 

@@ -2,15 +2,15 @@
 
 Watches results/bedrock_subset/ for per-task result JSONs written by
 run_bedrock_subset.py, merges whatever has completed so far into one envelope,
-and regenerates webagentbench/static/bedrock_subset_viz.html every ``interval``
+and regenerates webstress/static/bedrock_subset_viz.html every ``interval``
 seconds. Open http://127.0.0.1:8080/static/bedrock_subset_viz.html (or the
 /trajectories page) at any point to see current progress — no need to wait
 for the full 112-task run to finish.
 
 Usage:
-    python -m webagentbench.scripts.viz_watcher
-    python -m webagentbench.scripts.viz_watcher --interval 10
-    python -m webagentbench.scripts.viz_watcher --once    # single pass
+    python -m webstress.scripts.viz_watcher
+    python -m webstress.scripts.viz_watcher --interval 10
+    python -m webstress.scripts.viz_watcher --once    # single pass
 """
 
 from __future__ import annotations
@@ -169,8 +169,8 @@ def _envelope(results: list[dict], model: str, provider: str, manifest_version: 
 def _rebuild(results_dir: Path, *, model: str, provider: str,
              root: Path, expected_total: int, seed: int) -> tuple[int, int, Path]:
     """One regeneration pass. Returns (count, passed, viz_path)."""
-    from webagentbench.result_utils import build_manifest_task_meta, load_embedded_task_meta
-    from webagentbench.visualize import generate_html
+    from webstress.result_utils import build_manifest_task_meta, load_embedded_task_meta
+    from webstress.visualize import generate_html
 
     manifest_path = root / "manifest.json"
     manifest = json.loads(manifest_path.read_text())

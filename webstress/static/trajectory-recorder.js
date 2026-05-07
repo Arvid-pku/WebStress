@@ -1,5 +1,5 @@
 /**
- * WebAgentBench — Human Trajectory Recorder
+ * WebStress — Human Trajectory Recorder
  *
  * Records human interactions (clicks, typing, navigation) as a replayable
  * trajectory. Works alongside the benchmark toolbar.

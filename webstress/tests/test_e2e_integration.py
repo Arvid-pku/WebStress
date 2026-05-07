@@ -23,12 +23,12 @@ import time
 import pytest
 from starlette.testclient import TestClient
 
-from webagentbench.app import app
-from webagentbench.backend.security import CONTROLLER_SECRET_HEADER
-from webagentbench.backend.state import materialize_task_state
-from webagentbench.injector.middleware import clear_all_degradations
-from webagentbench.runner import controller_headers, ensure_controller_secret
-from webagentbench.tasks._registry import env_tasks
+from webstress.app import app
+from webstress.backend.security import CONTROLLER_SECRET_HEADER
+from webstress.backend.state import materialize_task_state
+from webstress.injector.middleware import clear_all_degradations
+from webstress.runner import controller_headers, ensure_controller_secret
+from webstress.tasks._registry import env_tasks
 
 
 @pytest.fixture(autouse=True)

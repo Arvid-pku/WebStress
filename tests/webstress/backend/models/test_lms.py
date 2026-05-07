@@ -5,7 +5,7 @@ import pytest
 
 
 def test_student_creation():
-    from webagentbench.backend.models.lms import Student
+    from webstress.backend.models.lms import Student
 
     s = Student(
         id="student_1",
@@ -23,7 +23,7 @@ def test_student_creation():
 
 
 def test_course_with_syllabus():
-    from webagentbench.backend.models.lms import (
+    from webstress.backend.models.lms import (
         CategoryPolicy, Course, LatePolicy, Syllabus,
     )
 
@@ -60,7 +60,7 @@ def test_course_with_syllabus():
 
 
 def test_assignment_creation():
-    from webagentbench.backend.models.lms import Assignment
+    from webstress.backend.models.lms import Assignment
 
     a = Assignment(
         id="assign_1",
@@ -80,7 +80,7 @@ def test_assignment_creation():
 
 
 def test_module_with_prerequisites():
-    from webagentbench.backend.models.lms import ContentItem, Module
+    from webstress.backend.models.lms import ContentItem, Module
 
     m = Module(
         id="mod_3",
@@ -101,7 +101,7 @@ def test_module_with_prerequisites():
 
 
 def test_grade_with_late_penalty():
-    from webagentbench.backend.models.lms import Grade
+    from webstress.backend.models.lms import Grade
 
     g = Grade(
         id="grade_1",
@@ -124,7 +124,7 @@ def test_grade_with_late_penalty():
 
 def _build_test_state():
     """Build a minimal LMSState with 1 course, 5 assignments, grades, and 1 module chain."""
-    from webagentbench.backend.models.lms import (
+    from webstress.backend.models.lms import (
         Assignment, CalendarEvent, CategoryPolicy, Course, Enrollment,
         Grade, LatePolicy, LMSState, Module, Student, Syllabus,
     )
@@ -245,7 +245,7 @@ def test_weighted_score_for_course():
 
 
 def test_late_penalty_calculation():
-    from webagentbench.backend.models.lms import Assignment
+    from webstress.backend.models.lms import Assignment
 
     state = _build_test_state()
     # Assignment due 2026-02-05 23:59 UTC, grace period 2h
@@ -263,7 +263,7 @@ def test_net_score_after_penalty():
 
 
 def test_module_prerequisite_chain():
-    from webagentbench.backend.models.lms import ContentItem, Module
+    from webstress.backend.models.lms import ContentItem, Module
 
     state = _build_test_state()
     # Add a 3-module chain: mod_1 (available) -> mod_2 (prereq mod_1) -> mod_3 (min_score mod_2:70)

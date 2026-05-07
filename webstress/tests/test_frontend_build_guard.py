@@ -7,8 +7,8 @@ from types import SimpleNamespace
 
 from fastapi.responses import FileResponse
 
-from webagentbench import app as wab_app
-from webagentbench.app import _frontend_bundle_status, build_manifest
+from webstress import app as wab_app
+from webstress.app import _frontend_bundle_status, build_manifest
 
 
 def _write_with_mtime(path: Path, text: str, mtime_ns: int) -> Path:
@@ -61,7 +61,7 @@ def test_frontend_bundle_status_accepts_fresh_build(tmp_path: Path) -> None:
 
 
 def test_manifest_uses_dev_frontend_override(monkeypatch) -> None:
-    monkeypatch.setenv("WEBAGENTBENCH_DEV_FRONTENDS", "gmail=http://localhost:4173/env/gmail")
+    monkeypatch.setenv("WEBSTRESS_DEV_FRONTENDS", "gmail=http://localhost:4173/env/gmail")
 
     manifest = build_manifest()
     gmail_entry = next(env for env in manifest["environments"] if env["env_id"] == "gmail")
@@ -99,7 +99,7 @@ def test_serve_env_html_returns_built_file_without_mutation(monkeypatch, tmp_pat
 
 def test_auto_build_frontends_builds_only_stale_envs(monkeypatch) -> None:
     monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
-    monkeypatch.setenv("WEBAGENTBENCH_AUTO_BUILD_FRONTENDS", "1")
+    monkeypatch.setenv("WEBSTRESS_AUTO_BUILD_FRONTENDS", "1")
 
     stale_states = [["lms", "patient_portal"], ["lms", "patient_portal"], []]
 
@@ -120,15 +120,15 @@ def test_auto_build_frontends_builds_only_stale_envs(monkeypatch) -> None:
 
     assert built_envs == ["lms", "patient_portal"]
     assert build_calls == [
-        (["pnpm", "--filter", "@webagentbench/shared", "build"], Path(wab_app.BASE_DIR / "environments")),
-        (["pnpm", "--filter", "@webagentbench/lms", "build"], Path(wab_app.BASE_DIR / "environments")),
-        (["pnpm", "--filter", "@webagentbench/patient_portal", "build"], Path(wab_app.BASE_DIR / "environments")),
+        (["pnpm", "--filter", "@webstress/shared", "build"], Path(wab_app.BASE_DIR / "environments")),
+        (["pnpm", "--filter", "@webstress/lms", "build"], Path(wab_app.BASE_DIR / "environments")),
+        (["pnpm", "--filter", "@webstress/patient_portal", "build"], Path(wab_app.BASE_DIR / "environments")),
     ]
 
 
 def test_auto_build_frontends_respects_disable_flag(monkeypatch) -> None:
     monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
-    monkeypatch.setenv("WEBAGENTBENCH_AUTO_BUILD_FRONTENDS", "0")
+    monkeypatch.setenv("WEBSTRESS_AUTO_BUILD_FRONTENDS", "0")
     monkeypatch.setattr(
         wab_app,
         "_stale_frontend_env_ids",
@@ -140,7 +140,7 @@ def test_auto_build_frontends_respects_disable_flag(monkeypatch) -> None:
 
 def test_auto_build_frontends_raises_clear_error_on_build_failure(monkeypatch) -> None:
     monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
-    monkeypatch.setenv("WEBAGENTBENCH_AUTO_BUILD_FRONTENDS", "1")
+    monkeypatch.setenv("WEBSTRESS_AUTO_BUILD_FRONTENDS", "1")
     monkeypatch.setattr(wab_app, "_stale_frontend_env_ids", lambda: ["lms"])
 
     def fake_run(command: list[str], cwd: Path, check: bool) -> SimpleNamespace:

@@ -1,5 +1,5 @@
 {
-  "name": "@webagentbench/gmail",
+  "name": "@webstress/gmail",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -22,7 +22,7 @@
     "test:run": "vitest run"
   },
   "dependencies": {
-    "@webagentbench/shared": "workspace:*",
+    "@webstress/shared": "workspace:*",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.28.0"

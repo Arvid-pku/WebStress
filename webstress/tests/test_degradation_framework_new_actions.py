@@ -15,13 +15,13 @@ import pytest
 import yaml
 from starlette.testclient import TestClient
 
-from webagentbench.app import app
-from webagentbench.backend.state import SessionManager
-from webagentbench.injector.middleware import (
+from webstress.app import app
+from webstress.backend.state import SessionManager
+from webstress.injector.middleware import (
     clear_all_degradations,
     register_session_degradation,
 )
-from webagentbench.injector.seed import apply_seed_injection
+from webstress.injector.seed import apply_seed_injection
 
 
 # ---------------------------------------------------------------------------
@@ -377,7 +377,7 @@ def test_new_gmail_variant_can_create_session(
 
 
 def test_render_request_template_substitutes_known_paths() -> None:
-    from webagentbench.injector.middleware import _render_request_template
+    from webstress.injector.middleware import _render_request_template
 
     body = {"product_id": "prod_real_42", "quantity": 3, "variant_selections": {}}
     result = _render_request_template(
@@ -404,7 +404,7 @@ def test_render_request_template_substitutes_known_paths() -> None:
 
 
 def test_render_request_template_no_op_without_body() -> None:
-    from webagentbench.injector.middleware import _render_request_template
+    from webstress.injector.middleware import _render_request_template
 
     value = {"product_id": "{request.product_id}"}
     assert _render_request_template(value, None) == value

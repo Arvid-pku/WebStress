@@ -6,8 +6,8 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from webagentbench.backend.routes.robinhood import router
-from webagentbench.backend.state import SessionManager
+from webstress.backend.routes.robinhood import router
+from webstress.backend.state import SessionManager
 
 
 BASE = "/api/env/robinhood"

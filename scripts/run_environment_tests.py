@@ -10,15 +10,15 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 BACKEND_TESTS = [
-    ROOT / "webagentbench/tests/test_gmail_feature_support.py",
-    ROOT / "webagentbench/tests/test_gmail_mailbox_contract.py",
+    ROOT / "webstress/tests/test_gmail_feature_support.py",
+    ROOT / "webstress/tests/test_gmail_mailbox_contract.py",
 ]
 LOCAL_NODE_CANDIDATES = sorted(
     (ROOT / ".tools").glob("node-v*/bin/node"),
     reverse=True,
 )
 NODE_CANDIDATES = [
-    os.environ.get("WEBAGENTBENCH_NODE"),
+    os.environ.get("WEBSTRESS_NODE"),
     *map(str, LOCAL_NODE_CANDIDATES),
     shutil.which("node"),
     str(Path.home() / ".lmstudio/.internal/utils/node"),
@@ -28,9 +28,9 @@ PYTHON_CANDIDATES = [
     str(Path.home() / "miniconda3/bin/python3.13"),
     shutil.which("python3"),
 ]
-VITEST_BIN = ROOT / "webagentbench/environments/node_modules/.pnpm/node_modules/.bin/vitest"
-VITEST_ENTRY = ROOT / "webagentbench/environments/node_modules/.pnpm/node_modules/vitest/vitest.mjs"
-GMAIL_VITEST_CONFIG = ROOT / "webagentbench/environments/gmail/vitest.config.ts"
+VITEST_BIN = ROOT / "webstress/environments/node_modules/.pnpm/node_modules/.bin/vitest"
+VITEST_ENTRY = ROOT / "webstress/environments/node_modules/.pnpm/node_modules/vitest/vitest.mjs"
+GMAIL_VITEST_CONFIG = ROOT / "webstress/environments/gmail/vitest.config.ts"
 
 
 def _is_executable(path: str | None) -> bool:
@@ -118,7 +118,7 @@ def main() -> int:
             failures += _run(
                 "gmail frontend unit tests",
                 command,
-                cwd=ROOT / "webagentbench/environments/gmail",
+                cwd=ROOT / "webstress/environments/gmail",
             )
 
     if failures == 0:

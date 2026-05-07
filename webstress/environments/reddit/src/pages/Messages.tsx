@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Button, preserveQueryParams } from "@webagentbench/shared";
+import { Button, preserveQueryParams } from "@webstress/shared";
 
 import { useRedditLayout } from "../context";
 import type { Message } from "../types";

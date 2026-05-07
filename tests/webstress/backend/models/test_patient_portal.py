@@ -3,7 +3,7 @@ from decimal import Decimal
 
 import pytest
 
-from webagentbench.backend.models.patient_portal import (
+from webstress.backend.models.patient_portal import (
     Appointment,
     ClinicalMessage,
     EmergencyContact,

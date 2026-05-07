@@ -17,10 +17,10 @@ from __future__ import annotations
 
 import pytest
 
-from webagentbench.backend.state import SessionManager
-from webagentbench.eval_core import compute_diff, match_diff
-from webagentbench.tasks._registry import load_all_tasks
-from webagentbench.tasks.adversarial import synthesize_adversarial_cases
+from webstress.backend.state import SessionManager
+from webstress.eval_core import compute_diff, match_diff
+from webstress.tasks._registry import load_all_tasks
+from webstress.tasks.adversarial import synthesize_adversarial_cases
 
 
 def _migrated_task_ids() -> list[str]:

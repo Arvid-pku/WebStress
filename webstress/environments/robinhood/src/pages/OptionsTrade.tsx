@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
-import { Button, preserveQueryParams } from "@webagentbench/shared";
+import { Button, preserveQueryParams } from "@webstress/shared";
 
 import { useRobinhoodLayout } from "../context";
 import type { OptionsContract } from "../types";

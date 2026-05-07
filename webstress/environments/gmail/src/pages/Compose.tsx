@@ -1,4 +1,4 @@
-import { preserveQueryParams } from "@webagentbench/shared";
+import { preserveQueryParams } from "@webstress/shared";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 
 import { ComposeForm } from "../components/ComposeForm";

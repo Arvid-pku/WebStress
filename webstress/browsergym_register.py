@@ -1,7 +1,7 @@
 """Register all WebStress tasks with BrowserGym.
 
 After importing this module, tasks are available as:
-    env = gym.make("browsergym/webagentbench.gmail_board_briefing_prep")
+    env = gym.make("browsergym/webstress.gmail_board_briefing_prep")
 """
 
 from __future__ import annotations
@@ -30,7 +30,7 @@ def register_all() -> int:
     for task_id in load_all_tasks():
         try:
             register_task(
-                id=f"webagentbench.{task_id}",
+                id=f"webstress.{task_id}",
                 task_class=WebStressTask,
                 task_kwargs={"task_id": task_id},
             )

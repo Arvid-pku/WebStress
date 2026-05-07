@@ -7,15 +7,15 @@ from types import SimpleNamespace
 
 import pytest
 
-from webagentbench.backend.models.gmail import (
+from webstress.backend.models.gmail import (
     Contact,
     Email,
     GmailSettings,
     GmailState,
     Label,
 )
-from webagentbench.tasks._evaluator import _compute_collateral, evaluate
-from webagentbench.tasks._registry import get_task
+from webstress.tasks._evaluator import _compute_collateral, evaluate
+from webstress.tasks._registry import get_task
 
 
 def _empty_state() -> GmailState:

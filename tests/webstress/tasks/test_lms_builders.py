@@ -7,8 +7,8 @@ from decimal import Decimal
 
 import pytest
 
-from webagentbench.backend.seeder import FakeDataGenerator
-from webagentbench.tasks._seed_builders_lms import (
+from webstress.backend.seeder import FakeDataGenerator
+from webstress.tasks._seed_builders_lms import (
     LMS_BUILDER_REGISTRY,
     LMSSeedContext,
 )

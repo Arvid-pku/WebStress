@@ -12,13 +12,13 @@ import sys
 
 import pytest
 
-from webagentbench.backend.models.booking import BookingState, ReservationGuest
-from webagentbench.backend.seeder import FakeDataGenerator
-from webagentbench.backend.seeders.booking import BookingSeedRunner
-from webagentbench.backend.state import materialize_task_state
-from webagentbench.tasks._evaluator import evaluate as unified_evaluate
-from webagentbench.tasks._registry import env_tasks, get_task, load_all_tasks
-from webagentbench.tasks._seed_builders_booking import BOOKING_BUILDER_REGISTRY
+from webstress.backend.models.booking import BookingState, ReservationGuest
+from webstress.backend.seeder import FakeDataGenerator
+from webstress.backend.seeders.booking import BookingSeedRunner
+from webstress.backend.state import materialize_task_state
+from webstress.tasks._evaluator import evaluate as unified_evaluate
+from webstress.tasks._registry import env_tasks, get_task, load_all_tasks
+from webstress.tasks._seed_builders_booking import BOOKING_BUILDER_REGISTRY
 
 
 # ---------------------------------------------------------------------------
@@ -51,7 +51,7 @@ def test_booking_builders_import_without_circular_import() -> None:
         [
             sys.executable,
             "-c",
-            "from webagentbench.tasks._seed_builders_booking import BOOKING_BUILDER_REGISTRY; print(len(BOOKING_BUILDER_REGISTRY))",
+            "from webstress.tasks._seed_builders_booking import BOOKING_BUILDER_REGISTRY; print(len(BOOKING_BUILDER_REGISTRY))",
         ],
         capture_output=True, text=True, check=False,
     )
@@ -229,7 +229,7 @@ def test_view_reservation_needs_audit_entry() -> None:
     result = unified_evaluate(task, server_state=state, targets=targets, trajectory=[])
     assert result["success"] is False
     # With the audit entry, should pass
-    from webagentbench.backend.models.base import AuditEntry
+    from webstress.backend.models.base import AuditEntry
     state.audit_log.append(AuditEntry(
         action="reservation.view",
         payload={"reservation_id": targets["reservation_id"]},
@@ -291,7 +291,7 @@ def test_booking_payment_removal_negative_checks_bind_allowed_target(
     desc: str,
 ) -> None:
     """Wrong payment removals should fail while the intended removal stays allowed."""
-    from webagentbench.backend.models.base import AuditEntry
+    from webstress.backend.models.base import AuditEntry
 
     _, state, targets, _ = _materialize(task_id)
     state._initial_snapshot = state.state_snapshot()

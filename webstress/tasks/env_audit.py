@@ -7,8 +7,8 @@ Classes audited:
   - Class 6: Side-effect mutations on entity-level list fields
 
 Usage:
-    python -m webagentbench.tasks.env_audit patient_portal
-    python -m webagentbench.tasks.env_audit patient_portal --json
+    python -m webstress.tasks.env_audit patient_portal
+    python -m webstress.tasks.env_audit patient_portal --json
 
 See docs/guides/canonical-diff-authoring-protocol.md for the hazard catalogue
 and docs/guides/canonical-diff-authoring-protocol.md for how findings
@@ -63,15 +63,15 @@ def _iter_lines(path: Path) -> Iterator[tuple[int, str]]:
 
 
 def _route_file(env_id: str) -> Path:
-    return _REPO_ROOT / "webagentbench" / "backend" / "routes" / f"{env_id}.py"
+    return _REPO_ROOT / "webstress" / "backend" / "routes" / f"{env_id}.py"
 
 
 def _model_file(env_id: str) -> Path:
-    return _REPO_ROOT / "webagentbench" / "backend" / "models" / f"{env_id}.py"
+    return _REPO_ROOT / "webstress" / "backend" / "models" / f"{env_id}.py"
 
 
 def _spa_dir(env_id: str) -> Path:
-    return _REPO_ROOT / "webagentbench" / "environments" / env_id / "src"
+    return _REPO_ROOT / "webstress" / "environments" / env_id / "src"
 
 
 # ──────────────────────────────────────────────────────────────
@@ -239,7 +239,7 @@ def audit_class6(env_id: str) -> list[Finding]:
                             f"If this mutation is a legitimate side-effect of an agent "
                             f"action (e.g. slot consumption on booking), add "
                             f"{fname!r} to {cls}.DIFF_IGNORE_FIELDS in "
-                            f"webagentbench/backend/models/{env_id}.py. "
+                            f"webstress/backend/models/{env_id}.py. "
                             f"If it's accidental collateral, leave it and let the "
                             f"unaccounted-sweep flag it during per-task verification."
                         )

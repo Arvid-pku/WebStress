@@ -7,7 +7,7 @@ discarded by the outer `try/except` in `run_episode`.
 """
 from __future__ import annotations
 
-from webagentbench.stock_browseruse_eval import _history_to_trajectory
+from webstress.stock_browseruse_eval import _history_to_trajectory
 
 
 class _FakeAction:

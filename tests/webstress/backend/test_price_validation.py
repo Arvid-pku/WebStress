@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from webagentbench.backend.price_engine import StockTrajectory, TrajectoryConfig
-from webagentbench.backend.price_validation import validate_trajectory
+from webstress.backend.price_engine import StockTrajectory, TrajectoryConfig
+from webstress.backend.price_validation import validate_trajectory
 
 
 def _cfg(stocks: dict[str, StockTrajectory]) -> TrajectoryConfig:

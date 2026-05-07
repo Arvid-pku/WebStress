@@ -6,8 +6,8 @@ mutations on the right axes. Later (Task 15) an integration test confirms
 every generated case is actually rejected by match_diff.
 """
 
-from webagentbench.tasks.canonical_diff import CanonicalDiff
-from webagentbench.tasks.adversarial import synthesize_adversarial_cases
+from webstress.tasks.canonical_diff import CanonicalDiff
+from webstress.tasks.adversarial import synthesize_adversarial_cases
 
 
 def test_generator_produces_field_mutation_case():

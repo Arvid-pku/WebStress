@@ -43,7 +43,7 @@ class SessionManager:
         if runner is None or state_cls is None:
             raise KeyError(f"Unknown environment: {env_id}")
         actual_seed = seed if seed is not None else derive_seed(f"{env_id}:{task_id}")
-        from webagentbench.tasks._registry import get_task
+        from webstress.tasks._registry import get_task
         task = get_task(task_id)
         rng = random.Random(actual_seed)
         fake = FakeDataGenerator(actual_seed)
@@ -52,7 +52,7 @@ class SessionManager:
         # window over "changes since session creation". Use the seed-derived
         # anchor time so (task_id, seed) remains fully deterministic — tests
         # like test_deterministic_seeds compare target dicts for equality.
-        from webagentbench.backend.seeder import derive_anchor_time
+        from webstress.backend.seeder import derive_anchor_time
         resolved_targets["session_start"] = derive_anchor_time(actual_seed).isoformat()
         state = state_cls.model_validate(seeded_data)
         state._resolved_targets = dict(resolved_targets)
@@ -60,10 +60,10 @@ class SessionManager:
 
         # Initialize price engine for robinhood tasks with trajectories
         if env_id == "robinhood":
-            from webagentbench.tasks._schema import PriceTrajectoryConfig
+            from webstress.tasks._schema import PriceTrajectoryConfig
             pt = getattr(task.seed, 'price_trajectory', None) if task.seed else None
             if pt is not None and isinstance(pt, PriceTrajectoryConfig) and pt.stocks:
-                from webagentbench.backend.price_engine import PriceEngine, TrajectoryConfig, StockTrajectory
+                from webstress.backend.price_engine import PriceEngine, TrajectoryConfig, StockTrajectory
                 tconfig = TrajectoryConfig(
                     tick_interval_seconds=pt.tick_interval_seconds,
                     stocks={
@@ -246,7 +246,7 @@ def materialize_task_state(
 
     Returns ``(task, state, resolved_targets, actual_seed)``.
     """
-    from webagentbench.tasks._registry import get_task
+    from webstress.tasks._registry import get_task
 
     runner = SEEDER_REGISTRY.get(env_id)
     state_cls = STATE_TYPES.get(env_id)

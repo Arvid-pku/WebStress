@@ -275,28 +275,28 @@ export default function BenchmarkDocsPage() {
         </h2>
         <p className="text-[14px] text-[var(--text-secondary)] leading-[1.7] mb-5">
           WebStress evaluations are driven by{" "}
-          <code className="font-mono text-[13px] text-[var(--text-primary)] bg-[var(--surface)] px-1.5 py-0.5 rounded">webagentbench/agent_eval.py</code>. It
+          <code className="font-mono text-[13px] text-[var(--text-primary)] bg-[var(--surface)] px-1.5 py-0.5 rounded">webstress/agent_eval.py</code>. It
           spins up a local FastAPI server, initializes seeded sessions, then runs the agent against
           the live DOM via Playwright.
         </p>
         <CodeBlock code={`# Evaluate the full benchmark
-python -m webagentbench.agent_eval --model gpt-4o --provider openai
+python -m webstress.agent_eval --model gpt-4o --provider openai
 
 # Restrict to specific environments
-python -m webagentbench.agent_eval --model gpt-4o --provider openai \\
+python -m webstress.agent_eval --model gpt-4o --provider openai \\
     --environments amazon booking reddit
 
 # Run specific tasks only
-python -m webagentbench.agent_eval --model gpt-4o --provider openai \\
+python -m webstress.agent_eval --model gpt-4o --provider openai \\
     --tasks booking_add_payment gmail_thread_detective
 
 # With visible browser (useful for debugging)
-python -m webagentbench.agent_eval --model gpt-4o --provider openai --no-headless`} language="bash" />
+python -m webstress.agent_eval --model gpt-4o --provider openai --no-headless`} language="bash" />
         <p className="text-[14px] text-[var(--text-secondary)] leading-[1.7] mt-5">
           Results are written to{" "}
-          <code className="font-mono text-[13px] text-[var(--text-primary)] bg-[var(--surface)] px-1.5 py-0.5 rounded">results/webagentbench/results.json</code>{" "}
+          <code className="font-mono text-[13px] text-[var(--text-primary)] bg-[var(--surface)] px-1.5 py-0.5 rounded">results/webstress/results.json</code>{" "}
           and can be visualised with{" "}
-          <code className="font-mono text-[13px] text-[var(--text-primary)] bg-[var(--surface)] px-1.5 py-0.5 rounded">python -m webagentbench.visualize results/webagentbench/results.json</code>.
+          <code className="font-mono text-[13px] text-[var(--text-primary)] bg-[var(--surface)] px-1.5 py-0.5 rounded">python -m webstress.visualize results/webstress/results.json</code>.
         </p>
       </section>
     </>

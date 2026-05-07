@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import pytest
 
-from webagentbench.injector.seed import (
+from webstress.injector.seed import (
     _MULTIPLIER_CAP_DEFAULTS,
     _replicate_with_multiplier,
 )

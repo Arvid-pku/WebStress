@@ -20,9 +20,9 @@ plus the documented opt-in/opt-out boundary.
 
 from __future__ import annotations
 
-from webagentbench.backend.models.amazon import AmazonState
-from webagentbench.backend.state import SessionManager
-from webagentbench.eval_core import compute_diff, Create
+from webstress.backend.models.amazon import AmazonState
+from webstress.backend.state import SessionManager
+from webstress.eval_core import compute_diff, Create
 
 
 def test_compute_diff_survives_wishlist_mutation():

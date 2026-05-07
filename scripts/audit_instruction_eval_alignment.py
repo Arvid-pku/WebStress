@@ -33,7 +33,7 @@ from collections import defaultdict
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-TASKS = REPO / "webagentbench" / "tasks"
+TASKS = REPO / "webstress" / "tasks"
 
 # ── Heuristic helpers ─────────────────────────────────────────────────────
 

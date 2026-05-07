@@ -8,7 +8,7 @@ sketch wrote ``meta.get("targets", {})`` — we treat ``meta`` as the targets di
 directly so the assertions line up with the actual API.
 """
 
-from webagentbench.backend.state import SessionManager
+from webstress.backend.state import SessionManager
 
 
 def test_immunization_record_emits_admin_providers():

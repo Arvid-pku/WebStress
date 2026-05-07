@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Link, useSearchParams, useLocation } from "react-router-dom";
-import { preserveQueryParams } from "@webagentbench/shared";
+import { preserveQueryParams } from "@webstress/shared";
 import { useBookingLayout } from "../context";
 import type { PropertyBrief, SearchResults as SearchResultsType } from "../types";
 

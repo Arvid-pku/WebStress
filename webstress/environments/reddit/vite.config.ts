@@ -8,7 +8,7 @@ export default defineConfig({
   plugins: [react()],
   base: "/env/reddit/",
   optimizeDeps: {
-    exclude: ["@webagentbench/shared", "@webagentbench/reddit"],
+    exclude: ["@webstress/shared", "@webstress/reddit"],
   },
   build: {
     outDir: "../../static/envs/reddit",

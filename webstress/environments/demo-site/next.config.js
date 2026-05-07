@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: "export",
-  transpilePackages: ["@webagentbench/shared", "@webagentbench/gmail"],
+  transpilePackages: ["@webstress/shared", "@webstress/gmail"],
   images: { unoptimized: true },
 };
 

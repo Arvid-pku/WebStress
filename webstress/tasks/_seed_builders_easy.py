@@ -245,7 +245,7 @@ def build_mark_all_read(ctx: SeedContext, params: dict[str, Any]) -> dict[str, A
 @_register("update_contact")
 def build_update_contact(ctx: SeedContext, params: dict[str, Any]) -> dict[str, Any]:
     """Seed a contact that needs its note updated."""
-    from webagentbench.backend.models.gmail import Contact
+    from webstress.backend.models.gmail import Contact
     contact = Contact(
         id=ctx.next_id("contact"),
         name="Alice Chen",

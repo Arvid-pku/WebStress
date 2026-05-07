@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import Any, Callable
 
-from webagentbench.backend.models.booking import (
+from webstress.backend.models.booking import (
     CancellationPolicy,
     GeoLocation,
     HouseRules,
@@ -138,14 +138,14 @@ class BookingSeedContext:
 
     def _property_images(self) -> list[str]:
         """Assign 3 deterministic hotel images based on counter."""
-        from webagentbench.backend.seeders.booking import _HOTEL_IMAGES
+        from webstress.backend.seeders.booking import _HOTEL_IMAGES
         n = len(_HOTEL_IMAGES)
         base = self._prop_counter % n
         return [_HOTEL_IMAGES[(base + i) % n] for i in range(3)]
 
     def _room_images(self) -> list[str]:
         """Assign 1 deterministic room image based on counter."""
-        from webagentbench.backend.seeders.booking import _ROOM_IMAGES
+        from webstress.backend.seeders.booking import _ROOM_IMAGES
         return [_ROOM_IMAGES[self._room_counter % len(_ROOM_IMAGES)]]
 
     def make_room(
@@ -600,7 +600,7 @@ def build_set_settings(ctx: BookingSeedContext, params: dict[str, Any]) -> dict[
 @_register("add_wallet_credit")
 def build_add_wallet(ctx: BookingSeedContext, params: dict[str, Any]) -> dict[str, Any]:
     """Add wallet credit for task scenarios."""
-    from webagentbench.backend.models.booking import WalletTransaction
+    from webstress.backend.models.booking import WalletTransaction
     amount = params.get("amount", 50.0)
     desc = params.get("description", "Bonus credit")
     ctx.base["wallet"]["balance"] = round(ctx.base["wallet"]["balance"] + amount, 2)

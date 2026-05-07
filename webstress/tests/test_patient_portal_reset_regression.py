@@ -3,8 +3,8 @@ from __future__ import annotations
 import pytest
 from starlette.testclient import TestClient
 
-from webagentbench.app import app
-from webagentbench.injector.middleware import clear_all_degradations
+from webstress.app import app
+from webstress.injector.middleware import clear_all_degradations
 
 
 @pytest.fixture(autouse=True)

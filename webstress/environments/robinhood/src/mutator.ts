@@ -1,4 +1,4 @@
-import type { RouteMutator } from "@webagentbench/shared";
+import type { RouteMutator } from "@webstress/shared";
 
 import type {
   AccountSettings,

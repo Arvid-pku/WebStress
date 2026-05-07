@@ -7,7 +7,7 @@ const backendUrl = `http://127.0.0.1:${process.env.VITE_BACKEND_PORT || 8080}`;
 export default defineConfig({
   plugins: [react()],
   base: "/env/robinhood/",
-  optimizeDeps: { exclude: ["@webagentbench/shared", "@webagentbench/robinhood"] },
+  optimizeDeps: { exclude: ["@webstress/shared", "@webstress/robinhood"] },
   build: { outDir: "../../static/envs/robinhood", emptyOutDir: true },
   server: {
     port: serverPort,

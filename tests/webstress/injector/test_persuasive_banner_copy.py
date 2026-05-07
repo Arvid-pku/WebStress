@@ -8,7 +8,7 @@ banner pool either.
 
 This test extracts the array from BenchmarkToolbar.tsx with a regex (no JS
 runtime needed for CI) and runs each entry through the Python rubric
-(`webagentbench.injector.seed._adv_passes_obviousness_rubric`). The two
+(`webstress.injector.seed._adv_passes_obviousness_rubric`). The two
 implementations of "obvious" are kept in lock-step.
 """
 
@@ -19,11 +19,11 @@ from pathlib import Path
 
 import pytest
 
-from webagentbench.injector.seed import _adv_passes_obviousness_rubric
+from webstress.injector.seed import _adv_passes_obviousness_rubric
 
 TSX_PATH = (
     Path(__file__).resolve().parents[3]
-    / "webagentbench/environments/shared/src/components/BenchmarkToolbar.tsx"
+    / "webstress/environments/shared/src/components/BenchmarkToolbar.tsx"
 )
 
 

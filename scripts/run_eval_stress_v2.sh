@@ -31,7 +31,7 @@ HIGH_SCORE_VARIANTS=(
   "gmail_invoice_verification__grounding_v2.yaml"
 )
 
-RESULTS_DIR="results/webagentbench/stress_v2"
+RESULTS_DIR="results/webstress/stress_v2"
 mkdir -p "$RESULTS_DIR"
 
 ALL_VARIANTS=("${EASY_VARIANTS[@]}" "${HIGH_SCORE_VARIANTS[@]}")
@@ -44,7 +44,7 @@ for variant in "${ALL_VARIANTS[@]}"; do
   echo "STRESS: $variant ($prim)"
   echo "================================================================"
 
-  UV_CACHE_DIR=/tmp/uv-cache uv run python -m webagentbench.agent_eval \
+  UV_CACHE_DIR=/tmp/uv-cache uv run python -m webstress.agent_eval \
     $COMMON \
     --degradation "$variant" \
     --output "$RESULTS_DIR/gpt54_stress_${task}__${prim}.json" \

@@ -6,7 +6,7 @@ import type { TrajectoryStep } from "../results";
 /* ------------------------------------------------------------------ */
 
 // Mock gmailMutator since it's a heavy dependency
-vi.mock("@webagentbench/gmail/mutator", () => ({
+vi.mock("@webstress/gmail/mutator", () => ({
   gmailMutator: vi.fn(
     (state: unknown, method: string, path: string, body?: unknown, query?: unknown) => {
       // Simple passthrough - return empty response
@@ -18,7 +18,7 @@ vi.mock("@webagentbench/gmail/mutator", () => ({
 // Import after mock setup
 import { buildGmailReplayStepStates } from "../gmailReplay";
 import type { GmailReplayStepState } from "../gmailReplay";
-import { gmailMutator } from "@webagentbench/gmail/mutator";
+import { gmailMutator } from "@webstress/gmail/mutator";
 
 function getQueryParams(route: string) {
   return new URL(`https://example.test${route}`).searchParams;

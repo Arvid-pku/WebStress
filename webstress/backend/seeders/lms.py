@@ -12,9 +12,9 @@ import random
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from webagentbench.backend.seeders._common import _assign_output
-from webagentbench.tasks._schema import TaskDefinition
-from webagentbench.tasks._seed_builders_lms import (
+from webstress.backend.seeders._common import _assign_output
+from webstress.tasks._schema import TaskDefinition
+from webstress.tasks._seed_builders_lms import (
     LMS_BUILDER_REGISTRY,
     LMSSeedContext,
 )

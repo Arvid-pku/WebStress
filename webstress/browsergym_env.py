@@ -8,14 +8,14 @@ WorkArena, and other BrowserGym benchmarks.
 Usage:
     # Via gymnasium (after importing registration)
     import gymnasium as gym
-    import webagentbench.browsergym_register  # auto-registers tasks
-    env = gym.make("browsergym/webagentbench.gmail_board_briefing_prep")
+    import webstress.browsergym_register  # auto-registers tasks
+    env = gym.make("browsergym/webstress.gmail_board_briefing_prep")
     obs, info = env.reset()
     obs, reward, terminated, truncated, info = env.step("click('a51')")
     env.close()
 
     # Via convenience function
-    from webagentbench.browsergym_env import make_env
+    from webstress.browsergym_env import make_env
     env = make_env("gmail_board_briefing_prep")
 
 Observation dict keys (standard BrowserGym):

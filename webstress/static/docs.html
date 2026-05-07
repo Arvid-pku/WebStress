@@ -434,11 +434,11 @@
 
 <!-- ═══════════════════════════════════════════════════ -->
 <h2>5. Evaluation System</h2>
-<p>Scoring runs against live environment state rather than the DOM. The evaluator reads the Pydantic state objects the real API handlers mutate, so a silently-dropped write is caught even when the UI shows a success toast. Every task declares a <code>canonical_diff</code> block, and matching runs through <span class="badge badge-file">webagentbench/eval_core/</span>. (The legacy expression-based <code>eval.checks</code> path was removed in the 2026-04 refactor; all 519 tasks now carry a <code>canonical_diff</code>.)</p>
+<p>Scoring runs against live environment state rather than the DOM. The evaluator reads the Pydantic state objects the real API handlers mutate, so a silently-dropped write is caught even when the UI shows a success toast. Every task declares a <code>canonical_diff</code> block, and matching runs through <span class="badge badge-file">webstress/eval_core/</span>. (The legacy expression-based <code>eval.checks</code> path was removed in the 2026-04 refactor; all 519 tasks now carry a <code>canonical_diff</code>.)</p>
 
 <h3>Pipeline</h3>
 <pre>
-<span class="cm"># webagentbench/eval_core/orchestrator.py</span>
+<span class="cm"># webstress/eval_core/orchestrator.py</span>
 <span class="kw">def</span> <span class="fn">evaluate</span>(task, server_state, targets, trajectory):
     canonical = task.canonical_diff              <span class="cm"># missing_canonical_diff &rarr; score 0</span>
     initial   = server_state._initial_state_copy  <span class="cm"># deep-copy taken at session create</span>
@@ -605,7 +605,7 @@ success       = <span class="kw">not</span> failures     <span class="cm"># any 
 <h2>9. Repository Structure (abridged)</h2>
 
 <pre>
-webagentbench/
+webstress/
   injector/
     config.py            <span class="cm"># DegradationConfig dataclass + default templates</span>
     seed.py              <span class="cm"># seed-layer actions</span>
@@ -640,23 +640,23 @@ uv sync && playwright install chromium
 pnpm -C environments install && pnpm -C environments build
 
 <span class="cm"># Baseline run (no intervention)</span>
-python -m webagentbench.agent_eval \
+python -m webstress.agent_eval \
     --model gpt-4o --provider openai --api-key $KEY \
     --tasks gmail_action_item_extraction \
     --max-steps 50 --seed 42 --output results/baseline.json
 
 <span class="cm"># Intervention run (same task, one variant)</span>
-python -m webagentbench.agent_eval \
+python -m webstress.agent_eval \
     --model gpt-4o --provider openai --api-key $KEY \
     --tasks gmail_action_item_extraction \
     --degradation gmail_action_item_extraction__phishing_inbox.yaml \
     --max-steps 50 --seed 42 --output results/phishing.json
 
 <span class="cm"># Visualize any result JSON</span>
-python -m webagentbench.visualize results/phishing.json
+python -m webstress.visualize results/phishing.json
 
 <span class="cm"># Human play (collects cold-start and optimal trajectories)</span>
-python -m webagentbench.app --host 127.0.0.1 --port 8080
+python -m webstress.app --host 127.0.0.1 --port 8080
 <span class="cm"># Open http://127.0.0.1:8080/launch</span>
 </pre>
 

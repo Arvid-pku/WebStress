@@ -2,4 +2,4 @@
 set -euo pipefail
 
 cd "$(dirname "$0")"
-exec ./scripts/webagentbench.sh "${@:-dev}"
+exec ./scripts/webstress.sh "${@:-dev}"

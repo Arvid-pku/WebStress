@@ -12,7 +12,7 @@ from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from typing import Any, Callable
 
-from webagentbench.backend.models.patient_portal import (
+from webstress.backend.models.patient_portal import (
     Appointment,
     ClinicalMessage,
     EmergencyContact,

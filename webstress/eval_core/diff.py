@@ -69,13 +69,13 @@ def _resolve_state_class(env_id: str) -> type | None:
     if _STATE_CLASS_BY_ENV is None:
         _STATE_CLASS_BY_ENV = {}
         try:
-            from webagentbench.backend.models.amazon import AmazonState
-            from webagentbench.backend.models.booking import BookingState
-            from webagentbench.backend.models.gmail import GmailState
-            from webagentbench.backend.models.lms import LMSState
-            from webagentbench.backend.models.patient_portal import PatientPortalState
-            from webagentbench.backend.models.reddit import RedditState
-            from webagentbench.backend.models.robinhood import RobinhoodState
+            from webstress.backend.models.amazon import AmazonState
+            from webstress.backend.models.booking import BookingState
+            from webstress.backend.models.gmail import GmailState
+            from webstress.backend.models.lms import LMSState
+            from webstress.backend.models.patient_portal import PatientPortalState
+            from webstress.backend.models.reddit import RedditState
+            from webstress.backend.models.robinhood import RobinhoodState
             for cls in (AmazonState, BookingState, GmailState, LMSState,
                         PatientPortalState, RedditState, RobinhoodState):
                 _STATE_CLASS_BY_ENV[cls.model_fields["env_id"].default or cls.__name__] = cls

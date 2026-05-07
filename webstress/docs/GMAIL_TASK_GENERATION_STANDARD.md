@@ -151,7 +151,7 @@ Current task authors should design against the implemented surface first. New fe
 
 ## 4. Primitive Design Rules
 
-Use the benchmark primitives from [`webagentbench/manifest.json`](../manifest.json).
+Use the benchmark primitives from [`webstress/manifest.json`](../manifest.json).
 
 ### 4.1 Exploration
 

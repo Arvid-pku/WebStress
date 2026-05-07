@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Button, DataTable, FormField } from "@webagentbench/shared";
+import { Button, DataTable, FormField } from "@webstress/shared";
 import { useSearchParams } from "react-router-dom";
 
 import { LabelChip } from "../components/LabelChip";

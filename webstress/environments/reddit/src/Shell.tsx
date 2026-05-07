@@ -7,7 +7,7 @@ import {
   preserveQueryParams,
   useApi,
   useBenchmarkState,
-} from "@webagentbench/shared";
+} from "@webstress/shared";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 
 import { createRedditApi } from "./api";

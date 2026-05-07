@@ -8,7 +8,7 @@ import {
   useApi,
   useBenchmarkState,
   useSession,
-} from "@webagentbench/shared";
+} from "@webstress/shared";
 import {
   Navigate,
   Outlet,

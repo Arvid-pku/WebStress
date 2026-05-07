@@ -30,7 +30,7 @@ vi.mock("@/components/replay/TrajectoryViewer", () => ({
   ),
 }));
 
-vi.mock("@webagentbench/gmail/mutator", () => ({
+vi.mock("@webstress/gmail/mutator", () => ({
   gmailMutator: vi.fn(() => ({ response: {} })),
 }));
 

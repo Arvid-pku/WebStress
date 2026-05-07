@@ -18,7 +18,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-VARIANT_DIR = Path(__file__).resolve().parents[3] / "webagentbench/injector/variants"
+VARIANT_DIR = Path(__file__).resolve().parents[3] / "webstress/injector/variants"
 
 
 # Each entry: (variant_filename, [list of required signatures]).

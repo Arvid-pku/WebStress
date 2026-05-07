@@ -9,7 +9,7 @@ from __future__ import annotations
 import pytest
 from pydantic import ValidationError
 
-from webagentbench.tasks.canonical_diff import (
+from webstress.tasks.canonical_diff import (
     Bijection,
     CanonicalDiff,
     Constraint,

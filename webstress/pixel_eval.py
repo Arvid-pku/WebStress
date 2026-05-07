@@ -13,7 +13,7 @@ Compared to `agent_eval.py` (text-only, BID actions, AXTree input):
 Usage (single task, programmatic):
 
     import asyncio
-    from webagentbench.pixel_eval import run_episode
+    from webstress.pixel_eval import run_episode
 
     result = asyncio.run(run_episode(
         task_id="booking_save_property",

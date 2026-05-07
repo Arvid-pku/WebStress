@@ -9,15 +9,15 @@ Output layout::
     results/bedrock_subset/standard.json               # 8 trajectories
     results/bedrock_subset/stress_<variant>.json * 8   # 1 trajectory each
     results/bedrock_subset/merged.json                 # 16 trajectories
-    webagentbench/static/bedrock_subset_viz.html       # served at /static/...
+    webstress/static/bedrock_subset_viz.html       # served at /static/...
 
 Prerequisites (one-time):
   uv sync
   playwright install chromium
-  pnpm -C webagentbench/environments install && pnpm -C webagentbench/environments build
+  pnpm -C webstress/environments install && pnpm -C webstress/environments build
 
 Run:
-  python -m webagentbench.scripts.run_bedrock_subset
+  python -m webstress.scripts.run_bedrock_subset
   # default model: anthropic.claude-sonnet-4-6
   # overrides: --model, --seed, --no-viz
 
@@ -90,7 +90,7 @@ SUBSET: list[tuple[str, str]] = _sample_pairs(8)
 
 
 def _load_env_file() -> None:
-    """Populate env from webagentbench/.env if present."""
+    """Populate env from webstress/.env if present."""
     try:
         from dotenv import load_dotenv
     except ImportError:
@@ -115,7 +115,7 @@ def _run_one(
 ) -> dict:
     """Run a single task through agent_eval.run_evaluation. Returns the result
     dict (not the full envelope)."""
-    from webagentbench.agent_eval import run_evaluation
+    from webstress.agent_eval import run_evaluation
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     results = run_evaluation(
@@ -270,8 +270,8 @@ def main() -> int:
     # --- Visualize ------------------------------------------------------
     print("\nGenerating visualization...")
     try:
-        from webagentbench.result_utils import build_manifest_task_meta, load_embedded_task_meta
-        from webagentbench.visualize import generate_html
+        from webstress.result_utils import build_manifest_task_meta, load_embedded_task_meta
+        from webstress.visualize import generate_html
     except Exception as exc:
         logger.error("Could not import visualizer: %s", exc)
         return 1
@@ -294,7 +294,7 @@ def main() -> int:
     print(f"  {results_viz_path}   (portable)")
     print(f"\nOpen on your launcher:")
     print(f"  http://127.0.0.1:8080/static/bedrock_subset_viz.html")
-    print(f"\n(Start the server with: python -m webagentbench.app --port 8080)")
+    print(f"\n(Start the server with: python -m webstress.app --port 8080)")
     return 0
 
 

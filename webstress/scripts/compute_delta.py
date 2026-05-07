@@ -1,7 +1,7 @@
 """Compute per-primitive Δ scores between standard and degraded evaluation runs.
 
 Usage:
-    python -m webagentbench.scripts.compute_delta \
+    python -m webstress.scripts.compute_delta \
         --standard results/standard.json \
         --degraded results/degraded_patience.json results/degraded_grounding.json \
         --output results/delta_report.json

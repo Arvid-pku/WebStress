@@ -9,8 +9,8 @@ from __future__ import annotations
 from datetime import timedelta
 from typing import Any
 
-from webagentbench.backend.models.gmail import Email
-from webagentbench.tasks._seed_builders import SeedContext, _register
+from webstress.backend.models.gmail import Email
+from webstress.tasks._seed_builders import SeedContext, _register
 
 
 # ---------------------------------------------------------------------------

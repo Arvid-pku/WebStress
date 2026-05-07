@@ -3,7 +3,7 @@
 Provides :func:`derive_seed` / :func:`derive_anchor_time` for deterministic
 seed arithmetic, and :class:`FakeDataGenerator` for reproducible fake data
 (names, companies, emails, etc.).  Environment-specific seed runners live
-in ``webagentbench.backend.seeders``.
+in ``webstress.backend.seeders``.
 """
 
 from __future__ import annotations

@@ -9,7 +9,7 @@
 #SBATCH --error=/usr/xtmp/%u/wab-logs/stock-sweep-%j.err
 
 # Generic stock browser-use sweep template. Pass model + provider + picks
-# via env vars. Examples in webagentbench/docs/RUNNING_SWEEPS.md.
+# via env vars. Examples in webstress/docs/RUNNING_SWEEPS.md.
 #
 # Required env vars:
 #   MODEL    — model id (provider-specific, e.g. us.anthropic.claude-opus-4-7)
@@ -37,7 +37,7 @@ mkdir -p /usr/xtmp/$USER/wab-logs "$HF_HOME" "$PIP_CACHE_DIR"
 ROOT="${LLMOS_ROOT:-$HOME/projects/LLMOS}"
 cd "$ROOT"
 source .venv/bin/activate
-set -a; source webagentbench/.env; set +a
+set -a; source webstress/.env; set +a
 
 BACKEND_PORT=$(( 9400 + (SLURM_JOB_ID % 600) ))
 N_PICKS=$(python3 -c "import json; print(len(json.load(open('$PICKS'))))")
@@ -46,9 +46,9 @@ echo "Job $SLURM_JOB_ID on $(hostname), backend :$BACKEND_PORT"
 echo "Picks: $PICKS"
 echo "Output: /usr/xtmp/$USER/wab-runs/stock-${OUTNAME}-${SLURM_JOB_ID}"
 
-export WEBAGENTBENCH_AUTO_BUILD_FRONTENDS=0
+export WEBSTRESS_AUTO_BUILD_FRONTENDS=0
 
-python -m uvicorn webagentbench.app:app \
+python -m uvicorn webstress.app:app \
   --host 127.0.0.1 --port "$BACKEND_PORT" --log-level warning \
   > /usr/xtmp/$USER/wab-logs/backend-${SLURM_JOB_ID}.log 2>&1 &
 BPID=$!

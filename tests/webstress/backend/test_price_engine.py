@@ -4,7 +4,7 @@ from decimal import Decimal
 
 import pytest
 
-from webagentbench.backend.models.robinhood import (
+from webstress.backend.models.robinhood import (
     AccountSettings,
     Order,
     Position,
@@ -13,8 +13,8 @@ from webagentbench.backend.models.robinhood import (
     Stock,
     TaxLot,
 )
-from webagentbench.backend.models.base import utc_now
-from webagentbench.backend.price_engine import (
+from webstress.backend.models.base import utc_now
+from webstress.backend.price_engine import (
     PriceEngine,
     StockTrajectory,
     TrajectoryConfig,

@@ -6,8 +6,8 @@ Reads a WebStress result JSON and produces:
   - public/results/trajectories/<task_id>.json — simplified per-task trajectories
 
 Usage (from repo root):
-    python webagentbench/environments/demo-site/scripts/prepare-results.py \
-        results/webagentbench/gmail_qwen3max_merged.json
+    python webstress/environments/demo-site/scripts/prepare-results.py \
+        results/webstress/gmail_qwen3max_merged.json
 """
 
 from __future__ import annotations

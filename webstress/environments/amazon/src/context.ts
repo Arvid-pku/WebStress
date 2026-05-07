@@ -1,6 +1,6 @@
 import { createContext, useContext } from "react";
 
-import type { ToastMessage } from "@webagentbench/shared";
+import type { ToastMessage } from "@webstress/shared";
 
 import type { CartSummary } from "./types";
 import type { createAmazonApi } from "./api";

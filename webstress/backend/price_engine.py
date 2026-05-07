@@ -5,8 +5,8 @@ import time
 from dataclasses import dataclass, field
 from decimal import Decimal
 
-from webagentbench.backend.models.base import utc_now
-from webagentbench.backend.models.robinhood import (
+from webstress.backend.models.base import utc_now
+from webstress.backend.models.robinhood import (
     Notification,
     Position,
     RobinhoodState,

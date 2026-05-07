@@ -83,8 +83,8 @@ class TestH7SmokeTestHarness:
         """The smoke test python invocation must include $HARNESS_FLAG."""
         smoke_block = self._extract_smoke_test_block(script_text)
         # Find the agent_eval invocation within the smoke block
-        assert "webagentbench.agent_eval" in smoke_block, (
-            "Smoke test must invoke webagentbench.agent_eval"
+        assert "webstress.agent_eval" in smoke_block, (
+            "Smoke test must invoke webstress.agent_eval"
         )
         # Check that HARNESS_FLAG appears in the invocation
         assert "$HARNESS_FLAG" in smoke_block or "${HARNESS_FLAG}" in smoke_block, (

@@ -8,7 +8,7 @@ export default defineConfig({
   plugins: [react()],
   base: "/env/gmail/",
   optimizeDeps: {
-    exclude: ["@webagentbench/shared", "@webagentbench/gmail"],
+    exclude: ["@webstress/shared", "@webstress/gmail"],
   },
   build: {
     outDir: "../../static/envs/gmail",

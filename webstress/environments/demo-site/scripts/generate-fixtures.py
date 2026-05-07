@@ -5,7 +5,7 @@ For each Gmail task, creates a fixture file containing the seeded state
 and rendered instruction. Also produces a _manifest.json with task metadata.
 
 Usage (from repo root):
-    python webagentbench/environments/demo-site/scripts/generate-fixtures.py
+    python webstress/environments/demo-site/scripts/generate-fixtures.py
 """
 
 from __future__ import annotations
@@ -18,9 +18,9 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[4]
 sys.path.insert(0, str(REPO_ROOT))
 
-from webagentbench.backend.state import SessionManager
-from webagentbench.task_rendering import render_template
-from webagentbench.tasks._registry import load_all_tasks, tasks_by_env
+from webstress.backend.state import SessionManager
+from webstress.task_rendering import render_template
+from webstress.tasks._registry import load_all_tasks, tasks_by_env
 
 # Fields to strip from serialised state — not needed for the demo.
 STRIP_KEYS = {"audit_log", "benchmark_state", "created_at", "updated_at"}

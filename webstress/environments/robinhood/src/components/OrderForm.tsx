@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Button } from "@webagentbench/shared";
+import { Button } from "@webstress/shared";
 
 interface OrderFormProps {
   symbol: string;

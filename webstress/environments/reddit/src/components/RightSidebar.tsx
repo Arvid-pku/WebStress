@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { preserveQueryParams } from "@webagentbench/shared";
+import { preserveQueryParams } from "@webstress/shared";
 
 import type { Subreddit } from "../types";
 import { formatNumber, formatDate } from "../utils";

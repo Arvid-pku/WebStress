@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { Button, FormField } from "@webagentbench/shared";
+import { Button, FormField } from "@webstress/shared";
 
 import type { ComposePayload } from "../types";
 

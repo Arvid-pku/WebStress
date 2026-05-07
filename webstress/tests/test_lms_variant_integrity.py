@@ -8,10 +8,10 @@ import pytest
 import yaml
 from starlette.testclient import TestClient
 
-from webagentbench.app import app
-from webagentbench.backend.routes.lms import SessionCreateRequest, create_session, list_variants
-from webagentbench.injector.middleware import clear_all_degradations
-from webagentbench.tasks._registry import env_tasks
+from webstress.app import app
+from webstress.backend.routes.lms import SessionCreateRequest, create_session, list_variants
+from webstress.injector.middleware import clear_all_degradations
+from webstress.tasks._registry import env_tasks
 
 
 VARIANTS_DIR = Path(__file__).resolve().parents[1] / "injector" / "variants"

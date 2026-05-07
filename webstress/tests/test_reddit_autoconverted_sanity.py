@@ -17,9 +17,9 @@ from __future__ import annotations
 
 import pytest
 
-from webagentbench.backend.state import SessionManager
-from webagentbench.eval_core import compute_diff, match_diff
-from webagentbench.tasks._registry import load_all_tasks
+from webstress.backend.state import SessionManager
+from webstress.eval_core import compute_diff, match_diff
+from webstress.tasks._registry import load_all_tasks
 
 
 # Tasks whose happy-path is already hand-written in test_reddit_<id>_canonical_diff.py.

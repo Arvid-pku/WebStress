@@ -14,7 +14,7 @@ from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from typing import Any, Callable
 
-from webagentbench.backend.models.robinhood import (
+from webstress.backend.models.robinhood import (
     DividendEntry,
     EarningsEvent,
     Greeks,
