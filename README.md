@@ -1,92 +1,152 @@
 # WebStress
 
-This repository is the main development branch for WebStress, a benchmark for evaluating web agents in seeded, stateful web application environments. The repo now keeps only benchmark-related code: environment frontends, backend routes, task definitions, evaluators, trajectory tooling, visualization, and benchmark test coverage.
+Probing what cognitive primitive a web agent fails on, by holding the rest of the task fixed and stressing one capability at a time.
 
-> The Python package + filesystem layout still lives under `webagentbench/`
-> for legacy compatibility — only the public-facing branding has been updated
-> to **WebStress**. Imports stay as `from webagentbench.X import …`.
+## What is WebStress?
 
-## Repository Map
+WebStress is a benchmark of **519 paired tasks** across **7 self-hosted web environments** — Gmail, Amazon, Reddit, Robinhood, Booking, an LMS, and a patient portal. Each task ships in two matched conditions:
 
-- `webagentbench/`: benchmark runtime, tasks, evaluators, BrowserGym integration, visualization, and frontend workspaces
-- `tests/webagentbench/`: repo-level benchmark tests
-- `scripts/`: launch, eval, debugging, and result-analysis helpers for the benchmark
-- `docs/guides/`: benchmark authoring and evaluation guidance
-- `results/`: checked-in benchmark artifacts and example trajectories
+- **clean** — the task runs against a healthy environment.
+- **intervention** — the same task runs again with one targeted stressor injected. The stressor loads exactly one cognitive primitive (grounding, planning, state tracking, backtracking, patience, exploration, or verification) drawn from a catalog of **29 stressor families across 4 injection layers** (seed data, server state, network middleware, DOM client).
 
-## Quickstart
+The paired drop between the two runs estimates how much the agent relies on that primitive. A run is graded against the live backend state, not the rendered DOM, so a forged "Saved" toast over a silently dropped write counts as a failure.
+
+## Why matched clean/intervention pairs?
+
+End-to-end task scores tell you that a 15-step booking failed; they don't tell you whether the agent misread the page, lost a sub-goal, or trusted a fake confirmation. Holding the base task fixed and varying one stressor at a time turns "agent A scores 40%" into "agent A loses 27 pp on backtracking and 18 pp on verification, almost nothing on planning." That is the signal a developer or trainer needs to know which capability to fix.
+
+## What is included
+
+| Asset | Path | Notes |
+|---|---|---|
+| 7 environment SPAs | `webagentbench/environments/` | Self-hosted React + FastAPI stack; no production data. |
+| 519 base task YAMLs | `webagentbench/tasks/<env>/` | Five-tier difficulty (easy → frontier). |
+| 519 intervention variants | `webagentbench/injector/variants/` | Each ties to one base task and one target primitive. |
+| Canonical-diff evaluator | `webagentbench/evaluator.py`, `webagentbench/eval_core/` | Grades positive obligations + negative invariants against backend state. |
+| Text harness | `webagentbench/stock_browseruse_eval.py` | Browser-Use action grammar over an accessibility-tree observation. |
+| Pixel harness | `webagentbench/pixel_eval.py` | BrowserGym + screenshot-only observation. |
+| Human traces | `webagentbench/human/` | 140-task panel × clean + intervention × cold + warm; annotators are pseudonymized as P1–P4 (primary) and D1–D4 (duplicate audit). |
+| Trajectory viewer | `webagentbench/visualize.py` | Renders an agent run side-by-side with the live page. |
+
+## Quick start
+
+Requires Python ≥ 3.10, Node 24+, and pnpm.
 
 ```bash
-uv sync
-uv run playwright install chromium
-pnpm -C webagentbench/environments install
-./scripts/webagentbench.sh build --clean
-./scripts/webagentbench.sh dev
+uv sync                                         # install Python deps
+uv run playwright install chromium              # headless Chromium for the harness
+pnpm -C webagentbench/environments install      # frontend deps
+./scripts/webagentbench.sh build                # build the 7 SPAs once
+./scripts/webagentbench.sh dev                  # start backend + frontends on :8080
 ```
 
-The launcher is served at `http://localhost:8080/launch` by default.
+The launcher then lives at `http://localhost:8080/launch`.
 
-### Human recording UI: split control / benchmark tabs
-
-Launching a task from the launcher now opens **two tabs**:
-
-- **Benchmark tab** (e.g. `/env/booking/home?session=...&control=on`) — the clean simulated site. No toolbar, no WAB overlay. This is what an agent sees.
-- **Control tab** (`/control/{env_id}/{session_id}`) — human-facing panel with the full task instruction, a big Record button, Evaluate, Reset, and live step/time counters.
-
-The two tabs coordinate via polling endpoints under `/api/control/{session_id}/*`. The benchmark page runs an invisible shim that auto-starts/stops the in-page JS recorder based on the backend flag; a 2-second heartbeat tells the control tab whether the benchmark tab is still open. Reset navigates both tabs to the new session in place (no orphaned tabs).
-
-Agent evaluation is unchanged: agents drive the benchmark URL directly and POST to `/api/env/.../evaluate`; they never open a control tab.
-
-If you want the optional `browser-use` harness, install its extra on Python 3.11+:
+For the optional Browser-Use harness (paper-grade text agent), add the extra:
 
 ```bash
 uv sync --extra browser-use
 ```
 
-## Common Workflows
-
-Run the backend and selected frontend dev servers:
+## Run one task
 
 ```bash
-./scripts/webagentbench.sh dev --env gmail
-./scripts/webagentbench.sh dev --env amazon --env booking
+./scripts/webagentbench.sh dev --env booking
+# open http://localhost:8080/launch and pick a task — the launcher opens a
+# benchmark tab (what the agent sees) and a control tab (instruction + record).
 ```
 
-Check frontend build status or rebuild all benchmark SPAs:
+## Evaluate an agent
+
+The minimal evaluation call against a single task with the BrowserGym harness:
 
 ```bash
-./scripts/webagentbench.sh status
-./scripts/webagentbench.sh build --clean
+python -m webagentbench.agent_eval \
+    --model gpt-5.4 --provider openai \
+    --tasks gmail_star_email \
+    --seed 42
 ```
 
-Run benchmark tests:
+The Browser-Use text harness used in the paper:
 
 ```bash
-python -m pytest -q webagentbench/tests tests/webagentbench
-python scripts/run_environment_tests.py
+python -m webagentbench.stock_browseruse_eval \
+    --model claude-opus-4-7 --provider anthropic \
+    --environments gmail amazon \
+    --seed 42
 ```
 
-Run evaluation:
+Both write per-trajectory JSON under `results/`; the canonical-diff evaluator scores against the final backend state regardless of how the trajectory terminated.
+
+For the pixel harness, slurm sweep templates, and viewport-per-model details, see [webagentbench/README.md](webagentbench/README.md).
+
+## Reproduce paper results
+
+The paper reports 9 agents — 6 text-mode (Gemini-3.1-Pro, Gemini-3-Flash, GPT-5.4, GPT-5.4-mini, Opus-4.7, Sonnet-4.6) and 3 pixel-mode (px-Gemini-3.1-Pro, px-GPT-5.4, px-Opus-4.7) — over the full 519-clean + 519-intervention sweep at seed 42.
 
 ```bash
-python -m webagentbench.agent_eval --model gpt-5.4 --provider openai --tasks gmail_star_email
-./scripts/run_gmail_sweep.sh
+# example: full sweep for one text agent, paper settings
+./scripts/sweep_templates/stock_sweep.sbatch    # adapt MODEL/PROVIDER, then sbatch
 ```
 
-For the stock `browser-use` harness (used for paper-grade comparability
-across models) and the full batch/parallel/slurm recipes, see the
-[Running the Stock Browser-Use Harness](webagentbench/README.md#running-the-stock-browser-use-harness)
-section of `webagentbench/README.md`.
+Trajectory bundles, the rule-based failure-mode classifier, and the per-(env, primitive, model) cube referenced in the paper's tables are regenerated by the scripts under `paper_workspace/scripts/` (workspace is local-only; see `paper_workspace/README.md` if it is present in your checkout).
 
-Generate or refresh trajectory visualizations:
+## Human traces
+
+The 140-base-task human panel is recorded under both conditions, with a cold attempt followed by a warm attempt by the same annotator. Annotator identifiers in `webagentbench/human/assignments_v1.yaml` are pseudonyms (P1–P4 for primary annotators; D1–D4 for the duplicate-audit panel); the mapping to real names is private. Recording UI:
 
 ```bash
-python -m webagentbench.visualize results/webagentbench/<run>.json
-python -m webagentbench.scripts.viz_watcher --once
+./scripts/human-record.sh P1 --env booking      # opens the launcher filtered to P1's assignments
 ```
 
-## Documentation
+Trace cleaning rules and the post-task rating instrument are documented in `webagentbench/human/GUIDELINES.md`.
 
-- Benchmark internals: `webagentbench/README.md`
-- Task-quality standard: `webagentbench/share_docs/TASK_GENERATION_STANDARD.md`
-- Evaluation hardening patterns: `docs/guides/eval-hardening-playbook.md`
+## Repository layout
+
+```
+webagentbench/
+├── agent_eval.py / stock_browseruse_eval.py / pixel_eval.py    # eval entrypoints
+├── evaluator.py + eval_core/                                   # canonical-diff scoring
+├── tasks/<env>/*.yaml                                          # 519 base tasks
+├── injector/variants/*.yaml                                    # 519 intervention variants
+├── environments/<env>/                                         # 7 React SPAs
+├── backend/                                                    # FastAPI app + routes + state models
+├── human/                                                      # human panel + recordings
+└── tests/                                                      # benchmark integrity + per-task tests
+docs/                                                           # design docs + authoring guides
+scripts/                                                        # launcher, sweep templates, debug tools
+```
+
+> The Python package and filesystem layout still live under `webagentbench/`
+> for legacy compatibility — only the public-facing branding has been updated
+> to **WebStress**. Imports remain `from webagentbench.X import …`.
+
+## Caveats and responsible use
+
+- **Scope of the catalog.** The released sweep covers 7 English consumer-web environments and frontier closed-source models. Per-primitive findings should be read as a vulnerability signal, not as proof that an agent will fail (or succeed) on enterprise, non-English, or open-weight settings. The exploration column in particular sits on a lower clean-baseline and should be re-tested on easier base tasks before being read as a strength.
+- **Stressor content.** The intervention catalog includes phishing-style email bodies, fabricated-success HTTP responses, and look-alike decoys. They are bounded by the local sandbox and reflect publicly-known failure patterns; the assets are intended as a defensive evaluation harness and **not** as templates for live-traffic attacks.
+- **Human traces.** Recordings are pseudonymized (P1–P4, D1–D4) and annotators gave informed consent under an IRB-exempt protocol. Per-step timing and DOM-event traces are released; viewport screenshots and free-text rubric comments are withheld pending a personal-information audit. Do not attempt to re-identify annotators from cleaned traces.
+- **Synthetic environments.** The 7 environments are self-hosted clones with synthetic seed data (no real users, payments, medical records, or live API calls). They do not model production rate limiting, geo-restrictions, fraud detection, or third-party scripts. Generalization to live sites is an open question — see the *Limitations* section of the paper.
+- **Failure-mode classifier.** The rule-based classifier in `webagentbench/eval_core/` is keyword-sensitive on the agent's terminal thought; the combined "belief-failure" class is robust, but the split between `misleading_success_taken` and `premature_done` is brittle and should be treated as a qualitative signal.
+
+## Citation
+
+```bibtex
+@inproceedings{webstress2026,
+  title  = {Beyond Task Success: Probing Cognitive Primitives in Web Agents},
+  author = {Anonymous},
+  booktitle = {Submitted to the 40th Conference on Neural Information Processing Systems (NeurIPS 2026)},
+  year   = {2026},
+  note   = {Under review.}
+}
+```
+
+## License and contact
+
+License: TBD pending de-anonymisation. Until a `LICENSE` file is added, the
+repository is shared under the implicit "all rights reserved" default;
+ad-hoc reuse of the catalog or trace bundles for research is welcome but
+should be coordinated with the authors first.
+
+For benchmark questions or intervention-catalog extensions, open an issue
+on the GitHub repository (`Arvid-pku/WebStress`).
