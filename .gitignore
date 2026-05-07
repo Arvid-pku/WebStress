@@ -114,3 +114,11 @@ RUNNING_EVALS.md
 # (re-include when the recording session is done and we want to commit them).
 webagentbench/human/traces/
 webagentbench/gold_trajectories/
+
+# NeurIPS 2026 paper draft + its source archive (kept locally, not in git).
+# paper/ holds the LaTeX source uploaded to Overleaf; paper_workspace/ holds
+# the analysis scripts, generated CSVs / MD reports, auto-generated table
+# fragments, and case-study raw artefacts that drive paper/figures/.
+paper/
+paper_workspace/
+_NeurIPS_2026__Primitive_Webagent_Benchmark*.zip

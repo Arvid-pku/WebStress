@@ -42,6 +42,10 @@ seed:
     - rsvp_thread_2_latest_email_id
     - rsvp_thread_3_latest_email_id
     - rsvp_thread_4_latest_email_id
+    - rsvp_thread_1_id
+    - rsvp_thread_2_id
+    - rsvp_thread_3_id
+    - rsvp_thread_4_id
   targets:
     marcus_name: '{output.marcus_name}'
     sofia_name: '{output.sofia_name}'
@@ -56,6 +60,10 @@ seed:
     rsvp_thread_2_latest_email_id: '{output.rsvp_thread_2_latest_email_id}'
     rsvp_thread_3_latest_email_id: '{output.rsvp_thread_3_latest_email_id}'
     rsvp_thread_4_latest_email_id: '{output.rsvp_thread_4_latest_email_id}'
+    rsvp_thread_1_id: '{output.rsvp_thread_1_id}'
+    rsvp_thread_2_id: '{output.rsvp_thread_2_id}'
+    rsvp_thread_3_id: '{output.rsvp_thread_3_id}'
+    rsvp_thread_4_id: '{output.rsvp_thread_4_id}'
 canonical_diff:
   create:
     - entity: sent
@@ -93,8 +101,13 @@ canonical_diff:
         archived:
           eq: true
   invariant:
+    # Exempt any email inside the 4 RSVP threads from preservation: the
+    # Thread-view star button stars the entire thread (Gmail-real behavior),
+    # so older replies legitimately become starred when annotators star "the
+    # most recent" via the natural UI path. The required-state on
+    # rsvp_thread_*_latest_email_id is still enforced by update[0] above.
     - collection: state.emails
-      filter: "a.id not in [target['rsvp_thread_1_latest_email_id'], target['rsvp_thread_2_latest_email_id'], target['rsvp_thread_3_latest_email_id'], target['rsvp_thread_4_latest_email_id'], target['date_poll_email_id']]"
+      filter: "a.thread_id not in [target['rsvp_thread_1_id'], target['rsvp_thread_2_id'], target['rsvp_thread_3_id'], target['rsvp_thread_4_id']] and a.id != target['date_poll_email_id']"
       preserve: ALL
     - collection: state.drafts
       preserve: ALL

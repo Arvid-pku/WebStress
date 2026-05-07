@@ -581,6 +581,13 @@ def build_annual_contact_review(ctx: SeedContext, params: dict[str, Any]) -> dic
     targets, new-contact senders, and decoys for the frontier-difficulty
     annual contact review task.
     """
+    # The shared gmail seeder pre-populates 10 random contacts with no inbox
+    # activity. They contradict this task's "delete inactive non-protected"
+    # instruction (every one of them is inactive) while the canonical_diff
+    # only authorises deleting the 3 explicit targets below. Reset to an
+    # empty contact list so the audit step is truthful.
+    ctx.base["contacts"] = []
+
     # ---------------------------------------------------------------
     # Protected contacts (4) — all have recent activity
     # ---------------------------------------------------------------

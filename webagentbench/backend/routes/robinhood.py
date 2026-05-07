@@ -7,7 +7,7 @@ from decimal import Decimal
 from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from pydantic import BaseModel, Field
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 
 from ...tasks._evaluator import evaluate as unified_evaluate
 from ...tasks._registry import get_task
@@ -70,13 +70,24 @@ class CancelOrderRequest(SessionScopedRequest):
 # --- Options ---
 
 class OptionsLegInput(BaseModel):
+    # The OptionsTrade page submits ``underlying_symbol`` while older API
+    # callers use ``symbol``. Accept both names so leg.symbol is populated
+    # either way; without this alias the frontend's value silently gets
+    # dropped to None and OptionsLeg.underlying_symbol is saved as None,
+    # causing every options task's canonical_diff predicates that reference
+    # ``leg.underlying_symbol`` to fail.
+    model_config = ConfigDict(populate_by_name=True)
+
     side: Literal["buy", "sell"]
     option_type: Literal["call", "put"]
     strike: str
     expiration: date
     quantity: int
     premium: str
-    symbol: str | None = None
+    symbol: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("symbol", "underlying_symbol"),
+    )
 
 
 class PlaceOptionsOrderRequest(SessionScopedRequest):

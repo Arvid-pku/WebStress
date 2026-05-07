@@ -14,34 +14,34 @@ injections:
         subject: "Q4 Revenue Numbers"
         body: "Preliminary revenue data for Q4 review."
         timestamp: "2024-03-15T09:15:00Z"
-        labels: []
+        labels: ["inbox"]
       - from_name: "Dr. Sarah Chen"
         from: "schen@company.com"
         subject: "Product Launch Schedule"
         body: "Updated product launch timeline and milestones."
         timestamp: "2024-03-15T10:30:00Z"
-        labels: []
+        labels: ["inbox"]
       - from_name: "Marcus Johnson"
         from: "mjohnson2@company.com"
         subject: "Competitor Intel Report"
         body: "Recent competitive intelligence findings."
         timestamp: "2024-03-15T11:45:00Z"
-        labels: []
+        labels: ["inbox"]
       - from_name: "Jane Martinez"
         from: "jane.martinez@company.com"
         subject: "Revenue Forecast Update"
         body: "Alternative revenue projection scenario."
         timestamp: "2024-03-15T09:30:00Z"
-        labels: []
+        labels: ["inbox"]
       - from_name: "Sarah Chen PhD"
         from: "sarah.chen@company.com"
         subject: "Product Development Status"
         body: "Current status of product development pipeline."
         timestamp: "2024-03-15T10:45:00Z"
-        labels: []
+        labels: ["inbox"]
       - from_name: "M. Johnson"
         from: "marcus.j@company.com"
         subject: "Market Analysis Brief"
         body: "Competitive market positioning analysis."
         timestamp: "2024-03-15T12:00:00Z"
-        labels: []
+        labels: ["inbox"]

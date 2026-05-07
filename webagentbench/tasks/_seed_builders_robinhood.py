@@ -1322,6 +1322,8 @@ def build_complex_options_book(ctx: RobinhoodSeedContext, params: dict[str, Any]
         ctx.base["options_orders"] = []
     if "options_positions" not in ctx.base:
         ctx.base["options_positions"] = []
+    if "options_chains" not in ctx.base:
+        ctx.base["options_chains"] = {}
 
     order_ids: list[str] = []
     position_ids: list[str] = []
@@ -1371,9 +1373,16 @@ def build_complex_options_book(ctx: RobinhoodSeedContext, params: dict[str, Any]
             no_action_symbols.append(sym)
 
         pos_id = ctx.next_id("opos")
+        contract_id = ctx.next_id("opt")
+        position_greeks = Greeks(
+            delta=Decimal(str(round(ctx.rng.uniform(-0.8, 0.8), 4))),
+            gamma=Decimal(str(round(ctx.rng.uniform(0.001, 0.05), 4))),
+            theta=Decimal(str(round(-ctx.rng.uniform(0.01, 0.15), 4))),
+            vega=Decimal(str(round(ctx.rng.uniform(0.05, 0.30), 4))),
+        )
         position = OptionsPosition(
             id=pos_id,
-            contract_id=ctx.next_id("opt"),
+            contract_id=contract_id,
             underlying_symbol=sym,
             position_side=position_side,
             option_type=option_type,
@@ -1382,16 +1391,30 @@ def build_complex_options_book(ctx: RobinhoodSeedContext, params: dict[str, Any]
             quantity=1,
             avg_cost=avg_cost,
             current_premium=current_premium,
-            greeks=Greeks(
-                delta=Decimal(str(round(ctx.rng.uniform(-0.8, 0.8), 4))),
-                gamma=Decimal(str(round(ctx.rng.uniform(0.001, 0.05), 4))),
-                theta=Decimal(str(round(-ctx.rng.uniform(0.01, 0.15), 4))),
-                vega=Decimal(str(round(ctx.rng.uniform(0.05, 0.30), 4))),
-            ),
+            greeks=position_greeks,
             status="open",
         )
         ctx.base["options_positions"].append(position)
         position_ids.append(pos_id)
+
+        # Register the position's contract in the symbol's chain so the
+        # OptionsTrade page can resolve it from contract_id and pre-fill the
+        # close/roll form. Without this, Sell/Buy-to-Close lands on an empty
+        # form and the user can't submit.
+        ctx.base["options_chains"].setdefault(sym, []).append(OptionsContract(
+            contract_id=contract_id,
+            underlying=sym,
+            option_type=option_type,
+            strike=strike,
+            expiration=exp_date,
+            bid=Decimal(str(round(float(current_premium) * 0.95, 2))),
+            ask=Decimal(str(round(float(current_premium) * 1.05, 2))),
+            last_price=current_premium,
+            volume=ctx.rng.randint(10, 5000),
+            open_interest=ctx.rng.randint(100, 50000),
+            implied_volatility=Decimal(str(round(ctx.rng.uniform(0.20, 0.60), 4))),
+            greeks=position_greeks,
+        ))
 
         legs = [
             OptionsLeg(

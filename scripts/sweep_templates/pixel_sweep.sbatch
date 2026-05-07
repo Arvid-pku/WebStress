@@ -20,8 +20,9 @@
 # Pixel mode rejects in-process concurrency (Playwright sync API isn't
 # thread-safe). Real parallelism: launch as a slurm array job, e.g.
 #   sbatch --array=0-7 ... pixel_sweep.sbatch
-# Each array task is one shard; output lands in shard_NN/. Aggregate
-# afterwards with `python scripts/pixel_aggregate.py <run-dir>`.
+# Each array task is one shard; output lands in shard_NN/. Merge the
+# per-shard summary.json files into a single summary by concatenating the
+# `results` arrays (each entry already has its own task_id + cond).
 #
 # Required env vars:
 #   MODEL    — model id (provider-specific)

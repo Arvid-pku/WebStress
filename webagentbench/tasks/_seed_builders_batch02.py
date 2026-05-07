@@ -765,6 +765,10 @@ def build_multi_party_rsvp(ctx: SeedContext, params: dict[str, Any]) -> dict[str
         "rsvp_thread_2_latest_email_id": rsvp_thread_2_latest.id,
         "rsvp_thread_3_latest_email_id": rsvp_thread_3_latest.id,
         "rsvp_thread_4_latest_email_id": rsvp_thread_4_latest.id,
+        "rsvp_thread_1_id": rsvp_thread_1_id,
+        "rsvp_thread_2_id": rsvp_thread_2_id,
+        "rsvp_thread_3_id": rsvp_thread_3_id,
+        "rsvp_thread_4_id": rsvp_thread_4_id,
     }
 
 
