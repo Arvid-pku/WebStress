@@ -834,6 +834,38 @@ async def index():
             .catch(function() {{ return []; }});
     }})).then(function(results) {{
         for (var i = 0; i < results.length; i++) allVariants = allVariants.concat(results[i]);
+
+        // ── Deep-link from URL: ?task=<task_id>&cond=clean|intervention&seed=<n> ──
+        // Pre-select a task (and optionally pick the first intervention variant)
+        // so the site can hand a visitor straight onto the launch panel.
+        var taskFromUrl = _urlParams.get('task');
+        var seedFromUrl = _urlParams.get('seed');
+        if (seedFromUrl && /^\d+$/.test(seedFromUrl)) {{
+            document.getElementById('seed').value = seedFromUrl;
+            saveFilters();
+        }}
+        if (taskFromUrl) {{
+            var matchEnv = null, matchTask = null;
+            ENV_DATA.forEach(function(e) {{
+                e.tasks.forEach(function(t) {{
+                    if (t.task_id === taskFromUrl) {{ matchEnv = e; matchTask = t; }}
+                }});
+            }});
+            if (matchEnv && matchTask) {{
+                selectEnv(matchEnv.env_id);
+                selectTask(matchTask.task_id, matchEnv.env_id, matchTask);
+                if (_urlParams.get('cond') === 'intervention') {{
+                    var v = allVariants.find(function(x) {{ return x.base_task_id === taskFromUrl; }});
+                    if (v) {{
+                        var variantSel = document.getElementById('variant');
+                        variantSel.value = v.filename;
+                        variantSel.dispatchEvent(new Event('change'));
+                    }}
+                }}
+                var selRow = document.querySelector('.task-table tr.selected');
+                if (selRow) selRow.scrollIntoView({{ behavior: 'smooth', block: 'center' }});
+            }}
+        }}
     }});
 
     // ── Initial render ──
