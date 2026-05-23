@@ -116,10 +116,17 @@ RUNNING_EVALS.md
 webstress/human/traces/
 webstress/gold_trajectories/
 
+# Pre-rebrand orphaned copy of the codebase (`webagentbench/` is now
+# `webstress/` per commit bf314904). Some annotators continue recording
+# against the old path during the transition — ignore the entire folder
+# so it does not clutter `git status`.
+webagentbench/
+
 # NeurIPS 2026 paper draft + its source archive (kept locally, not in git).
 # paper/ holds the LaTeX source uploaded to Overleaf; paper_workspace/ holds
 # the analysis scripts, generated CSVs / MD reports, auto-generated table
 # fragments, and case-study raw artefacts that drive paper/figures/.
 paper/
 paper_workspace/
+paper.bak.*/
 _NeurIPS_2026__Primitive_Webagent_Benchmark*.zip

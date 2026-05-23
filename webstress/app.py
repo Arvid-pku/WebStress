@@ -626,6 +626,11 @@ async def index():
     if (_stored.search) document.getElementById('search').value = _stored.search;
     if (_stored.seed) document.getElementById('seed').value = _stored.seed;
 
+    // URL ?env=<id> overrides localStorage so deep links land on the right tab.
+    var _urlParams = new URLSearchParams(window.location.search);
+    var _envFromUrl = _urlParams.get('env');
+    if (_envFromUrl) selectedEnv = _envFromUrl;
+
     function saveFilters() {{
         try {{
             localStorage.setItem('wab_filters', JSON.stringify({{
