@@ -129,18 +129,6 @@ scripts/                                                        # launcher, swee
 - **Synthetic environments.** The 7 environments are self-hosted clones with synthetic seed data (no real users, payments, medical records, or live API calls). They do not model production rate limiting, geo-restrictions, fraud detection, or third-party scripts. Generalization to live sites is an open question — see the *Limitations* section of the paper.
 - **Failure-mode classifier.** The rule-based classifier in `webstress/eval_core/` is keyword-sensitive on the agent's terminal thought; the combined "belief-failure" class is robust, but the split between `misleading_success_taken` and `premature_done` is brittle and should be treated as a qualitative signal.
 
-## Citation
-
-```bibtex
-@inproceedings{webstress2026,
-  title  = {Beyond Task Success: Probing Cognitive Primitives in Web Agents},
-  author = {Anonymous},
-  booktitle = {Submitted to the 40th Conference on Neural Information Processing Systems (NeurIPS 2026)},
-  year   = {2026},
-  note   = {Under review.}
-}
-```
-
 ## License and contact
 
 License: TBD pending de-anonymisation. Until a `LICENSE` file is added, the
