@@ -7,7 +7,7 @@ description: >
   plus crossposts of the real target titles into wrong-but-plausible
   subreddits (forcing exact-subreddit grounding). Previously this variant
   added only a single lookalike subreddit + one crosspost, so 3 of the 4 task
-  steps had no per-step intervention — Michael flagged "didn't feel any
+  steps had no per-step intervention — an annotator flagged "didn't feel any
   intervention".
 injections:
 - layer: seed

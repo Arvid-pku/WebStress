@@ -2367,7 +2367,7 @@ def _build_grade_book(ctx: LMSSeedContext, params: dict[str, Any]) -> dict[str, 
             # (final weight ∈ [0.2, 0.3], remaining weight ≥ 0.7) the required
             # final score still exceeds 100%, so the course remains impossible.
             # Previously this was 1%, which looked like a data bug to annotators
-            # (Tianchen flagged this as "The score is 0.96%, there's a bug!!!!").
+            # (an annotator flagged this as "The score is 0.96%, there's a bug!!!!").
             for g in ctx.base["grades"]:
                 if g["course_id"] == victim_cid and not g["is_dropped"]:
                     pts = Decimal(str(g["points_possible"]))

@@ -2424,7 +2424,7 @@ def _rh_add_confusing_positions(state: Any, params: dict[str, Any], *, rng=None)
         # Options spec: dispatch to the options-position branch. Detected by
         # presence of `option_type` (call/put). Previously these specs were
         # silently treated as stock positions (`strike`/`expiration`/`option_type`
-        # dropped), so options-confusion variants did nothing — Michael flagged
+        # dropped), so options-confusion variants did nothing — an annotator flagged
         # "didn't really feel any intervention" on rh_options_roll_strategy etc.
         if spec.get("option_type"):
             _rh_add_confusing_options_position(state, spec, rng=_rng)

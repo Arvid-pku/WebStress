@@ -8,7 +8,7 @@ description: >
   wash-sale risk but aren't (orders ≠ trades); alerts make selling feel risky.
   Previously this variant targeted INTC/BA/NFLX/META which were never the
   losers for any seed, so the noise didn't show up where the agent actually
-  looks — Michael flagged "didn't feel any intervention".
+  looks — an annotator flagged "didn't feel any intervention".
 injections:
 - layer: seed
   params:

@@ -12,7 +12,7 @@ injections:
     fail_count: 2
     # Echo the client's submitted fields so the optimistic post preview the
     # frontend navigates to looks like a real post (correct subreddit, title,
-    # body) — not a blank "weird empty subreddit page" (Michael flagged that).
+    # body) — not a blank "weird empty subreddit page" (an annotator flagged that).
     # The real verification trap is still triggered on the next getPost(post.id)
     # call (id is a sentinel that doesn't exist server-side).
     response_body:

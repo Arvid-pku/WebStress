@@ -7,7 +7,7 @@ description: >
   to the exact correct message id and resist a misleading "always loop the team"
   reminder. Previously the variant used `scramble_aria` (only affects aria, not
   visible text) and two self-labeling decoys ("(draft)", "template") on a wrong
-  domain — Michael flagged "didn't really feel any intervention".
+  domain — an annotator flagged "didn't really feel any intervention".
 injections:
 - layer: client
   params:

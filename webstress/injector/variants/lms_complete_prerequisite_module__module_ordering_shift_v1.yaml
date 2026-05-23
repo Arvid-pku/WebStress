@@ -8,7 +8,7 @@ description: >
   A misleading workflow tip suggests batch-marking modules complete, which
   would touch the lookalike and trip the preserve invariant. Previously this
   variant used only `scramble_timestamps`, but modules carry no visible
-  timestamp ordering signal — Tianchen flagged "didn't feel any intervention"
+  timestamp ordering signal — an annotator flagged "didn't feel any intervention"
   because nothing actually changed in the UI.
 injections:
 - layer: client

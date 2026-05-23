@@ -116,6 +116,10 @@ RUNNING_EVALS.md
 webstress/human/traces/
 webstress/gold_trajectories/
 
+# Internal bug-fix tracking doc — contains raw annotator names + free-text
+# rubric comments. Local-only; the backup lives at ~/BUG_FIX_PLAN.md.bak.
+webstress/human/BUG_FIX_PLAN.md
+
 # Pre-rebrand orphaned copy of the codebase (`webagentbench/` is now
 # `webstress/` per commit bf314904). Some annotators continue recording
 # against the old path during the transition — ignore the entire folder

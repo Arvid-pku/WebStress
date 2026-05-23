@@ -10,7 +10,7 @@ description: >
   agent cannot rely on chronology to identify the authoritative source.
 
   Previously this variant added only generic topical-subject distractors with
-  boilerplate bodies — Tianchen flagged "didn't feel any intervention" because
+  boilerplate bodies — an annotator flagged "didn't feel any intervention" because
   the noise carried no specific names that could trip the contact ops.
 injections:
 - layer: server
